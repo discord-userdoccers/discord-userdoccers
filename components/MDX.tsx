@@ -3,20 +3,20 @@ import ContentWrapper from "./mdx/ContentWrapper";
 import Heading from "./mdx/Heading";
 import Code from "./mdx/Code";
 
-const InlineCode: React.FC<{}> = (props) => {
+function InlineCode(props: any) {
   return <code {...props} />;
 }
 
-type HeadingProps = React.DetailedHTMLProps<React.HTMLAttributes<HTMLHeadingElement>, HTMLHeadingElement>;
+type HeadingProps = { children: React.ReactNode };
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,
-  h1: (props: HeadingProps) => <Heading as="h1" {...props} />,
-  h2: (props: HeadingProps) => <Heading as="h2" {...props} />,
-  h3: (props: HeadingProps) => <Heading as="h3" {...props} />,
-  h4: (props: HeadingProps) => <Heading as="h4" {...props} />,
-  h5: (props: HeadingProps) => <Heading as="h5" {...props} />,
-  h6: (props: HeadingProps) => <Heading as="h6" {...props} />,
+  h1: ({children}: HeadingProps) => <Heading as="h1">{children}</Heading>,
+  h2: ({children}: HeadingProps) => <Heading as="h2">{children}</Heading>,
+  h3: ({children}: HeadingProps) => <Heading as="h3">{children}</Heading>,
+  h4: ({children}: HeadingProps) => <Heading as="h4">{children}</Heading>,
+  h5: ({children}: HeadingProps) => <Heading as="h5">{children}</Heading>,
+  h6: ({children}: HeadingProps) => <Heading as="h6">{children}</Heading>,
   code: Code,
   inlineCode: InlineCode,
 };
