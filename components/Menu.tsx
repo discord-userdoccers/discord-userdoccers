@@ -1,12 +1,11 @@
-import { Fragment } from "react";
+import React, { Fragment } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import classNames from "classnames";
-import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
 
-function MenuSection({ title, children }) {
+const MenuSection: React.FC<{ title?: string }> = ({ title, children }) => {
   return (
     <section>
       {title ? <h3 className="uppercase font-whitney-bold mb-1 mt-4">{title}</h3> : null}
@@ -15,7 +14,7 @@ function MenuSection({ title, children }) {
   );
 }
 
-function MenuLink({ href, subLinks, children }) {
+const MenuLink: React.FC<{href: string, subLinks?: React.ReactNode }> = ({ href, subLinks, children }) => {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
   const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
@@ -48,7 +47,7 @@ function MenuLink({ href, subLinks, children }) {
   );
 }
 
-function MenuSubLink({ href, children }) {
+const MenuSubLink: React.FC<{ href: string }> = ({ href, children }) => {
   const router = useRouter();
   const classes = classNames(
     "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
