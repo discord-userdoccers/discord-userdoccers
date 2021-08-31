@@ -7,19 +7,24 @@ export default function useTheme() {
 
   const getSystemTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
-  useEffect(() => {
-    if ((theme === "system" ? getSystemTheme() : theme) === "dark") {
+  const applyTheme = (toApply: Theme) => {
+    if ((toApply === "system" ? getSystemTheme() : toApply) === "dark") {
       document.body.classList.add("dark");
     } else {
       document.body.classList.remove("dark");
     }
+  }
+
+  useEffect(() => {
+    applyTheme(theme);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme])
 
   useEffect(() => {
     _setTheme((window.localStorage.getItem("theme") ?? "system") as Theme);
 
     const match = window?.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = (e: MediaQueryListEvent) => { console.log(e.matches) }
+    const onChange = (e: MediaQueryListEvent) => { applyTheme(e.matches ? "dark" : "light") }
     match.addEventListener('change', onChange)
     return () => match.removeEventListener('change', onChange)
   }, [])
