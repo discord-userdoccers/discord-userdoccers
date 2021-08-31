@@ -1,6 +1,8 @@
 import classNames from "classnames";
 
-function getClasses(type) {
+type AlertType = "danger" | "warn" | "info";
+
+function getClasses(type: AlertType) {
   return classNames("alert block p-4", {
     "bg-red-100 text-red-500": type === "danger",
     "bg-yellow-100 text-yellow-500": type === "warn",
@@ -8,6 +10,8 @@ function getClasses(type) {
   });
 }
 
-export default function Alert({ type, children }) {
+const Alert: React.FC<{ type: AlertType }> = ({ type, children }) => {
   return <aside className={getClasses(type)}>{children}</aside>;
 }
+
+export default Alert;
