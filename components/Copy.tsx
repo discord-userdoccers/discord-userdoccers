@@ -1,7 +1,7 @@
 import classnames from "classnames";
 import { COPY_STATUS, useClipboard } from "../hooks/useClipboard";
 
-export default function CopyButton({ text, children }) {
+const CopyButton: React.FC<{ text: string }> = ({ text, children }) => {
   const { copy, status } = useClipboard(text);
   let value = children;
 
@@ -21,3 +21,5 @@ export default function CopyButton({ text, children }) {
     </button>
   );
 }
+
+export default CopyButton;
