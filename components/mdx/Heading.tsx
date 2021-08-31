@@ -1,6 +1,6 @@
-import { isValidElement } from "react";
+import React, { isValidElement } from "react";
 
-function getText(node) {
+function getText(node: React.ReactNode): string{
   if (typeof node === "string") {
     return node.toLowerCase().replaceAll(" ", "-");
   }
@@ -19,7 +19,7 @@ function getText(node) {
   return "";
 }
 
-export default function Heading({ as: As, children }) {
+const Heading: React.FC<{as: any}> = ({ as: As, children }) => {
   const anchor = getText(children);
 
   return (
@@ -31,6 +31,8 @@ export default function Heading({ as: As, children }) {
     </a>
   );
 }
+
+export default Heading;
 
 // TODO: Use Discord version
 function HyperlinkIcon() {
