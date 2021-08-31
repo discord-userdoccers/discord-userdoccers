@@ -22,7 +22,7 @@ export default function useTheme() {
   }, [theme])
 
   useEffect(() => {
-    setTheme((window.localStorage.getItem("theme") ?? "system") as Theme);
+    setTheme(theme);
 
     const match = window?.matchMedia('(prefers-color-scheme: dark)')
     const onChange = (e: MediaQueryListEvent) => { applyTheme(e.matches ? "dark" : "light") }
