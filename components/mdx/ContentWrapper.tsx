@@ -8,11 +8,11 @@ export default function ContentWrapper({ children }) {
     <Fragment>
       <Header />
 
-      <div className="h-screen flex overflow-hidden bg-gray-100">
+      <div className="flex h-screen bg-white overflow-hidden">
         <Menu />
 
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <article className="m-auto prose">{children}</article>
+        <main className="relative flex-1 mt-10 focus:outline-none overflow-y-auto">
+          <article className="prose m-auto">{children}</article>
         </main>
       </div>
       <Footer />
