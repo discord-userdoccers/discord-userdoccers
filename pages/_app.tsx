@@ -1,7 +1,12 @@
-import '../styles/globals.css'
-import type { AppProps } from 'next/app'
+import type { AppProps } from "next/app";
+import MDX from "../components/MDX";
+import "tailwindcss/tailwind.css";
+import "../stylesheets/alert.css";
 
-function MyApp({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <MDX>
+      <Component {...pageProps} />
+    </MDX>
+  );
 }
-export default MyApp
