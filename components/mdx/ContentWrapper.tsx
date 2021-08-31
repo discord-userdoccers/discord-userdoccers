@@ -3,7 +3,11 @@ import Header from "../Header";
 import Menu from "../Menu";
 import Footer from "../Footer";
 
-export default function ContentWrapper({ children }) {
+interface ContentWrapperProps {
+  children: React.ReactNode;
+}
+
+export default function ContentWrapper ({ children }: ContentWrapperProps) {
   return (
     <Fragment>
       <div className="flex h-screen bg-white overflow-hidden">

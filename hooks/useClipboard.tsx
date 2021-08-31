@@ -6,7 +6,7 @@ export const COPY_STATUS = {
   ERROR: "error",
 };
 
-export function useClipboard(text, duration = 2500) {
+export function useClipboard(text: string, duration: number = 2500) {
   const [status, setStatus] = useState(COPY_STATUS.INACTIVE);
 
   const copy = useCallback(async () => {

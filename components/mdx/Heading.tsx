@@ -1,6 +1,6 @@
-import { isValidElement } from "react";
+import React, { isValidElement } from "react";
 
-function getText(node) {
+function getText(node: React.ReactNode): string{
   if (typeof node === "string") {
     return node.toLowerCase().replaceAll(" ", "-");
   }
@@ -19,7 +19,13 @@ function getText(node) {
   return "";
 }
 
-export default function Heading({ as: As, children }) {
+export interface HeadingProps {
+  // TODO: Can a string be rendered as a react component?? That'\s news to me lol. Can someone figure out the proper typing for this?
+  as: any
+  children: React.ReactNode
+};
+
+export default function Heading ({ as: As, children }: HeadingProps) {
   const anchor = getText(children);
 
   return (

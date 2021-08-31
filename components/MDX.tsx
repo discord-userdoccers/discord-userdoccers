@@ -3,22 +3,26 @@ import ContentWrapper from "./mdx/ContentWrapper";
 import Heading from "./mdx/Heading";
 import Code from "./mdx/Code";
 
-function InlineCode(props) {
+function InlineCode(props: any) {
   return <code {...props} />;
 }
 
 const COMPONENTS = {
-  wrapper: (props) => <ContentWrapper {...props} />,
-  h1: (props) => <Heading as="h1" {...props} />,
-  h2: (props) => <Heading as="h2" {...props} />,
-  h3: (props) => <Heading as="h3" {...props} />,
-  h4: (props) => <Heading as="h4" {...props} />,
-  h5: (props) => <Heading as="h5" {...props} />,
-  h6: (props) => <Heading as="h6" {...props} />,
+  wrapper: (props: any) => <ContentWrapper {...props} />,
+  h1: ({children}: any) => <Heading as="h1">{children}</Heading>,
+  h2: ({children}: any) => <Heading as="h2">{children}</Heading>,
+  h3: ({children}: any) => <Heading as="h3">{children}</Heading>,
+  h4: ({children}: any) => <Heading as="h4">{children}</Heading>,
+  h5: ({children}: any) => <Heading as="h5">{children}</Heading>,
+  h6: ({children}: any) => <Heading as="h6">{children}</Heading>,
   code: Code,
   inlineCode: InlineCode,
 };
 
-export default function MDX({ children }) {
+interface MDXProps {
+  children: React.ReactNode;
+}
+
+export default function MDX ({ children }: MDXProps) {
   return <MDXProvider components={COMPONENTS}>{children}</MDXProvider>;
 }

@@ -2,7 +2,12 @@ import { Fragment } from "react";
 import classNames from "classnames";
 import Heading from "./mdx/Heading";
 
-function MethodBadge({ method }) {
+type RESTMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
+
+interface MethodBadgeProps {
+  method: RESTMethod
+}
+function MethodBadge ({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
   const classes = classNames("uppercase p-2 rounded-lg", {
@@ -15,7 +20,13 @@ function MethodBadge({ method }) {
   return <span className={classes}>{method}</span>;
 }
 
-export default function RouteHeader({ method, url, children }) {
+interface RouteHeaderProps {
+  method: RESTMethod
+  url: string
+  children: React.ReactNode
+}
+
+export default function RouteHeader ({ method, url, children }: RouteHeaderProps) {
   return (
     <Fragment>
       <Heading as="h2">{children}</Heading>

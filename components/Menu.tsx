@@ -1,12 +1,16 @@
-import { Fragment } from "react";
+import React, { Fragment } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import classNames from "classnames";
-import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
 
-function MenuSection({ title, children }) {
+interface MenuSelectionProps {
+  title?: string;
+  children: React.ReactNode;
+}
+
+function MenuSection({ title, children }: MenuSelectionProps) {
   return (
     <section>
       {title ? (
@@ -17,7 +21,13 @@ function MenuSection({ title, children }) {
   );
 }
 
-function MenuLink({ href, subLinks, children }) {
+interface MenuLinkProps {
+  href: string;
+  subLinks?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+function MenuLink ({ href, subLinks, children }: MenuLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
   const classes = classNames("font-whitney flex items-center px-2 rounded-md", {
@@ -49,7 +59,12 @@ function MenuLink({ href, subLinks, children }) {
   );
 }
 
-function MenuSubLink({ href, children }) {
+interface MenuSubLinkProps {
+  href: string;
+  children: React.ReactNode;
+}
+
+function MenuSubLink ({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
     "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
@@ -59,13 +74,6 @@ function MenuSubLink({ href, children }) {
         router.asPath !== href,
     }
   );
-
-  // const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
-  //   "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text":
-  //     router.pathname === href,
-  //   "text-theme-light-sidebar-text hover:bg-indigo-600 hover:text-white":
-  //     router.pathname !== href,
-  // });
 
   return (
     <span className="flex items-center">

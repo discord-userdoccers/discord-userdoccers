@@ -8,7 +8,7 @@ import Check from "./icons/Check";
 export default function Header() {
   const [theme, setTheme] = useTheme();
 
-  const getMenuItemClasses = (active) =>
+  const getMenuItemClasses = (active: boolean) =>
     classNames("flex px-4 py-2 text-sm", {
       "bg-red-100 text-gray-900": active,
       "text-gray-700": !active,
