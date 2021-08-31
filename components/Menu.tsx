@@ -18,29 +18,30 @@ function MenuSection({ title, children }) {
 function MenuLink({ href, subLinks, children }) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames(
-    "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
-    {
-      "bg-indigo-800 text-white": router.pathname === href,
-      "text-indigo-100 hover:bg-indigo-600": router.pathname !== href,
-    }
-  );
+  const classes = classNames("flex items-center px-2 rounded-md", {
+    "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text":
+      router.pathname === href,
+    "text-theme-light-sidebar-text hover:bg-indigo-600":
+      router.pathname !== href,
+  });
 
   return (
     <Fragment>
-      <span className="flex items-center">
+      <span className={classes}>
         {subLinks != null &&
           (isOpen ? (
             <a onClick={toggle}>
-              <CaretFill className="text-white w-4 h-4 rotate-90" />
+              <CaretFill className="text-sidebar-icon-primary-light w-4 h-4 rotate-90" />
             </a>
           ) : (
             <a onClick={toggle}>
-              <Caret className="text-white w-4 h-4" />
+              <Caret className="text-sidebar-icon-primary-light w-4 h-4" />
             </a>
           ))}
         <Link href={href}>
-          <a className={classes}>{children}</a>
+          <a className="group flex items-center px-2 py-2 w-full text-sm font-medium">
+            {children}
+          </a>
         </Link>
       </span>
       {isOpen && subLinks != null ? subLinks : null}
@@ -60,7 +61,7 @@ function MenuSubLink({ href, children }) {
 
   return (
     <span className="flex items-center">
-      {router.asPath === href ? <Caret className="text-white w-4 h-4" /> : null}
+      {router.asPath === href ? <Caret className="w-4 h-4 text-white" /> : null}
       <Link href={href}>
         <a className={classes}>{children}</a>
       </Link>
@@ -70,11 +71,11 @@ function MenuSubLink({ href, children }) {
 
 export default function Menu() {
   return (
-    <div className="hidden bg-indigo-700 md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-64">
-        <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
-          <div className="mt-5 flex-1 flex flex-col">
-            <nav className="flex-1 px-2 space-y-1">
+    <div className="bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark hidden text-theme-light-text md:flex md:flex-shrink-0">
+      <div className="flex flex-col w-72">
+        <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
+          <div className="flex flex-1 flex-col mt-5">
+            <nav className="flex-1 px-4 space-y-1">
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>
