@@ -21,8 +21,10 @@ const COMPONENTS = {
   inlineCode: InlineCode,
 };
 
-const MDX: React.FC<{}> = ({ children }) => {
-  return <MDXProvider components={COMPONENTS}>{children}</MDXProvider>;
+interface MDXProps {
+  children: React.ReactNode;
 }
 
-export default MDX;
+export default function MDX ({ children }: MDXProps) {
+  return <MDXProvider components={COMPONENTS}>{children}</MDXProvider>;
+}

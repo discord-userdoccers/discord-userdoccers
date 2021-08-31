@@ -10,8 +10,11 @@ function getClasses(type: AlertType) {
   });
 }
 
-const Alert: React.FC<{ type: AlertType }> = ({ type, children }) => {
-  return <aside className={getClasses(type)}>{children}</aside>;
+interface AlertProps {
+  type: AlertType;
+  children: React.ReactNode;
 }
 
-export default Alert;
+export default function Alert ({ type, children }: AlertProps) {
+  return <aside className={getClasses(type)}>{children}</aside>;
+}

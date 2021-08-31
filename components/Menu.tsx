@@ -5,7 +5,12 @@ import classNames from "classnames";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
 
-const MenuSection: React.FC<{ title?: string }> = ({ title, children }) => {
+interface MenuSelectionProps {
+  title?: string;
+  children: React.ReactNode;
+}
+
+function MenuSection({ title, children }: MenuSelectionProps) {
   return (
     <section>
       {title ? <h3 className="uppercase font-whitney-bold mb-1 mt-4">{title}</h3> : null}
@@ -14,7 +19,13 @@ const MenuSection: React.FC<{ title?: string }> = ({ title, children }) => {
   );
 }
 
-const MenuLink: React.FC<{href: string, subLinks?: React.ReactNode }> = ({ href, subLinks, children }) => {
+interface MenuLinkProps {
+  href: string;
+  subLinks?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+function MenuLink ({ href, subLinks, children }: MenuLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
   const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
@@ -47,7 +58,12 @@ const MenuLink: React.FC<{href: string, subLinks?: React.ReactNode }> = ({ href,
   );
 }
 
-const MenuSubLink: React.FC<{ href: string }> = ({ href, children }) => {
+interface MenuSubLinkProps {
+  href: string;
+  children: React.ReactNode;
+}
+
+function MenuSubLink ({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
     "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
@@ -56,13 +72,6 @@ const MenuSubLink: React.FC<{ href: string }> = ({ href, children }) => {
       "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text": router.asPath !== href,
     }
   );
-
-  // const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
-  //   "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text":
-  //     router.pathname === href,
-  //   "text-theme-light-sidebar-text hover:bg-indigo-600 hover:text-white":
-  //     router.pathname !== href,
-  // });
 
   return (
     <span className="flex items-center">

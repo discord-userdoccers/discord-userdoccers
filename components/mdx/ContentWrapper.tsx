@@ -3,7 +3,11 @@ import Header from "../Header";
 import Menu from "../Menu";
 import Footer from "../Footer";
 
-const ContentWrapper: React.FC<{}> = ({ children }) => {
+interface ContentWrapperProps {
+  children: React.ReactNode;
+}
+
+export default function ContentWrapper ({ children }: ContentWrapperProps) {
   return (
     <Fragment>
       <Header />
@@ -19,5 +23,3 @@ const ContentWrapper: React.FC<{}> = ({ children }) => {
     </Fragment>
   );
 }
-
-export default ContentWrapper;

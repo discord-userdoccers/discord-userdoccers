@@ -19,7 +19,13 @@ function getText(node: React.ReactNode): string{
   return "";
 }
 
-const Heading: React.FC<{as: any}> = ({ as: As, children }) => {
+interface HeadingProps {
+  // TODO: Can a string be rendered as a react component?? That'\s news to me lol. Can someone figure out the proper typing for this?
+  as: any
+  children: React.ReactNode
+}
+
+export default function Heading ({ as: As, children }: HeadingProps) {
   const anchor = getText(children);
 
   return (
@@ -31,8 +37,6 @@ const Heading: React.FC<{as: any}> = ({ as: As, children }) => {
     </a>
   );
 }
-
-export default Heading;
 
 // TODO: Use Discord version
 function HyperlinkIcon() {
