@@ -9,7 +9,7 @@ import useToggle from "../hooks/useToggle";
 function MenuSection({ title, children }) {
   return (
     <section>
-      {title ? <h3 className="uppercase">{title}</h3> : null}
+      {title ? <h3 className="uppercase font-whitney-bold mb-1 mt-4">{title}</h3> : null}
       {children}
     </section>
   );
@@ -18,28 +18,27 @@ function MenuSection({ title, children }) {
 function MenuLink({ href, subLinks, children }) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames("flex items-center px-2 rounded-md", {
-    "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text":
+  const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
+    "bg-indigo-600 text-white":
       router.pathname === href,
-    "text-theme-light-sidebar-text hover:bg-indigo-600":
+    "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
       router.pathname !== href,
+  });
+
+  const caretClasses = classNames("w-4 h-4", {
+    "rotate-90":
+      isOpen && router.pathname === href
   });
 
   return (
     <Fragment>
       <span className={classes}>
         {subLinks != null &&
-          (isOpen ? (
-            <a onClick={toggle}>
-              <CaretFill className="text-sidebar-icon-primary-light w-4 h-4 rotate-90" />
-            </a>
-          ) : (
-            <a onClick={toggle}>
-              <Caret className="text-sidebar-icon-primary-light w-4 h-4" />
-            </a>
-          ))}
+          (<a onClick={toggle}>
+            <CaretFill className={caretClasses} />
+          </a>)}
         <Link href={href}>
-          <a className="group flex items-center px-2 py-2 w-full text-sm font-medium">
+          <a className="group flex items-center px-2 py-2 w-full text-base font-medium">
             {children}
           </a>
         </Link>
@@ -52,16 +51,23 @@ function MenuLink({ href, subLinks, children }) {
 function MenuSubLink({ href, children }) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center px-2 py-2 text-sm font-medium rounded-md",
+    "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
     {
-      "text-white": router.asPath === href,
-      "text-indigo-100": router.asPath !== href,
+      "text-theme-light-sidebar-hover-text": router.asPath === href,
+      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text": router.asPath !== href,
     }
   );
 
+  // const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
+  //   "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text":
+  //     router.pathname === href,
+  //   "text-theme-light-sidebar-text hover:bg-indigo-600 hover:text-white":
+  //     router.pathname !== href,
+  // });
+
   return (
     <span className="flex items-center">
-      {router.asPath === href ? <Caret className="w-4 h-4 text-white" /> : null}
+      { /* router.asPath === href ? <Caret className="w-4 h-4 text-white" /> : null */}
       <Link href={href}>
         <a className={classes}>{children}</a>
       </Link>
@@ -72,10 +78,10 @@ function MenuSubLink({ href, children }) {
 export default function Menu() {
   return (
     <div className="bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark hidden text-theme-light-text md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-72">
+      <div className="flex flex-col w-80">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
           <div className="flex flex-1 flex-col mt-5">
-            <nav className="flex-1 px-4 space-y-1">
+            <nav className="flex-1 px-6 space-y-1">
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>
