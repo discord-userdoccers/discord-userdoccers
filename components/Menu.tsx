@@ -9,7 +9,9 @@ import useToggle from "../hooks/useToggle";
 function MenuSection({ title, children }) {
   return (
     <section>
-      {title ? <h3 className="uppercase font-whitney-bold mb-1 mt-4">{title}</h3> : null}
+      {title ? (
+        <h3 className="font-whitney-bold mb-1 mt-4 uppercase">{title}</h3>
+      ) : null}
       {children}
     </section>
   );
@@ -18,25 +20,24 @@ function MenuSection({ title, children }) {
 function MenuLink({ href, subLinks, children }) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames("flex font-whitney items-center px-2 rounded-md", {
-    "bg-indigo-600 text-white":
-      router.pathname === href,
+  const classes = classNames("font-whitney flex items-center px-2 rounded-md", {
+    "bg-indigo-600 text-white": router.pathname === href,
     "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
       router.pathname !== href,
   });
 
   const caretClasses = classNames("w-4 h-4", {
-    "rotate-90":
-      isOpen && router.pathname === href
+    "rotate-90": isOpen || router.pathname === href,
   });
 
   return (
     <Fragment>
       <span className={classes}>
-        {subLinks != null &&
-          (<a onClick={toggle}>
+        {subLinks != null && (
+          <a onClick={toggle}>
             <CaretFill className={caretClasses} />
-          </a>)}
+          </a>
+        )}
         <Link href={href}>
           <a className="group flex items-center px-2 py-2 w-full text-base font-medium">
             {children}
@@ -54,7 +55,8 @@ function MenuSubLink({ href, children }) {
     "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
     {
       "text-theme-light-sidebar-hover-text": router.asPath === href,
-      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text": router.asPath !== href,
+      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":
+        router.asPath !== href,
     }
   );
 
@@ -67,7 +69,7 @@ function MenuSubLink({ href, children }) {
 
   return (
     <span className="flex items-center">
-      { /* router.asPath === href ? <Caret className="w-4 h-4 text-white" /> : null */}
+      {/* router.asPath === href ? <Caret className="w-4 h-4 text-white" /> : null */}
       <Link href={href}>
         <a className={classes}>{children}</a>
       </Link>
