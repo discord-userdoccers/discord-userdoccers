@@ -8,9 +8,11 @@ export default function useTheme() {
   const getSystemTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
   useEffect(() => {
-    (theme === "system" ? getSystemTheme() : theme) === "dark"
-     ? document.body.classList.add("dark")
-     : document.body.classList.remove("dark");
+    if ((theme === "system" ? getSystemTheme() : theme) === "dark") {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
   }, [theme])
 
   useEffect(() => {
