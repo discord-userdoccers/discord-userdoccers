@@ -5,7 +5,8 @@ type Theme = "dark" | "light" | "system";
 const getSystemTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
 const applyTheme = (toApply: Theme) => {
-  if ((toApply === "system" ? getSystemTheme() : toApply) === "dark") {
+  const themeToApply = toApply === "system" ? getSystemTheme() : toApply
+  if (themeToApply === "dark") {
     document.body.classList.add("dark");
   } else {
     document.body.classList.remove("dark");
@@ -13,25 +14,21 @@ const applyTheme = (toApply: Theme) => {
 }
 
 export default function useTheme() {
-  const [theme, _setTheme] = useState<Theme>("system");
+  const [theme, setTheme] = useState<Theme>((window.localStorage.getItem("theme") ?? "system") as Theme);
 
   useEffect(() => {
+    window.localStorage.setItem("theme", theme);
     applyTheme(theme);
   }, [theme])
 
   useEffect(() => {
-    _setTheme((window.localStorage.getItem("theme") ?? "system") as Theme);
+    setTheme((window.localStorage.getItem("theme") ?? "system") as Theme);
 
     const match = window?.matchMedia('(prefers-color-scheme: dark)')
     const onChange = (e: MediaQueryListEvent) => { applyTheme(e.matches ? "dark" : "light") }
     match.addEventListener('change', onChange)
     return () => match.removeEventListener('change', onChange)
   }, [])
-
-  const setTheme = (theme: Theme) => {
-    _setTheme(theme);
-    window.localStorage.setItem("theme", theme);
-  };
 
   return [theme, setTheme] as const;
 }

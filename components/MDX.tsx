@@ -7,16 +7,14 @@ function InlineCode(props: any) {
   return <code {...props} />;
 }
 
-type HeadingProps = { children: React.ReactNode };
-
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,
-  h1: ({children}: HeadingProps) => <Heading as="h1">{children}</Heading>,
-  h2: ({children}: HeadingProps) => <Heading as="h2">{children}</Heading>,
-  h3: ({children}: HeadingProps) => <Heading as="h3">{children}</Heading>,
-  h4: ({children}: HeadingProps) => <Heading as="h4">{children}</Heading>,
-  h5: ({children}: HeadingProps) => <Heading as="h5">{children}</Heading>,
-  h6: ({children}: HeadingProps) => <Heading as="h6">{children}</Heading>,
+  h1: ({children}: any) => <Heading as="h1">{children}</Heading>,
+  h2: ({children}: any) => <Heading as="h2">{children}</Heading>,
+  h3: ({children}: any) => <Heading as="h3">{children}</Heading>,
+  h4: ({children}: any) => <Heading as="h4">{children}</Heading>,
+  h5: ({children}: any) => <Heading as="h5">{children}</Heading>,
+  h6: ({children}: any) => <Heading as="h6">{children}</Heading>,
   code: Code,
   inlineCode: InlineCode,
 };

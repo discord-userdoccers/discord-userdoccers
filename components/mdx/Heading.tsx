@@ -19,7 +19,7 @@ function getText(node: React.ReactNode): string{
   return "";
 }
 
-interface HeadingProps {
+export interface HeadingProps {
   // TODO: Can a string be rendered as a react component?? That'\s news to me lol. Can someone figure out the proper typing for this?
   as: any
   children: React.ReactNode
