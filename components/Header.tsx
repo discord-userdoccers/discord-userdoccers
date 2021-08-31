@@ -8,7 +8,7 @@ import Check from "./icons/Check";
 export default function Header() {
   const [theme, setTheme] = useTheme();
 
-  const getMenuItemClasses = (active) =>
+  const getMenuItemClasses = (active: boolean) =>
     classNames("flex px-4 py-2 text-sm", {
       "bg-red-100 text-gray-900": active,
       "text-gray-700": !active,
@@ -38,7 +38,7 @@ export default function Header() {
         <Menu.Items className="absolute right-0 mt-2 w-56 bg-white rounded-md focus:outline-none shadow-lg origin-top-right ring-1 ring-black ring-opacity-5">
           <div className="py-1">
             <Menu.Item>
-              {({ active }) => (
+              {({ active }: { active: boolean }) => (
                 <a
                   href="#"
                   onClick={() => setTheme("system")}
@@ -50,7 +50,7 @@ export default function Header() {
               )}
             </Menu.Item>
             <Menu.Item>
-              {({ active }) => (
+              {({ active }: { active: boolean }) => (
                 <a
                   href="#"
                   onClick={() => setTheme("dark")}
@@ -62,7 +62,7 @@ export default function Header() {
               )}
             </Menu.Item>
             <Menu.Item>
-              {({ active }) => (
+              {({ active }: { active: boolean }) => (
                 <a
                   href="#"
                   onClick={() => setTheme("light")}
