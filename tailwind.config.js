@@ -21,6 +21,13 @@ module.exports = {
 
         "theme-dark-sidebar": "#2e3136",
       },
+      
+      // TODO: Change these out for whatever legitimate font family names discord uses,
+      // just here to visualise what itd look like with them rn
+      fontFamily: {
+        "whitney": ["Whitney Medium", "sans-serif"],
+        "whitney-bold": ["Whitney Semibold Regular", "sans-serif"],
+      }
     },
   },
   variants: {
