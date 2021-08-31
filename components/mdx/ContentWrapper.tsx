@@ -11,7 +11,7 @@ export default function ContentWrapper({ children }) {
       <div className="flex h-screen bg-white overflow-hidden">
         <Menu />
 
-        <main className="relative flex-1 mt-10 focus:outline-none overflow-y-auto">
+        <main className="relative flex-1 pb-10 pt-10 focus:outline-none overflow-y-auto">
           <article className="prose m-auto">{children}</article>
         </main>
       </div>
