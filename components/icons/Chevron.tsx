@@ -1,4 +1,4 @@
-export default function Chevron(props) {
+export default function Chevron(props: any) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

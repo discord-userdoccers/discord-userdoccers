@@ -15,6 +15,6 @@ interface AlertProps {
   children: React.ReactNode;
 }
 
-export default function Alert ({ type, children }: AlertProps) {
+export default function Alert({ type, children }: AlertProps) {
   return <aside className={getClasses(type)}>{children}</aside>;
 }

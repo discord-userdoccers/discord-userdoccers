@@ -1,6 +1,8 @@
+// @ts-nocheck
+
 import React from "react";
 import Highlight, { defaultProps } from "prism-react-renderer";
-import Prism from "prism-react-renderer/prism";
+import { Prism } from "prism-react-renderer";
 import rangeParser from "parse-numeric-range";
 import classnames from "classnames";
 
@@ -30,7 +32,7 @@ const symbols = {
   delete: "-",
 };
 
-function cleanTokens(tokens) {
+function cleanTokens(tokens: any) {
   const tokensLength = tokens.length;
   if (tokensLength === 0) {
     return tokens;

@@ -1,4 +1,4 @@
-export default function File(props) {
+export default function File(props: any) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
