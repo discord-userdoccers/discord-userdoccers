@@ -1,10 +1,13 @@
 import Head from "next/head";
+import { useRouter } from "next/router";
 
-// TODO: Figure out how to dynamicallyu set the URL property
 export default function OpenGraph({
   title = "Discord Developers",
   description = "👾 BOTS BOTS BOTS 👾",
 }) {
+  const router = useRouter();
+  const url = `https://discord.com/developers/docs${router.asPath}`;
+
   return (
     <Head>
       <meta key="description" name="description" content={description} />
@@ -14,7 +17,7 @@ export default function OpenGraph({
       <meta name="twitter:creator" content="@discord" key="twitter-handle" />
 
       {/* Open Graph */}
-      <meta property="og:url" content="" key="og-url" />
+      <meta property="og:url" content={url} key="og-url" />
       <meta property="og:image" content="/opengraph.png" key="og-image" />
       <meta
         property="og:site_name"
