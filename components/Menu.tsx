@@ -2,6 +2,7 @@ import React, { Dispatch, Fragment, SetStateAction } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import classNames from "classnames";
+import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
 import Bars from "./icons/Bars";
@@ -73,9 +74,9 @@ interface MenuSubLinkProps {
 function MenuSubLink({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center ml-3 px-2 text-sm font-medium rounded-md",
+    "group flex items-center ml-6 p-2 text-sm font-medium rounded-md",
     {
-      "text-theme-light-sidebar-hover-text": router.asPath === href,
+      "text-dark dark:text-white": router.asPath === href,
       "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":
         router.asPath !== href,
     }
@@ -83,34 +84,43 @@ function MenuSubLink({ href, children }: MenuSubLinkProps) {
 
   return (
     <span className="flex items-center">
-      {/* router.asPath === href ? <Caret className="w-4 h-4 text-white" /> : null */}
       <Link href={href}>
-        <a className={classes}>{children}</a>
+        <a className={classes}>
+          {router.asPath === href ? <Caret className="mr-1 w-2 h-2" /> : null}
+
+          {children}
+        </a>
       </Link>
     </span>
   );
 }
 
 interface MenuProps {
-  open: boolean
-  setSidebarOpen: Dispatch<SetStateAction<boolean>>
+  open: boolean;
+  setSidebarOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function Menu({ open, setSidebarOpen }: MenuProps) {
-  const classes = classNames([
-    "bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark text-theme-light-text absolute -left-16 pl-16 top-0 w-full h-full flex z-40 transition-transform duration-300 transform-gpu",
-    "md:flex md:flex-shrink-0 md:relative md:w-auto md:transform-none md:transition-none"
-  ], {
-    "translate-x-0 ": open,
-    "-translate-x-full md:flex": !open
-  })
+  const classes = classNames(
+    [
+      "bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark text-theme-light-text absolute -left-16 pl-16 top-0 w-full h-full flex z-40 transition-transform duration-300 transform-gpu",
+      "md:flex md:flex-shrink-0 md:relative md:w-auto md:transform-none md:transition-none",
+    ],
+    {
+      "translate-x-0 ": open,
+      "-translate-x-full md:flex": !open,
+    }
+  );
   return (
     <div className={classes}>
       <div className="flex flex-col w-full md:w-80">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
           <div className="flex flex-1 flex-col items-start">
-            <Bars onClick={() => setSidebarOpen(false)} className="h-7 ml-6 md:hidden cursor-pointer"/>
-            <nav className="flex-1 px-6 space-y-1 mt-5 self-stretch">
+            <Bars
+              onClick={() => setSidebarOpen(false)}
+              className="ml-6 h-7 cursor-pointer md:hidden"
+            />
+            <nav className="flex-1 self-stretch mt-5 px-6">
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>

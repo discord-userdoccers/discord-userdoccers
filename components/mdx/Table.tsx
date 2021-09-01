@@ -1,7 +1,7 @@
 export function Table(props) {
   return (
     <table
-      className="align-middle w-full break-words text-sm rounded-lg border-collapse overflow-hidden"
+      className="align-middle w-full break-words text-sm rounded border-collapse overflow-hidden"
       {...props}
     />
   );
