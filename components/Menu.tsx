@@ -41,7 +41,7 @@ function MenuLink({ href, subLinks, children }: MenuLinkProps) {
     "flex items-center px-2 py-1 font-whitney rounded-md",
     {
       "bg-brand-blurple text-white": router.pathname === href,
-      "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:text-theme-dark-sidebar-text":
+      "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
         router.pathname !== href,
     }
   );
