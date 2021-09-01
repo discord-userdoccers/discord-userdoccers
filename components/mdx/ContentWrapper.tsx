@@ -15,7 +15,7 @@ export default function ContentWrapper({ children }: ContentWrapperProps) {
 
         <main className="relative flex flex-1 flex-col p-12 focus:outline-none overflow-y-auto">
           <Header />
-          <div className="pb-10 pt-10">
+          <div className="pb-10">
             <article className="m-auto">{children}</article>
           </div>
         </main>
