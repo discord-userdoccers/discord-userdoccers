@@ -6,15 +6,18 @@ import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
 import Bars from "./icons/Bars";
+import Discord from "./icons/Discord";
 
 interface MenuSelectionProps {
   title?: string;
   children: React.ReactNode;
 }
 
-function MenuSection({ title, children }: MenuSelectionProps) {
+function MenuSection({ title, className, children }: MenuSelectionProps) {
+  const classes = classNames("mb-6", className);
+
   return (
-    <section className="mb-6">
+    <section className={classes}>
       {title ? (
         <h3 className="mb-2 ml-4 text-black dark:text-white font-whitney-bold text-xs uppercase">
           {title}
@@ -121,6 +124,12 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
               className="ml-6 h-7 text-black dark:text-white cursor-pointer md:hidden"
             />
             <nav className="flex-1 self-stretch mt-5 px-6">
+              <Discord className="mb-4 ml-auto mr-auto w-9/12 text-white" />
+              <MenuSection className="mb-6 pb-6 border-b-2 border-white">
+                <MenuLink href="">Applications</MenuLink>
+                <MenuLink href="">Teams</MenuLink>
+              </MenuSection>
+
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>
