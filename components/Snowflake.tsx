@@ -1,5 +1,4 @@
 export default function Snowflake(props: unknown) {
-  console.log(props)
   return (
     <svg 
       id="Snowflake-Deconstruction-Example"
