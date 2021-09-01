@@ -4,7 +4,13 @@ import { H1, H2, H3, H4, H5, H6 } from "./mdx/Heading";
 import Code from "./mdx/Code";
 import Paragraph from "./mdx/Paragraph";
 import { ListItem, OrderedList, UnorderedList } from "./mdx/List";
-import { Table, TableData, TableHeader, TableRow } from "./mdx/Table";
+import {
+  Table,
+  TableHead,
+  TableData,
+  TableHeader,
+  TableRow,
+} from "./mdx/Table";
 import Strong from "./mdx/Strong";
 import Emphasis from "./mdx/Emphasis";
 import StrikeThrough from "./mdx/StrikeThrough";
@@ -13,7 +19,12 @@ import Anchor from "./mdx/Anchor";
 import Image from "./mdx/Image";
 
 function InlineCode(props: any) {
-  return <code {...props} />;
+  return (
+    <code
+      className="dark:bg-table-row-background-secondary-dark pb-1 pl-2 pr-2 pt-1 rounded-md"
+      {...props}
+    />
+  );
 }
 
 const COMPONENTS = {
@@ -31,8 +42,9 @@ const COMPONENTS = {
   ol: OrderedList,
   li: ListItem,
   table: Table,
-  tr: TableRow,
+  thead: TableHead,
   th: TableHeader,
+  tr: TableRow,
   td: TableData,
   em: Emphasis,
   strong: Strong,

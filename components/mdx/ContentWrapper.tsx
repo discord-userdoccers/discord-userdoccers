@@ -10,10 +10,10 @@ interface ContentWrapperProps {
 export default function ContentWrapper({ children }: ContentWrapperProps) {
   return (
     <Fragment>
-      <div className="flex h-screen bg-white overflow-hidden">
+      <div className="dark:bg-background-dark flex h-screen bg-white overflow-hidden">
         <Menu />
 
-        <main className="relative flex flex-1 flex-col focus:outline-none overflow-y-auto">
+        <main className="relative flex flex-1 flex-col p-12 focus:outline-none overflow-y-auto">
           <Header />
           <div className="pb-10 pt-10">
             <article className="m-auto">{children}</article>
