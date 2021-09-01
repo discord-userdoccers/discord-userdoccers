@@ -37,7 +37,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
     <a href={`#${anchor}`}>
       <As id={anchor} className={classes}>
         {children}
-        <HyperlinkIcon className="ml-2 w-4 h-4" />
+        <HyperlinkIcon className="min-w-4 min-h-4 ml-2 w-4 h-4" />
       </As>
     </a>
   );
@@ -45,7 +45,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
 
 export function H1({ className, ...props }) {
   const classes = classNames(
-    "not:first-of-type:mt-10 mb-8 text-4xl font-bold leading-loose",
+    "not:first-of-type:mt-10 mb-8 text-4xl font-bold leading-tight sm:leading-loose",
     className
   );
   return <Heading as="h1" className={classes} {...props} />;

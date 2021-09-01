@@ -7,7 +7,7 @@ import Check from "./icons/Check";
 import Bars from "./icons/Bars";
 
 interface HeaderProps {
-  setSidebarOpen: Dispatch<SetStateAction<boolean>>
+  setSidebarOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function Header({ setSidebarOpen }: HeaderProps) {
@@ -22,9 +22,12 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
   return (
     <Menu
       as="div"
-      className="relative flex flex-1 justify-between md:justify-end items-center px-4 w-full mt-4 text-left"
+      className="relative flex flex-1 items-center justify-between mt-4 px-4 w-full text-left md:justify-end"
     >
-      <Bars onClick={() => setSidebarOpen(true)} className="h-7 ml-1 justify-self-start cursor-pointer md:hidden"/>
+      <Bars
+        onClick={() => setSidebarOpen(true)}
+        className="justify-self-start ml-1 h-7 text-black dark:text-white cursor-pointer md:hidden"
+      />
       <div>
         <Menu.Button className="inline-flex px-4 py-2 w-full text-gray-700 text-sm font-medium hover:bg-gray-50 bg-white border border-gray-300 rounded-md focus:outline-none shadow-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100">
           Change Theme
@@ -41,7 +44,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 w-56 bg-white self-start rounded-md focus:outline-none shadow-lg origin-top-right ring-1 ring-black ring-opacity-5">
+        <Menu.Items className="absolute right-0 self-start mt-2 w-56 bg-white rounded-md focus:outline-none shadow-lg origin-top-right ring-1 ring-black ring-opacity-5">
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (

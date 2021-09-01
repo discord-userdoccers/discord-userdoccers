@@ -118,7 +118,7 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
           <div className="flex flex-1 flex-col items-start">
             <Bars
               onClick={() => setSidebarOpen(false)}
-              className="ml-6 h-7 cursor-pointer md:hidden"
+              className="ml-6 h-7 text-black dark:text-white cursor-pointer md:hidden"
             />
             <nav className="flex-1 self-stretch mt-5 px-6">
               <MenuSection>
