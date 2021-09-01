@@ -17,6 +17,7 @@ module.exports = {
         "sidebar-tertiary-light": "#f2f3f5",
         "sidebar-tertiary-dark": "#2e3136",
 
+        "table-head-background-dark": "#35383c",
         "table-row-background-primary-dark": "#121315",
         "table-row-background-secondary-dark": "#18191c",
 

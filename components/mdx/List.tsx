@@ -5,7 +5,10 @@ export function ListItem(props) {
 }
 
 function List({ className, as: As, ...props }) {
-  const classes = classNames("mb-4 list-inside", className);
+  const classes = classNames(
+    "text-text-light dark:text-text-dark mb-4 list-inside",
+    className
+  );
 
   return <As className={classes} {...props} />;
 }
