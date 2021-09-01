@@ -35,8 +35,10 @@ export default function RouteHeader({
   return (
     <Fragment>
       <H2>{children}</H2>
-      <MethodBadge method={method} />
-      <code className="text-text-light dark:text-text-dark">{url}</code>
+      <div className="flex items-center overflow-y-scroll">
+        <MethodBadge method={method} />
+        <code className="text-text-light dark:text-text-dark">{url}</code>
+      </div>
     </Fragment>
   );
 }
