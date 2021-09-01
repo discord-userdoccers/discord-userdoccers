@@ -74,7 +74,7 @@ interface MenuSubLinkProps {
 function MenuSubLink({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center ml-6 p-2 text-sm font-medium rounded-md",
+    "group flex items-center ml-8 p-2 text-sm font-medium rounded-md",
     {
       "text-dark dark:text-white": router.asPath === href,
       "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":
