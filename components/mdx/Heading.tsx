@@ -47,7 +47,7 @@ export function H1(props) {
   return (
     <Heading
       as="h1"
-      className="mb-10 mt-10 text-4xl font-bold leading-loose"
+      className="not:first-of-type:mt-10 mb-8 text-4xl font-bold leading-loose"
       {...props}
     />
   );
@@ -57,7 +57,7 @@ export function H2(props) {
   return (
     <Heading
       as="h2"
-      className="mb-8 mt-8 text-2xl font-semibold leading-relaxed"
+      className="mb-6 mt-8 text-2xl font-semibold leading-relaxed"
       {...props}
     />
   );
@@ -67,7 +67,7 @@ export function H3(props) {
   return (
     <Heading
       as="h3"
-      className="mb-6 mt-6 text-xl font-medium leading-normal"
+      className="mb-4 mt-6 text-xl font-medium leading-normal"
       {...props}
     />
   );
@@ -77,7 +77,7 @@ export function H4(props) {
   return (
     <Heading
       as="h4"
-      className="mb-4 mt-4 text-lg font-medium leading-normal"
+      className="mb-4 mt-6 text-lg font-medium leading-normal"
       {...props}
     />
   );
@@ -87,7 +87,7 @@ export function H5(props) {
   return (
     <Heading
       as="h5"
-      className="mb-2 mt-2 text-base font-medium leading-normal"
+      className="mb-4 mt-6 text-base font-medium leading-normal"
       {...props}
     />
   );
@@ -97,7 +97,7 @@ export function H6(props) {
   return (
     <Heading
       as="h6"
-      className="mb-1 mt-1 text-base font-medium leading-normal"
+      className="mb-4 mt-6 text-base font-medium leading-normal"
       {...props}
     />
   );

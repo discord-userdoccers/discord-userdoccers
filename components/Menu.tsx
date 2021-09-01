@@ -13,9 +13,11 @@ interface MenuSelectionProps {
 
 function MenuSection({ title, children }: MenuSelectionProps) {
   return (
-    <section>
+    <section className="mb-6">
       {title ? (
-        <h3 className="font-whitney-bold mb-1 mt-4 uppercase">{title}</h3>
+        <h3 className="mb-2 ml-4 text-black dark:text-white font-whitney-bold text-xs uppercase">
+          {title}
+        </h3>
       ) : null}
       {children}
     </section>
@@ -28,29 +30,32 @@ interface MenuLinkProps {
   children: React.ReactNode;
 }
 
-function MenuLink ({ href, subLinks, children }: MenuLinkProps) {
+function MenuLink({ href, subLinks, children }: MenuLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames("font-whitney flex items-center px-2 rounded-md", {
-    "bg-indigo-600 text-white": router.pathname === href,
-    "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
-      router.pathname !== href,
-  });
+  const classes = classNames(
+    "flex items-center px-2 py-1 font-whitney rounded-md",
+    {
+      "bg-brand-blurple text-white": router.pathname === href,
+      "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:text-theme-dark-sidebar-text":
+        router.pathname !== href,
+    }
+  );
 
   const caretClasses = classNames("w-4 h-4", {
-    "rotate-90": isOpen || router.pathname === href,
+    "rotate-90": isOpen,
   });
 
   return (
     <Fragment>
       <span className={classes}>
         {subLinks != null && (
-          <a onClick={toggle}>
+          <a onClick={toggle} className="pl-2">
             <CaretFill className={caretClasses} />
           </a>
         )}
         <Link href={href}>
-          <a className="group flex items-center px-2 py-2 w-full text-base font-medium">
+          <a className="group flex items-center px-2 w-full text-base font-medium">
             {children}
           </a>
         </Link>
@@ -65,10 +70,10 @@ interface MenuSubLinkProps {
   children: React.ReactNode;
 }
 
-function MenuSubLink ({ href, children }: MenuSubLinkProps) {
+function MenuSubLink({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
+    "group flex items-center ml-3 px-2 text-sm font-medium rounded-md",
     {
       "text-theme-light-sidebar-hover-text": router.asPath === href,
       "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":

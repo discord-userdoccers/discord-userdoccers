@@ -4,17 +4,20 @@ import { H1, H2, H3, H4, H5, H6 } from "./mdx/Heading";
 import Code from "./mdx/Code";
 import Paragraph from "./mdx/Paragraph";
 import { ListItem, OrderedList, UnorderedList } from "./mdx/List";
-import { Table, TableData, TableHeader, TableRow } from "./mdx/Table";
+import {
+  Table,
+  TableHead,
+  TableData,
+  TableHeader,
+  TableRow,
+} from "./mdx/Table";
 import Strong from "./mdx/Strong";
 import Emphasis from "./mdx/Emphasis";
 import StrikeThrough from "./mdx/StrikeThrough";
 import HorizontalRule from "./mdx/HorizontalRule";
 import Anchor from "./mdx/Anchor";
 import Image from "./mdx/Image";
-
-function InlineCode(props: any) {
-  return <code {...props} />;
-}
+import InlineCode from "./mdx/InlineCode";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,
@@ -31,8 +34,9 @@ const COMPONENTS = {
   ol: OrderedList,
   li: ListItem,
   table: Table,
-  tr: TableRow,
+  thead: TableHead,
   th: TableHeader,
+  tr: TableRow,
   td: TableData,
   em: Emphasis,
   strong: Strong,
