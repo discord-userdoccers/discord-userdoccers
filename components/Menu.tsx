@@ -12,9 +12,9 @@ interface MenuSelectionProps {
 
 function MenuSection({ title, children }: MenuSelectionProps) {
   return (
-    <section>
+    <section className="mb-6">
       {title ? (
-        <h3 className="font-whitney-bold mb-1 mt-4 uppercase">{title}</h3>
+        <h3 className="mb-2 font-whitney-bold text-xs uppercase">{title}</h3>
       ) : null}
       {children}
     </section>
@@ -27,10 +27,10 @@ interface MenuLinkProps {
   children: React.ReactNode;
 }
 
-function MenuLink ({ href, subLinks, children }: MenuLinkProps) {
+function MenuLink({ href, subLinks, children }: MenuLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames("font-whitney flex items-center px-2 rounded-md", {
+  const classes = classNames("flex items-center px-2 font-whitney rounded-md", {
     "bg-indigo-600 text-white": router.pathname === href,
     "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
       router.pathname !== href,
@@ -64,7 +64,7 @@ interface MenuSubLinkProps {
   children: React.ReactNode;
 }
 
-function MenuSubLink ({ href, children }: MenuSubLinkProps) {
+function MenuSubLink({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
     "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
@@ -87,11 +87,11 @@ function MenuSubLink ({ href, children }: MenuSubLinkProps) {
 
 export default function Menu() {
   return (
-    <div className="bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark hidden text-theme-light-text md:flex md:flex-shrink-0">
+    <div className="text-theme-light-text hidden dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light md:flex md:flex-shrink-0">
       <div className="flex flex-col w-80">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
           <div className="flex flex-1 flex-col mt-5">
-            <nav className="flex-1 px-6 space-y-1">
+            <nav className="flex-1 px-6">
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>

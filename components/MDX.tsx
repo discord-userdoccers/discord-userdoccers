@@ -17,15 +17,7 @@ import StrikeThrough from "./mdx/StrikeThrough";
 import HorizontalRule from "./mdx/HorizontalRule";
 import Anchor from "./mdx/Anchor";
 import Image from "./mdx/Image";
-
-function InlineCode(props: any) {
-  return (
-    <code
-      className="dark:bg-table-row-background-secondary-dark pb-1 pl-2 pr-2 pt-1 rounded-md"
-      {...props}
-    />
-  );
-}
+import { InlineCode } from "./mdx/InlineCode";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,

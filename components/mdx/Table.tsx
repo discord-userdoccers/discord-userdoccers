@@ -10,7 +10,7 @@ export function Table(props) {
 export function TableHead(props) {
   return (
     <thead
-      className="dark:bg-table-head-background-dark text-left"
+      className="dark:bg-table-head-background-dark bg-table-head-background-light text-left"
       {...props}
     />
   );
@@ -27,7 +27,7 @@ export function TableHeader(props) {
 export function TableRow(props) {
   return (
     <tr
-      className="text-text-light dark:text-text-dark dark:even:bg-table-row-background-primary-dark dark:bg-table-row-background-secondary-dark"
+      className="text-text-light dark:text-text-dark dark:even:bg-table-row-background-primary-dark dark:bg-table-row-background-secondary-dark even:bg-table-row-background-primary-light bg-table-row-background-secondary-light"
       {...props}
     />
   );
