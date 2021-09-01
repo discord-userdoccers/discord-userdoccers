@@ -17,7 +17,7 @@ import StrikeThrough from "./mdx/StrikeThrough";
 import HorizontalRule from "./mdx/HorizontalRule";
 import Anchor from "./mdx/Anchor";
 import Image from "./mdx/Image";
-import { InlineCode } from "./mdx/InlineCode";
+import InlineCode from "./mdx/InlineCode";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,

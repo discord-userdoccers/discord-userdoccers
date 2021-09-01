@@ -9,6 +9,8 @@ module.exports = {
     extend: {
       colors: {
         "brand-blurple": "#5865F2",
+        "brand-link": "#00AFF4",
+
         "text-light": "#2e3338",
         "text-dark": "#dcddde",
         "background-dark": "#36393f",
