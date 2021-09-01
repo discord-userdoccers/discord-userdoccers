@@ -106,17 +106,17 @@ interface MenuProps {
 export default function Menu({ open, setSidebarOpen }: MenuProps) {
   const classes = classNames(
     [
-      "bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark text-theme-light-text absolute -left-16 pl-16 top-0 w-full h-full flex z-40 transition-transform duration-300 transform-gpu",
-      "md:flex md:flex-shrink-0 md:relative md:w-auto md:transform-none md:transition-none",
+      "text-theme-light-text absolute -left-full pr-16 md:pr-0 top-0 w-full h-full flex z-40 transition-transform duration-300 transform-gpu",
+      "md:flex md:flex-shrink-0 md:left-auto md:relative md:w-auto md:transform-none md:transition-none",
     ],
     {
-      "translate-x-0 ": open,
-      "-translate-x-full md:flex": !open,
+      "translate-x-full ": open,
+      "translate-x-none md:flex": !open,
     }
   );
   return (
     <div className={classes}>
-      <div className="flex flex-col w-full md:w-80">
+      <div className="flex flex-col w-full md:w-80 bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
           <div className="flex flex-1 flex-col items-start">
             <Bars
