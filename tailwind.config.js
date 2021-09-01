@@ -8,6 +8,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        "text-light": "#2e3338",
+        "text-dark": "#dcddde",
         "sidebar-selected-primary-light": "#060607",
         "sidebar-selected-tertiary-light": "#D4D7DC",
         "sidebar-icon-primary-light": "#747f8d",
@@ -21,13 +23,13 @@ module.exports = {
 
         "theme-dark-sidebar": "#2e3136",
       },
-      
+
       // TODO: Change these out for whatever legitimate font family names discord uses,
       // just here to visualise what itd look like with them rn
       fontFamily: {
         "whitney": ["Whitney Medium", "sans-serif"],
         "whitney-bold": ["Whitney Semibold Regular", "sans-serif"],
-      }
+      },
     },
   },
   variants: {

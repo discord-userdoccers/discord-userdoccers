@@ -1,16 +1,16 @@
 import { Fragment } from "react";
 import classNames from "classnames";
-import Heading from "./mdx/Heading";
+import { H2 } from "./mdx/Heading";
 
-type RESTMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
+type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 interface MethodBadgeProps {
-  method: RESTMethod
+  method: RESTMethod;
 }
-function MethodBadge ({ method }: MethodBadgeProps) {
+function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
-  const classes = classNames("uppercase p-2 rounded-lg", {
+  const classes = classNames("p-2 rounded-lg uppercase", {
     "bg-blue-100 text-blue-500": name === "GET",
     "bg-green-100 text-green-500": name === "POST",
     "bg-yellow-100 text-yellow-500": name === "PATCH" || name === "PUT",
@@ -21,15 +21,19 @@ function MethodBadge ({ method }: MethodBadgeProps) {
 }
 
 interface RouteHeaderProps {
-  method: RESTMethod
-  url: string
-  children: React.ReactNode
+  method: RESTMethod;
+  url: string;
+  children: React.ReactNode;
 }
 
-export default function RouteHeader ({ method, url, children }: RouteHeaderProps) {
+export default function RouteHeader({
+  method,
+  url,
+  children,
+}: RouteHeaderProps) {
   return (
     <Fragment>
-      <Heading as="h2">{children}</Heading>
+      <H2>{children}</H2>
       <MethodBadge method={method} /> <span>{url}</span>
     </Fragment>
   );

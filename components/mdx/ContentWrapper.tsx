@@ -7,7 +7,7 @@ interface ContentWrapperProps {
   children: React.ReactNode;
 }
 
-export default function ContentWrapper ({ children }: ContentWrapperProps) {
+export default function ContentWrapper({ children }: ContentWrapperProps) {
   return (
     <Fragment>
       <div className="flex h-screen bg-white overflow-hidden">
@@ -16,7 +16,7 @@ export default function ContentWrapper ({ children }: ContentWrapperProps) {
         <main className="relative flex flex-1 flex-col focus:outline-none overflow-y-auto">
           <Header />
           <div className="pb-10 pt-10">
-            <article className="prose m-auto">{children}</article>
+            <article className="m-auto">{children}</article>
           </div>
         </main>
       </div>
