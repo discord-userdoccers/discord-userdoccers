@@ -1,9 +1,10 @@
-import React, { Fragment } from "react";
+import React, { Dispatch, Fragment, SetStateAction } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import classNames from "classnames";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
+import Bars from "./icons/Bars";
 
 interface MenuSelectionProps {
   title?: string;
@@ -90,13 +91,26 @@ function MenuSubLink({ href, children }: MenuSubLinkProps) {
   );
 }
 
-export default function Menu() {
+interface MenuProps {
+  open: boolean
+  setSidebarOpen: Dispatch<SetStateAction<boolean>>
+}
+
+export default function Menu({ open, setSidebarOpen }: MenuProps) {
+  const classes = classNames([
+    "bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark text-theme-light-text absolute -left-16 pl-16 top-0 w-full h-full flex z-40 transition-transform duration-300 transform-gpu",
+    "md:flex md:flex-shrink-0 md:relative md:w-auto md:transform-none md:transition-none"
+  ], {
+    "translate-x-0 ": open,
+    "-translate-x-full md:flex": !open
+  })
   return (
-    <div className="text-theme-light-text hidden dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-80">
+    <div className={classes}>
+      <div className="flex flex-col w-full md:w-80">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
-          <div className="flex flex-1 flex-col mt-5">
-            <nav className="flex-1 px-6 text-sm">
+          <div className="flex flex-1 flex-col items-start">
+            <Bars onClick={() => setSidebarOpen(false)} className="h-7 ml-6 md:hidden cursor-pointer"/>
+            <nav className="flex-1 px-6 space-y-1 mt-5 self-stretch">
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>
