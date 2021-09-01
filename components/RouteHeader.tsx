@@ -11,10 +11,10 @@ interface MethodBadgeProps {
 function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
-  const classes = classNames("p-2 rounded-lg uppercase", {
-    "bg-blue-100 text-blue-500": name === "GET",
-    "bg-green-100 text-green-500": name === "POST",
-    "bg-yellow-100 text-yellow-500": name === "PATCH" || name === "PUT",
+  const classes = classNames("px-2 py-1 text-sm rounded uppercase", {
+    "bg-blue-100 text-blue-700": name === "GET",
+    "bg-green-100 text-green-700": name === "POST",
+    "bg-yellow-100 text-yellow-700": name === "PATCH" || name === "PUT",
     "bg-red-100 text-red-500": name === "DELETE",
   });
 
@@ -34,10 +34,12 @@ export default function RouteHeader({
 }: RouteHeaderProps) {
   return (
     <Fragment>
-      <H2>{children}</H2>
-      <div className="flex items-center overflow-y-scroll">
+      <H2 className="mb-0">{children}</H2>
+      <div className="flex items-center">
         <MethodBadge method={method} />
-        <code className="text-text-light dark:text-text-dark">{url}</code>
+        <code className="text-text-light dark:text-text-dark p-2 break-all">
+          {url}
+        </code>
       </div>
     </Fragment>
   );
