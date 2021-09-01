@@ -35,7 +35,7 @@ export default function RouteHeader({
   return (
     <Fragment>
       <H2>{children}</H2>
-      <MethodBadge method={method} />{" "}
+      <MethodBadge method={method} />
       <code className="text-text-light dark:text-text-dark">{url}</code>
     </Fragment>
   );
