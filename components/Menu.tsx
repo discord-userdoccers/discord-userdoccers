@@ -116,7 +116,7 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
   );
   return (
     <div className={classes}>
-      <div className="flex flex-col w-full md:w-80 bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark">
+      <div className="flex flex-col w-full dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light md:w-80">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
           <div className="flex flex-1 flex-col items-start">
             <Bars
@@ -124,10 +124,16 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
               className="ml-6 h-7 text-black dark:text-white cursor-pointer md:hidden"
             />
             <nav className="flex-1 self-stretch mt-5 px-6">
-              <Discord className="mb-4 ml-auto mr-auto w-9/12 text-white" />
+              <a href="https://discord.com/developers/applications">
+                <Discord className="mb-4 ml-auto mr-auto w-9/12 text-black dark:text-white" />
+              </a>
               <MenuSection className="mb-6 pb-6 border-b-2 border-white">
-                <MenuLink href="">Applications</MenuLink>
-                <MenuLink href="">Teams</MenuLink>
+                <MenuLink href="https://discord.com/developers/applications">
+                  Applications
+                </MenuLink>
+                <MenuLink href="https://discord.com/developers/teams">
+                  Teams
+                </MenuLink>
               </MenuSection>
 
               <MenuSection>

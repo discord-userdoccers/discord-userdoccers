@@ -12,10 +12,14 @@ function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
   const classes = classNames("px-2 py-1 text-sm rounded uppercase", {
-    "bg-blue-100 text-blue-700": name === "GET",
-    "bg-green-100 text-green-700": name === "POST",
-    "bg-yellow-100 text-yellow-700": name === "PATCH" || name === "PUT",
-    "bg-red-100 text-red-500": name === "DELETE",
+    "bg-blue-100 text-blue-700 dark:bg-blue-500 dark:text-blue-100":
+      name === "GET",
+    "bg-green-100 text-green-700 dark:bg-green-500 dark:text-green-100":
+      name === "POST",
+    "bg-yellow-100 text-yellow-700 dark:bg-yellow-500 dark:text-yellow-100":
+      name === "PATCH" || name === "PUT",
+    "bg-red-100 text-red-500 dark:bg-red-500 dark:text-red-100":
+      name === "DELETE",
   });
 
   return <code className={classes}>{method}</code>;
