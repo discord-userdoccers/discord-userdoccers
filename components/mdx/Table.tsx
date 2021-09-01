@@ -1,9 +1,11 @@
 export function Table(props) {
   return (
-    <table
-      className="align-middle w-full break-words text-sm rounded border-collapse overflow-hidden"
-      {...props}
-    />
+    <div className="max-w-full overflow-auto overflow-y-scroll">
+      <table
+        className="align-middle w-full break-words text-sm rounded border-collapse overflow-hidden"
+        {...props}
+      />
+    </div>
   );
 }
 
