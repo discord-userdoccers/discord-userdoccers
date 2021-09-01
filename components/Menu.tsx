@@ -14,7 +14,7 @@ function MenuSection({ title, children }: MenuSelectionProps) {
   return (
     <section className="mb-6">
       {title ? (
-        <h3 className="mb-2 ml-4 font-whitney-bold text-xs uppercase">
+        <h3 className="mb-2 ml-4 text-black dark:text-white font-whitney-bold text-xs uppercase">
           {title}
         </h3>
       ) : null}
@@ -35,8 +35,8 @@ function MenuLink({ href, subLinks, children }: MenuLinkProps) {
   const classes = classNames(
     "flex items-center px-2 py-1 font-whitney rounded-md",
     {
-      "bg-indigo-600 text-white": router.pathname === href,
-      "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
+      "bg-brand-blurple text-white": router.pathname === href,
+      "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:text-theme-dark-sidebar-text":
         router.pathname !== href,
     }
   );

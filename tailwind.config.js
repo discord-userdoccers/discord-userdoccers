@@ -8,6 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        "brand-blurple": "#5865F2",
         "text-light": "#2e3338",
         "text-dark": "#dcddde",
         "background-dark": "#36393f",
@@ -31,6 +32,7 @@ module.exports = {
         "theme-light-sidebar-hover-text": "#060607",
 
         "theme-dark-sidebar": "#2e3136",
+        "theme-dark-sidebar-text": "#b9bbbe",
       },
 
       // TODO: Change these out for whatever legitimate font family names discord uses,
