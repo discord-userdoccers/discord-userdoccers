@@ -14,7 +14,9 @@ function MenuSection({ title, children }: MenuSelectionProps) {
   return (
     <section className="mb-6">
       {title ? (
-        <h3 className="mb-2 font-whitney-bold text-xs uppercase">{title}</h3>
+        <h3 className="mb-2 ml-4 font-whitney-bold text-xs uppercase">
+          {title}
+        </h3>
       ) : null}
       {children}
     </section>
@@ -30,11 +32,14 @@ interface MenuLinkProps {
 function MenuLink({ href, subLinks, children }: MenuLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames("flex items-center px-2 font-whitney rounded-md", {
-    "bg-indigo-600 text-white": router.pathname === href,
-    "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
-      router.pathname !== href,
-  });
+  const classes = classNames(
+    "flex items-center px-2 py-1 font-whitney rounded-md",
+    {
+      "bg-indigo-600 text-white": router.pathname === href,
+      "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text":
+        router.pathname !== href,
+    }
+  );
 
   const caretClasses = classNames("w-4 h-4", {
     "rotate-90": isOpen || router.pathname === href,
@@ -44,12 +49,12 @@ function MenuLink({ href, subLinks, children }: MenuLinkProps) {
     <Fragment>
       <span className={classes}>
         {subLinks != null && (
-          <a onClick={toggle}>
+          <a onClick={toggle} className="pl-2">
             <CaretFill className={caretClasses} />
           </a>
         )}
         <Link href={href}>
-          <a className="group flex items-center px-2 py-2 w-full text-base font-medium">
+          <a className="group flex items-center px-2 w-full text-base font-medium">
             {children}
           </a>
         </Link>
@@ -67,7 +72,7 @@ interface MenuSubLinkProps {
 function MenuSubLink({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center ml-3 px-2 py-2 text-sm font-medium rounded-md",
+    "group flex items-center ml-3 px-2 text-sm font-medium rounded-md",
     {
       "text-theme-light-sidebar-hover-text": router.asPath === href,
       "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":
@@ -91,7 +96,7 @@ export default function Menu() {
       <div className="flex flex-col w-80">
         <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
           <div className="flex flex-1 flex-col mt-5">
-            <nav className="flex-1 px-6">
+            <nav className="flex-1 px-6 text-sm">
               <MenuSection>
                 <MenuLink href="/changelog">Changelog</MenuLink>
                 <MenuLink href="/intro">Intro</MenuLink>
