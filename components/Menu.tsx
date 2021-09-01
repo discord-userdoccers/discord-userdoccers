@@ -42,7 +42,7 @@ function MenuLink({ href, subLinks, children }: MenuLinkProps) {
   );
 
   const caretClasses = classNames("w-4 h-4", {
-    "rotate-90": isOpen || router.pathname === href,
+    "rotate-90": isOpen,
   });
 
   return (

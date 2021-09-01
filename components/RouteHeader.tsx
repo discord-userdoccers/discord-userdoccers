@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import classNames from "classnames";
 import { H2 } from "./mdx/Heading";
+import InlineCode from "./mdx/InlineCode";
 
 type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -17,7 +18,11 @@ function MethodBadge({ method }: MethodBadgeProps) {
     "bg-red-100 text-red-500": name === "DELETE",
   });
 
-  return <span className={classes}>{method}</span>;
+  return (
+    <span className={classes}>
+      <InlineCode>{method}</InlineCode>
+    </span>
+  );
 }
 
 interface RouteHeaderProps {
@@ -34,7 +39,7 @@ export default function RouteHeader({
   return (
     <Fragment>
       <H2>{children}</H2>
-      <MethodBadge method={method} /> <span>{url}</span>
+      <MethodBadge method={method} /> <InlineCode>{url}</InlineCode>
     </Fragment>
   );
 }
