@@ -37,14 +37,11 @@ interface MenuLinkProps {
 function MenuLink({ href, subLinks, children }: MenuLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
-  const classes = classNames(
-    "flex items-center px-2 py-1 font-whitney rounded-md",
-    {
-      "bg-brand-blurple text-white": router.pathname === href,
-      "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
-        router.pathname !== href,
-    }
-  );
+  const classes = classNames("flex items-center font-whitney rounded-md", {
+    "bg-brand-blurple text-white": router.pathname === href,
+    "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
+      router.pathname !== href,
+  });
 
   const caretClasses = classNames("w-4 h-4", {
     "rotate-90": isOpen,
@@ -59,7 +56,7 @@ function MenuLink({ href, subLinks, children }: MenuLinkProps) {
           </a>
         )}
         <Link href={href}>
-          <a className="group flex items-center px-2 w-full text-base font-medium">
+          <a className="group flex items-center px-4 py-1 w-full text-base font-medium">
             {children}
           </a>
         </Link>
