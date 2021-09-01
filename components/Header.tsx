@@ -15,8 +15,10 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
 
   const getMenuItemClasses = (active: boolean) =>
     classNames("flex px-4 py-2 text-sm", {
-      "bg-red-100 text-gray-900": active,
-      "text-gray-700": !active,
+      "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text dark:bg-theme-dark-sidebar-hover dark:text-white":
+        active,
+      "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text":
+        !active,
     });
 
   return (
@@ -44,7 +46,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 self-start mt-2 w-56 bg-white rounded-md focus:outline-none shadow-lg origin-top-right ring-1 ring-black ring-opacity-5">
+        <Menu.Items className="absolute right-0 self-start mt-2 w-56 dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light rounded-md focus:outline-none shadow-lg origin-top-right ring-1 ring-black dark:ring-white ring-opacity-5">
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (

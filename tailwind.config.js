@@ -35,7 +35,7 @@ module.exports = {
 
         "theme-dark-sidebar": "#2e3136",
         "theme-dark-sidebar-text": "#b9bbbe",
-        "theme-light-sidebar-hover": "#393C43",
+        "theme-dark-sidebar-hover": "#393C43",
       },
 
       // TODO: Change these out for whatever legitimate font family names discord uses,
