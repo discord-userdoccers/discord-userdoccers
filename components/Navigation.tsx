@@ -198,13 +198,13 @@ export default function Navigation() {
               <NavigationSubLink href="/interactions/application-commands#subcommands-and-subcommand-groups">
                 Subcommands and Subcommand Groups
               </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands/guild#user-commands">
+              <NavigationSubLink href="/interactions/application-commands#user-commands">
                 User Commands
               </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands/guild#message-commands">
+              <NavigationSubLink href="/interactions/application-commands#message-commands">
                 Message Commands
               </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands/guild#endpoints">
+              <NavigationSubLink href="/interactions/application-commands#endpoints">
                 Endpoints
               </NavigationSubLink>
             </Fragment>
