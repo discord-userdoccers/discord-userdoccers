@@ -23,7 +23,6 @@ module.exports = {
         "sidebar-tertiary-dark": "#2e3136",
 
         "table-head-background-dark": "#202225",
-        "table-row-background-primary-dark": "#121315",
         "table-row-background-secondary-dark": "#18191c",
 
         "theme-light-sidebar": "#f2f3f5",
