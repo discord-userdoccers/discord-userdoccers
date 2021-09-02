@@ -9,6 +9,9 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      padding: {
+        teensy: "0.1rem",
+      },
       gridTemplateRows: {
         "max-content": "max-content",
       },
