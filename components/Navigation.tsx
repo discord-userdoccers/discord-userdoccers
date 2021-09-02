@@ -40,7 +40,7 @@ function NavigationLink({ href, subLinks, children }: NavigationLinkProps) {
 
   // TODO: We currently have a bunch of listeners being added here - can this be improved?
   useEffect(() => {
-    const handler = (url) => {
+    const handler = (url: string) => {
       // debugger;
       if (url.endsWith(href) && !isOpen) {
         toggle();
