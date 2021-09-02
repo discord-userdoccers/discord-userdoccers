@@ -1,3 +1,3 @@
-export default function Emphasis(props) {
+export default function Emphasis(props: JSX.IntrinsicElements["em"]) {
   return <em {...props} />;
 }

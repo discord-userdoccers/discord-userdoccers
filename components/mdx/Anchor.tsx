@@ -1,7 +1,11 @@
 import classNames from "classnames";
 import Link from "next/link";
 
-function DocLink({ href, ...props }) {
+type DocLinkProps = JSX.IntrinsicElements["a"] & {
+  href: string;
+};
+
+function DocLink({ href, ...props }: DocLinkProps) {
   return (
     <Link href={href}>
       <a {...props} />
@@ -9,7 +13,12 @@ function DocLink({ href, ...props }) {
   );
 }
 
-export default function Anchor({ href, className, ...props }) {
+type AnchorProps = JSX.IntrinsicElements["a"] & {
+  href: string;
+  className: string;
+};
+
+export default function Anchor({ href, className, ...props }: AnchorProps) {
   const classes = classNames("text-brand-link underline", className);
 
   if (href.startsWith("/")) {
