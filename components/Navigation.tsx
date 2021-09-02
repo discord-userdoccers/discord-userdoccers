@@ -74,10 +74,10 @@ interface NavigationSubLinkProps {
 function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center ml-6 px-2 py-1 text-sm font-medium rounded-md w-full",
+    "group flex items-center ml-6 px-2 py-1 w-full text-sm font-medium rounded-md",
     {
       "text-dark dark:text-white": router.asPath === href,
-      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":
+      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text hover:text-dark dark:hover:text-white":
         router.asPath !== href,
     }
   );
