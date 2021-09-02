@@ -13,15 +13,14 @@ function DocLink({ href, ...props }: DocLinkProps) {
   );
 }
 
-type AnchorProps = JSX.IntrinsicElements["a"] & {
-  href: string;
-  className: string;
-};
-
-export default function Anchor({ href, className, ...props }: AnchorProps) {
+export default function Anchor({
+  href,
+  className,
+  ...props
+}: JSX.IntrinsicElements["a"]) {
   const classes = classNames("text-brand-link underline", className);
 
-  if (href.startsWith("/")) {
+  if (href?.startsWith("/")) {
     return <DocLink href={href} className={classes} {...props} />;
   }
 
