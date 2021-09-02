@@ -27,7 +27,7 @@ const symColorMap = {
   "|": "var(--prism-highlight-text)",
 };
 
-const symbols = {
+const SYMBOLS = {
   normal: "|",
   add: "+",
   delete: "-",
@@ -75,14 +75,6 @@ export default function Code({
 
   const language = className && className.replace(/language-/, "");
   let breakWords = false;
-  let diffArray = [];
-
-  if (metastring?.includes("highlight")) {
-    const parts = props.highlight.split("|");
-    parts.forEach((part) => {
-      diffArray = [part.split(";"), ...diffArray];
-    });
-  }
 
   if (propList.includes(language)) {
     breakWords = true;
@@ -97,7 +89,7 @@ export default function Code({
   );
 
   return (
-    <div className="code-block relative my-6 font-mono">
+    <div className="code-block relative my-6 font-mono rounded-md">
       <InfoBar fileName={file} language={language} />
       <Highlight {...defaultProps} code={children} language={language}>
         {({
@@ -109,7 +101,7 @@ export default function Code({
         }) => (
           <pre
             className={classnames(
-              "relative mb-4 overflow-auto",
+              "relative mb-4 overflow-auto leading-normal inline-grid w-full grid-rows-max-content m-0",
               blockClassName,
               {
                 "is-terminal": isTerminal,
@@ -124,61 +116,37 @@ export default function Code({
                 </CopyButton>
               </div>
             )}
-            <code className="p-4">
+            <code className="p-4 rounded-md">
               {cleanTokens(tokens).map((line, i) => {
-                let lineClass = {
-                  backgroundColor: "",
-                  symbColor: "",
-                };
-
+                const lineClass = {};
                 let isDiff = false;
                 let diffSymbol = "";
 
                 if (
-                  (!metastring?.includes("plain") &&
-                    line[0] &&
-                    line[0].content.length &&
-                    (line[0].content[0] === "+" ||
-                      line[0].content[0] === "-" ||
-                      line[0].content[0] === "|")) ||
-                  (line[0] &&
-                    line[0].content === "" &&
-                    line[1] &&
-                    (line[1].content === "+" ||
-                      line[1].content === "-" ||
-                      line[1].content === "|"))
+                  Object.values(SYMBOLS).includes(line?.[0]?.content?.[0]) ||
+                  (line?.[0]?.content === "" &&
+                    Object.values(SYMBOLS).includes(line?.[1]?.content))
                 ) {
-                  diffSymbol =
-                    line[0] && line[0].content.length
-                      ? line[0].content[0]
-                      : line[1].content;
-                  lineClass = {
-                    backgroundColor: diffBgColorMap[diffSymbol],
-                    symbColor: symColorMap[diffSymbol],
-                  };
-                  isDiff = true;
-                }
+                  diffSymbol = line?.[0]?.content?.length
+                    ? line[0].content[0]
+                    : line[1].content;
 
-                if (diffArray.length !== 0) {
-                  diffArray.forEach((arr) => {
-                    if (rangeParser(arr[0]).includes(i + 1)) {
-                      diffSymbol = symbols[arr[1]];
-                      lineClass = {
-                        backgroundColor: diffBgColorMap[diffSymbol],
-                        symbColor: symColorMap[diffSymbol],
-                      };
-                      isDiff = metastring?.includes("highlight");
-                    }
-                  });
+                  lineClass.backgroundColor = diffBgColorMap[diffSymbol];
+                  lineClass.color = symColorMap[diffSymbol];
+
+                  isDiff = true;
                 }
 
                 const lineProps = getLineProps({ line, key: i });
 
-                lineProps.style = { ...lineClass };
-
                 return (
                   // eslint-disable-next-line react/no-array-index-key
-                  <div className="block" key={line + i} {...lineProps}>
+                  <div
+                    className="block"
+                    key={line + i}
+                    {...lineProps}
+                    style={lineClass}
+                  >
                     {isTerminal && !isDiff && (
                       <span className={lineNumberClasses}>$</span>
                     )}
@@ -188,7 +156,7 @@ export default function Code({
                     {isDiff && hasLines && (
                       <span
                         className={lineNumberClasses}
-                        style={{ color: lineClass.symbColor }}
+                        style={{ color: lineClass.color }}
                       >
                         {["+", "-"].includes(diffSymbol) ? diffSymbol : i + 1}
                       </span>
@@ -200,25 +168,24 @@ export default function Code({
                       })}
                     >
                       {line.map((token, key) => {
-                        if (isDiff) {
-                          if (
-                            (key === 0 || key === 1) &&
-                            (token.content.charAt(0) === "+" ||
-                              token.content.charAt(0) === "-" ||
-                              token.content.charAt(0) === "|")
-                          ) {
-                            return (
-                              <span
-                                {...getTokenProps({
-                                  token: {
-                                    ...token,
-                                    content: token.content.slice(1),
-                                  },
-                                  key,
-                                })}
-                              />
-                            );
-                          }
+                        if (
+                          isDiff &&
+                          (key === 0 || key === 1) &&
+                          Object.values(SYMBOLS).includes(
+                            token.content.charAt(0)
+                          )
+                        ) {
+                          return (
+                            <span
+                              {...getTokenProps({
+                                token: {
+                                  ...token,
+                                  content: token.content.slice(1),
+                                },
+                                key,
+                              })}
+                            />
+                          );
                         }
                         // eslint-disable-next-line react/jsx-key
                         return <span {...getTokenProps({ token, key })} />;

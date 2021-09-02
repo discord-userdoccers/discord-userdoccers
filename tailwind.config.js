@@ -9,6 +9,9 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      gridTemplateRows: {
+        "max-content": "max-content",
+      },
       colors: {
         "brand-blurple": "#5865F2",
         "brand-link": "#00AFF4",
