@@ -31,10 +31,16 @@ function NavigationSection({ title, className, children }: MenuSelectionProps) {
 interface NavigationLinkProps {
   href: string;
   subLinks?: React.ReactNode;
+  className?: string;
   children: React.ReactNode;
 }
 
-function NavigationLink({ href, subLinks, children }: NavigationLinkProps) {
+function NavigationLink({
+  href,
+  subLinks,
+  className,
+  children,
+}: NavigationLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
 
@@ -51,11 +57,15 @@ function NavigationLink({ href, subLinks, children }: NavigationLinkProps) {
     return () => router.events.off("routeChangeComplete", handler);
   });
 
-  const classes = classNames("flex items-center font-whitney rounded-md", {
-    "bg-brand-blurple text-white": router.pathname === href,
-    "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
-      router.pathname !== href,
-  });
+  const classes = classNames(
+    "flex items-center font-whitney rounded-md",
+    className,
+    {
+      "bg-brand-blurple text-white": router.pathname === href,
+      "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
+        router.pathname !== href,
+    }
+  );
 
   const caretClasses = classNames("w-4 h-4", {
     "rotate-90": isOpen,
@@ -70,7 +80,7 @@ function NavigationLink({ href, subLinks, children }: NavigationLinkProps) {
           </a>
         )}
         <Link href={href}>
-          <a className="group flex items-center px-2 py-1 w-full text-base font-medium">
+          <a className="group flex items-center px-2 py-1 w-full font-medium">
             {children}
           </a>
         </Link>
@@ -115,11 +125,17 @@ export default function Navigation() {
       <a href="https://discord.com/developers/applications">
         <Discord className="mb-4 ml-auto mr-auto w-9/12 text-black dark:text-white" />
       </a>
-      <NavigationSection className="mb-6 pb-6 border-b-2 border-white">
-        <NavigationLink href="https://discord.com/developers/applications">
+      <NavigationSection className="mb-6 pb-6 border-b-2 border-gray-200 dark:border-theme-light-sidebar-text">
+        <NavigationLink
+          href="https://discord.com/developers/applications"
+          className="text-lg"
+        >
           Applications
         </NavigationLink>
-        <NavigationLink href="https://discord.com/developers/teams">
+        <NavigationLink
+          href="https://discord.com/developers/teams"
+          className="text-lg"
+        >
           Teams
         </NavigationLink>
       </NavigationSection>
