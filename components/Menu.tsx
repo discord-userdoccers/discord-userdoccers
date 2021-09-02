@@ -467,7 +467,7 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
                       <MenuSubLink href="/resources/guild-template#modify-guild-template">
                         Modify Guild Template
                       </MenuSubLink>
-                      <MenuSubLink href="/resources/guild-template#Delete-guild-template">
+                      <MenuSubLink href="/resources/guild-template#delete-guild-template">
                         Delete Guild Template
                       </MenuSubLink>
                     </Fragment>
