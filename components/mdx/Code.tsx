@@ -194,7 +194,7 @@ export default function Code({
                       </span>
                     )}
                     <span
-                      className={classnames("line_content", {
+                      className={classnames("line_content px-4", {
                         "has-copy-button": hasCopy,
                         "inline-table break-words": breakWords,
                       })}
