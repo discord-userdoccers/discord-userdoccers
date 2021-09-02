@@ -19,6 +19,7 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
       "translate-x-none md:flex": !open,
     }
   );
+
   return (
     <div className={classes}>
       <div className="flex flex-col w-full dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light md:w-80">
