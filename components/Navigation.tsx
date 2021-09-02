@@ -176,34 +176,34 @@ export default function Navigation() {
           href="/interactions/application-commands"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/resources/guild#application-command-object">
+              <NavigationSubLink href="/interactions/application-commands#application-command-object">
                 Application Command Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#authorizing-your-application">
+              <NavigationSubLink href="/interactions/application-commands#authorizing-your-application">
                 Authorizing Your Application
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#registering-a-command">
+              <NavigationSubLink href="/interactions/application-commands#registering-a-command">
                 Registering a Command
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#updating-and-deleting-a-command">
+              <NavigationSubLink href="/interactions/application-commands#updating-and-deleting-a-command">
                 Updating and Deleting a Command
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#permissions">
+              <NavigationSubLink href="/interactions/application-commands#permissions">
                 Permissions
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#slash-commands">
+              <NavigationSubLink href="/interactions/application-commands#slash-commands">
                 Slash Commands
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#subcommands-and-subcommand-groups">
+              <NavigationSubLink href="/interactions/application-commands#subcommands-and-subcommand-groups">
                 Subcommands and Subcommand Groups
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#user-commands">
+              <NavigationSubLink href="/interactions/application-commands/guild#user-commands">
                 User Commands
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#message-commands">
+              <NavigationSubLink href="/interactions/application-commands/guild#message-commands">
                 Message Commands
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#endpoints">
+              <NavigationSubLink href="/interactions/application-commands/guild#endpoints">
                 Endpoints
               </NavigationSubLink>
             </Fragment>
