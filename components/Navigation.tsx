@@ -5,7 +5,6 @@ import classNames from "classnames";
 import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
-import Bars from "./icons/Bars";
 import Discord from "./icons/Discord";
 
 interface MenuSelectionProps {
