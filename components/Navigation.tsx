@@ -645,21 +645,267 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Topics">
-        <NavigationLink href="/topics/certified-devices">
+        <NavigationLink
+          href="/topics/certified-devices"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/certified-devices#hows-it-work">
+                How's it work?
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/certified-devices#connecting">
+                Connecting
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/certified-devices#getting-device-uuid">
+                Getting Device UUID
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/certified-devices#http-example">
+                HTTP Example
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/certified-devices#websocker-example">
+                WebSocket Example
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/certified-devices#models">
+                Models
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Certified Devices
         </NavigationLink>
-        <NavigationLink href="/topics/community-resources">
+        <NavigationLink
+          href="/topics/community-resources"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/community-resources#discord-developers">
+                Discord Developers
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#libraries">
+                Libraries
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#interactions">
+                Interactions
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#game-sdk-tools">
+                Game SDK Tools
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#dispatch-tools">
+                Dispatch Tools
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#permission-calculators">
+                Permission Calculators
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#intent-calculators">
+                Intent Calculators
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#api-types">
+                API Types
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Community Resources
         </NavigationLink>
-        <NavigationLink href="/topics/gateway">Gateway</NavigationLink>
-        <NavigationLink href="/topics/oauth2">OAuth2</NavigationLink>
-        <NavigationLink href="/topics/opcodes-and-status-codes">
+        <NavigationLink
+          href="/topics/gateway"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/gateway#payloads">
+                Payloads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#encoding-and-compression">
+                Encoding and Compression
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#connecting-to-the-gateway">
+                Connecting to the Gateway
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#resuming">
+                Resuming
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#gateway-intents">
+                Gateway Intents
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#rate-limiting">
+                Rate Limiting
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#tracking-state">
+                Tracking State
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#guild-availability">
+                Guild Availability
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#sharding">
+                Sharding
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#sharding-for-very-large-bots">
+                Sharding for Very Large Bots
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#commands-and-events">
+                Commands and Events
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#get-gateway">
+                Endpoints
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#session-start-limit-object">
+                Session Start Limit Object
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Gateway
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/oauth2"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/oauth2#shared=resources">
+                Shared Resources
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#state=and=security">
+                State and Security
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#authorization-code-grant">
+                Authorization Code Grant
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#implicit-grant">
+                Implicit Grant
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#client-credentials-grant">
+                Client Gredentials Grant
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#bots">
+                Bots
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#webhooks">
+                Webhooks
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#get-current-bot-application-information">
+                Get Current Bot Application Information
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#get-current-authorization-information">
+                Get Current Authorization Information
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          OAuth2
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/opcodes-and-status-codes"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/opcodes-and-status-codes#gateway">
+                Gateway
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/opcodes-and-status-codes#voice">
+                Voice
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/opcodes-and-status-codes#http">
+                HTTP
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/opcodes-and-status-codes#json">
+                JSON
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/opcodes-and-status-codes#rpc">
+                RPC
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Opcodes &amp; Status Codes
         </NavigationLink>
-        <NavigationLink href="/topics/permissions">Permissions</NavigationLink>
-        <NavigationLink href="/topics/rpc">RPC</NavigationLink>
-        <NavigationLink href="/topics/rate-limits">Rate Limits</NavigationLink>
-        <NavigationLink href="/topics/teams">Teams</NavigationLink>
+        <NavigationLink
+          href="/topics/permissions"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/permissions#permission-hierarchy">
+                Permission Hierarchy
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/permissions#permission-overwrites">
+                Permission Overwrites
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/permissions#implicit-permissions">
+                Implicit Permissions
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/permissions#inherited-permissions-(threads)">
+                Inherited Permissions (Threads)
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/permissions#permission-syncing">
+                Permission Syncing
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Permissions
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/rpc"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/rpc#restrictions">
+                Restrictions
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rpc#payloads">
+                Payloads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rpc#connecting">
+                Connecting
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rpc#authenticating">
+                Authenticating
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rpc#commands-and-events">
+                Commands and Events
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          RPC
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/rate-limits"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/rate-limits#header-format">
+                Header Format
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rate-limits#exceeding-a-rate-limit">
+                Exceeding A Rate Limit
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rate-limits#global-rate-limit">
+                Global Rate Limit
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/rate-limits#invalid-request-limit-aka-cloudflare-bans">
+                Invalid Request Limit aka CloudFlare bans
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Rate Limits
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/teams"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/teams#what-do-they-do">
+                What Do They Do
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/teams#how-do-i-make-one">
+                How Do I Make One
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/teams#apps-on-teams">
+                Apps on Teams
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/teams#what-next">
+                What Next
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/teams#data-models">
+                Data Models
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Teams
+        </NavigationLink>
         <NavigationLink href="/topics/threads">Threads</NavigationLink>
         <NavigationLink href="/topics/voice-connections">
           Voice Connections
