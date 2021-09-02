@@ -625,7 +625,6 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
                       </MenuSubLink>
                     </Fragment>
                   }
-
                 >
                   Voice
                 </MenuLink>
