@@ -56,7 +56,7 @@ function MenuLink({ href, subLinks, children }: MenuLinkProps) {
           </a>
         )}
         <Link href={href}>
-          <a className="group flex items-center px-4 py-1 w-full text-base font-medium">
+          <a className="group flex items-center px-2 py-1 w-full text-base font-medium">
             {children}
           </a>
         </Link>
@@ -74,7 +74,7 @@ interface MenuSubLinkProps {
 function MenuSubLink({ href, children }: MenuSubLinkProps) {
   const router = useRouter();
   const classes = classNames(
-    "group flex items-center ml-8 p-2 text-sm font-medium rounded-md",
+    "group flex items-center ml-6 px-2 py-1 text-sm font-medium rounded-md",
     {
       "text-dark dark:text-white": router.asPath === href,
       "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text":
@@ -138,7 +138,57 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
                 <MenuLink href="/intro">Intro</MenuLink>
                 <MenuLink href="/legal">Legal</MenuLink>
                 <MenuLink href="/policy">Policy</MenuLink>
-                <MenuLink href="/reference">Reference</MenuLink>
+                <MenuLink 
+                  href="/reference"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/reference#api-versioning">
+                        API Versioning
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#error-messages">
+                        Error Messages
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#authentication">
+                        Authentication
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#encryption">
+                        Encryption
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#snowflakes">
+                        Snowflakes
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#id-serialization">
+                        ID Serialization
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#iso8601-date/time">
+                        ISO8601 Date/Time
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#nullable-and-optional-resource-fields">
+                        Nullable and Optional Resource Fields
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#consistency">
+                        Consistency
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#http-api">
+                        HTTP API
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#gateway-(websocket)-api">
+                        Gateway (WebSocket) API
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#message-formatting">
+                        Message Formatting
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#image-formatting">
+                        Image Formatting
+                      </MenuSubLink>
+                      <MenuSubLink href="/reference#image-data">
+                        Image Data
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Reference
+                </MenuLink>
                 <MenuLink href="/store-distribution-agreement">
                   Store Distribution Agreement
                 </MenuLink>
@@ -149,39 +199,456 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
                   href="/interactions/application-commands"
                   subLinks={
                     <Fragment>
-                      <MenuSubLink href="/interactions/application-commands#slash-commands">
+                      <MenuSubLink href="/resources/guild#application-command-object">
+                        Application Command Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#authorizing-your-application">
+                        Authorizing Your Application
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#registering-a-command">
+                        Registering a Command
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#updating-and-deleting-a-command">
+                        Updating and Deleting a Command
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#permissions">
+                        Permissions
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#slash-commands">
                         Slash Commands
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#subcommands-and-subcommand-groups">
+                        Subcommands and Subcommand Groups
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#user-commands">
+                        User Commands
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#message-commands">
+                        Message Commands
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#endpoints">
+                        Endpoints
                       </MenuSubLink>
                     </Fragment>
                   }
                 >
                   Application Commands
                 </MenuLink>
-                <MenuLink href="/interactions/message-components">
+                <MenuLink
+                  href="/interactions/message-components"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/interactions/message-components#what-is-a-component">
+                        What is a Component
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/message-components#component-object">
+                        Component Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/message-components#action-rows">
+                        Action Rows
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/message-components#responding-to-a-component-interaction">
+                        Responding to a Component Interaction
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/message-components#custom-id">
+                        Custom ID
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/message-components#buttons">
+                        Buttons
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/message-components#select-menus">
+                        Select Menus
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
                   Message Components
                 </MenuLink>
-                <MenuLink href="/interactions/receiving-and-responding">
+                <MenuLink
+                  href="/interactions/receiving-and-responding"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/interactions/receiving-and-responding#interaction-object">
+                        Interaction Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#message-interaction-object">
+                        Message Interaction Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#interactions-and-bot-users">
+                        Interactions and Bot Users
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#receiving-an-interaction">
+                        Receiving an Interaction
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#responding-to-an-interaction">
+                        Responding to an Interaction
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#followup-messages">
+                        Followup Messages
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#security-and-authorization">
+                        Security and Authorization
+                      </MenuSubLink>
+                      <MenuSubLink href="/interactions/receiving-and-responding#endpoints">
+                        Endpoints
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
                   Receiving &amp; Responding
                 </MenuLink>
               </MenuSection>
 
               <MenuSection title="Resources">
                 <MenuLink href="/resources/application">Application</MenuLink>
-                <MenuLink href="/resources/audit-log">Audit Log</MenuLink>
-                <MenuLink href="/resources/channel">Channel</MenuLink>
-                <MenuLink href="/resources/emoji">Emoji</MenuLink>
-                <MenuLink href="/resources/guild">Guild</MenuLink>
-                <MenuLink href="/resources/guild-template">
+                <MenuLink
+                  href="/resources/audit-log"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/audit-log#audit-log-object">
+                        Audit Log Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/audit-log#audit-log-entry-object">
+                        Audit Log Entry Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/audit-log#audit-log-change-object">
+                        Audit Log Change Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/audit-log#get-guild-audit-log">
+                        Get Guild Audit Log
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Audit Log
+                </MenuLink>
+                <MenuLink
+                  href="/resources/channel"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/channel#channel-object">
+                        Channel Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#message-object">
+                        Message Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#message-reference-object">
+                        Message Reference Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#followed-channel-object">
+                        Followed Channel Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#reaction-object">
+                        Reaction Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#overwrite-object">
+                        Overwrite Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#thread-metadata-object">
+                        Thread Metadata Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#thread-member-object">
+                        Thread Member Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#embed-object">
+                        Embed Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#attachment-object">
+                        Attachment Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#channel-mention-object">
+                        Channel Mention Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#allowed-mentions-object">
+                        Allowed Mentions Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#embed-limits">
+                        Embed Limits
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/channel#get-channel">
+                        Endpoints
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Channel
+                </MenuLink>
+                <MenuLink
+                  href="/resources/emoji"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/emoji#emoji-object">
+                        Emoji Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/emoji#list-guild-emojis">
+                        List Guild Emojis
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/emoji#get-guild-emoji">
+                        Get Guild Emoji
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/emoji#create-guild-emoji">
+                        Create Guild Emoji
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/emoji#modify-guild-emoji">
+                        Modify Guild Emoji
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/emoji#delete-guild-emoji">
+                        Delete Guild Emoji
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Emoji
+                </MenuLink>
+                <MenuLink
+                  href="/resources/guild"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/guild#guild-object">
+                        Guild Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#unavailable-guild-object">
+                        Unavailable Guild Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#guild-preview-object">
+                        Guild Preview Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#guild-widget-object">
+                        Guild Widget Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#guild-member-object">
+                        Guild Member Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#integration-object">
+                        Integration Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#ban-object">
+                        Ban Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#user-commands">
+                        User Commands
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#welcome-screen-object">
+                        Welcome Screen Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#membership-screening-object">
+                        Membership Screening Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild#create-guild">
+                        Endpoints
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Guild
+                </MenuLink>
+                <MenuLink
+                  href="/resources/guild-template"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/guild-template#guild-template-object">
+                        Guild Template Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#get-guild-template">
+                        Get Guild Template
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#create-guild-from-guild-template">
+                        Create Guild From Guild Template
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#get-guild-templates">
+                        Get Guild Templates
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#create-guild-template">
+                        Create Guild Template
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#sync-guild-template">
+                        Sync Guild Template
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#modify-guild-template">
+                        Modify Guild Template
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/guild-template#delete-guild-template">
+                        Delete Guild Template
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
                   Guild Template
                 </MenuLink>
-                <MenuLink href="/resources/invite">Invite</MenuLink>
-                <MenuLink href="/resources/stage-instance">
+                <MenuLink
+                  href="/resources/invite"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/invite#invite-object">
+                        Invite Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/invite#invite-metadata-object">
+                        Invite Metadata Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/invite#invite-stage-instance-object">
+                        Invite Stage Instance Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/invite#get-invite">
+                        Get Invite
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/invite#delete-invite">
+                        Delete Invite
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Invite
+                </MenuLink>
+                <MenuLink
+                  href="/resources/stage-instance"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/stage-instance#stage-instance-object">
+                        Stage Instance Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/stage-instance#definitions">
+                        Definitions
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/stage-instance#auto-closing">
+                        Auto Closing
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/stage-instance#create-stage-instance">
+                        Create Stage Instance
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/stage-instance#get-stage-instance">
+                        Get Stage Instance
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/stage-instance#modify-stage-instance">
+                        Modify Stage Instance
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/stage-instance#delete-stage-instance">
+                        Delete Stage Instance
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
                   Stage Instance
                 </MenuLink>
-                <MenuLink href="/resources/sticker">Sticker</MenuLink>
-                <MenuLink href="/resources/user">User</MenuLink>
-                <MenuLink href="/resources/voice">Voice</MenuLink>
-                <MenuLink href="/resources/webhook">Webhook</MenuLink>
+                <MenuLink
+                  href="/resources/sticker"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/sticker#sticker-object">
+                        Sticker Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#sticker-item-object">
+                        Sticker Item Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#sticker-pack-object">
+                        Sticker Pack Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#get-sticker">
+                        Get Sticker
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#list-nitro-sticker-packs">
+                        List Nitro Sticker Packs
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#list-guild-stickers">
+                        List Guild Stickers
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#get-guild-sticker">
+                        Get Guild Sticker
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#create-guild-sticker">
+                        Create Guild Sticker
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#modify-guild-sticker">
+                        Modify Guild Sticker
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/sticker#delete-guild-sticker">
+                        Delete Guild Sticker
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Sticker
+                </MenuLink>
+                <MenuLink
+                  href="/resources/user"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/user#usernames-and-nicknames">
+                        Usernames and Nicknames
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#user-object">
+                        User Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#connection-object">
+                        Connection Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#get-current-user">
+                        Get Current User
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#get-user">
+                        Get User
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#modify-current-user">
+                        Modify Current User
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#get-current-user-guilds">
+                        Get Current User Guilds
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#leave-guild">
+                        Leave Guild
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#create-dm">
+                        Create DM
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#create-group-dm">
+                        Create Group DM
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/user#get-user-connections">
+                        Get User Connections
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  User
+                </MenuLink>
+                <MenuLink
+                  href="/resources/voice"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/voice#voice-state-object">
+                        Voice State Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/voice#voice-region-object">
+                        Voice Region Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/voice#list-voice-regions">
+                        List Voice Regions
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Voice
+                </MenuLink>
+                <MenuLink
+                  href="/resources/webhook"
+                  subLinks={
+                    <Fragment>
+                      <MenuSubLink href="/resources/webhook#webhook-object">
+                        Webhook Object
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/webhook#create-webhook">
+                        Webhook Management Endpoints
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/webhook#execute-webhook">
+                        Webhook Execution Endpoints
+                      </MenuSubLink>
+                      <MenuSubLink href="/resources/webhook#get-webhook-message">
+                        Webhook Message Endpoints
+                      </MenuSubLink>
+                    </Fragment>
+                  }
+                >
+                  Webhook
+                </MenuLink>
               </MenuSection>
 
               <MenuSection title="Topics">
