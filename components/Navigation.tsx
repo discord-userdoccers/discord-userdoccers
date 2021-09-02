@@ -1,4 +1,4 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import classNames from "classnames";
@@ -37,6 +37,20 @@ interface NavigationLinkProps {
 function NavigationLink({ href, subLinks, children }: NavigationLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
+
+  // TODO: We currently have a bunch of listeners being added here - can this be improved?
+  useEffect(() => {
+    const handler = (url) => {
+      // debugger;
+      if (url.endsWith(href) && !isOpen) {
+        toggle();
+      }
+    };
+
+    router.events.on("routeChangeComplete", handler);
+    return () => router.events.off("routeChangeComplete", handler);
+  });
+
   const classes = classNames("flex items-center font-whitney rounded-md", {
     "bg-brand-blurple text-white": router.pathname === href,
     "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
