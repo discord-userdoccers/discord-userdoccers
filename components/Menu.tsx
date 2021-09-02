@@ -196,7 +196,7 @@ export default function Menu({ open, setSidebarOpen }: MenuProps) {
 
               <MenuSection title="Interactions">
                 <MenuLink
-                  href="/resources/guild"
+                  href="/interactions/application-commands"
                   subLinks={
                     <Fragment>
                       <MenuSubLink href="/resources/guild#application-command-object">
