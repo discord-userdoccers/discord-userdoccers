@@ -11,6 +11,7 @@ import Discord from "./icons/Discord";
 interface MenuSelectionProps {
   title?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
 function NavigationSection({ title, className, children }: MenuSelectionProps) {

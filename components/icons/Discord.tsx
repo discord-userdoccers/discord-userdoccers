@@ -1,4 +1,4 @@
-export default function Discord(props) {
+export default function Discord(props: JSX.IntrinsicElements["svg"]) {
   return (
     <svg
       fill="currentColor"

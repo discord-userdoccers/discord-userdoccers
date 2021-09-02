@@ -23,7 +23,8 @@ function getText(node: React.ReactNode): string {
 
 export interface HeadingProps {
   as: any;
-  children: React.ReactNode;
+  className: string;
+  children?: React.ReactNode;
 }
 
 function Heading({ as: As, className, children }: HeadingProps) {
@@ -43,7 +44,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
   );
 }
 
-export function H1({ className, ...props }) {
+export function H1({ className, ...props }: JSX.IntrinsicElements["h1"]) {
   const classes = classNames(
     "not:first-of-type:mt-10 mb-8 text-4xl font-bold leading-tight sm:leading-loose",
     className
@@ -51,7 +52,7 @@ export function H1({ className, ...props }) {
   return <Heading as="h1" className={classes} {...props} />;
 }
 
-export function H2({ className, ...props }) {
+export function H2({ className, ...props }: JSX.IntrinsicElements["h2"]) {
   const classes = classNames(
     "mb-6 mt-8 text-2xl font-semibold leading-relaxed",
     className
@@ -59,7 +60,7 @@ export function H2({ className, ...props }) {
   return <Heading as="h2" className={classes} {...props} />;
 }
 
-export function H3({ className, ...props }) {
+export function H3({ className, ...props }: JSX.IntrinsicElements["h3"]) {
   const classes = classNames(
     "mb-4 mt-6 text-xl font-medium leading-normal",
     className
@@ -67,7 +68,7 @@ export function H3({ className, ...props }) {
   return <Heading as="h3" className={classes} {...props} />;
 }
 
-export function H4({ className, ...props }) {
+export function H4({ className, ...props }: JSX.IntrinsicElements["h4"]) {
   const classes = classNames(
     "mb-4 mt-6 text-lg font-medium leading-normal",
     className
@@ -75,7 +76,7 @@ export function H4({ className, ...props }) {
   return <Heading as="h4" className={classes} {...props} />;
 }
 
-export function H5({ className, ...props }) {
+export function H5({ className, ...props }: JSX.IntrinsicElements["h5"]) {
   const classes = classNames(
     "mb-4 mt-6 text-base font-medium leading-normal",
     className
@@ -83,7 +84,7 @@ export function H5({ className, ...props }) {
   return <Heading as="h5" className={classes} {...props} />;
 }
 
-export function H6({ className, ...props }) {
+export function H6({ className, ...props }: JSX.IntrinsicElements["h6"]) {
   const classes = classNames(
     "mb-4 mt-6 text-base font-medium leading-normal",
     className
