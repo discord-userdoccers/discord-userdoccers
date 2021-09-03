@@ -1,3 +1,5 @@
+const colors = require("tailwindcss/colors");
+
 module.exports = {
   mode: "jit",
   purge: [
@@ -7,6 +9,12 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      padding: {
+        teensy: "0.1rem",
+      },
+      gridTemplateRows: {
+        "max-content": "max-content",
+      },
       colors: {
         "brand-blurple": "#5865F2",
         "brand-link": "#00AFF4",
@@ -20,12 +28,7 @@ module.exports = {
         "sidebar-tertiary-light": "#f2f3f5",
         "sidebar-tertiary-dark": "#2e3136",
 
-        "table-head-background-light": "cac7c3",
-        "table-row-background-primary-light": "#edecea",
-        "table-row-background-secondary-light": "#e7e6e3",
-
-        "table-head-background-dark": "#35383c",
-        "table-row-background-primary-dark": "#121315",
+        "table-head-background-dark": "#202225",
         "table-row-background-secondary-dark": "#18191c",
 
         "theme-light-sidebar": "#f2f3f5",
@@ -36,6 +39,7 @@ module.exports = {
         "theme-dark-sidebar": "#2e3136",
         "theme-dark-sidebar-text": "#b9bbbe",
         "theme-dark-sidebar-hover": "#393C43",
+        "trueGray": colors.trueGray,
       },
 
       // TODO: Change these out for whatever legitimate font family names discord uses,

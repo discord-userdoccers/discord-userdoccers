@@ -9,6 +9,7 @@ import classnames from "classnames";
 import FileIcon from "../icons/File";
 import CopyIcon from "../icons/Copy";
 import CopyButton from "../Copy";
+import classNames from "classnames";
 
 // Extend base classes
 (typeof global !== "undefined" ? global : window).Prism = Prism;
@@ -26,7 +27,7 @@ const symColorMap = {
   "|": "var(--prism-highlight-text)",
 };
 
-const symbols = {
+const SYMBOLS = {
   normal: "|",
   add: "+",
   delete: "-",
@@ -34,184 +35,169 @@ const symbols = {
 
 function cleanTokens(tokens: any) {
   const tokensLength = tokens.length;
+
   if (tokensLength === 0) {
     return tokens;
   }
+
   const lastToken = tokens[tokensLength - 1];
 
   if (lastToken.length === 1 && lastToken[0].empty) {
     return tokens.slice(0, tokensLength - 1);
   }
+
   return tokens;
 }
 
-const propList = ["copy", "terminal", "no-lines"];
+function InfoBar({ fileName, language }) {
+  return (
+    <div className="flex mb-2 text-black dark:text-white text-sm font-bold">
+      {fileName != null ? (
+        <span className="inline-flex items-center">
+          <FileIcon className="mr-2 w-4 h-4" />
+          {fileName}
+        </span>
+      ) : null}
+      <span className="ml-auto">{language}</span>
+    </div>
+  );
+}
 
 // TODO: This module needs some love
-export default function Code({ children, className, ...props }) {
+export default function Code({
+  children,
+  className,
+  metastring,
+  file,
+  ...props
+}) {
+  const propList = ["copy", "terminal", "no-lines"];
+
   const language = className && className.replace(/language-/, "");
   let breakWords = false;
-  let diffArray = [];
-
-  if (props?.metastring?.includes("highlight")) {
-    const parts = props.highlight.split("|");
-    parts.forEach((part) => {
-      diffArray = [part.split(";"), ...diffArray];
-    });
-  }
 
   if (propList.includes(language)) {
     breakWords = true;
   }
 
-  const code = children;
   const hasCopy = props.copy || language === "copy";
   const isTerminal = props.terminal || language === "terminal";
-  const fileName = props.file || language === "file";
-  const hasLines = fileName || props.lines;
+  const hasLines = file != null || props.lines;
 
-  const tokenCopyClass = `${hasCopy ? "has-copy-button" : ""} ${
-    breakWords ? "break-words" : ""
-  }`;
+  const lineNumberClasses = classNames(
+    "line_number inline-block w-6 text-right leading-6 select-none"
+  );
 
   return (
-    <div className="code-block">
-      <div className="code-block_file">
-        {fileName && (
-          <span className="code-block_file_name">
-            <FileIcon />
-            {fileName}
-          </span>
-        )}
-        <span className="code-block_file_language">{language}</span>
-      </div>
-      <div className="code-block_highlight">
-        <Highlight {...defaultProps} code={code} language={language}>
-          {({
-            className: blockClassName,
-            style,
-            tokens,
-            getLineProps,
-            getTokenProps,
-          }) => (
-            <pre
-              className={classnames(blockClassName, {
+    <div className="code-block relative my-6 font-mono rounded-md">
+      <InfoBar fileName={file} language={language} />
+      <Highlight {...defaultProps} code={children} language={language}>
+        {({
+          className: blockClassName,
+          style,
+          tokens,
+          getLineProps,
+          getTokenProps,
+        }) => (
+          <pre
+            className={classnames(
+              "relative mb-4 overflow-auto leading-normal inline-grid w-full grid-rows-max-content m-0",
+              blockClassName,
+              {
                 "is-terminal": isTerminal,
-              })}
-              style={style}
-            >
-              {(props.copy || language === "copy") && (
-                <div className="copy-button">
-                  <CopyButton text={code}>
-                    <CopyIcon />
-                  </CopyButton>
-                </div>
-              )}
-              <code>
-                {cleanTokens(tokens).map((line, i) => {
-                  let lineClass = {
-                    backgroundColor: "",
-                    symbColor: "",
-                  };
+              }
+            )}
+            style={style}
+          >
+            {(props.copy || language === "copy") && (
+              <div className="copy-button">
+                <CopyButton text={children}>
+                  <CopyIcon />
+                </CopyButton>
+              </div>
+            )}
+            <code className="p-4 rounded-md">
+              {cleanTokens(tokens).map((line, i) => {
+                const lineClass = {};
+                let isDiff = false;
+                let diffSymbol = "";
 
-                  let isDiff = false;
-                  let diffSymbol = "";
+                if (
+                  Object.values(SYMBOLS).includes(line?.[0]?.content?.[0]) ||
+                  (line?.[0]?.content === "" &&
+                    Object.values(SYMBOLS).includes(line?.[1]?.content))
+                ) {
+                  diffSymbol = line?.[0]?.content?.length
+                    ? line[0].content[0]
+                    : line[1].content;
 
-                  if (
-                    (!props?.metastring?.includes("plain") &&
-                      line[0] &&
-                      line[0].content.length &&
-                      (line[0].content[0] === "+" ||
-                        line[0].content[0] === "-" ||
-                        line[0].content[0] === "|")) ||
-                    (line[0] &&
-                      line[0].content === "" &&
-                      line[1] &&
-                      (line[1].content === "+" ||
-                        line[1].content === "-" ||
-                        line[1].content === "|"))
-                  ) {
-                    diffSymbol =
-                      line[0] && line[0].content.length
-                        ? line[0].content[0]
-                        : line[1].content;
-                    lineClass = {
-                      backgroundColor: diffBgColorMap[diffSymbol],
-                      symbColor: symColorMap[diffSymbol],
-                    };
-                    isDiff = true;
-                  }
+                  lineClass.backgroundColor = diffBgColorMap[diffSymbol];
+                  lineClass.color = symColorMap[diffSymbol];
 
-                  if (diffArray.length !== 0) {
-                    diffArray.forEach((arr) => {
-                      if (rangeParser(arr[0]).includes(i + 1)) {
-                        diffSymbol = symbols[arr[1]];
-                        lineClass = {
-                          backgroundColor: diffBgColorMap[diffSymbol],
-                          symbColor: symColorMap[diffSymbol],
-                        };
-                        isDiff = props?.metastring?.includes("highlight");
-                      }
-                    });
-                  }
+                  isDiff = true;
+                }
 
-                  const lineProps = getLineProps({ line, key: i });
+                const lineProps = getLineProps({ line, key: i });
 
-                  lineProps.style = { ...lineClass };
-
-                  return (
-                    // eslint-disable-next-line react/no-array-index-key
-                    <div className="line" key={line + i} {...lineProps}>
-                      {isTerminal && !isDiff && (
-                        <span className="line_number">$</span>
-                      )}
-                      {!isTerminal && !isDiff && hasLines && (
-                        <span className="line_number">{i + 1}</span>
-                      )}
-                      {isDiff && hasLines && (
-                        <span
-                          className="line_number"
-                          style={{ color: lineClass.symbColor }}
-                        >
-                          {["+", "-"].includes(diffSymbol) ? diffSymbol : i + 1}
-                        </span>
-                      )}
+                return (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <div
+                    className="block"
+                    key={line + i}
+                    {...lineProps}
+                    style={lineClass}
+                  >
+                    {isTerminal && !isDiff && (
+                      <span className={lineNumberClasses}>$</span>
+                    )}
+                    {!isTerminal && !isDiff && hasLines && (
+                      <span className={lineNumberClasses}>{i + 1}</span>
+                    )}
+                    {isDiff && hasLines && (
                       <span
-                        className={classnames("line_content", tokenCopyClass)}
+                        className={lineNumberClasses}
+                        style={{ color: lineClass.color }}
                       >
-                        {line.map((token, key) => {
-                          if (isDiff) {
-                            if (
-                              (key === 0 || key === 1) &&
-                              (token.content.charAt(0) === "+" ||
-                                token.content.charAt(0) === "-" ||
-                                token.content.charAt(0) === "|")
-                            ) {
-                              return (
-                                <span
-                                  {...getTokenProps({
-                                    token: {
-                                      ...token,
-                                      content: token.content.slice(1),
-                                    },
-                                    key,
-                                  })}
-                                />
-                              );
-                            }
-                          }
-                          // eslint-disable-next-line react/jsx-key
-                          return <span {...getTokenProps({ token, key })} />;
-                        })}
+                        {["+", "-"].includes(diffSymbol) ? diffSymbol : i + 1}
                       </span>
-                    </div>
-                  );
-                })}
-              </code>
-            </pre>
-          )}
-        </Highlight>
-      </div>
+                    )}
+                    <span
+                      className={classnames("line_content px-4", {
+                        "has-copy-button": hasCopy,
+                        "inline-table break-words": breakWords,
+                      })}
+                    >
+                      {line.map((token, key) => {
+                        if (
+                          isDiff &&
+                          (key === 0 || key === 1) &&
+                          Object.values(SYMBOLS).includes(
+                            token.content.charAt(0)
+                          )
+                        ) {
+                          return (
+                            <span
+                              {...getTokenProps({
+                                token: {
+                                  ...token,
+                                  content: token.content.slice(1),
+                                },
+                                key,
+                              })}
+                            />
+                          );
+                        }
+                        // eslint-disable-next-line react/jsx-key
+                        return <span {...getTokenProps({ token, key })} />;
+                      })}
+                    </span>
+                  </div>
+                );
+              })}
+            </code>
+          </pre>
+        )}
+      </Highlight>
     </div>
   );
 }

@@ -2,7 +2,7 @@ export function Table(props: JSX.IntrinsicElements["table"]) {
   return (
     <div className="max-w-full overflow-auto">
       <table
-        className="align-middle w-full break-words text-sm rounded border-collapse overflow-hidden"
+        className="align-middle w-full break-words text-sm rounded-md border-collapse overflow-hidden"
         {...props}
       />
     </div>
@@ -12,24 +12,25 @@ export function Table(props: JSX.IntrinsicElements["table"]) {
 export function TableHead(props: JSX.IntrinsicElements["thead"]) {
   return (
     <thead
-      className="dark:bg-table-head-background-dark bg-table-head-background-light text-left"
+      className="dark:bord-white text-left border-b-2 dark:border-black border-gray-400"
       {...props}
     />
   );
 }
 
-// border-bottom: 1px solid #040405;
-//     background-color: #202225;
 export function TableHeader(props: JSX.IntrinsicElements["th"]) {
-  return <th className="p-2 uppercase" {...props} />;
+  return (
+    <th
+      className="p-2 bg-indigo-100 dark:bg-table-head-background-dark uppercase"
+      {...props}
+    />
+  );
 }
 
-// margin-top: 0;
-// border: 1px solid transparent;
 export function TableRow(props: JSX.IntrinsicElements["tr"]) {
   return (
     <tr
-      className="text-text-light dark:text-text-dark dark:even:bg-table-row-background-primary-dark dark:bg-table-row-background-secondary-dark even:bg-table-row-background-primary-light bg-table-row-background-secondary-light"
+      className="dark:even:bg-trueGray-900 dark:bg-trueGray-800 dark:text-text-dark text-text-light even:bg-gray-100 bg-gray-200"
       {...props}
     />
   );
