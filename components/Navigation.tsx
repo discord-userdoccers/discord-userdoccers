@@ -667,7 +667,7 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/topics/certified-devices#how's-it-work?">
-                How's it work?
+                How&apos;s it work?
               </NavigationSubLink>
               <NavigationSubLink href="/topics/certified-devices#connecting">
                 Connecting
@@ -1475,7 +1475,7 @@ export default function Navigation() {
                 GetTexture
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/images#example:-user's-avatar-data">
-                Example: User's Avatar Data
+                Example: User&apos;s Avatar Data
               </NavigationSubLink>
             </Fragment>
           }
