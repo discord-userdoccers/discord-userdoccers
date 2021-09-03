@@ -909,8 +909,88 @@ export default function Navigation() {
         >
           Teams
         </NavigationLink>
-        <NavigationLink href="/topics/threads">Threads</NavigationLink>
-        <NavigationLink href="/topics/voice-connections">
+        <NavigationLink
+          href="/topics/threads"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/threads#disclaimer">
+                Disclaimer
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#backwards-compatibility">
+                Backwards Compatibility
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#new-thread-fields">
+                New Thread Fields
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#public-&-private-threads">
+                Public & Private Threads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#active-&-archived-threads">
+                Active & Archived Threads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#permissions">
+                Permissions
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#gateway-events">
+                Gateway Events
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#thread-membership">
+                Thread Membership
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#editing-&-deleting-threads">
+                Editing & Deleting Threads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#nsfw-threads">
+                NSFW Threads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#new-message-types">
+                New Message Types
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#enumerating-threads">
+                Enumerating Threads
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#webhooks">
+                Webhooks
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#additional-context-on-the-the-thread_list_sync-and-thread_create-dispatches">
+                Additional context on the the THREAD_LIST_SYNC and THREAD_CREATE dispatches
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Threads
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/voice-connections"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/voice-connections#voice-gateway-versioning">
+                Voice Gateway Versioning
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#connecting-to-voice">
+                Connecting to Voice
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-websocket-connection">
+                Establishing a Voice Websocket Connection
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#heartbeating">
+                Heartbeating
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-udp-connection">
+                Establishing a Voice UDP Connection
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#encrypting-and-sending-voice">
+                Encrypting and Sending Voice
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#speaking">
+                Speaking
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#resuming-voice-connection">
+                Resuming Voice Connection
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Voice Connections
         </NavigationLink>
       </NavigationSection>
