@@ -1,4 +1,4 @@
-export default function Lightbulb(props: any) {
+export default function Lightbulb(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
