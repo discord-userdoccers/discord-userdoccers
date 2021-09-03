@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import classNames from "classnames";
+import Link from "next/link";
 import { H3 } from "./mdx/Heading";
-import InlineCode from "./mdx/InlineCode";
 
 type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -11,7 +11,7 @@ interface MethodBadgeProps {
 function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
-  const classes = classNames("px-2 py-1 text-sm rounded uppercase border-2", {
+  const classes = classNames("px-2 py-1 text-sm border-2 rounded uppercase", {
     "bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-white border-blue-500":
       name === "GET",
     "bg-green-100 text-green-700 dark:bg-green-600 dark:text-white border-green-500":
@@ -26,9 +26,18 @@ function MethodBadge({ method }: MethodBadgeProps) {
 }
 
 function AuditLogHeaderBadge() {
-  return <a href="/docs/resources/audit-log#x-audit-log-reason" className="px-2 py-1 text-sm rounded bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-white border-2 border-blue-500">
-    Supports <span className="ml-1"><InlineCode>X-Audit-Log-Reason</InlineCode></span>
-  </a>;
+  return (
+    <Link href="/resources/audit-log#x-audit-log-reason">
+      <a className="inline-flex items-center px-2.5 py-0.5 dark:text-text-dark text-text-light font-mono text-xs font-medium dark:bg-theme-dark-sidebar bg-theme-light-sidebar rounded-full">
+        <abbr
+          title="Supports X-Audit-Log-Reason Header"
+          className="no-underline"
+        >
+          X-Audit-Log-Reason
+        </abbr>
+      </a>
+    </Link>
+  );
 }
 
 interface RouteHeaderProps {
@@ -46,15 +55,15 @@ export default function RouteHeader({
 }: RouteHeaderProps) {
   return (
     <Fragment>
-      <div className="justify-between md:items-end gap-2 grid auto-cols-auto lg:flex">
-        <H3 className="mb-0">{children}</H3>
-        {supportsXAuditLogHeader && <AuditLogHeaderBadge />}
-      </div>
+      <H3 className="mb-0">{children}</H3>
       <div className="flex items-center mt-1">
         <MethodBadge method={method} />
-        <code className="text-text-light dark:text-text-dark p-2 break-all">
+        <code className="p-2 dark:text-text-dark text-text-light break-all">
           {url}
         </code>
+      </div>
+      <div className="flex gap-2 items-center mt-2">
+        {supportsXAuditLogHeader ? <AuditLogHeaderBadge /> : null}
       </div>
     </Fragment>
   );
