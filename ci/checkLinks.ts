@@ -158,7 +158,7 @@ function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>):
     github.startGroup(resultFile);
     for (const result of resultArr) {
       total += 1;
-      console.log(`::warning file=${resultFile},title=${result.title},line=${result.startLine},col=${result.startColumn},endColumn=${result.endColumn}`);
+      console.log(`::warning file=${resultFile},title=Invalid Link,line=${result.startLine},col=${result.startColumn},endColumn=${result.endColumn}::${result.title}`);
     }
     github.endGroup();
   }
