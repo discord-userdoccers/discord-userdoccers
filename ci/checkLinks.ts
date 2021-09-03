@@ -50,7 +50,7 @@ function scanFile(regex: RegExp, index: number, name: string, splitFile: string[
       if (!valid.has(url)) {
         results.push({
           title: `Base url ${chalk.blueBright(url)} does not exist`,
-          startLine: lineNum,
+          startLine: lineNum + 1,
           startColumn: match.index,
           endColumn: (match.index ?? 0) + match[0].length,
         });
@@ -62,7 +62,7 @@ function scanFile(regex: RegExp, index: number, name: string, splitFile: string[
       if (!validAnchors.includes(split[1])) {
         results.push({
           title: `Anchor ${chalk.cyan(split[1])} does not exist on ${chalk.blueBright(url)}`,
-          startLine: lineNum,
+          startLine: lineNum + 1,
           startColumn: match.index,
           endColumn: (match.index ?? 0) + match[0].length,
         });
@@ -104,11 +104,10 @@ try {
   const navFile = '/components/Navigation.tsx'
   const nav = readFileSync(`${cwd}${navFile}`, 'utf8');
   const file = nav.split('\n')
-  const filePath = path.resolve(`${cwd}${navFile}`);
-  if (!results.has(filePath)) {
-    results.set(filePath, []);
+  if (!results.has(navFile)) {
+    results.set(navFile, []);
   }
-  const ownResults = results.get(filePath)!;
+  const ownResults = results.get(navFile)!;
   scanFile(/(?<!!)href=(["'])(?!https?)(.+?)\1/g, 2, navFile.slice(0, -'.tsx'.length), file, validLinks, ownResults);
 } catch {
   console.warn('Navigation file not found!');
@@ -136,8 +135,8 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
   let output = '\n';
   let total = 0;
   for (const [resultFile, resultArr] of resultMap) {
-    const filePath = path.resolve(`${cwd}/${resultFile}`);
     if (resultArr.length <= 0) continue;
+    const filePath = path.resolve(`${cwd}/${resultFile}`);
     output += `${chalk.underline(filePath)}\n`;
     output += resultArr.reduce<string>((result, props) => {
       total += 1;
