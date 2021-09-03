@@ -155,6 +155,7 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
 function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>): void {
   let total = 0;
   for (const [resultFile, resultArr] of resultMap) {
+    if (resultArr.length <= 0) continue;
     github.startGroup(resultFile);
     for (const result of resultArr) {
       total += 1;
