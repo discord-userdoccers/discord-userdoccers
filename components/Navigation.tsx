@@ -434,9 +434,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild#ban-object">
                 Ban Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#user-commands">
-                User Commands
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#welcome-screen-object">
                 Welcome Screen Object
               </NavigationSubLink>
@@ -665,7 +662,7 @@ export default function Navigation() {
           href="/topics/certified-devices"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/topics/certified-devices#hows-it-work">
+              <NavigationSubLink href="/topics/certified-devices#how's-it-work?">
                 How's it work?
               </NavigationSubLink>
               <NavigationSubLink href="/topics/certified-devices#connecting">
@@ -677,7 +674,7 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/certified-devices#http-example">
                 HTTP Example
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/certified-devices#websocker-example">
+              <NavigationSubLink href="/topics/certified-devices#websocket-example">
                 WebSocket Example
               </NavigationSubLink>
               <NavigationSubLink href="/topics/certified-devices#models">
@@ -776,10 +773,10 @@ export default function Navigation() {
           href="/topics/oauth2"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/topics/oauth2#shared=resources">
+              <NavigationSubLink href="/topics/oauth2#shared-resources">
                 Shared Resources
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/oauth2#state=and=security">
+              <NavigationSubLink href="/topics/oauth2#state-and-security">
                 State and Security
               </NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#authorization-code-grant">
