@@ -1671,14 +1671,294 @@ export default function Navigation() {
         >
           Lobbies
         </NavigationLink>
-        <NavigationLink href="/game-sdk/networking">Networking</NavigationLink>
-        <NavigationLink href="/game-sdk/overlay">Overlay</NavigationLink>
-        <NavigationLink href="/game-sdk/relationships">
+        <NavigationLink
+          href="/game-sdk/networking"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/networking#">
+                GetPeerId
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                Flush
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                OpenChannel
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                OpenPeer
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                UpdatePeer
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                SendMessage
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                CloseChannel
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                ClosePeer
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                OnMessage
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                OnRouteUpdate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                Flush vs RunCallbacks
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#">
+                Connecting to Each Other
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/networking#example:-connecting-to-another-player-in-a-lobby">
+                Example: COnnecting to Another Play in a Lobby
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Networking
+        </NavigationLink>
+        <NavigationLink
+          href="/game-sdk/overlay"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/overlay#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#isenabled">
+                IsEnabled
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#islocked">
+                IsLocked
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#setlocked">
+                SetLocked
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#openactivityinvite">
+                OpenActivityInvite
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#openguildinvite">
+                OpenGuildInvite
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#openvoicesettings">
+                OpenVoiceSettings
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#ontoggle">
+                OnToggle
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/overlay#example:-activate-overlay-invite-modal">
+                Example: Activate Overlay Invite Modal
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Overlay
+        </NavigationLink>
+        <NavigationLink 
+          href="/game-sdk/relationships"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/relationships#first-notes">
+                First Notes
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#filter">
+                Filter
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#get">
+                Get
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#getat">
+                GetAt
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#count">
+                Count
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#onrefresh">
+                OnRefresh
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#onrelationshipupdate">
+                OnRelationshipUpdate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#example:-creating-a-friends-list">
+                Example: Creating a Friends List
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/relationships#example:-invite-users-who-are-playing-the-same-game">
+                Example: Invite Users Who Are Playing the Same Game
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Relationships
         </NavigationLink>
-        <NavigationLink href="/game-sdk/storage">Storage</NavigationLink>
-        <NavigationLink href="/game-sdk/store">Store</NavigationLink>
-        <NavigationLink href="/game-sdk/users">Users</NavigationLink>
+        <NavigationLink
+          href="/game-sdk/storage"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/storage#cloud-saves">
+                Cloud Saves
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#getpath">
+                GetPath
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#read">
+                Read
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#readasync">
+                ReadAsync
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#readasyncpartial">
+                ReadAsyncPartial
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#write">
+                Write
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#writeasync">
+                WriteAsync
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#delete">
+                Delete
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#exists">
+                Exists
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#stat">
+                Stat
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#count">
+                Count
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#statat">
+                StatAt
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/storage#example:-saving,-reading,-deleting,-and-checking-data">
+                Example: Saving, Reading, Deleting, and Checking Data
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Storage
+        </NavigationLink>
+        <NavigationLink
+          href="/game-sdk/store"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/store#application-test-mode">
+                Application Test Mode
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#checking-dlc-entitlements">
+                Checking DLC Entitlements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#checking-consumable-entitlements">
+                Checking Consumable Entitlements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#fetchskus">
+                FetchSkus
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#countskus">
+                CountSkus
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#getsku">
+                GetSku
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#getskuat">
+                GetSkuAt
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#fetchentitlements">
+                FetchEntitlements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#countentitlements">
+                CountEntitlements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#getentitlement">
+                GetEntitlement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#getentitlementat">
+                GetEntitlementAt
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#hasskuentitlement">
+                HasSkuEntitlement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#startpurchase">
+                StartPurchase
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#onentitlementcreate">
+                OnEntitlementCreate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#onentitlementdelete">
+                OnEntitlementDelete
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#http-apis">
+                HTTP APIs
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#http-specific-data-models">
+                HTTP-Specific Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#get-entitlements">
+                Get Entitlements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#get-entitlement">
+                Get Entitlement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#get-skus">
+                Get SKUs
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#consume-sku">
+                Consume SKU
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#delete-test-entitlement">
+                Delete Test Entitlement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#create-purchase-discount">
+                Create Purchase Discount
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/store#delete-purchase-discount">
+                Delete Purchase Discount
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Store
+        </NavigationLink>
+        <NavigationLink
+          href="/game-sdk/users"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/users#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/users#getcurrentuser">
+                GetCurrentUser
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/users#getuser">
+                GetUser
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/users#getcurrentuserpremiumtype">
+                GetCurrentUserPremiumType
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/users#currentuserhasflag">
+                CurrentUserHasFlag
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/users#oncurrentuserupdate">
+                OnCurrentUserUpdate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/users#example:-fetching-data-about-a-discord-user">
+                Example: Fetching Data About a Discord User
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Users
+        </NavigationLink>
       </NavigationSection>
 
       <NavigationSection title="Dispatch">
