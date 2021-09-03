@@ -40,7 +40,13 @@ function importDirectory(directory: string, extension: string, subdirectories: b
 }
 
 function scanFile(regex: RegExp, index: number, name: string, splitFile: string[], valid: Map<string, string[]>, results: github.AnnotationProperties[]): void {
+  let multilineCode = false;
   splitFile.forEach((line, lineNum) => {
+    if (line.startsWith('```')) {
+      multilineCode = !multilineCode;
+      if (line.length > 3 && line.endsWith('```')) multilineCode = !multilineCode;
+    }
+    if (multilineCode) return;
     const matches = line.matchAll(regex);
 
     for (const match of matches) {
@@ -108,7 +114,7 @@ try {
     results.set(navFile, []);
   }
   const ownResults = results.get(navFile)!;
-  scanFile(/(?<!!)href=(["'])(?!https?)(.+?)\1/g, 2, navFile.slice(0, -'.tsx'.length), file, validLinks, ownResults);
+  scanFile(/(?<!!)href=(["'])(?!(?:https?)|(?:mailto))(.+?)\1/g, 2, navFile.slice(0, -'.tsx'.length), file, validLinks, ownResults);
 } catch {
   console.warn('Navigation file not found!');
 }
@@ -128,7 +134,7 @@ for (const [name, raw] of mdxFiles) {
     results.set(name, []);
   }
   const ownResults = results.get(name)!;
-  scanFile(/(?<!!)\[.+?\]\((?!https?)(.+?)\)/g, 1, name.slice(0, -extLength), file, validLinks, ownResults);
+  scanFile(/(?<![!`])\[.+?\]\((?!(?:https?)|(?:mailto))(.+?)\)(?!`)/g, 1, name.slice(0, -extLength), file, validLinks, ownResults);
 }
 
 function printResults(resultMap: Map<string, github.AnnotationProperties[]>): void {
