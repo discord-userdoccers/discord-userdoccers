@@ -1,5 +1,6 @@
 const colors = require("tailwindcss/colors");
 
+/** @type {Parameters<import('tailwindcss')>[0]} */
 module.exports = {
   mode: "jit",
   purge: [
