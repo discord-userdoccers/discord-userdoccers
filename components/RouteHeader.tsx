@@ -46,7 +46,7 @@ export default function RouteHeader({
       <H3 className="mb-0">{children}</H3>
       <div className="flex items-center mt-1">
         <MethodBadge method={method} />
-        <code className="p-2 dark:text-text-dark text-text-light break-all">
+        <code className="p-2 dark:text-text-dark text-text-light break-words">
           {url}
         </code>
       </div>
