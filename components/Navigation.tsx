@@ -1478,7 +1478,195 @@ export default function Navigation() {
         >
           Images
         </NavigationLink>
-        <NavigationLink href="/game-sdk/lobbies">Lobbies</NavigationLink>
+        <NavigationLink
+          href="/game-sdk/lobbies"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/lobbies#the-sdk-way">
+                The SDK Way
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbytransaction.settype">
+                LobbyTransaction.SetType
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbytransaction.setowner">
+                LobbyTransaction.SetOwner
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbytransaction.setcapacity">
+                LobbyTransaction.SetCapacity
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbytransaction.setmetadata">
+                LobbyTransaction.SetMetadata
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbytransaction.deletemetadata">
+                LobbyTransaction.DeleteMetadata
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbytransaction.setlocked">
+                LobbyTransaction.SetLocked
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbymembertransaction.setmetadata">
+                LobbyMemberTransaction.SetMetadata
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbymembertransaction.deletemetadata">
+                LobbyMemberTransaction.DeleteMetadata
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbysearchquery.filter">
+                LobbySearchQuery.Filter
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbysearchquery.sort">
+                LobbySearchQuery.Sort
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbysearchquery.limit">
+                LobbySearchQuery.Limit
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbysearchquery.distance">
+                LobbySearchQuery.Distance
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobbycreatetransaction">
+                GetLobbyCreateTransaction
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobbyupdatetransaction">
+                GetLobbyUpdateTransaction
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getmemberupdatetransaction">
+                GetMemberUpdateTransaction
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#createlobby">
+                CreateLobby
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#updatelobby">
+                UpdateLobby
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#deletelobby">
+                DeleteLobby
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#connectlobby">
+                ConnectLobby
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#connectlobbywithactivitysecret">
+                ConnectLobbyWithActivitySecret
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobbyactivitysecret">
+                GetLobbyActivitySecret
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#disconnectlobby">
+                DisconnectLobby
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobby">
+                GetLobby
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbymetadatacount">
+                LobbyMetadataCount
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobbymetadatakey">
+                GetLobbyMetadataKey
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobbymetadatavalue">
+                GetLobbyMetadataValue
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#membercount">
+                MemberCount
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getmemberuserid">
+                GetMemberUserId
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getmemberuser">
+                GetMemberUser
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#membermetadatacount">
+                MemberMetadataCount
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getmembermetadatakey">
+                GetMemberMetadataKey
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getmembermetadatavalue">
+                GetMemberMetadataValue
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#updatemember">
+                UpdateMember
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#sendlobbymessage">
+                SendLobbyMessage
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getsearchquery">
+                GetSearchQuery
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#search">
+                Search
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#lobbycount">
+                LobbyCount
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#getlobbyid">
+                GetLobbyId
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#connectvoice">
+                ConnectVoice
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#disconnectvoice">
+                DisconnectVoice
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onlobbyupdate">
+                OnLobbyUpdate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onlobbydelete">
+                OnLobbyDelete
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onmemberconnect">
+                OnMemberConnect
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onmemberupdate">
+                OnMemberUpdate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onmemberdisconnect">
+                OnMemberDisconnect
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onlobbymessage">
+                OnLobbyMessage
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onspeaking">
+                OnSpeaking
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#connecting-to-lobbies">
+                Connecting to Lobbies
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#example:-crossplayish">
+                Example: Crossplayish
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#the-api-way">
+                The API Way
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#integrated-networking">
+                Integrated Networking
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#connectnetwork">
+                ConnectNetwork
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#disconnectnetwork">
+                DisconnectNetwork
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#flushnetwork">
+                FlushNetwork
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#opennetworkchannel">
+                OpenNetworkChannel
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#sendnetworkmessage">
+                SendNetworkMessage
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#onnetworkmessage">
+                OnNetworkMessage
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/lobbies#example:-networking-the-easy-way">
+                Example: Networking the Easy Way
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Lobbies
+        </NavigationLink>
         <NavigationLink href="/game-sdk/networking">Networking</NavigationLink>
         <NavigationLink href="/game-sdk/overlay">Overlay</NavigationLink>
         <NavigationLink href="/game-sdk/relationships">
