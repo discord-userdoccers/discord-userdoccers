@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import classNames from "classnames";
 import { H3 } from "./mdx/Heading";
-import Badge from "./badges/Base";
+import Badge from "./Badge";
 
 type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -51,23 +51,13 @@ export default function RouteHeader({
         </code>
       </div>
       <div className="flex gap-2 items-center mt-2">
-        <Badge
-          href={
-            requestDoesNotRequireAuthorizationHeader
-              ? "/reference#unauthenticated-request"
-              : "/reference#authentication"
-          }
-          name={
-            requestDoesNotRequireAuthorizationHeader
-              ? "Unauthenticated Request"
-              : "Requires Authentication"
-          }
-          tooltip={
-            requestDoesNotRequireAuthorizationHeader
-              ? "Request does not require the Authorization header"
-              : "Request requires the Authorization header"
-          }
-        />
+        {requestDoesNotRequireAuthorizationHeader ? (
+          <Badge
+            href="/reference#unauthenticated-request"
+            name="Unauthenticated Request"
+            tooltip="Request does not require the Authorization header"
+          />
+        ) : null}
         {supportsXAuditLogHeader ? (
           <Badge
             href="/resources/audit-log#x-audit-log-reason"
