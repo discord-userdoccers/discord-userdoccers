@@ -1048,10 +1048,40 @@ export default function Navigation() {
         >
           How to Get Your Game on Discord
         </NavigationLink>
-        <NavigationLink href="/game-and-server-management/alpha-and-beta-testing">
+        <NavigationLink
+          href="/game-and-server-management/alpha-and-beta-testing"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-and-server-management/alpha-and-beta-testing#beta-entitlements">
+                Beta Entitlements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/alpha-and-beta-testing#role-based-entitlement">
+                Role-Based Entitlement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/alpha-and-beta-testing#gift-codes">
+                Gift Codes
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Alpha and Beta Testing
         </NavigationLink>
-        <NavigationLink href="/game-and-server-management/special-channels">
+        <NavigationLink
+          href="/game-and-server-management/special-channels"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-and-server-management/special-channels#store-channels">
+                Store Channels
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/special-channels#lurker-mode">
+                Lurker Mode
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/special-channels#announcement-channels">
+                Announcement Channels
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Special Channels
         </NavigationLink>
       </NavigationSection>
