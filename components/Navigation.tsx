@@ -1965,10 +1965,124 @@ export default function Navigation() {
         <NavigationLink href="/dispatch/dispatch-and-you">
           Dispatch &amp; You
         </NavigationLink>
-        <NavigationLink href="/dispatch/branches-and-builds">
+        <NavigationLink
+          href="/dispatch/branches-and-builds"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/dispatch/branches-and-builds#getting-set-up">
+                Getting Set Up
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#authorizing-yourself-to-use-it">
+                Authorizing Yourself to Use It
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#creating-branches">
+                Creating Branches
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#setting-up-our-first-build">
+                Setting Up Our First Build
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#basic-information">
+                Basic Information
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#labels,-platforms,-and-local-roots">
+                Labels, Platforms, and Local Roots
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#file-rules">
+                File Rules
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#cloud-storage">
+                Cloud Storage
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#registry-keys-and-install-scripts">
+                Registry Keys and Install Scripts
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#launch-options">
+                Launch Options
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#all-together-now">
+                All Together Now
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#multiple-manifests-and-dlc-content">
+                Multiple Manifests and DLC Content
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#drm">
+                DRM
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#pushing-our-first-build">
+                Pushing Our First Build
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#publishing-our-first-build">
+                Publishing Our First Build
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#downloading-a-build-for-testing">
+                Downloading a Build for Testing
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/branches-and-builds#patching">
+                Patching
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Branches &amp; Builds
         </NavigationLink>
-        <NavigationLink href="/dispatch/list-of-commands">
+        <NavigationLink
+          href="/dispatch/list-of-commands"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/dispatch/list-of-commands#branch-create">
+                branch create
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#branch-delete">
+                branch delete
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#branch-list">
+                branch list
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#branch-promote">
+                branch promote
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-delete">
+                build delete
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-drm-wrap">
+                build drm-wrap
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-list">
+                build list
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-publish">
+                build publish
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-push">
+                build push
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-update">
+                build update
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-corrupt">
+                build corrupt
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-preview-files">
+                build preview-files
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-repair">
+                build repair
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#build-run-launch-setup">
+                build run-launch-setup
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#completions-generate">
+                completions generate
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#manifest-label-list">
+                manifest-label list
+              </NavigationSubLink>
+              <NavigationSubLink href="/dispatch/list-of-commands#login">
+                login
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           List of Commands
         </NavigationLink>
         <NavigationLink href="/dispatch/error-codes">
