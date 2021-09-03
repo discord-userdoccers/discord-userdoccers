@@ -3,7 +3,7 @@ import path from 'path';
 import { JSDOM } from 'jsdom';
 import chalk from 'chalk';
 import * as github from '@actions/core';
-const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE : process.cwd();
+const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE! : process.cwd();
 
 function importDirectory(directory: string, extension: string, subdirectories: boolean = true) {
     try {
@@ -52,7 +52,7 @@ function scanFile(regex: RegExp, index: number, name: string, splitFile: string[
           title: `Base url ${chalk.blueBright(url)} does not exist`,
           startLine: lineNum,
           startColumn: match.index,
-          endColumn: match[0].length,
+          endColumn: (match.index ?? 0) + match[0].length,
         });
         continue;
       }
@@ -64,7 +64,7 @@ function scanFile(regex: RegExp, index: number, name: string, splitFile: string[
           title: `Anchor ${chalk.cyan(split[1])} does not exist on ${chalk.blueBright(url)}`,
           startLine: lineNum,
           startColumn: match.index,
-          endColumn: match[0].length,
+          endColumn: (match.index ?? 0) + match[0].length,
         });
       }
     }
@@ -125,11 +125,10 @@ extLength = '.mdx'.length;
 
 for (const [name, raw] of mdxFiles) {
   const file = raw.split('\n');
-  const filePath = path.resolve(`${cwd}/${name}`);
-  if (!results.has(filePath)) {
-    results.set(filePath, []);
+  if (!results.has(name)) {
+    results.set(name, []);
   }
-  const ownResults = results.get(filePath)!;
+  const ownResults = results.get(name)!;
   scanFile(/(?<!!)\[.+?\]\((?!https?)(.+?)\)/g, 1, name.slice(0, -extLength), file, validLinks, ownResults);
 }
 
@@ -137,11 +136,12 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
   let output = '\n';
   let total = 0;
   for (const [resultFile, resultArr] of resultMap) {
+    const filePath = path.resolve(`${cwd}/${resultFile}`);
     if (resultArr.length <= 0) continue;
-    output += `${chalk.underline(resultFile)}\n`;
+    output += `${chalk.underline(filePath)}\n`;
     output += resultArr.reduce<string>((result, props) => {
       total += 1;
-      return `${result}  ${props.startLine}:${props.startColumn}-${[props.endColumn]}  ${chalk.yellow('warning')}  ${props.title}\n`;
+      return `${result}  ${props.startLine}:${props.startColumn}-${props.endColumn}  ${chalk.yellow('warning')}  ${props.title}\n`;
     }, '');
     output += '\n';
   }
@@ -155,10 +155,12 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
 function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>): void {
   let total = 0;
   for (const [resultFile, resultArr] of resultMap) {
+    github.startGroup(resultFile);
     for (const result of resultArr) {
       total += 1;
-      github.warning(resultFile, result);
+      console.log(`::warning file=${resultFile},title=${result.title},line=${result.startLine},col=${result.startColumn},endColumn=${result.endColumn}`);
     }
+    github.endGroup();
   }
   if (total > 0) {
     github.setFailed('One or more links are invalid!');
