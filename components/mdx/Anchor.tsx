@@ -18,7 +18,7 @@ export default function Anchor({
   className,
   ...props
 }: JSX.IntrinsicElements["a"]) {
-  const classes = classNames("text-brand-link underline", className);
+  const classes = classNames("text-brand-link hover:underline", className);
 
   if (href?.startsWith("/")) {
     return <DocLink href={href} className={classes} {...props} />;
