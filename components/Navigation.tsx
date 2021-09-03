@@ -1012,7 +1012,43 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Game & Server Management">
-        <NavigationLink href="/game-and-server-management/how-to-get-your-game-on-discord">
+        <NavigationLink
+          href="/game-and-server-management/how-to-get-your-game-on-discord"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#get-the-band-back-together">
+                Get the Band Back Together
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#apps-and-games">
+                Apps and Games
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#join-the-club">
+                Join the Club
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#your-server---your-kingdom">
+                Your Server - Your Kingdom
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#testing-your-game">
+                Testing Your Game
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#getting-approved">
+                Getting Approved
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#available-vs-store-page-published">
+                Available vs Store Page Published
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#getting-verified-and-discovered">
+                Getting Verified and Discovered
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#make-good-decisions">
+                Make Good Decisions
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-and-server-management/how-to-get-your-game-on-discord#what-comes-next">
+                What Comes Next
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           How to Get Your Game on Discord
         </NavigationLink>
         <NavigationLink href="/game-and-server-management/alpha-and-beta-testing">
