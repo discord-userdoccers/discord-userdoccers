@@ -1160,21 +1160,324 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Game SDK">
-        <NavigationLink href="/game-sdk/sdk-starter-guide">
+        <NavigationLink
+          href="/game-sdk/sdk-starter-guide"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#step-0---some-notes">
+                Step 0 - Some Notes
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#step-1---get-the-thing">
+                Step 1 - Get the Thing
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#get-set-up">
+                Get Set Up
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---unity-(csharp)">
+              Code Primer - Unity (Csharp)
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---non-unity-projects-(csharp)">
+              Code Primer - Non-Unity Projects (Csharp)
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---unreal-engine-(c)">
+              Code Primer - Unreal Engine (C)
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---unreal-engine-4-(cpp)">
+              Code Primer - Unreal Engine 4 (Cpp)
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---no-engine-(cpp)">
+              Code Primer - No Engine (Cpp)
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#testing-locally-with-two-clients">
+              Testing Locally with Two Clients
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#section-checklist">
+                Section Checklist
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/sdk-starter-guide#where...do-i-go...">
+                Where...do I go...
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           SDK Starter Guide
         </NavigationLink>
-        <NavigationLink href="/game-sdk/discord">Discord</NavigationLink>
-        <NavigationLink href="/game-sdk/achievments">
+        <NavigationLink
+          href="/game-sdk/discord"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/discord#general-structure">
+                General Structure
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#functions-in-the-sdk">
+                Functions in the SDK
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#environment-variables">
+                Environment Variables
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#error-handling">
+                Error Handling
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#create">
+                Create
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#destroy">
+                Destroy
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#setloghook">
+                SetLogHook
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#runcallbacks">
+                RunCallbacks
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getactivitymanager">
+                GetActivityManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getrelationshipmanager">
+                GetRelationshipManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getimagemanager">
+                GetImageManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getusermanager">
+                GetUserManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getlobbymanager">
+                GetLobbyManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getnetworkmanager">
+                GetNetworkManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getoverlaymanager">
+                GetOverlayManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getapplicationmanager">
+                GetApplicationManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getstoragemanager">
+                GetStorageManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getstoremanager">
+                GetStoreManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getvoicemanager">
+                GetVoiceManager
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord#getachievementmanager">
+                GetAchievementManager
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Discord
+        </NavigationLink>
+        <NavigationLink
+          href="/game-sdk/achievements"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/achievements#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#setuserachievement">
+                SetUserAchievement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#fetchuserachievements">
+                FetchUserAchievements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#countuserachievements">
+                CountUserAchievements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#getuserachievementat">
+                GetUserAchievementAt
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#getuserachievement">
+                GetUserAchievement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#onuserachievementupdate">
+                OnUserAchievementUpdate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#the-api-way">
+                The API Way
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#get-achievements">
+                Get Achievements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#get-achievement">
+                Get Achievements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#create-achievement">
+                Create Achievement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#update-achievement">
+                Update Achievement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#delete-achievement">
+                Delete Achievement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#update-user-achievement">
+                Update User Achievement
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/achievements#get-user-achievements">
+                Get User Achievements
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Achievements
         </NavigationLink>
-        <NavigationLink href="/game-sdk/activities">Activities</NavigationLink>
-        <NavigationLink href="/game-sdk/applications">
+        <NavigationLink
+          href="/game-sdk/activities"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/activities#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#activity-action-field-requirements">
+                Activity Action Field Requirements
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#registercommand">
+                RegisterCommand
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#registersteam">
+                RegisterSteam
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#updateactivity">
+                UpdateActivity
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#clearactivity">
+                ClearActivity
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#sendrequestreply">
+                SendRequestReply
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#sendinvite">
+                SendInvite
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#acceptinvite">
+                AcceptInvite
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#onactivityjoin">
+                OnActivityJoin
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#onactivityspectate">
+                OnActivitySpectate
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#onactivityjoinrequest">
+                OnActivityJoinRequest
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#onactivityinvite">
+                OnActivityInvite
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/activities#example:-inviting-a-user-to-a-game">
+                Example: Inviting a User to a Game
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Activities
+        </NavigationLink>
+        <NavigationLink
+          href="/game-sdk/applications"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/applications#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/applications#getcurrentlocale">
+                GetCurrentLocale
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/applications#getcurrentbranch">
+                GetCurrentBranch
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/applications#getoauth2token">
+                GetOAuth2Token
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/applications#validateorexit">
+                ValidateOrExit
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/applications#getticket">
+                GetTicket
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/applications#example:-get-oauth2-token">
+                Example: Get OAuth2 Token
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Applications
         </NavigationLink>
-        <NavigationLink href="/game-sdk/discord-voice">
+        <NavigationLink
+          href="/game-sdk/discord-voice"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/discord-voice#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#getinputmode">
+                GetInputMode
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#setinputmode">
+                SetInputMode
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#isselfmute">
+                IsSelfMute
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#setselfmute">
+                SetSelfMute
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#isselfdeaf">
+                IsSelfDeaf
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#setselfdeaf">
+                SetSelfDeaf
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#islocalmute">
+                IsLocalMute
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#setlocalmute">
+                SetLocalMute
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#getlocalvolume">
+                GetLocalVolume
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/discord-voice#setlocalvolume">
+                SetLocalVolume
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Discord Voice
         </NavigationLink>
-        <NavigationLink href="/game-sdk/images">Images</NavigationLink>
+        <NavigationLink
+          href="/game-sdk/images"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/game-sdk/images#data-models">
+                Data Models
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/images#fetch">
+                Fetch
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/images#getdimensions">
+                GetDimensions
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/images#getdata">
+                GetData
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/images#gettexture">
+                GetTexture
+              </NavigationSubLink>
+              <NavigationSubLink href="/game-sdk/images#example:-user's-avatar-data">
+                Example: User's Avatar Data
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Images
+        </NavigationLink>
         <NavigationLink href="/game-sdk/lobbies">Lobbies</NavigationLink>
         <NavigationLink href="/game-sdk/networking">Networking</NavigationLink>
         <NavigationLink href="/game-sdk/overlay">Overlay</NavigationLink>
