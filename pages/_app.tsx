@@ -8,7 +8,7 @@ import Footer from "../components/Footer";
 import MenuContext from "../contexts/MenuContext";
 import "tailwindcss/tailwind.css";
 import "../stylesheets/whitney/whitney.css";
-import "../stylesheets/code.css";
+import "../stylesheets/prism.css";
 import "../stylesheets/snowflake-deconstruction.css";
 
 export default function App({ Component, pageProps }: AppProps) {

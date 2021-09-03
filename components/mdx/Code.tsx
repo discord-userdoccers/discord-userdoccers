@@ -16,15 +16,9 @@ import classNames from "classnames";
 require("prismjs/components/prism-docker");
 
 const diffBgColorMap = {
-  "+": "var(--prism-highlight-added-background)",
-  "-": "var(--prism-highlight-removed-background)",
-  "|": "var(--prism-highlight-background)",
-};
-
-const symColorMap = {
-  "+": "var(--prism-highlight-added-text)",
-  "-": "var(--prism-highlight-removed-text)",
-  "|": "var(--prism-highlight-text)",
+  "+": "var(--prism-highlight-add)",
+  "-": "var(--prism-highlight-delete)",
+  "|": "var(--prism-highlight)",
 };
 
 const SYMBOLS = {
@@ -102,12 +96,8 @@ export default function Code({
           <pre
             className={classnames(
               "relative mb-4 overflow-auto leading-normal inline-grid w-full grid-rows-max-content m-0",
-              blockClassName,
-              {
-                "is-terminal": isTerminal,
-              }
+              blockClassName
             )}
-            style={style}
           >
             {(props.copy || language === "copy") && (
               <div className="copy-button">
@@ -132,7 +122,6 @@ export default function Code({
                     : line[1].content;
 
                   lineClass.backgroundColor = diffBgColorMap[diffSymbol];
-                  lineClass.color = symColorMap[diffSymbol];
 
                   isDiff = true;
                 }

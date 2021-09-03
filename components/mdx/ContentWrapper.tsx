@@ -1,5 +1,3 @@
-import { useContext } from "react";
-import MenuContext from "../../contexts/MenuContext";
 import Header from "../Header";
 
 interface ContentWrapperProps {
