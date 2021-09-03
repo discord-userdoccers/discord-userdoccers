@@ -142,6 +142,12 @@ export default function Navigation() {
         >
           Teams
         </NavigationLink>
+        <NavigationLink
+          href="https://discord.gg/discord-developers"
+          className="text-lg"
+        >
+          Join our Developer Discord!
+        </NavigationLink>
       </NavigationSection>
 
       <NavigationSection>

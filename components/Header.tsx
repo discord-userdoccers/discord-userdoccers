@@ -37,7 +37,7 @@ export default function Header() {
   return (
     <Menu
       as="div"
-      className="relative flex flex-1 items-center justify-between mt-4 px-4 w-full text-left md:justify-end"
+      className="relative flex items-center justify-between mt-4 px-4 w-full text-left md:justify-end"
     >
       <Link href="/menu">
         <a onClick={onMenuClick}>
