@@ -26,7 +26,8 @@ export default function Header() {
           />
         </a>
       </Link>
-      <Discord className="ml-auto mr-auto w-1/4 text-black dark:text-white" />
+
+      <Discord className="ml-auto mr-auto h-8 text-black dark:text-white" />
 
       <ThemeSwitcher />
     </header>
