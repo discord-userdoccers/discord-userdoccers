@@ -6,6 +6,7 @@ import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import useToggle from "../hooks/useToggle";
 import Discord from "./icons/Discord";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 interface MenuSelectionProps {
   title?: string;
@@ -106,7 +107,7 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
     "group flex items-center ml-6 px-2 py-1 w-full text-sm font-medium rounded-md",
     {
       "text-dark dark:text-white": router.asPath === href,
-      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text hover:text-dark dark:hover:text-white":
+      "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text dark:hover:text-white":
         router.asPath !== href,
     }
   );
@@ -126,13 +127,17 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
 export default function Navigation() {
   return (
     <nav className="flex-1 self-stretch mt-5 px-6">
-      <a
-        href="https://discord.com/developers/applications"
-        className="hidden md:block"
-      >
-        <Discord className="mb-4 ml-auto mr-auto w-9/12 text-black dark:text-white" />
-      </a>
-      <NavigationSection className="mb-6 pb-6 border-b-2 border-gray-200 dark:border-theme-light-sidebar-text">
+      <div className="hidden items-center -mt-4 mb-10 md:flex">
+        <a
+          href="https://discord.com/developers/applications"
+          className="hidden md:block"
+        >
+          <Discord className="w-9/12 text-black dark:text-white" />
+        </a>
+        <ThemeSwitcher />
+      </div>
+
+      <NavigationSection title="Applications">
         <NavigationLink
           href="https://discord.com/developers/applications"
           className="text-lg"
@@ -153,7 +158,7 @@ export default function Navigation() {
         </NavigationLink>
       </NavigationSection>
 
-      <NavigationSection>
+      <NavigationSection title="Documentation">
         <NavigationLink href="/changelog">Changelog</NavigationLink>
         <NavigationLink href="/intro">Intro</NavigationLink>
         <NavigationLink href="/legal">Legal</NavigationLink>
@@ -979,7 +984,8 @@ export default function Navigation() {
                 Webhooks
               </NavigationSubLink>
               <NavigationSubLink href="/topics/threads#additional-context-on-the-the-thread_list_sync-and-thread_create-dispatches">
-                Additional context on the the THREAD_LIST_SYNC and THREAD_CREATE dispatches
+                Additional context on the the THREAD_LIST_SYNC and THREAD_CREATE
+                dispatches
               </NavigationSubLink>
             </Fragment>
           }
@@ -1187,22 +1193,22 @@ export default function Navigation() {
                 Get Set Up
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---unity-(csharp)">
-              Code Primer - Unity (Csharp)
+                Code Primer - Unity (Csharp)
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---non-unity-projects-(csharp)">
-              Code Primer - Non-Unity Projects (Csharp)
+                Code Primer - Non-Unity Projects (Csharp)
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---unreal-engine-(c)">
-              Code Primer - Unreal Engine (C)
+                Code Primer - Unreal Engine (C)
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---unreal-engine-4-(cpp)">
-              Code Primer - Unreal Engine 4 (Cpp)
+                Code Primer - Unreal Engine 4 (Cpp)
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#code-primer---no-engine-(cpp)">
-              Code Primer - No Engine (Cpp)
+                Code Primer - No Engine (Cpp)
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#testing-locally-with-two-clients">
-              Testing Locally with Two Clients
+                Testing Locally with Two Clients
               </NavigationSubLink>
               <NavigationSubLink href="/game-sdk/sdk-starter-guide#section-checklist">
                 Section Checklist
@@ -1764,7 +1770,7 @@ export default function Navigation() {
         >
           Overlay
         </NavigationLink>
-        <NavigationLink 
+        <NavigationLink
           href="/game-sdk/relationships"
           subLinks={
             <Fragment>
