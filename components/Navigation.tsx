@@ -697,6 +697,9 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/community-resources#intent-calculators">
                 Intent Calculators
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/community-resources#embed-visualizer">
+                Embed Visualizer
+              </NavigationSubLink>
               <NavigationSubLink href="/topics/community-resources#api-types">
                 API Types
               </NavigationSubLink>
