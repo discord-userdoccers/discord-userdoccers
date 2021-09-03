@@ -126,7 +126,10 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
 export default function Navigation() {
   return (
     <nav className="flex-1 self-stretch mt-5 px-6">
-      <a href="https://discord.com/developers/applications">
+      <a
+        href="https://discord.com/developers/applications"
+        className="hidden md:block"
+      >
         <Discord className="mb-4 ml-auto mr-auto w-9/12 text-black dark:text-white" />
       </a>
       <NavigationSection className="mb-6 pb-6 border-b-2 border-gray-200 dark:border-theme-light-sidebar-text">

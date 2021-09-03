@@ -7,6 +7,7 @@ import Menu from "../components/Menu";
 import Footer from "../components/Footer";
 import MenuContext from "../contexts/MenuContext";
 import "tailwindcss/tailwind.css";
+import "../stylesheets/styles.css";
 import "../stylesheets/whitney/whitney.css";
 import "../stylesheets/prism.css";
 import "../stylesheets/youtube.css";
