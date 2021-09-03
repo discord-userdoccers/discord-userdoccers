@@ -7,7 +7,7 @@ import useOnClickOutside from "../hooks/useOnClickOutside";
 import { useRouter } from "next/router";
 
 export default function Menu() {
-  const ref = useRef();
+  const ref = useRef(null);
   const router = useRouter();
   const { open, setClose } = useContext(MenuContext);
 
