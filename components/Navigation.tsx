@@ -71,6 +71,13 @@ function NavigationLink({
     "rotate-90": isOpen,
   });
 
+  const linkClasses = classNames(
+    "group flex items-center px-2 py-1 w-full font-medium",
+    {
+      "ml-6": subLinks == null,
+    }
+  );
+
   return (
     <Fragment>
       <span className={classes}>
@@ -80,9 +87,7 @@ function NavigationLink({
           </a>
         )}
         <Link href={href}>
-          <a className="group flex items-center px-2 py-1 w-full font-medium">
-            {children}
-          </a>
+          <a className={linkClasses}>{children}</a>
         </Link>
       </span>
       {isOpen && subLinks != null ? subLinks : null}
@@ -107,11 +112,10 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
   );
 
   return (
-    <span className="flex items-center">
+    <span className="flex items-center ml-4">
       <Link href={href}>
         <a className={classes}>
           {router.asPath === href ? <Caret className="mr-1 w-2 h-2" /> : null}
-
           {children}
         </a>
       </Link>
