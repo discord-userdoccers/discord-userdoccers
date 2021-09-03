@@ -1,13 +1,14 @@
 import { Fragment } from "react";
 import classNames from "classnames";
-import Link from "next/link";
 import { H3 } from "./mdx/Heading";
+import Badge from "./badges/Base";
 
 type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 interface MethodBadgeProps {
   method: RESTMethod;
 }
+
 function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
@@ -25,26 +26,12 @@ function MethodBadge({ method }: MethodBadgeProps) {
   return <code className={classes}>{method}</code>;
 }
 
-function AuditLogHeaderBadge() {
-  return (
-    <Link href="/resources/audit-log#x-audit-log-reason">
-      <a className="inline-flex items-center px-2.5 py-0.5 dark:text-text-dark text-text-light font-mono text-xs font-medium dark:bg-theme-dark-sidebar bg-theme-light-sidebar rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75">
-        <abbr
-          title="Supports X-Audit-Log-Reason Header"
-          className="no-underline"
-        >
-          X-Audit-Log-Reason
-        </abbr>
-      </a>
-    </Link>
-  );
-}
-
 interface RouteHeaderProps {
   method: RESTMethod;
   url: string;
   children: React.ReactNode;
   supportsXAuditLogHeader?: boolean;
+  requestDoesNotRequireAuthorizationHeader?: boolean;
 }
 
 export default function RouteHeader({
@@ -52,6 +39,7 @@ export default function RouteHeader({
   url,
   children,
   supportsXAuditLogHeader,
+  requestDoesNotRequireAuthorizationHeader,
 }: RouteHeaderProps) {
   return (
     <Fragment>
@@ -63,7 +51,30 @@ export default function RouteHeader({
         </code>
       </div>
       <div className="flex gap-2 items-center mt-2">
-        {supportsXAuditLogHeader ? <AuditLogHeaderBadge /> : null}
+        <Badge
+          href={
+            requestDoesNotRequireAuthorizationHeader
+              ? "/reference#unauthenticated-request"
+              : "/reference#authentication"
+          }
+          name={
+            requestDoesNotRequireAuthorizationHeader
+              ? "Unauthenticated Request"
+              : "Requires Authentication"
+          }
+          tooltip={
+            requestDoesNotRequireAuthorizationHeader
+              ? "Request does not require the Authorization header"
+              : "Request requires the Authorization header"
+          }
+        />
+        {supportsXAuditLogHeader ? (
+          <Badge
+            href="/resources/audit-log#x-audit-log-reason"
+            tooltip="Supports X-Audit-Log-Reason Header"
+            name="X-Audit-Log-Reason"
+          />
+        ) : null}
       </div>
     </Fragment>
   );
