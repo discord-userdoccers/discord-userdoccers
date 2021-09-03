@@ -1,17 +1,30 @@
-import { Dispatch, Fragment, SetStateAction } from "react";
+import {
+  Dispatch,
+  Fragment,
+  SetStateAction,
+  useCallback,
+  useContext,
+} from "react";
 import { Transition, Menu } from "@headlessui/react";
+import Link from "next/link";
 import classNames from "classnames";
 import ChevronIcon from "./icons/Chevron";
 import useTheme from "../hooks/useTheme";
 import Check from "./icons/Check";
 import Bars from "./icons/Bars";
+import MenuContext from "../contexts/MenuContext";
 
-interface HeaderProps {
-  setSidebarOpen: Dispatch<SetStateAction<boolean>>;
-}
-
-export default function Header({ setSidebarOpen }: HeaderProps) {
+export default function Header() {
   const [theme, setTheme] = useTheme();
+  const { setOpen } = useContext(MenuContext);
+
+  const onMenuClick = useCallback(
+    (event) => {
+      event.preventDefault();
+      setOpen();
+    },
+    [setOpen]
+  );
 
   const getMenuItemClasses = (active: boolean) =>
     classNames("flex px-4 py-2 text-sm", {
@@ -26,10 +39,15 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
       as="div"
       className="relative flex flex-1 items-center justify-between mt-4 px-4 w-full text-left md:justify-end"
     >
-      <Bars
-        onClick={() => setSidebarOpen(true)}
-        className="justify-self-start ml-1 h-7 text-black dark:text-white cursor-pointer md:hidden"
-      />
+      <Link href="/menu">
+        <a onClick={onMenuClick}>
+          <Bars
+            onClick={setOpen}
+            className="justify-self-start ml-1 h-7 text-black dark:text-white cursor-pointer md:hidden"
+          />
+        </a>
+      </Link>
+
       <div>
         <Menu.Button className="inline-flex px-4 py-2 w-full text-gray-700 text-sm font-medium hover:bg-gray-50 bg-white border border-gray-300 rounded-md focus:outline-none shadow-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100">
           Change Theme

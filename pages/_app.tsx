@@ -14,6 +14,7 @@ import "../stylesheets/snowflake-deconstruction.css";
 export default function App({ Component, pageProps }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
+  const setClose = useCallback(() => setSidebarOpen(false), []);
 
   const fadeClasses = classNames(
     "absolute z-30 left-0 top-0 w-full h-full bg-black duration-300 md:opacity-0 md:pointer-events-none",
@@ -24,12 +25,12 @@ export default function App({ Component, pageProps }: AppProps) {
   );
 
   return (
-    <MenuContext.Provider value={{ open: sidebarOpen, setOpen }}>
+    <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
       <MDX>
         <OpenGraph />
         <div className="flex h-screen dark:bg-background-dark bg-white overflow-hidden">
           <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-          <Menu open={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+          <Menu />
 
           <Component {...pageProps} />
         </div>

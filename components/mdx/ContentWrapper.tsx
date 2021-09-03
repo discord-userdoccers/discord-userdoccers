@@ -12,8 +12,8 @@ export default function ContentWrapper({ children }: ContentWrapperProps) {
   return (
     <main className="relative flex flex-1 flex-col items-center focus:outline-none overflow-y-auto">
       <Header setSidebarOpen={setOpen} />
-      <div className="px-4 w-full max-w-6xl sm:px-6 lg:px-10">
-        <article className="m-auto">{children}</article>{" "}
+      <div className="pt-4 px-4 w-full max-w-6xl sm:pt-0 sm:px-6 lg:px-10">
+        <article className="m-auto">{children}</article>
       </div>
     </main>
   );
