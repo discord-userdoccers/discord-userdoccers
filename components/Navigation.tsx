@@ -1087,8 +1087,70 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Rich Presence">
-        <NavigationLink href="/rich-presence/how-to">How To</NavigationLink>
-        <NavigationLink href="/rich-presence/best-practices">
+        <NavigationLink
+          href="/rich-presence/how-to"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/rich-presence/how-to#so,-what-is-it?">
+                So, what is it?
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#step-0:-get-the-sdk">
+                Step 0: Get the SDK
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#so,-how-does-it-work?">
+                So, how does it work?
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#initialization">
+                Initilization
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#shutting-down">
+                Shutting Down
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#updating-presence">
+                Updating Presence
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#joining">
+                Joining
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#spectating">
+                Spectating
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#secrets">
+                Secrets
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#rich-presence-field-requirements">
+                Rich Presence Field Requirements
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#your-new-developer-dashboard">
+                Your New Developer Dashboard
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#a-note-on-testing-and-game-detection">
+                A note on testing and Game Detection
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/how-to#so,-what-now?">
+                So, what now?
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          How To
+        </NavigationLink>
+        <NavigationLink
+          href="/rich-presence/best-practices"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/rich-presence/best-practices#who-should-use-rich-presence?">
+                Who should use Rich Presence?
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/best-practices#how-should-you-think-about-the-data-you-show?">
+                How should you think about the data you show?
+              </NavigationSubLink>
+              <NavigationSubLink href="/rich-presence/best-practices#tips">
+                Tips
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
           Best Practices
         </NavigationLink>
         <NavigationLink href="/rich-presence/launch-checklist">
