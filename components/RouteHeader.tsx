@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import classNames from "classnames";
 import { H2 } from "./mdx/Heading";
-import InlineCode from "./mdx/InlineCode";
 
 type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
