@@ -46,9 +46,9 @@ export default function RouteHeader({
 }: RouteHeaderProps) {
   return (
     <Fragment>
-      <div className="flex items-end gap-4">
+      <div className="justify-between md:items-end gap-2 grid auto-cols-auto lg:flex">
         <H3 className="mb-0">{children}</H3>
-        {supportsXAuditLogHeader && AuditLogHeaderBadge()}
+        {supportsXAuditLogHeader && <AuditLogHeaderBadge />}
       </div>
       <div className="flex items-center mt-1">
         <MethodBadge method={method} />
