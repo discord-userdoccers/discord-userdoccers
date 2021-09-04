@@ -35,10 +35,10 @@ function Heading({ as: As, className, children }: HeadingProps) {
   );
 
   return (
-    <a href={`#${anchor}`}>
+    <a className="group" href={`#${anchor}`}>
       <As id={anchor} className={classes}>
         {children}
-        <HyperlinkIcon className="min-w-4 min-h-4 ml-2 w-4 h-4" />
+        <HyperlinkIcon className="min-w-4 min-h-4 motion-safe:animate-fade-in-out md:group-hover:inline-flex ml-2 w-4 h-4 md:hidden" />
       </As>
     </a>
   );
