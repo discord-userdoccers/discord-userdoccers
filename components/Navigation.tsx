@@ -83,9 +83,9 @@ function NavigationLink({
     <Fragment>
       <span className={classes}>
         {subLinks != null && (
-          <a onClick={toggle} className="pl-2">
+          <button onClick={toggle} className="pl-2">
             <CaretFill className={caretClasses} />
-          </a>
+          </button>
         )}
         <Link href={href}>
           <a className={linkClasses}>{children}</a>
