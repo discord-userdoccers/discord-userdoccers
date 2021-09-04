@@ -1,29 +1,29 @@
 import { useCallback, useEffect, useState } from "react";
 
-export const COPY_STATUS = {
-	INACTIVE: "inactive",
-	SUCCESS: "success",
-	ERROR: "error",
-};
+export const enum CopyStatus {
+	INACTIVE = "inactive",
+	SUCCESS = "success",
+	ERROR = "error",
+}
 
 export function useClipboard(text: string, duration = 2500) {
-	const [status, setStatus] = useState(COPY_STATUS.INACTIVE);
+	const [status, setStatus] = useState(CopyStatus.INACTIVE);
 
 	const copy = useCallback(async () => {
 		try {
 			await navigator.clipboard.writeText(text);
-			setStatus(COPY_STATUS.SUCCESS);
+			setStatus(CopyStatus.SUCCESS);
 		} catch (error) {
-			setStatus(COPY_STATUS.ERROR);
+			setStatus(CopyStatus.ERROR);
 		}
 	}, [text]);
 
 	useEffect(() => {
-		if (status === COPY_STATUS.INACTIVE) {
+		if (status === CopyStatus.INACTIVE) {
 			return;
 		}
 
-		const timeout = setTimeout(() => setStatus(COPY_STATUS.INACTIVE), duration);
+		const timeout = setTimeout(() => setStatus(CopyStatus.INACTIVE), duration);
 		return () => {
 			clearTimeout(timeout);
 		};

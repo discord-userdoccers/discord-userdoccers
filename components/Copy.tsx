@@ -1,5 +1,5 @@
 import classnames from "classnames";
-import { COPY_STATUS, useClipboard } from "../hooks/useClipboard";
+import { CopyStatus, useClipboard } from "../hooks/useClipboard";
 
 interface CopyButtonProps {
 	text: string;
@@ -10,14 +10,14 @@ export default function CopyButton({ text, children }: CopyButtonProps) {
 	const { copy, status } = useClipboard(text);
 	let value = children;
 
-	if (status === COPY_STATUS.SUCCESS) {
+	if (status === CopyStatus.SUCCESS) {
 		value = "Copied!";
-	} else if (status === COPY_STATUS.ERROR) {
+	} else if (status === CopyStatus.ERROR) {
 		value = "Copy failed :(";
 	}
 
 	const classes = classnames("clipboard", {
-		clipboard_notification: status !== COPY_STATUS.INACTIVE,
+		clipboard_notification: status !== CopyStatus.INACTIVE,
 	});
 
 	return (

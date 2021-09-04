@@ -9,8 +9,8 @@ import CopyIcon from "../icons/Copy";
 import CopyButton from "../Copy";
 
 // Extend base classes
-(typeof global === "undefined" ? window : global).Prism = Prism;
-import("prismjs/components/prism-docker");
+globalThis.Prism = Prism;
+import "prismjs/components/prism-docker";
 
 const diffBgColorMap = {
 	"+": "var(--prism-highlight-add)",
@@ -72,11 +72,7 @@ export default function Code({ children, className, metastring, file, ...props }
 	const propList = ["copy", "terminal", "no-lines"];
 
 	const language = className?.replace(/language-/, "");
-	let breakWords = false;
-
-	if (propList.includes(language)) {
-		breakWords = true;
-	}
+	const breakWords = propList.includes(language);
 
 	/* eslint-disable react/prop-types */
 	const hasCopy = props.copy || language === "copy";
