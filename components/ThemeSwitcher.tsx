@@ -26,7 +26,7 @@ export default function ThemeSwitcher() {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="dark:hover:bg-brand-blurple inline-flex justify-center p-2 w-full text-black dark:text-white hover:text-white text-sm font-medium dark:bg-black hover:bg-brand-blurple bg-indigo-100 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75">
+        <Menu.Button className="dark:hover:bg-brand-blurple inline-flex justify-center p-2 w-full text-black dark:text-white hover:text-white text-sm font-medium dark:bg-table-row-background-secondary-dark hover:bg-brand-blurple bg-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 transition duration-100">
           <span className="sr-only">Change Theme</span>
           <Lightbulb className="w-4 h-4 md:w-6 md:h-6" aria-hidden="true" />
         </Menu.Button>
@@ -40,7 +40,7 @@ export default function ThemeSwitcher() {
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 w-56 dark:bg-black bg-white rounded-md focus:outline-none shadow-lg divide-gray-100 dark:divide-gray-900 divide-y origin-top-right ring-1 ring-brand-blurple ring-opacity-5">
+        <Menu.Items className="absolute right-0 mt-2 w-56 dark:bg-table-row-background-secondary-dark bg-white rounded-md focus:outline-none shadow-lg divide-gray-100 dark:divide-gray-900 divide-y origin-top-right ring-1 ring-brand-blurple ring-opacity-5">
           <div className="px-1 py-1">
             <Menu.Item>
               {({ active }) => (
