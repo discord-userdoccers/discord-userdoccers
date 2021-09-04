@@ -11,7 +11,7 @@ function importDirectory(directory: string, extension: string, subdirectories = 
 		const files = readdirSync(directory);
 		const requestedFiles = files.filter((name) => name.endsWith(extension));
 		for (const file of requestedFiles) {
-			const currentPath = `${directory}/${file}`;
+			const currentPath = path.join(directory, file);
 			try {
 				const read = readFileSync(currentPath, "utf8");
 				output.set(`/${file}`, read);
@@ -21,13 +21,13 @@ function importDirectory(directory: string, extension: string, subdirectories = 
 		}
 		if (subdirectories) {
 			for (const possibleDir of files) {
-				const path = `/${possibleDir}`;
-				const currentPath = `${directory}${path}`;
+				const dirPath = `/${possibleDir}`;
+				const currentPath = path.join(directory, dirPath);
 				if (statSync(currentPath).isDirectory()) {
 					const subdir = importDirectory(currentPath, extension, subdirectories);
 					if (!subdir) continue;
 					for (const [name, read] of subdir) {
-						output.set(`${path}${name}`, read);
+						output.set(`${dirPath}${name}`, read);
 					}
 				}
 			}
@@ -84,7 +84,7 @@ function scanFile(
 	});
 }
 
-const htmlFiles = importDirectory(`${cwd}/.next/server/pages/`, ".html");
+const htmlFiles = importDirectory(path.join(cwd, ".next/server/pages"), ".html");
 
 if (!htmlFiles) {
 	console.error("No links found, ensure that build has been run!");
@@ -115,7 +115,7 @@ const results = new Map<string, github.AnnotationProperties[]>();
 
 try {
 	const navFile = "components/Navigation.tsx";
-	const nav = readFileSync(`${cwd}/${navFile}`, "utf8");
+	const nav = readFileSync(path.join(cwd, navFile), "utf8");
 	const file = nav.split("\n");
 	if (!results.has(navFile)) {
 		results.set(navFile, []);
@@ -133,7 +133,7 @@ try {
 	console.warn("Navigation file not found!");
 }
 
-const mdxFiles = importDirectory(`${cwd}/pages/`, ".mdx");
+const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
 
 if (!mdxFiles) {
 	console.error("No mdx files found!");
@@ -164,7 +164,7 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
 	let total = 0;
 	for (const [resultFile, resultArr] of resultMap) {
 		if (resultArr.length <= 0) continue;
-		const filePath = path.resolve(`${cwd}/${resultFile}`);
+		const filePath = path.join(cwd, resultFile);
 		output += `${chalk.underline(filePath)}\n`;
 		output += resultArr.reduce<string>((result, props) => {
 			total += 1;

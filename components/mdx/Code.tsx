@@ -10,7 +10,7 @@ import CopyButton from "../Copy";
 
 // Extend base classes
 globalThis.Prism = Prism;
-import "prismjs/components/prism-docker";
+import("prismjs/components/prism-docker");
 
 const diffBgColorMap = {
 	"+": "var(--prism-highlight-add)",
