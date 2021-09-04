@@ -14,19 +14,20 @@ function importDirectory(directory: string, extension: string, subdirectories = 
 			const currentPath = `${directory}/${file}`;
 			try {
 				const read = readFileSync(currentPath, "utf8");
-				output.set(`${file}`, read);
+				output.set(`/${file}`, read);
 			} catch {
 				// Discard error, file is not a file, but a directory
 			}
 		}
 		if (subdirectories) {
 			for (const possibleDir of files) {
-				const currentPath = `${directory}/${possibleDir}`;
+				const path = `/${possibleDir}`;
+				const currentPath = `${directory}${path}`;
 				if (statSync(currentPath).isDirectory()) {
 					const subdir = importDirectory(currentPath, extension, subdirectories);
 					if (!subdir) continue;
 					for (const [name, read] of subdir) {
-						output.set(`${possibleDir}/${name}`, read);
+						output.set(`${path}${name}`, read);
 					}
 				}
 			}
@@ -58,11 +59,10 @@ function scanFile(
 		for (const match of matches) {
 			const split = match[index].split("#");
 			let url = split[0].endsWith("/") ? split[0].slice(0, -1) : split[0];
-			url = url.startsWith("/") ? url.slice(1) : url;
 			if (match[index].startsWith("#")) url = name;
 			if (!valid.has(url)) {
 				results.push({
-					title: `Base url ${chalk.blueBright(`/${url}`)} does not exist`,
+					title: `Base url ${chalk.blueBright(url)} does not exist`,
 					startLine: lineNum + 1,
 					startColumn: match.index,
 					endColumn: (match.index ?? 0) + match[0].length,
@@ -74,7 +74,7 @@ function scanFile(
 			const validAnchors = valid.get(url)!;
 			if (!validAnchors.includes(split[1])) {
 				results.push({
-					title: `Anchor ${chalk.cyan(split[1])} does not exist on ${chalk.blueBright(`/${url}`)}`,
+					title: `Anchor ${chalk.cyan(split[1])} does not exist on ${chalk.blueBright(url)}`,
 					startLine: lineNum + 1,
 					startColumn: match.index,
 					endColumn: (match.index ?? 0) + match[0].length,
@@ -115,7 +115,7 @@ const results = new Map<string, github.AnnotationProperties[]>();
 
 try {
 	const navFile = "components/Navigation.tsx";
-	const nav = readFileSync(`${cwd}${navFile}`, "utf8");
+	const nav = readFileSync(`${cwd}/${navFile}`, "utf8");
 	const file = nav.split("\n");
 	if (!results.has(navFile)) {
 		results.set(navFile, []);
@@ -124,7 +124,7 @@ try {
 	scanFile(
 		/(?<!!)href=(["'])(?!(?:https?)|(?:mailto))(.+?)\1/g,
 		2,
-		navFile.slice(0, -".tsx".length),
+		`/${navFile.slice(0, -".tsx".length)}`,
 		file,
 		validLinks,
 		ownResults,
@@ -143,11 +143,12 @@ if (!mdxFiles) {
 extLength = ".mdx".length;
 
 for (const [name, raw] of mdxFiles) {
+	const fileName = `pages${name}`;
 	const file = raw.split("\n");
-	if (!results.has(name)) {
-		results.set(name, []);
+	if (!results.has(fileName)) {
+		results.set(fileName, []);
 	}
-	const ownResults = results.get(name)!;
+	const ownResults = results.get(fileName)!;
 	scanFile(
 		/(?<![!`])\[.+?\]\((?!(?:https?)|(?:mailto))(.+?)\)(?!`)/g,
 		1,
