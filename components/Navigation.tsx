@@ -113,11 +113,11 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
   );
 
   return (
-    <span className="flex items-center ml-4">
+    <span className="relative flex items-center ml-4">
       <Link href={href}>
         <a className={classes}>
           {router.asPath === href ? (
-            <Caret className="ml--1 absolute -m-4 mr-1 w-2 h-2" />
+            <Caret className="absolute -ml-4 w-2 h-2" />
           ) : null}
           {children}
         </a>
