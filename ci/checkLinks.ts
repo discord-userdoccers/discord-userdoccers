@@ -168,9 +168,9 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
 		output += `${chalk.underline(filePath)}\n`;
 		output += resultArr.reduce<string>((result, props) => {
 			total += 1;
-			return `${result}  ${props.startLine}:${props.startColumn}-${props.endColumn}  ${chalk.yellow("warning")}  ${
-				props.title
-			}\n`;
+			return `${result}  ${props.startLine ?? ""}:${props.startColumn ?? ""}-${props.endColumn ?? ""}  ${chalk.yellow(
+				"warning",
+			)}  ${props.title ?? ""}\n`;
 		}, "");
 		output += "\n";
 	}
@@ -189,8 +189,11 @@ function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>):
 		for (const result of resultArr) {
 			total += 1;
 			console.log(
-				`::warning file=${resultFile},title=Invalid Link,line=${result.startLine},endLine=${result.startLine},` +
-					`col=${result.startColumn},endColumn=${result.endColumn}::${result.title}`,
+				`::warning file=${resultFile},title=Invalid Link,line=${result.startLine ?? 0},endLine=${
+					result.startLine ?? 0
+				},col=${result.startColumn ?? 0},endColumn=${result.endColumn ?? result.startColumn ?? 0}::${
+					result.title ?? "Invalid Link"
+				}`,
 			);
 		}
 		github.endGroup();
