@@ -12,7 +12,7 @@ interface MethodBadgeProps {
 function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
-  const classes = classNames("px-2 py-1 text-sm border-2 rounded uppercase", {
+  const classes = classNames("px-2 py-1 text-sm border-2 rounded uppercase dark:bg-opacity-50 dark:border-opacity-50", {
     "bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-white border-blue-500":
       name === "GET",
     "bg-green-100 text-green-700 dark:bg-green-600 dark:text-white border-green-500":
