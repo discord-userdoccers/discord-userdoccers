@@ -356,18 +356,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/channel#channel-object">
                 Channel Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#message-object">
-                Message Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#message-reference-object">
-                Message Reference Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#followed-channel-object">
-                Followed Channel Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#reaction-object">
-                Reaction Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#overwrite-object">
                 Overwrite Object
               </NavigationSubLink>
@@ -377,28 +365,52 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/channel#thread-member-object">
                 Thread Member Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#embed-object">
-                Embed Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#attachment-object">
-                Attachment Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#channel-mention-object">
-                Channel Mention Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#allowed-mentions-object">
-                Allowed Mentions Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#embed-limits">
-                Embed Limits
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#get-channel">
+              <NavigationSubLink href="/resources/channel#endpoints">
                 Endpoints
               </NavigationSubLink>
             </Fragment>
           }
         >
           Channel
+        </NavigationLink>
+        <NavigationLink
+          href="/resources/message"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/message#message-object">
+                Message Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-reference-object">
+                Message Reference Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#followed-channel-object">
+                Followed Channel Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#reaction-object">
+                Reaction Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#embed-object">
+                Embed Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#attachment-object">
+                Attachment Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#channel-mention-object">
+                Channel Mention Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#allowed-mentions-object">
+                Allowed Mentions Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#embed-limits">
+                Embed Limits
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#endpoints">
+                Endpoints
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Message
         </NavigationLink>
         <NavigationLink
           href="/resources/emoji"
@@ -458,7 +470,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild#membership-screening-object">
                 Membership Screening Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#create-guild">
+              <NavigationSubLink href="/resources/guild#endpoints">
                 Endpoints
               </NavigationSubLink>
             </Fragment>
