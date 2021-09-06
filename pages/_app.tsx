@@ -9,6 +9,7 @@ import MenuContext from "../contexts/MenuContext";
 import { ThemeProvider } from "next-themes";
 import "../stylesheets/tailwind.css";
 import "../stylesheets/styles.css";
+import "../stylesheets/scrollbar.css";
 import "../stylesheets/whitney/whitney.css";
 import "../stylesheets/prism.css";
 import "../stylesheets/youtube.css";
