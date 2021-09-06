@@ -106,7 +106,7 @@ export default function Code({
                 </CopyButton>
               </div>
             )}
-            <code className="p-4 rounded-md">
+            <code className="p-4 px-1.5 rounded-md">
               {cleanTokens(tokens).map((line, i) => {
                 const lineClass = {};
                 let isDiff = false;
