@@ -17,7 +17,7 @@ export default function ThemeSwitcher() {
 				"bg-brand-blurple text-white": active,
 				"text-gray-900 dark:text-theme-dark-sidebar-text": !active,
 			}),
-		[],
+		[]
 	);
 
 	return (

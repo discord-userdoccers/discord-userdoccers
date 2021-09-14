@@ -90,7 +90,7 @@ export default function Code({ children, className, metastring, file, ...props }
 					<pre
 						className={classNames(
 							"relative inline-grid grid-rows-max-content m-0 mb-4 w-full leading-normal overflow-auto",
-							blockClassName,
+							blockClassName
 						)}
 					>
 						{/* eslint-disable-next-line react/prop-types */}
