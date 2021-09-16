@@ -1,36 +1,36 @@
 import { useCallback, useEffect, useState } from "react";
 
-export const COPY_STATUS = {
-  INACTIVE: "inactive",
-  SUCCESS: "success",
-  ERROR: "error",
-};
+export const enum CopyStatus {
+	INACTIVE = "inactive",
+	SUCCESS = "success",
+	ERROR = "error",
+}
 
-export function useClipboard(text: string, duration: number = 2500) {
-  const [status, setStatus] = useState(COPY_STATUS.INACTIVE);
+export function useClipboard(text: string, duration = 2500) {
+	const [status, setStatus] = useState(CopyStatus.INACTIVE);
 
-  const copy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus(COPY_STATUS.SUCCESS);
-    } catch (error) {
-      setStatus(COPY_STATUS.ERROR);
-    }
-  }, [text]);
+	const copy = useCallback(async () => {
+		try {
+			await navigator.clipboard.writeText(text);
+			setStatus(CopyStatus.SUCCESS);
+		} catch (error) {
+			setStatus(CopyStatus.ERROR);
+		}
+	}, [text]);
 
-  useEffect(() => {
-    if (status === COPY_STATUS.INACTIVE) {
-      return;
-    }
+	useEffect(() => {
+		if (status === CopyStatus.INACTIVE) {
+			return;
+		}
 
-    const timeout = setTimeout(() => setStatus(COPY_STATUS.INACTIVE), duration);
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [status, duration]);
+		const timeout = setTimeout(() => setStatus(CopyStatus.INACTIVE), duration);
+		return () => {
+			clearTimeout(timeout);
+		};
+	}, [status, duration]);
 
-  return {
-    copy,
-    status,
-  };
+	return {
+		copy,
+		status,
+	};
 }

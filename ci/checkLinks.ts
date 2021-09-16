@@ -11,7 +11,7 @@ function importDirectory(directory: string, extension: string, subdirectories = 
 		const files = readdirSync(directory);
 		const requestedFiles = files.filter((name) => name.endsWith(extension));
 		for (const file of requestedFiles) {
-			const currentPath = `${directory}/${file}`;
+			const currentPath = path.join(directory, file);
 			try {
 				const read = readFileSync(currentPath, "utf8");
 				output.set(`/${file}`, read);
@@ -21,13 +21,13 @@ function importDirectory(directory: string, extension: string, subdirectories = 
 		}
 		if (subdirectories) {
 			for (const possibleDir of files) {
-				const path = `/${possibleDir}`;
-				const currentPath = `${directory}${path}`;
+				const dirPath = `/${possibleDir}`;
+				const currentPath = path.join(directory, dirPath);
 				if (statSync(currentPath).isDirectory()) {
 					const subdir = importDirectory(currentPath, extension, subdirectories);
 					if (!subdir) continue;
 					for (const [name, read] of subdir) {
-						output.set(`${path}${name}`, read);
+						output.set(`${dirPath}${name}`, read);
 					}
 				}
 			}
@@ -45,7 +45,7 @@ function scanFile(
 	name: string,
 	splitFile: string[],
 	valid: Map<string, string[]>,
-	results: github.AnnotationProperties[],
+	results: github.AnnotationProperties[]
 ): void {
 	let multilineCode = false;
 	splitFile.forEach((line, lineNum) => {
@@ -84,7 +84,7 @@ function scanFile(
 	});
 }
 
-const htmlFiles = importDirectory(`${cwd}/.next/server/pages/`, ".html");
+const htmlFiles = importDirectory(path.join(cwd, ".next/server/pages"), ".html");
 
 if (!htmlFiles) {
 	console.error("No links found, ensure that build has been run!");
@@ -115,7 +115,7 @@ const results = new Map<string, github.AnnotationProperties[]>();
 
 try {
 	const navFile = "components/Navigation.tsx";
-	const nav = readFileSync(`${cwd}/${navFile}`, "utf8");
+	const nav = readFileSync(path.join(cwd, navFile), "utf8");
 	const file = nav.split("\n");
 	if (!results.has(navFile)) {
 		results.set(navFile, []);
@@ -127,13 +127,13 @@ try {
 		`/${navFile.slice(0, -".tsx".length)}`,
 		file,
 		validLinks,
-		ownResults,
+		ownResults
 	);
 } catch {
 	console.warn("Navigation file not found!");
 }
 
-const mdxFiles = importDirectory(`${cwd}/pages/`, ".mdx");
+const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
 
 if (!mdxFiles) {
 	console.error("No mdx files found!");
@@ -155,7 +155,7 @@ for (const [name, raw] of mdxFiles) {
 		name.slice(0, -extLength),
 		file,
 		validLinks,
-		ownResults,
+		ownResults
 	);
 }
 
@@ -164,13 +164,13 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
 	let total = 0;
 	for (const [resultFile, resultArr] of resultMap) {
 		if (resultArr.length <= 0) continue;
-		const filePath = path.resolve(`${cwd}/${resultFile}`);
+		const filePath = path.join(cwd, resultFile);
 		output += `${chalk.underline(filePath)}\n`;
 		output += resultArr.reduce<string>((result, props) => {
 			total += 1;
-			return `${result}  ${props.startLine}:${props.startColumn}-${props.endColumn}  ${chalk.yellow("warning")}  ${
-				props.title
-			}\n`;
+			return `${result}  ${props.startLine ?? ""}:${props.startColumn ?? ""}-${props.endColumn ?? ""}  ${chalk.yellow(
+				"warning"
+			)}  ${props.title ?? ""}\n`;
 		}, "");
 		output += "\n";
 	}
@@ -189,8 +189,11 @@ function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>):
 		for (const result of resultArr) {
 			total += 1;
 			console.log(
-				`::warning file=${resultFile},title=Invalid Link,line=${result.startLine},endLine=${result.startLine},` +
-					`col=${result.startColumn},endColumn=${result.endColumn}::${result.title}`,
+				`::warning file=${resultFile},title=Invalid Link,line=${result.startLine ?? 0},endLine=${
+					result.startLine ?? 0
+				},col=${result.startColumn ?? 0},endColumn=${result.endColumn ?? result.startColumn ?? 0}::${
+					result.title ?? "Invalid Link"
+				}`
 			);
 		}
 		github.endGroup();
