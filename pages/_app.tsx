@@ -1,7 +1,8 @@
 import classNames from "classnames";
 import type { AppProps } from "next/app";
+import Router from "next/router";
 import { ThemeProvider } from "next-themes";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Footer from "../components/Footer";
 import MDX from "../components/MDX";
 import Menu from "../components/Menu";
@@ -27,6 +28,12 @@ export default function App({ Component, pageProps }: AppProps) {
       "opacity-0 pointer-events-none": !sidebarOpen,
     }
   );
+
+  useEffect(() => {
+    if (Router.pathname === "/") {
+        void Router.push("/intro");
+    }
+  });
 
   return (
     <ThemeProvider defaultTheme="system" attribute="class">

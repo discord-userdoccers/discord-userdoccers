@@ -7,11 +7,11 @@ interface OpenGraphProps {
 }
 
 export default function OpenGraph({
-  title = "Discord Developers",
-  description = "👾 BOTS BOTS BOTS 👾",
+  title = "Unofficial User API Documentation",
+  description = "👽 ALIEN ALIEN ALIEN 👽",
 }: OpenGraphProps) {
   const router = useRouter();
-  const url = `https://discord.com/developers/docs${router.asPath}`;
+  const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}/developers/docs${router.asPath}`;
 
   return (
     <Head>
@@ -24,7 +24,7 @@ export default function OpenGraph({
       {/* Open Graph */}
       <meta property="og:url" content={url} key="og-url" />
       <meta property="og:image" content="/opengraph.png" key="og-image" />
-      <meta property="og:site_name" content="Discord Developers" key="og-site-name" />
+      <meta property="og:site_name" content="Discord Userdoccers" key="og-site-name" />
       <meta property="og:title" content={title} key="og-title" />
       <meta property="og:description" content={description} key="og-desc" />
     </Head>
