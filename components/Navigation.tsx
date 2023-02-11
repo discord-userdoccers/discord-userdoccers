@@ -396,8 +396,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/invite#invite-stage-instance-object">
                 Invite Stage Instance Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/invite#get-invite">Get Invite</NavigationSubLink>
-              <NavigationSubLink href="/resources/invite#delete-invite">Delete Invite</NavigationSubLink>
+              <NavigationSubLink href="/resources/invite#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >

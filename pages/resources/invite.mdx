@@ -2,67 +2,114 @@
 
 ### Invite Object
 
-Represents a code that when used, adds a user to a guild or group DM channel.
+Represents a code that when used, adds a user to a guild or group DM channel, or creates a relationship between two users.
 
 ###### Invite Structure
 
-| Field                       | Type                                                                    | Description                                                                                                                  |
-| --------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| code                        | string                                                                  | the invite code (unique ID)                                                                                                  |
-| guild?                      | partial [guild](/resources/guild#guild-object) object                   | the guild this invite is for                                                                                                 |
-| channel                     | partial [channel](/resources/channel#channel-object) object             | the channel this invite is for                                                                                               |
-| inviter?                    | [user](/resources/user#user-object) object                              | the user who created the invite                                                                                              |
-| target_type?                | integer                                                                 | the [type of target](#invite-target-types) for this voice channel invite                                                     |
-| target_user?                | [user](/resources/user#user-object) object                              | the user whose stream to display for this voice channel stream invite                                                        |
-| target_application?         | partial [application](/resources/application#application-object) object | the embedded application to open for this voice channel embedded application invite                                          |
-| approximate_presence_count? | integer                                                                 | approximate count of online members, returned from the `GET /invites/<code>` endpoint when `with_counts` is `true`           |
-| approximate_member_count?   | integer                                                                 | approximate count of total members, returned from the `GET /invites/<code>` endpoint when `with_counts` is `true`            |
-| expires_at?                 | ?ISO8601 timestamp                                                      | the expiration date of this invite, returned from the `GET /invites/<code>` endpoint when `with_expiration` is `true`        |
-| stage_instance?             | [invite stage instance](#invite-stage-instance-object) object           | stage instance data if there is a [public Stage instance](/resources/stage-instance) in the Stage channel this invite is for |
+| Field                         | Type                                                                                       | Description                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| code                          | string                                                                                     | The invite code (unique ID)                                                                                                                    |
+| type?                         | integer                                                                                    | The [type of invite](#invite-type)                                                                                                             |
+| guild?                        | partial [guild](/resources/guild#guild-object) object                                      | The guild this invite is for, with an extra `welcome_screen` key denoting the guild's [welcome screen](/resources/guild#welcome-screen-object) |
+| channel                       | partial [channel](/resources/channel#channel-object) object                                | The channel this invite is for                                                                                                                 |
+| inviter?                      | partial [user](/resources/user#user-object) object                                         | The user who created the invite                                                                                                                |
+| target_type?                  | integer                                                                                    | The [type of target](#invite-target-type) for this voice channel invite                                                                        |
+| target_user?                  | partial [user](/resources/user#user-object) object                                         | The user whose stream to display for this voice channel stream invite                                                                          |
+| target_application?           | partial [application](/resources/application#application-object) object                    | The embedded application to open for this voice channel embedded application invite                                                            |
+| approximate_presence_count?\* | integer                                                                                    | Approximate count of online members                                                                                                            |
+| approximate_member_count?\*   | integer                                                                                    | Approximate count of total members                                                                                                             |
+| expires_at?                   | ?ISO8601 timestamp                                                                         | The expiration date of this invite                                                                                                             |
+| stage_instance?               | [invite stage instance](#invite-stage-instance-object) object                              | Stage instance data if there is a [public stage instance](/resources/stage-instance) in the stage channel this invite is for                   |
+| guild_scheduled_event?        | [guild scheduled event](/topics/guild-scheduled-event#guild-scheduled-event-object) object | Guild scheduled event data, only included if `guild_scheduled_event_id` contains a valid guild scheduled event ID                              |
 
-###### Invite Target Types
+\* Only returned from the [Get Invite](#get-invite) endpoint when `with_counts` is `true`.
 
-| Type                 | Value |
-| -------------------- | ----- |
-| STREAM               | 1     |
-| EMBEDDED_APPLICATION | 2     |
+###### Invite Type
+
+| Value | Name     | Description                                                                     |
+| ----- | -------- | ------------------------------------------------------------------------------- |
+| 0     | GUILD    | Joins the user to a [guild](/resources/guild#guild-object)                      |
+| 1     | GROUP_DM | Joins the user to a [group DM](/resources/channel#channel-object)               |
+| 2     | FRIEND   | Adds the user as a [friend](/resources/user#relationship-object) to the inviter |
+
+###### Invite Target Type
+
+| Value | Name                 | Description                                                                                                  |
+| ----- | -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1     | STREAM               | The invite is for a stream in a [voice channel](/resources/channel#channel-object)                           |
+| 2     | EMBEDDED_APPLICATION | The invite is for an embedded application (activity) in a [voice channel](/resources/channel#channel-object) |
+| 3     | ROLE_SUBSCRIPTIONS\* | The invite redirects to the role subscriptions page within a [guild](/resources/guild#guild-object)          |
+| 4     | CREATOR_PAGE\*       | The invite originates from the creator page of a [guild](/resources/guild#guild-object)                      |
+
+\* Invites with these target types are not returned in the [Get Guild Invites](/topics/guild#get-guild-invites) and [Get Channel Invites](/topics/channel#get-channel-invites) endpoints.
+They are also not deletable through [Delete Invite](#delete-invite).
 
 ###### Example Invite Object
 
 ```json
 {
-  "code": "0vCdhLbwjZZTWZLD",
+  "code": "eh387fhdw",
+  "type": 0,
+  "expires_at": null,
   "guild": {
-    "id": "165176875973476352",
-    "name": "CS:GO Fraggers Only",
-    "splash": null,
-    "banner": null,
-    "description": "Very good description",
-    "icon": null,
-    "features": ["NEWS", "DISCOVERABLE"],
+    "id": "1046920999469330512",
+    "name": "Alien Network",
+    "splash": "b40e61f7730b8781b9a551964570e0cc",
+    "banner": "a_98d07f130569f17e8352df80c3a2bc2b",
+    "description": "Where the 👽s 👽 and sometimes very 👽 things happen 😨.",
+    "icon": "66b0f4d96c145970fa9d96ada8afadf3",
+    "features": [],
     "verification_level": 2,
-    "vanity_url_code": null
+    "vanity_url_code": "alien",
+    "premium_subscription_count": 14,
+    "nsfw": false,
+    "nsfw_level": 0,
+    "welcome_screen": {
+      "description": "Alien",
+      "welcome_channels": [
+        {
+          "channel_id": "1036355199587074249",
+          "description": "Welcome",
+          "emoji_id": null,
+          "emoji_name": "🥰"
+        }
+      ]
+    }
   },
   "channel": {
-    "id": "165176875973476352",
-    "name": "illuminati",
-    "type": 0
+    "id": "1057241425793798144",
+    "name": "alien noises",
+    "type": 2
   },
   "inviter": {
-    "id": "115590097100865541",
-    "username": "speed",
-    "avatar": "deadbeef",
-    "discriminator": "7653",
-    "public_flags": 131328
-  },
-  "target_type": 1,
-  "target_user": {
-    "id": "165176875973476352",
-    "username": "bob",
-    "avatar": "deadbeef",
-    "discriminator": "1234",
+    "id": "852892297661906993",
+    "username": "Alien",
+    "avatar": null,
+    "avatar_decoration": null,
+    "discriminator": "1337",
     "public_flags": 64
-  }
+  },
+  "target_type": 2,
+  "target_application": {
+    "id": "880218394199220334",
+    "name": "Watch Together",
+    "icon": "ec48acbad4c32efab4275cb9f3ca3a58",
+    "description": "Create and watch a playlist of videos with your friends. Your choice to share the remote or not.",
+    "summary": "",
+    "type": null,
+    "cover_image": "bc5f23f13943c4b5414a3bb4fefdb4c1",
+    "hook": true,
+    "bot_public": false,
+    "bot_require_code_grant": false,
+    "terms_of_service_url": "https://discord.com/terms",
+    "privacy_policy_url": "https://discord.com/privacy",
+    "verify_key": "e2aaf50fbe2fd9d025ac669035f5efb89099931690fba9dc28efb7eaade7f96d",
+    "flags": 1179648,
+    "max_participants": -1,
+    "tags": ["Video Player", "Watch"]
+  },
+  "approximate_member_count": 100,
+  "approximate_presence_count": 35
 }
 ```
 
@@ -74,11 +121,12 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
 
 | Field      | Type              | Description                                          |
 | ---------- | ----------------- | ---------------------------------------------------- |
-| uses       | integer           | number of times this invite has been used            |
-| max_uses   | integer           | max number of times this invite can be used          |
-| max_age    | integer           | duration (in seconds) after which the invite expires |
-| temporary  | boolean           | whether this invite only grants temporary membership |
-| created_at | ISO8601 timestamp | when this invite was created                         |
+| uses       | integer           | Number of times this invite has been used            |
+| max_uses   | integer           | Max number of times this invite can be used          |
+| max_age    | integer           | Duration (in seconds) after which the invite expires |
+| temporary  | boolean           | Whether this invite only grants temporary membership |
+| created_at | ISO8601 timestamp | When this invite was created                         |
+| revoked?   | boolean           | Whether this invite has been revoked                 |
 
 ###### Example Invite Metadata
 
@@ -98,10 +146,10 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
 
 | Field             | Type                                                                          | Description                                        |
 | ----------------- | ----------------------------------------------------------------------------- | -------------------------------------------------- |
-| members           | array of partial [guild member](/resources/guild#guild-member-object) objects | the members speaking in the Stage                  |
-| participant_count | integer                                                                       | the number of users in the Stage                   |
-| speaker_count     | integer                                                                       | the number of users speaking in the Stage          |
-| topic             | string                                                                        | the topic of the Stage instance (1-120 characters) |
+| members           | array of partial [guild member](/resources/guild#guild-member-object) objects | The members speaking in the Stage                  |
+| participant_count | integer                                                                       | The number of users in the Stage                   |
+| speaker_count     | integer                                                                       | The number of users speaking in the Stage          |
+| topic             | string                                                                        | The topic of the Stage instance (1-120 characters) |
 
 ###### Example Invite Stage Instance
 
@@ -118,7 +166,14 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
       "premium_since": null,
       "joined_at": "2015-04-26T06:26:56.936000+00:00",
       "pending": false,
-      "user": {}
+      "user": {
+        "id": "115590097100865541",
+        "username": "speed",
+        "avatar": null,
+        "avatar_decoration": null,
+        "discriminator": "7653",
+        "public_flags": 131328
+      }
     }
   ]
 }
@@ -126,7 +181,7 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
 
 ## Endpoints
 
-<RouteHeader method="GET" url="/invites/{invite.code}">
+<RouteHeader method="GET" url="/invites/{invite.code}" unauthenticated>
   Get Invite
 </RouteHeader>
 
@@ -134,13 +189,14 @@ Returns an [invite](#invite-object) object for the given code.
 
 ###### Query String Params
 
-| Field            | Type    | Description                                                 |
-| ---------------- | ------- | ----------------------------------------------------------- |
-| with_counts?     | boolean | whether the invite should contain approximate member counts |
-| with_expiration? | boolean | whether the invite should contain the expiration date       |
+| Field                     | Type      | Description                                                                 |
+| ------------------------- | --------- | --------------------------------------------------------------------------- |
+| with_counts?              | boolean   | Whether the invite should contain approximate member counts (default false) |
+| with_expiration?          | boolean   | Whether the invite should contain the expiration date (default true)        |
+| guild_scheduled_event_id? | snowflake | The guild scheduled event to include with the invite                        |
 
 <RouteHeader method="DELETE" url="/invites/{invite.code}" supportsAuditReason>
   Delete Invite
 </RouteHeader>
 
-Delete an invite. Requires the `MANAGE_CHANNELS` permission on the channel this invite belongs to, or `MANAGE_GUILD` to remove any invite across the guild. Returns an [invite](#invite-object) object on success. Fires a [Invite Delete](/topics/gateway#invite-delete) Gateway event.
+Delete an invite. Requires the `MANAGE_CHANNELS` permission on the channel this invite belongs to, or `MANAGE_GUILD` to remove any invite across the guild, if the invite is to a guild. Returns an [invite](#invite-object) object on success. May fire a [Invite Delete](/topics/gateway#invite-delete) Gateway event.
