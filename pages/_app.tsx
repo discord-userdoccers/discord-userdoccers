@@ -16,33 +16,33 @@ import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
 
 export default function App({ Component, pageProps }: AppProps) {
-	const [sidebarOpen, setSidebarOpen] = useState(false);
-	const setOpen = useCallback(() => setSidebarOpen(true), []);
-	const setClose = useCallback(() => setSidebarOpen(false), []);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const setOpen = useCallback(() => setSidebarOpen(true), []);
+  const setClose = useCallback(() => setSidebarOpen(false), []);
 
-	const fadeClasses = classNames(
-		"absolute z-30 left-0 top-0 w-full h-full bg-black duration-300 md:opacity-0 md:pointer-events-none",
-		{
-			"opacity-50": sidebarOpen,
-			"opacity-0 pointer-events-none": !sidebarOpen,
-		}
-	);
+  const fadeClasses = classNames(
+    "absolute z-30 left-0 top-0 w-full h-full bg-black duration-300 md:opacity-0 md:pointer-events-none",
+    {
+      "opacity-50": sidebarOpen,
+      "opacity-0 pointer-events-none": !sidebarOpen,
+    }
+  );
 
-	return (
-		<ThemeProvider defaultTheme="system" attribute="class">
-			<MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
-				{/* eslint-disable-next-line react/jsx-pascal-case */}
-				<MDX>
-					<OpenGraph />
-					<div className="flex h-screen dark:bg-background-dark bg-white overflow-hidden">
-						<div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-						<Menu />
+  return (
+    <ThemeProvider defaultTheme="system" attribute="class">
+      <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
+        {/* eslint-disable-next-line react/jsx-pascal-case */}
+        <MDX>
+          <OpenGraph />
+          <div className="flex h-screen dark:bg-background-dark bg-white overflow-hidden">
+            <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
+            <Menu />
 
-						<Component {...pageProps} />
-					</div>
-					<Footer />
-				</MDX>
-			</MenuContext.Provider>
-		</ThemeProvider>
-	);
+            <Component {...pageProps} />
+          </div>
+          <Footer />
+        </MDX>
+      </MenuContext.Provider>
+    </ThemeProvider>
+  );
 }
