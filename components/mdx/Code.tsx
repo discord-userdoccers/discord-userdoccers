@@ -6,7 +6,7 @@ import React from "react";
 
 import CopyButton from "../Copy";
 import CopyIcon from "../icons/Copy";
-import FileIcon from "../icons/File";
+// import FileIcon from "../icons/File";
 
 // Extend base classes
 globalThis.Prism = Prism;
@@ -40,24 +40,24 @@ function cleanTokens(tokens: Token[][]): Token[][] {
   return tokens;
 }
 
-interface InfoBarProps {
-  fileName?: string | null;
-  language: string;
-}
+// interface InfoBarProps {
+//   fileName?: string | null;
+//   language: string;
+// }
 
-function InfoBar({ fileName, language }: InfoBarProps) {
-  return (
-    <div className="flex mb-2 text-black dark:text-white text-sm font-bold">
-      {fileName == null ? null : (
-        <span className="inline-flex items-center">
-          <FileIcon className="mr-2 w-4 h-4" />
-          {fileName}
-        </span>
-      )}
-      <span className="ml-auto">{language}</span>
-    </div>
-  );
-}
+// function InfoBar({ fileName, language }: InfoBarProps) {
+//   return (
+//     <div className="flex mb-2 text-black dark:text-white text-sm font-bold">
+//       {fileName == null ? null : (
+//         <span className="inline-flex items-center">
+//           <FileIcon className="mr-2 w-4 h-4" />
+//           {fileName}
+//         </span>
+//       )}
+//       <span className="ml-auto">{language}</span>
+//     </div>
+//   );
+// }
 
 interface CodeProps {
   children?: string;

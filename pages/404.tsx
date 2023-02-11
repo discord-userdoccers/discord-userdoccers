@@ -40,7 +40,7 @@ export default function NotFound() {
                   Learn more about the Discord API and philosophy.
                 </LinkPanel>
                 <LinkPanel title="Status" href="https://discordstatus.com/">
-                  Get Discord's current status, uptime, and response latency.
+                  Get Discord&apos;s current status, uptime, and response latency.
                 </LinkPanel>
               </LinkList>
             </div>
