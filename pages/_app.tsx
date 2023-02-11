@@ -31,7 +31,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     if (Router.pathname === "/") {
-        void Router.push("/intro");
+      void Router.push("/intro");
     }
   });
 
