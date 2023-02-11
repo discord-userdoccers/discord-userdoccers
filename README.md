@@ -1,3 +1,5 @@
+![Header Image](https://github.com/discord-userdoccers/discord-userdoccers/blob/main/alienmd.png?raw=true)
+
 # Discord Unofficial User API Documentation
 
 This repo is an attempt at documenting the unsupported user side of the Discord API, used by the [official client](https://discord.com/app) and [developer portal](https://discord.com/developers/applications), amongst others. 
