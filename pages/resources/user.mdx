@@ -15,8 +15,8 @@ Discord enforces the following restrictions for usernames and nicknames:
 
 The following restrictions are additionally enforced for usernames:
 
-1.  Names cannot contain the following substrings: '@', '#', ':', '\```'.
-2.  Names cannot be: 'discordtag', 'everyone', 'here'.
+1.  Usernames cannot contain the following substrings: '@', '#', ':', '\```', 'discord'.
+2.  Usernames cannot be: 'everyone', 'here', 'system message'.
 
 There are other rules and restrictions not shared here for the sake of spam and abuse mitigation, but the majority of users won't encounter them. It's important to properly handle all error messages returned by Discord when editing or updating names.
 
@@ -24,25 +24,99 @@ There are other rules and restrictions not shared here for the sake of spam and 
 
 ###### User Structure
 
-| Field         | Type      | Description                                                                             | Required OAuth2 Scope |
-| ------------- | --------- | --------------------------------------------------------------------------------------- | --------------------- |
-| id            | snowflake | the user's id                                                                           | identify              |
-| username      | string    | the user's username, not unique across the platform                                     | identify              |
-| discriminator | string    | the user's 4-digit discord-tag                                                          | identify              |
-| avatar        | ?string   | the user's [avatar hash](/reference#image-formatting)                                   | identify              |
-| bot?          | boolean   | whether the user belongs to an OAuth2 application                                       | identify              |
-| system?       | boolean   | whether the user is an Official Discord System user (part of the urgent message system) | identify              |
-| mfa_enabled?  | boolean   | whether the user has two factor enabled on their account                                | identify              |
-| banner?       | ?string   | the user's [banner hash](/reference#image-formatting)                                   | identify              |
-| accent_color? | ?integer  | the user's banner color encoded as an integer representation of hexadecimal color code  | identify              |
-| locale?       | string    | the user's chosen language option                                                       | identify              |
-| verified?     | boolean   | whether the email on this account has been verified                                     | email                 |
-| email?        | ?string   | the user's email                                                                        | email                 |
-| flags?        | integer   | the [flags](#user-flags) on a user's account                                            | identify              |
-| premium_type? | integer   | the [type of Nitro subscription](#premium-types) on a user's account                    | identify              |
-| public_flags? | integer   | the public [flags](#user-flags) on a user's account                                     | identify              |
+| Field                  | Type      | Description                                                                             |
+| ---------------------- | --------- | --------------------------------------------------------------------------------------- |
+| id                     | snowflake | The user's ID                                                                           |
+| username               | string    | The user's username, not unique across the platform                                     |
+| discriminator          | string    | The user's stringified 4-digit Discord tag                                              |
+| avatar                 | ?string   | The user's [avatar hash](/reference#image-formatting)                                   |
+| avatar_decoration      | ?string   | The user's [avatar decoration hash](/reference#image-formatting)                        |
+| bot?                   | boolean   | Whether the user belongs to an OAuth2 application                                       |
+| system?                | boolean   | Whether the user is an Official Discord System user (part of the urgent message system) |
+| mfa_enabled?           | boolean   | Whether the user has two-factor authentication enabled on their account                 |
+| nsfw_allowed\*         | ?boolean  | Whether the user is allowed to see NSFW content, `null` if not yet known                |
+| bio\*                  | string    | The user's bio                                                                          |
+| banner?                | ?string   | The user's [banner hash](/reference#image-formatting)                                   |
+| accent_color?          | ?integer  | The user's banner color encoded as an integer representation of hexadecimal color code  |
+| locale\*\*\*           | string    | The user's chosen [language option](/reference#locales)                                 |
+| verified\*\*           | boolean   | Whether the email on this account has been verified                                     |
+| email\*\*              | ?string   | The user's email                                                                        |
+| phone\*                | ?string   | The user's phone number                                                                 |
+| premium_type           | integer   | The [type of premium (Nitro) subscription](#premium-type) on a user's account           |
+| flags\*                | integer   | The [flags](#user-flags) on a user's account                                            |
+| public_flags?          | integer   | The public [flags](#user-flags) on a user's account                                     |
+| purchased_flags?\*     | integer   | The [purchased flags](#purchased-flags) on a user's account                             |
+| premium_usage_flags?\* | integer   | The [premium usage flags](#premium-usage-flags) on a user's account                     |
+
+\* Not included when fetching a user via OAuth2.
+
+\*\* Not included when fetching a user via OAuth2 without the `email` scope.
+
+\*\*\* Not included in the user object returned over the Gateway.
 
 ###### Example User
+
+```json
+// OAuth2
+{
+  "id": "80351110224678912",
+  "username": "Nelly",
+  "avatar": "8342729096ea3675442027381ff50dfe",
+  "avatar_decoration": null,
+  "discriminator": "1337",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": "06c16474723fe537c283b8efa61a30c8",
+  "accent_color": null,
+  "locale": "en-US",
+  "mfa_enabled": true,
+  "premium_type": 1,
+  "email": "nelly@discord.com",
+  "verified": true
+}
+
+// Full
+{
+  "id": "80351110224678912",
+  "username": "Nelly",
+  "discriminator": "1337",
+  "avatar": "8342729096ea3675442027381ff50dfe",
+  "avatar_decoration": null,
+  "public_flags": 64,
+  "flags": 64,
+  "purchased_flags": 10,
+  "premium_usage_flags": 4,
+  "banner": "06c16474723fe537c283b8efa61a30c8",
+  "accent_color": null,
+  "bio": "I'm a bot!",
+  "locale": "en-US",
+  "nsfw_allowed": true,
+  "mfa_enabled": true,
+  "premium_type": 1,
+  "email": "nelly@discord.com",
+  "verified": true,
+  "phone": "+18885940085"
+}
+```
+
+###### Partial User Structure
+
+| Field              | Type      | Description                                                                             |
+| ------------------ | --------- | --------------------------------------------------------------------------------------- |
+| id                 | snowflake | The user's ID                                                                           |
+| username           | string    | The user's username, not unique across the platform                                     |
+| discriminator      | string    | The user's stringified 4-digit Discord tag                                              |
+| avatar             | ?string   | The user's [avatar hash](/reference#image-formatting)                                   |
+| avatar_decoration? | ?string   | The user's [avatar decoration hash](/reference#image-formatting)                        |
+| bot?               | boolean   | Whether the user belongs to an OAuth2 application                                       |
+| system?            | boolean   | Whether the user is an Official Discord System user (part of the urgent message system) |
+| banner?\*          | ?string   | The user's [banner hash](/reference#image-formatting)                                   |
+| accent_color?\*    | ?integer  | The user's banner color encoded as an integer representation of hexadecimal color code  |
+| public_flags?      | integer   | The public [flags](#user-flags) on a user's account                                     |
+
+\* Only included in [Get User](#get-user) and [Get User Profile](#get-user-profile) endpoints.
+
+###### Example Partial User
 
 ```json
 {
@@ -50,44 +124,100 @@ There are other rules and restrictions not shared here for the sake of spam and 
   "username": "Nelly",
   "discriminator": "1337",
   "avatar": "8342729096ea3675442027381ff50dfe",
-  "verified": true,
-  "email": "nelly@discord.com",
-  "flags": 64,
+  "avatar_decoration": null,
   "banner": "06c16474723fe537c283b8efa61a30c8",
-  "accent_color": 16711680,
-  "premium_type": 1,
-  "public_flags": 64
+  "accent_color": 16711680
 }
 ```
 
 ###### User Flags
 
-| Value   | Description                  |
-| ------- | ---------------------------- |
-| 0       | None                         |
-| 1 << 0  | Discord Employee             |
-| 1 << 1  | Partnered Server Owner       |
-| 1 << 2  | HypeSquad Events             |
-| 1 << 3  | Bug Hunter Level 1           |
-| 1 << 6  | House Bravery                |
-| 1 << 7  | House Brilliance             |
-| 1 << 8  | House Balance                |
-| 1 << 9  | Early Supporter              |
-| 1 << 10 | Team User                    |
-| 1 << 14 | Bug Hunter Level 2           |
-| 1 << 16 | Verified Bot                 |
-| 1 << 17 | Early Verified Bot Developer |
-| 1 << 18 | Discord Certified Moderator  |
+| Value   | Name                       | Description                                                                                 | Public |
+| ------- | -------------------------- | ------------------------------------------------------------------------------------------- | ------ |
+| 1 << 0  | STAFF                      | Discord Staff                                                                               | Yes    |
+| 1 << 1  | PARTNER                    | Partnered Server Owner                                                                      | Yes    |
+| 1 << 2  | HYPESQUAD                  | HypeSquad Events                                                                            | Yes    |
+| 1 << 3  | BUG_HUNTER_LEVEL_1         | Level 1 Discord Bug Hunter                                                                  | Yes    |
+| 1 << 4  | MFA_SMS                    | SMS enabled as a two-factor authentication backup                                           | No     |
+| 1 << 5  | PREMIUM_PROMO_DISMISSED    | User has dismissed the current premium (Nitro) promotion                                    | No     |
+| 1 << 6  | HYPESQUAD_ONLINE_HOUSE_1   | HypeSquad Bravery                                                                           | Yes    |
+| 1 << 7  | HYPESQUAD_ONLINE_HOUSE_2   | HypeSquad Brilliance                                                                        | Yes    |
+| 1 << 8  | HYPESQUAD_ONLINE_HOUSE_3   | HypeSquad Balance                                                                           | Yes    |
+| 1 << 9  | PREMIUM_EARLY_SUPPORTER    | Early Premium (Nitro) Supporter                                                             | Yes    |
+| 1 << 10 | TEAM_PSEUDO_USER           | User is a [Team](#topics/teams)                                                             | Yes    |
+| 1 << 11 | INTERNAL_APPLICATION       | User has a pending partner or bot verification application                                  | No     |
+| 1 << 12 | SYSTEM                     | User is a system user (i.e. official Discord account)                                       | Yes    |
+| 1 << 13 | HAS_UNREAD_URGENT_MESSAGES | User has unread urgent system messages; an urgent message is one sent from Trust and Safety | No     |
+| 1 << 14 | BUG_HUNTER_LEVEL_2         | Level 2 Discord Bug Hunter                                                                  | Yes    |
+| 1 << 15 | UNDERAGE_DELETED           | User is scheduled to be deleted for being under the minimum required age                    | No     |
+| 1 << 16 | VERIFIED_BOT               | User is a verified bot                                                                      | Yes    |
+| 1 << 17 | VERIFIED_DEVELOPER         | Early Verified Bot Developer                                                                | Yes    |
+| 1 << 18 | CERTIFIED_MODERATOR        | Moderator Programs Alumni                                                                   | Yes    |
+| 1 << 19 | BOT_HTTP_INTERACTIONS      | Bot uses only HTTP interactions and is shown in the online member list                      | Yes    |
+| 1 << 20 | SPAMMER                    | User is marked as a spammer and has their messages collapsed in the UI                      | Yes    |
+| 1 << 21 | DISABLE_PREMIUM            | User has manually disabled Nitro features                                                   | No     |
+| 1 << 22 | ACTIVE_DEVELOPER           | [Active Developer](https://support-dev.discord.com/hc/articles/10113997751447)              | Yes    |
+| 1 << 44 | QUARANTINED                | User is quarantined and cannot create DMs or accept invites                                 | No     |
 
-###### Premium Types
+###### Purchased Flags
 
-Premium types denote the level of premium a user has. Visit the [Nitro](https://discord.com/nitro) page to learn more about the premium plans we currently offer.
+Purchased flags denote what premium items a user has ever purchased. Visit the [Nitro](https://discord.com/nitro) page to learn more about the premium plans currently offered.
+
+| Value  | Name          | Description                          |
+| ------ | ------------- | ------------------------------------ |
+| 1 << 0 | NITRO_CLASSIC | The user has purchased Nitro classic |
+| 1 << 1 | NITRO         | The user has purchased regular Nitro |
+| 1 << 2 | GUILD_BOOST   | The user has purchased a guild boost |
+| 1 << 3 | NITRO_BASIC   | The user has purchased Nitro basic   |
+
+###### Premium Usage Flags
+
+Premium usage flags denote what premium (Nitro) features a user has utilized.
+
+| Value  | Name                  | Description                                  |
+| ------ | --------------------- | -------------------------------------------- |
+| 1 << 0 | PREMIUM_DISCRIMINATOR | The user has utilized premium discriminators |
+| 1 << 1 | ANIMATED_AVATAR       | The user has utilized animated avatars       |
+| 1 << 2 | PROFILE_BANNER        | The user has utilized profile banners        |
+
+###### Premium Type
+
+Premium types denote the level of premium a user has. Visit the [Nitro](https://discord.com/nitro) page to learn more about the premium plans currently offered.
 
 | Value | Name          |
 | ----- | ------------- |
 | 0     | None          |
 | 1     | Nitro Classic |
 | 2     | Nitro         |
+| 3     | Nitro Basic   |
+
+### Profile Metadata Object
+
+Represents a user's profile metadata.
+
+###### Profile Metadata Structure
+
+| Field         | Type            | Description                                                                                      |
+| ------------- | --------------- | ------------------------------------------------------------------------------------------------ |
+| guild_id?     | snowflake       | The guild ID this profile applies to, if it is a guild profile                                   |
+| bio?          | string          | The user's bio                                                                                   |
+| banner?       | ?string         | The user's [banner hash](/reference#image-formatting)                                            |
+| accent_color? | ?integer        | The user's banner color encoded as an integer representation of hexadecimal color code           |
+| theme_colors? | ?array[integer] | The user's two theme colors encoded as an array of integers representing hexadecimal color codes |
+
+###### Example Profile Metadata
+
+```json
+{
+  "accent_color": null,
+  "banner": null,
+  "bio": "👽 Professional alien",
+  "emoji": null,
+  "guild_id": "80351110224678912",
+  "popout_animation_particle_type": null,
+  "theme_colors": [1, 1]
+}
+```
 
 ### Connection Object
 
@@ -95,44 +225,185 @@ The connection object that the user has attached.
 
 ###### Connection Structure
 
-| Field         | Type    | Description                                                                     |
-| ------------- | ------- | ------------------------------------------------------------------------------- |
-| id            | string  | id of the connection account                                                    |
-| name          | string  | the username of the connection account                                          |
-| type          | string  | the service of the connection (twitch, youtube)                                 |
-| revoked?      | boolean | whether the connection is revoked                                               |
-| integrations? | array   | an array of partial [server integrations](/resources/guild#integration-object)  |
-| verified      | boolean | whether the connection is verified                                              |
-| friend_sync   | boolean | whether friend sync is enabled for this connection                              |
-| show_activity | boolean | whether activities related to this connection will be shown in presence updates |
-| visibility    | integer | [visibility](#visibility-types) of this connection                              |
+| Field               | Type                                                                    | Description                                                             |
+| ------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| id                  | string                                                                  | ID of the connection account                                            |
+| type                | string                                                                  | The [type](#connection-type) of the connection                          |
+| name                | string                                                                  | The username of the connection account                                  |
+| verified            | boolean                                                                 | Whether the connection is verified                                      |
+| metadata?           | object                                                                  | Service-specific metadata about the connection                          |
+| metadata_visibility | integer                                                                 | [Visibility](#visibility-type) of the connection's metadata             |
+| revoked             | boolean                                                                 | whether the connection is revoked                                       |
+| integrations        | array[partial [guild integration](/resources/guild#integration-object)] | The guild integrations attached to the connection                       |
+| friend_sync         | boolean                                                                 | Whether friend sync is enabled for this connection                      |
+| show_activity       | boolean                                                                 | Whether activities related to this connection will be shown in presence |
+| two_way_link        | boolean                                                                 | Whether this connection has a corresponding third party OAuth2 token    |
+| visibility          | integer                                                                 | [Visibility](#visibility-type) of this connection                       |
+| access_token?\*     | string                                                                  | The access token for the connection account                             |
 
-###### Visibility Types
+\* Not included when fetching a user's connections via OAuth2.
+
+###### Example Connection
+
+```json
+{
+  "type": "reddit",
+  "id": "run&hide",
+  "name": "alien",
+  "visibility": 1,
+  "friend_sync": false,
+  "show_activity": true,
+  "verified": true,
+  "two_way_link": false,
+  "metadata_visibility": 1,
+  "metadata": {
+    "gold": "0",
+    "mod": "1",
+    "total_karma": "20223",
+    "created_at": "2019-05-02T20:28:37"
+  },
+  "revoked": false,
+  "integrations": []
+}
+```
+
+###### Partial Connection Structure
+
+| Field         | Type                                                                    | Description                                       |
+| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------- |
+| id            | string                                                                  | ID of the connection account                      |
+| type          | string                                                                  | The [type](#connection-type) of the connection    |
+| name          | string                                                                  | The username of the connection account            |
+| verified      | boolean                                                                 | Whether the connection is verified                |
+| metadata?     | object                                                                  | Service-specific metadata about the connection    |
+| integrations? | array[partial [guild integration](/resources/guild#integration-object)] | The guild integrations attached to the connection |
+
+###### Example Partial Connection
+
+```json
+{
+  "type": "reddit",
+  "id": "run&hide",
+  "name": "alien",
+  "verified": true,
+  "metadata": {
+    "gold": "0",
+    "mod": "1",
+    "total_karma": "20223",
+    "created_at": "2019-05-02T20:28:37"
+  }
+}
+```
+
+###### Connection Type
+
+| Value           | Name                |
+| --------------- | ------------------- |
+| battlenet       | Battle.net          |
+| contacts        | Contact Sync        |
+| crunchyroll     | Crunchyroll         |
+| ebay            | eBay                |
+| epicgames       | Epic Games          |
+| facebook        | Facebook            |
+| github          | GitHub              |
+| leagueoflegends | League of Legends   |
+| paypal          | PayPal              |
+| playstation     | PlayStation Network |
+| reddit          | Reddit              |
+| riotgames       | Riot Games          |
+| samsung\*       | Samsung Galaxy      |
+| spotify         | Spotify             |
+| skype\*         | Skype               |
+| steam           | Steam               |
+| tiktok          | TikTok              |
+| twitch          | Twitch              |
+| twitter         | Twitter             |
+| xbox            | Xbox                |
+| youtube         | YouTube             |
+
+\* Service can no longer be added by users.
+
+###### Visibility Type
 
 | Value | Name     | Description                                      |
 | ----- | -------- | ------------------------------------------------ |
-| 0     | None     | invisible to everyone except the user themselves |
-| 1     | Everyone | visible to everyone                              |
+| 0     | None     | Invisible to everyone except the user themselves |
+| 1     | Everyone | Visible to everyone                              |
+
+[Partial connections](#partial-connection-structure) always have a visibility of 1.
+
+### Relationship Object
+
+A relationship between the current user and another user.
+
+###### Relationship Structure
+
+| Field    | Type                 | Description                                                |
+| -------- | -------------------- | ---------------------------------------------------------- |
+| id       | string               | The [user](#user-object) ID of the target user             |
+| type     | integer              | The [type](#relationship-type) of the relationship         |
+| user     | [user](#user-object) | The partial [user](#user-object) object of the target user |
+| nickname | string?              | The nickname of the target friend                          |
+| since?   | ISO8601 timestamp    | When the user requested a relationship                     |
+
+###### Example Relationship
+
+```json
+{
+  "id": "852892297661906993",
+  "type": 3,
+  "nickname": null,
+  "user": {
+    "id": "852892297661906993",
+    "username": "Alien",
+    "avatar": "14733482e560d9267c0a414b21b2fb8d",
+    "avatar_decoration": null,
+    "discriminator": "1337",
+    "public_flags": 64
+  },
+  "since": "2023-02-10T01:58:05.348000+00:00"
+}
+```
+
+###### Relationship Type
+
+| Value | Name             | Description                                                    |
+| ----- | ---------------- | -------------------------------------------------------------- |
+| 0     | None             | No relationship exists (this shouldn't usually be encountered) |
+| 1     | Friend           | The user is a friend                                           |
+| 2     | Blocked          | The user is blocked                                            |
+| 3     | Incoming Request | The user has sent a friend request to the current user         |
+| 4     | Outgoing Request | The current user has sent a friend request to the user         |
+| 5     | Implicit         | The user is an affinity of the current user                    |
+| 6     | Suggestion       | The user is a friend suggestion for the current user           |
+
+### Application Role Connection Object
+
+The role connection object that an application has attached to a user.
+
+###### Application Role Connection Structure
+
+| Field                 | Type                                                                                                              | Description                                                                                                                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| platform_name         | ?string                                                                                                           | The vanity name of the platform a bot has connected (max 50 characters)                                                                                                                                                            |
+| platform_username     | ?string                                                                                                           | The username on the platform a bot has connected (max 100 characters)                                                                                                                                                              |
+| metadata              | object                                                                                                            | Object mapping [application role connection metadata](/resources/application#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
+| application?          | integration [application](/resources/application#application-object) object                                       | The application that owns the role connection                                                                                                                                                                                      |
+| application_metadata? | array[[application role connection metadata](/resources/application#application-role-connection-metadata-object)] | The metadata that the application has set for the role connection                                                                                                                                                                  |
 
 ## Endpoints
 
-<RouteHeader method="GET" url="/users/@me">
+<RouteHeader method="GET" url="/users/@me" supportsOAuth2="identify">
   Get Current User
 </RouteHeader>
 
-Returns the [user](#user-object) object of the requester's account. For OAuth2, this requires the `identify` scope, which will return the object _without_ an email, and optionally the `email` scope, which returns the object _with_ an email.
-
-<RouteHeader method="GET" url="/users/{user.id}">
-  Get User
-</RouteHeader>
-
-Returns a [user](#user-object) object for a given user ID.
+Returns the [user](#user-object) object of the requester's account.
 
 <RouteHeader method="PATCH" url="/users/@me">
   Modify Current User
 </RouteHeader>
 
-Modify the requester's user account settings. Returns a [user](#user-object) object on success.
+Modify the requester's user account settings. Returns a [user](#user-object) object on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
 
 <Alert type="info">
 
@@ -142,18 +413,254 @@ All parameters to this endpoint are optional.
 
 ###### JSON Params
 
-| Field    | Type                                 | Description                                                                      |
-| -------- | ------------------------------------ | -------------------------------------------------------------------------------- |
-| username | string                               | user's username, if changed may cause the user's discriminator to be randomized. |
-| avatar   | ?[image data](/reference#image-data) | if passed, modifies the user's avatar                                            |
+| Field                     | Type                                 | Description                                                                                                                                       |
+| ------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| username?                 | string                               | The user's username; if changed may cause the user's discriminator to be randomized                                                               |
+| discriminator?            | string                               | The user's stringified 4-digit Discord tag; can only be changed for premium (Nitro) users, which triggers a reroll after the subscription expires |
+| avatar?                   | ?[image data](/reference#image-data) | The user's avatar                                                                                                                                 |
+| avatar_decoration?        | ?[image data](/reference#image-data) | The user's avatar decoration                                                                                                                      |
+| avatar_decoration_preset? | ?[image data](/reference#image-data) | The user's avatar decoration selected from a list of presets                                                                                      |
+| email?                    | string                               | The user's email; if changing from a verified email `email_token` must be provided                                                                |
+| email_token?              | string                               | The user's email token from their previous email                                                                                                  |
+| bio?                      | ?string                              | The user's bio                                                                                                                                    |
+| banner?                   | ?[image data](/reference#image-data) | The user's banner; can only be changed for premium (Nitro) users                                                                                  |
+| accent_color?             | ?integer                             | The user's accent color as a hex integer                                                                                                          |
+| date_of_birth?            | ISO8601 timestamp                    | The user's date of birth; can only be set once                                                                                                    |
+| password?\*               | string                               | The user's current password; if the account does not have a password this sets it                                                                 |
+| new_password?             | string                               | The user's new password                                                                                                                           |
+
+\* Required for changing `username`, `discriminator`, `email`, `date_of_birth`, or `new_password`.
+
+###### Extra Fields
+
+| Field | Type   | Description                          |
+| ----- | ------ | ------------------------------------ |
+| token | string | The new token for the user's account |
+
+<RouteHeader method="GET" url="/users/{user.id}">
+  Get User
+</RouteHeader>
+
+Returns a partial [user](#user-object) object for a given user ID.
+
+<RouteHeader method="GET" url="/users/{user.id}/profile">
+  Get User Profile
+</RouteHeader>
+
+Returns a user profile object for a given user ID.
+
+<Alert type="warn">
+
+This endpoint requires one of the following:
+
+- The user is a bot
+- The user shares a mutual guild with the current user
+- The user is a friend of the current user
+- The user has an outgoing friend request to the current user
+- A valid `friend_token` is provided
+
+</Alert>
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### Query String Params
+
+| Field                      | Type      | Description                                                                                       |
+| -------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| with_mutual_guilds?        | boolean   | Whether to include the mutual guilds of the user with the current user (default true)             |
+| with_mutual_friends_count? | boolean   | Whether to include the number of mutual friends of the user with the current user (default false) |
+| guild_id?                  | snowflake | The guild ID to get the user's member profile in                                                  |
+| connections_role_id?       | snowflake | The role ID to get the user's application role connection metadata in                             |
+| friend_token?              | string    | The friend token of the user                                                                      |
+
+###### Response Body
+
+| Field                         | Type                                                                      | Description                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| user                          | partial [user](#user-object) object                                       | The user object with an extra `bio` key                                     |
+| user_profile\*                | [profile metadata](#profile-metadata-object) object                       | The user's profile metadata                                                 |
+| guild_member?\*               | [guild member](#guild-member-object) object                               | The guild member in the guild specified, with extra `banner` and `bio` keys |
+| guild_member_profile?\*       | [profile metadata](#profile-metadata-object) object                       | The guild member's profile in the guild specified                           |
+| mutual_guilds?                | array[[mutual guild](#mutual-guild-structure)]                            | The mutual guilds of the user with the current user                         |
+| mutual_friends_count?         | integer                                                                   | The number of mutual friends the user has with the current user             |
+| connected_accounts            | array[partial [connected account](#connected-account-object)]             | The user's public connected accounts                                        |
+| application_role_connections? | array[[application role connection](#application-role-connection-object)] | The user's application role connections for the role specified              |
+| premium_type\*                | ?integer                                                                  | The user's [premium type](#premium-type)                                    |
+| premium_since\*               | ?ISO8601 timestamp                                                        | The date the user's premium (Nitro) subscription started                    |
+| premium_guild_since\*         | ?ISO8601 timestamp                                                        | The date the user's premium guild (boosting) subscription started           |
+
+\* These fields are unexpectedly missing or `null` if the user has blocked the current user.
+
+###### Mutual Guild Structure
+
+| Field | Type      | Description                      |
+| ----- | --------- | -------------------------------- |
+| id    | snowflake | The guild ID                     |
+| nick  | ?string   | The user's nickname in the guild |
+
+###### Example Object
+
+```json
+{
+  "user": {
+    "id": "852892297661906993",
+    "username": "Alien",
+    "avatar": "9d52298a3ad006da31ac66a86230d9f2",
+    "avatar_decoration": null,
+    "discriminator": "0040",
+    "public_flags": 64,
+    "flags": 64,
+    "banner": "a_17a0757cf6121ccc07546de9bff3edb2",
+    "accent_color": null,
+    "bio": "👽 Professional smoothbrain"
+  },
+  "connected_accounts": [
+    {
+      "type": "twitter",
+      "id": "123456",
+      "name": "discord",
+      "verified": true,
+      "metadata": {
+        "verified": "1",
+        "followers_count": "100000",
+        "statuses_count": "100000",
+        "created_at": "2016-01-01T00:00:00"
+      }
+    }
+  ],
+  "premium_since": "2016-01-01T00:00:00.00+00:00",
+  "premium_type": 2,
+  "premium_guild_since": "2016-01-01T00:00:00.00+00:00",
+  "mutual_friends_count": 100,
+  "mutual_guilds": [
+    {
+      "id": "80351110224678912",
+      "nick": "Liena"
+    }
+  ],
+  "guild_member": {
+    "avatar": null,
+    "communication_disabled_until": null,
+    "flags": 0,
+    "is_pending": false,
+    "joined_at": "2016-01-01T00:00:00.00+00:00",
+    "nick": null,
+    "pending": false,
+    "premium_since": "2016-01-01T00:00:00.00+00:00",
+    "roles": [],
+    "user": {
+      "id": "852892297661906993",
+      "username": "Alien",
+      "avatar": "9d52298a3ad006da31ac66a86230d9f2",
+      "avatar_decoration": null,
+      "discriminator": "0040",
+      "public_flags": 4194368
+    },
+    "bio": "👽 Professional alien",
+    "banner": null,
+    "mute": false,
+    "deaf": false
+  },
+  "application_role_connections": [
+    {
+      "platform_name": "Aliens United",
+      "platform_username": "Alien",
+      "metadata": {
+        "real": "1",
+        "certified": "1"
+      },
+      "application": {
+        "id": "891436233903964161",
+        "name": "Lightbulb",
+        "icon": "4d47160ec8c45f22e2bdbe75ac3e1bbd",
+        "description": "<:support_icon:853084466016288828> Imagine a bot.",
+        "summary": "",
+        "type": null,
+        "bot": {
+          "id": "891436233903964161",
+          "username": "Lightbulb",
+          "display_name": null,
+          "avatar": "59fb354bf144ed784aa8bdef88d135bb",
+          "avatar_decoration": null,
+          "discriminator": "5312",
+          "public_flags": 0,
+          "bot": true
+        }
+      },
+      "application_metadata": {
+        "real": {
+          "type": 7,
+          "key": "real",
+          "name": "Real",
+          "description": "Are you real alier?"
+        },
+        "certified": {
+          "type": 7,
+          "key": "certified",
+          "name": "Certified",
+          "description": "Are you certified alier?"
+        }
+      }
+    }
+  ],
+  "user_profile": {
+    "bio": "👽 Professional smoothbrain",
+    "accent_color": null,
+    "banner": "a_17a0757cf6121ccc07546de9bff3edb2",
+    "theme_colors": [1, 1],
+    "popout_animation_particle_type": 100000,
+    "emoji": null
+  },
+  "guild_member_profile": {
+    "guild_id": "80351110224678912",
+    "bio": "👽 Professional alien",
+    "banner": null,
+    "accent_color": null,
+    "theme_colors": [1, 1],
+    "popout_animation_particle_type": null,
+    "emoji": null
+  }
+}
+```
+
+<RouteHeader method="PATCH" url="/users/@me/profile">
+  Modify User Profile
+</RouteHeader>
+
+Modify the current user's profile. Returns a [profile metadata](#profile-metadata-object) object on success. Fires a [User Update](#DOCS_TOPICS_GATEWAY/user-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field         | Type                                 | Description                                                                                      |
+| ------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| bio?          | ?string                              | The user's bio                                                                                   |
+| banner?       | ?[image data](/reference#image-data) | The user's banner; can only be changed for premium (Nitro) users                                 |
+| accent_color? | ?integer                             | The user's accent color as a hex integer                                                         |
+| theme_colors? | ?array[integer]                      | The user's two theme colors encoded as an array of integers representing hexadecimal color codes |
+
+<RouteHeader method="GET" url="/users/{user.id}/relationships">
+  Get User Mutual Relationships
+</RouteHeader>
+
+Returns a list of partial [user](#DOCS_RESOURCES_USER/user-object) objects that are friends with the user and current user.
 
 <RouteHeader method="GET" url="/users/@me/guilds">
-  Get Current User Guilds
+  List User Guilds
 </RouteHeader>
 
 Returns a list of partial [guild](/resources/guild#guild-object) objects the current user is a member of. Requires the `guilds` OAuth2 scope.
 
-###### Example Partial Guild
+###### Example Object
 
 ```json
 {
@@ -168,17 +675,17 @@ Returns a list of partial [guild](/resources/guild#guild-object) objects the cur
 
 <Alert type="info">
 
-This endpoint returns 200 guilds by default, which is the maximum number of guilds a non-bot user can join. Therefore, pagination is **not needed** for integrations that need to get a list of the users' guilds.
+This endpoint returns 200 guilds by default, which is the maximum number of guilds a non-bot user can join. Therefore, pagination is **not needed** in order to get a list of the users' guilds, and all parameters are optional.
 
 </Alert>
 
 ###### Query String Params
 
-| Field  | Type      | Description                            | Required | Default |
-| ------ | --------- | -------------------------------------- | -------- | ------- |
-| before | snowflake | get guilds before this guild ID        | false    | absent  |
-| after  | snowflake | get guilds after this guild ID         | false    | absent  |
-| limit  | integer   | max number of guilds to return (1-200) | false    | 200     |
+| Field   | Type      | Description                                         |
+| ------- | --------- | --------------------------------------------------- |
+| before? | snowflake | Get guilds before this guild ID                     |
+| after?  | snowflake | Get guilds after this guild ID                      |
+| limit?  | integer   | Max number of guilds to return (1-200, default 200) |
 
 <RouteHeader method="DELETE" url="/users/@me/guilds/{guild.id}">
   Leave Guild
@@ -186,45 +693,379 @@ This endpoint returns 200 guilds by default, which is the maximum number of guil
 
 Leave a guild. Returns a 204 empty response on success.
 
-<RouteHeader method="POST" url="/users/@me/channels">
-  Create DM
+<RouteHeader method="GET" url="/users/@me/channels">
+  List Private Channels
 </RouteHeader>
 
-Create a new DM channel with a user. Returns a [DM channel](/resources/channel#channel-object) object.
+Returns a list of active [private channel](/resources/channel#channel-object) objects the user is participating in.
+
+<RouteHeader method="POST" url="/users/@me/channels">
+  Create Private Channel
+</RouteHeader>
+
+One recipient creates or returns an existing [DM channel](/resources/channel#channel-object), no or multiple recipients create a [group DM channel](/resources/channel#channel-object). Returns a [private channel](/resources/channel#channel-object) object. Fires a [Channel Create](/topics/gateway-events#channel-create) Gateway event.
 
 <Alert type="warn">
 
-You should not use this endpoint to DM everyone in a server about something. DMs should generally be initiated by a user action. If you open a significant amount of DMs too quickly, your bot may be rate limited or blocked from opening new ones.
+You should not use this endpoint to create multiple new DMs in a short period of time.
 
 </Alert>
 
 ###### JSON Params
 
-| Field        | Type      | Description                             |
-| ------------ | --------- | --------------------------------------- |
-| recipient_id | snowflake | the recipient to open a DM channel with |
+| Field      | Type             | Description                                 |
+| ---------- | ---------------- | ------------------------------------------- |
+| recipients | array[snowflake] | The users to include in the private channel |
 
-<RouteHeader method="POST" url="/users/@me/channels">
-  Create Group DM
+<RouteHeader method="GET" url="/users/@me/notes">
+  List User Notes
 </RouteHeader>
 
-Create a new group DM channel with multiple users. Returns a [DM channel](/resources/channel#channel-object) object. This endpoint was intended to be used with the now-deprecated GameBridge SDK. DMs created with this endpoint will not be shown in the Discord client
+Returns a mapping of [user](#user-object) IDs to notes for the current user.
 
-<Alert type="warn">
+###### Example Object
 
-This endpoint is limited to 10 active group DMs.
+```json
+{
+  "852892297661906993": "This is a note",
+  "787017887877169173": "This is another note"
+}
+```
+
+<RouteHeader method="GET" url="/users/@me/notes/{user.id}">
+  Get User Note
+</RouteHeader>
+
+Returns the note for the given [user](#user-object).
+
+###### Response Body
+
+| Field        | Type      | Description                                                       |
+| ------------ | --------- | ----------------------------------------------------------------- |
+| note         | string    | The note                                                          |
+| note_user_id | snowflake | The ID of the user the note is on                                 |
+| user_id      | snowflake | The ID of the user who created the note (always the current user) |
+
+###### Example Object
+
+```json
+{
+  "note": "This is a note",
+  "note_user_id": "787017887877169173",
+  "user_id": "852892297661906993"
+}
+```
+
+<RouteHeader method="PUT" url="/users/@me/notes/{user.id}">
+  Modify User Note
+</RouteHeader>
+
+Sets the note for the given [user](#user-object). Returns a 204 empty response on success. Fires a [User Note Update](/topics/gateway-events#user-note-update) Gateway event.
+
+###### JSON Params
+
+| Field | Type    | Description |
+| ----- | ------- | ----------- |
+| note  | string? | The note    |
+
+<RouteHeader method="POST" url="/connections/{connection.type}/authorize">
+  Authorize User Connection
+</RouteHeader>
+
+Returns an object with one 'url' key that represents the authorization link for authorizing a new connection.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
 
 </Alert>
 
 ###### JSON Params
 
-| Field         | Type             | Description                                                            |
-| ------------- | ---------------- | ---------------------------------------------------------------------- |
-| access_tokens | array of strings | access tokens of users that have granted your app the `gdm.join` scope |
-| nicks         | dict             | a dictionary of user ids to their respective nicknames                 |
+| Field              | Type    | Description                                                |
+| ------------------ | ------- | ---------------------------------------------------------- |
+| two_way_link_type? | string? | The [type of two-way link](#two-way-link-type) to create   |
+| two_way_user_code? | string? | The device code to use for the two-way link                |
+| continuation?      | boolean | Whether this is a continuation of a previous authorization |
 
-<RouteHeader method="GET" url="/users/@me/connections">
+###### Two Way Link Type
+
+| Value   | Description                          |
+| ------- | ------------------------------------ |
+| web     | The connection is linked via web     |
+| mobile  | The connection is linked via mobile  |
+| desktop | The connection is linked via desktop |
+
+###### Response Body
+
+| Field | Type   | Description                         |
+| ----- | ------ | ----------------------------------- |
+| url   | string | The authorization link for the user |
+
+<RouteHeader method="POST" url="/connections/{connection.type}/callback">
+  Create User Connection
+</RouteHeader>
+
+Create a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#connection-create) Gateway event.
+
+###### JSON Params
+
+| Field              | Type    | Description                                 |
+| ------------------ | ------- | ------------------------------------------- |
+| code               | string  | The authorization code for the connection   |
+| state              | string  | The state used to authorize the connection  |
+| two_way_link_code? | string  | The code to use for two-way linking         |
+| insecure?          | boolean | Whether the connection is insecure          |
+| friend_sync?       | boolean | Whether to sync friends over the connection |
+
+<RouteHeader method="GET" url="/users/@me/connections" supportsOAuth2="connections">
   Get User Connections
 </RouteHeader>
 
-Returns a list of [connection](#connection-object) objects. Requires the `connections` OAuth2 scope.
+Returns a list of [connection](#connection-object) objects.
+
+<RouteHeader method="GET" url="/users/@me/connections/{connection.type}/{connection.id}/access-token">
+  Get User Connection Access Token
+</RouteHeader>
+
+Returns a new access token for the given connection. Only available for Twitch, YouTube, and Spotify connections. Fires a [User Connections Update](/topics/gateway-events#connection-update) Gateway event.
+
+##### Response Body
+
+| Field        | Type   | Description                   |
+| ------------ | ------ | ----------------------------- |
+| access_token | string | The connection's access token |
+
+<RouteHeader method="GET" url="/users/@me/connections/{connection.type}/{connection.id}/subreddits">
+  List User Connection Subreddits
+</RouteHeader>
+
+Returns a list of subreddits the connected account moderates. Only available for Reddit connections.
+
+##### Response Body
+
+| Field       | Type    | Description                       |
+| ----------- | ------- | --------------------------------- |
+| id          | string  | The subreddit's ID                |
+| subscribers | integer | The number of joined Reddit users |
+| url         | string  | The subreddit's relative URL      |
+
+##### Example Object
+
+```json
+{
+  "id": "t5_10rq6y",
+  "subscribers": 1019,
+  "url": "/r/discordapp/"
+}
+```
+
+<RouteHeader method="POST" url="/users/@me/connections/{connection.type}/{connection.id}/refresh">
+  Refresh User Connection
+</RouteHeader>
+
+Refreshes a connection. Returns a 204 empty response on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+
+<RouteHeader method="PATCH" url="/users/@me/connections/{connection.type}/{connection.id}">
+  Modify User Connection
+</RouteHeader>
+
+Modifies a connection. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+
+Not all connection types support all parameters.
+
+###### Query String Params
+
+| Field               | Type            | Description                                                             |
+| ------------------- | --------------- | ----------------------------------------------------------------------- |
+| name                | string          | The connection's username                                               |
+| show_activity       | boolean         | Whether activities related to this connection will be shown in presence |
+| friend_sync         | boolean         | Whether friend sync is enabled for this connection                      |
+| metadata_visibility | integer/boolean | [Visibility](#visibility-type) of the connection's metadata             |
+| visibility          | integer/boolean | [Visibility](#visibility-type) of the connection                        |
+
+<RouteHeader method="DELETE" url="/users/@me/connections/{connection.type}/{connection.id}">
+  Delete User Connection
+</RouteHeader>
+
+Deletes a connection. Returns a 204 empty response on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+
+<RouteHeader method="GET" url="/users/@me/relationships" supportsOAuth2="relationships.read">
+  Get User Relationships
+</RouteHeader>
+
+Returns a list of [relationship](#relationship-object) objects for the current user.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### Query String Params
+
+| Field            | Type    | Description                                                               |
+| ---------------- | ------- | ------------------------------------------------------------------------- |
+| with_implicit?\* | boolean | Whether to include non-user-created implicit relationships (default true) |
+
+\* Only usable with OAuth2 requests.
+
+<RouteHeader method="POST" url="/users/@me/relationships">
+  Create User Relationship
+</RouteHeader>
+
+Sends a friend request to another user, which can be accepted by creating a new relationship of type friend.
+Returns a 204 empty response on success. Fires a [Relationship Add](/topics/gateway-events#user-relationship-create) Gateway event.
+
+###### JSON Params
+
+| Field         | Type   | Description                                               |
+| ------------- | ------ | --------------------------------------------------------- |
+| username      | string | The username of the user to send a friend request to      |
+| discriminator | string | The discriminator of the user to send a friend request to |
+
+<RouteHeader method="PUT" url="/users/@me/relationships/{user.id}">
+  Add User Relationship
+</RouteHeader>
+
+Adds a relationship to another user. Returns a 204 empty response on success. Fires a [Relationship Add](/topics/gateway-events#user-relationship-create) Gateway event.
+
+###### JSON Params
+
+| Field                   | Type    | Description                                                                                                                       |
+| ----------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| type?                   | integer | The [relationship type](#relationship-type) to create (defaults to -1, which accepts an existing or creates a new friend request) |
+| from_friend_suggestion? | boolean | Whether the relationship was created from a friend suggestion (default false)                                                     |
+| friend_token?           | string  | The friend token of the user to add a direct friend relationship to                                                               |
+
+<RouteHeader method="PATCH" url="/users/@me/relationships/{user.id}">
+  Modify User Relationship
+</RouteHeader>
+
+Modifies a relationship to another user. Returns a 204 empty response on success. Fires a [Relationship Update](/topics/gateway-events#user-relationship-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type   | Description                      |
+| ----------- | ------ | -------------------------------- |
+| nickname?\* | string | The nickname of the relationship |
+
+\* Only applicable to relationships of type friend.
+
+<RouteHeader method="DELETE" url="/users/@me/relationships/{user.id}">
+  Remove User Relationship
+</RouteHeader>
+
+Removes a relationship to another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#user-relationship-delete) Gateway event.
+
+<RouteHeader method="GET" url="/users/@me/invites">
+  Get User Invites
+</RouteHeader>
+
+Returns a list of friend [invite](#invite-object) objects for the current user.
+
+<RouteHeader method="POST" url="/users/@me/invites">
+  Create User Invite
+</RouteHeader>
+
+Creates a new friend invite. Accepts an empty body. Returns a friend [invite](#invite-object) object on success.
+
+<RouteHeader method="DELETE" url="/users/@me/invites">
+  Revoke User invites
+</RouteHeader>
+
+Revokes all of the current user's friend invites. Returns a list of revoked friend [invite](#invite-object) objects on success.
+
+<RouteHeader method="GET" url="/users/@me/premium-usage">
+  Get User Premium Usage
+</RouteHeader>
+
+Returns the current user's premium usage for various perks. Only available for users with Nitro.
+
+##### Response Body
+
+| Field                 | Type                                             | Description                                     |
+| --------------------- | ------------------------------------------------ | ----------------------------------------------- |
+| nitro_sticker_sends   | [Premium Usage Object](#premium-usage-structure) | The number of Nitro sticker the user has sent   |
+| total_animated_emojis | [Premium Usage Object](#premium-usage-structure) | The number of animated emojis the user has sent |
+| total_global_emojis   | [Premium Usage Object](#premium-usage-structure) | The number of global emojis the user has sent   |
+| total_large_uploads   | [Premium Usage Object](#premium-usage-structure) | The number of large uploads the user has made   |
+| total_hd_streams      | [Premium Usage Object](#premium-usage-structure) | The number of streams the user has made in HD   |
+| hd_hours_streamed     | [Premium Usage Object](#premium-usage-structure) | The number of hours the user has streamed in HD |
+
+##### Premium Usage Structure
+
+| Field | Type    | Description                            |
+| ----- | ------- | -------------------------------------- |
+| value | integer | The total number of uses for this perk |
+
+##### Example Object
+
+```json
+{
+  "total_large_uploads": {
+    "value": 50
+  },
+  "total_global_emojis": {
+    "value": 967
+  },
+  "total_animated_emojis": {
+    "value": 217
+  },
+  "nitro_sticker_sends": {
+    "value": 303
+  },
+  "hd_hours_streamed": {
+    "value": 100
+  },
+  "total_hd_streams": {
+    "value": 50
+  }
+}
+```
+
+<RouteHeader
+  method="GET"
+  url="/users/@me/applications/{application.id}/role-connection"
+  supportsOAuth2="role_connections.write"
+>
+  Get User Application Role Connection
+</RouteHeader>
+
+Returns the [application role connection](#application-role-connection-object) for the user, without optional fields.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `role_connections.write` scope for the application specified in the path.
+
+</Alert>
+
+<RouteHeader
+  method="PUT"
+  url="/users/@me/applications/{application.id}/role-connection"
+  supportsOAuth2="role_connections.write"
+>
+  Modify User Application Role Connection
+</RouteHeader>
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `role_connections.write` scope for the application specified in the path.
+
+</Alert>
+
+Updates and returns the [application role connection](#application-role-connection-object) for the user.
+
+###### JSON Params
+
+| Field              | Type   | Description                                                                                                                                                                                                                        |
+| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| platform_name?     | string | The vanity name of the platform a bot has connected (max 50 characters)                                                                                                                                                            |
+| platform_username? | string | The username on the platform a bot has connected (max 100 characters)                                                                                                                                                              |
+| metadata?          | object | Object mapping [application role connection metadata](/resources/application#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
