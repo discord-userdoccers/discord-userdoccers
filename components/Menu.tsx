@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useRef } from "react";
 import classNames from "classnames";
-import Bars from "./icons/Bars";
+import { useRouter } from "next/router";
+import React, { useContext, useEffect, useRef } from "react";
 import Navigation from "./Navigation";
+import Bars from "./icons/Bars";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
-import { useRouter } from "next/router";
 
 export default function Menu() {
 	const ref = useRef(null);

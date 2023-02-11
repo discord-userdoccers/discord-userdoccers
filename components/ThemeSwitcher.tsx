@@ -1,12 +1,12 @@
-import { Fragment, useCallback } from "react";
 import { Transition, Menu } from "@headlessui/react";
 import classNames from "classnames";
 import { useTheme } from "next-themes";
-import Moon from "./icons/Moon";
-import Sun from "./icons/Sun";
+import { Fragment, useCallback } from "react";
+import Check from "./icons/Check";
 import Gear from "./icons/Gear";
 import Lightbulb from "./icons/Lightbulb";
-import Check from "./icons/Check";
+import Moon from "./icons/Moon";
+import Sun from "./icons/Sun";
 
 export default function ThemeSwitcher() {
 	const { theme, setTheme } = useTheme();

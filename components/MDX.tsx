@@ -1,20 +1,20 @@
 import { MDXProvider } from "@mdx-js/react";
-import ContentWrapper from "./mdx/ContentWrapper";
-import { H1, H2, H3, H4, H5, H6 } from "./mdx/Heading";
-import Code from "./mdx/Code";
-import Paragraph from "./mdx/Paragraph";
-import { ListItem, OrderedList, UnorderedList } from "./mdx/List";
-import { Table, TableHead, TableData, TableHeader, TableRow } from "./mdx/Table";
-import Strong from "./mdx/Strong";
-import Emphasis from "./mdx/Emphasis";
-import StrikeThrough from "./mdx/StrikeThrough";
-import HorizontalRule from "./mdx/HorizontalRule";
-import Anchor from "./mdx/Anchor";
-import InlineCode from "./mdx/InlineCode";
-
-import RouteHeader from "./RouteHeader";
-import Alert from "./Alert";
 import Image from "next/image";
+import Alert from "./Alert";
+import RouteHeader from "./RouteHeader";
+import Anchor from "./mdx/Anchor";
+import Code from "./mdx/Code";
+import ContentWrapper from "./mdx/ContentWrapper";
+import Emphasis from "./mdx/Emphasis";
+import { H1, H2, H3, H4, H5, H6 } from "./mdx/Heading";
+import HorizontalRule from "./mdx/HorizontalRule";
+import InlineCode from "./mdx/InlineCode";
+import { ListItem, OrderedList, UnorderedList } from "./mdx/List";
+import Paragraph from "./mdx/Paragraph";
+import StrikeThrough from "./mdx/StrikeThrough";
+import Strong from "./mdx/Strong";
+import { Table, TableHead, TableData, TableHeader, TableRow } from "./mdx/Table";
+
 
 const COMPONENTS = {
 	wrapper: (props: any) => <ContentWrapper {...props} />,
