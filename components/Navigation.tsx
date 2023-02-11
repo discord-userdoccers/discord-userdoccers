@@ -570,7 +570,6 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/opcodes-and-status-codes#voice">Voice</NavigationSubLink>
               <NavigationSubLink href="/topics/opcodes-and-status-codes#http">HTTP</NavigationSubLink>
               <NavigationSubLink href="/topics/opcodes-and-status-codes#json">JSON</NavigationSubLink>
-              <NavigationSubLink href="/topics/opcodes-and-status-codes#rpc">RPC</NavigationSubLink>
             </Fragment>
           }
         >
