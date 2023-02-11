@@ -502,7 +502,7 @@ All parameters to this endpoint are optional.
 | id    | snowflake | The guild ID                     |
 | nick  | ?string   | The user's nickname in the guild |
 
-###### Example Object
+###### Example Response
 
 ```json
 {
@@ -660,19 +660,6 @@ Returns a list of partial [user](#DOCS_RESOURCES_USER/user-object) objects that 
 
 Returns a list of partial [guild](/resources/guild#guild-object) objects the current user is a member of. Requires the `guilds` OAuth2 scope.
 
-###### Example Object
-
-```json
-{
-  "id": "80351110224678912",
-  "name": "1337 Krew",
-  "icon": "8342729096ea3675442027381ff50dfe",
-  "owner": true,
-  "permissions": "36953089",
-  "features": ["COMMUNITY", "NEWS"]
-}
-```
-
 <Alert type="info">
 
 This endpoint returns 200 guilds by default, which is the maximum number of guilds a non-bot user can join. Therefore, pagination is **not needed** in order to get a list of the users' guilds, and all parameters are optional.
@@ -681,11 +668,31 @@ This endpoint returns 200 guilds by default, which is the maximum number of guil
 
 ###### Query String Params
 
-| Field   | Type      | Description                                         |
-| ------- | --------- | --------------------------------------------------- |
-| before? | snowflake | Get guilds before this guild ID                     |
-| after?  | snowflake | Get guilds after this guild ID                      |
-| limit?  | integer   | Max number of guilds to return (1-200, default 200) |
+| Field          | Type      | Description                                                               |
+| -------------- | --------- | ------------------------------------------------------------------------- |
+| before?        | snowflake | Get guilds before this guild ID                                           |
+| after?         | snowflake | Get guilds after this guild ID                                            |
+| limit?         | integer   | Max number of guilds to return (1-200, default 200)                       |
+| with_counts?\* | boolean   | Whether to include approximate member and presence counts (default false) |
+
+\* For OAuth2 requests, this parameter requires the additional `guilds.members.read` scope.
+
+###### Example Response
+
+```json
+[
+  {
+    "id": "80351110224678912",
+    "name": "1337 Krew",
+    "icon": "8342729096ea3675442027381ff50dfe",
+    "owner": true,
+    "permissions": "36953089",
+    "features": ["COMMUNITY", "NEWS"],
+    "approximate_member_count": 420,
+    "approximate_presence_count": 69
+  }
+]
+```
 
 <RouteHeader method="DELETE" url="/users/@me/guilds/{guild.id}">
   Leave Guild
@@ -723,7 +730,7 @@ You should not use this endpoint to create multiple new DMs in a short period of
 
 Returns a mapping of [user](#user-object) IDs to notes for the current user.
 
-###### Example Object
+###### Example Response
 
 ```json
 {
@@ -746,7 +753,7 @@ Returns the note for the given [user](#user-object).
 | note_user_id | snowflake | The ID of the user the note is on                                 |
 | user_id      | snowflake | The ID of the user who created the note (always the current user) |
 
-###### Example Object
+###### Example Response
 
 ```json
 {
@@ -768,7 +775,7 @@ Sets the note for the given [user](#user-object). Returns a 204 empty response o
 | ----- | ------- | ----------- |
 | note  | string? | The note    |
 
-<RouteHeader method="POST" url="/connections/{connection.type}/authorize">
+<RouteHeader method="POST" url="/connections/{connection.type}/authorize" unauthenticated>
   Authorize User Connection
 </RouteHeader>
 
@@ -803,7 +810,7 @@ All parameters to this endpoint are optional.
 | url   | string | The authorization link for the user |
 
 <RouteHeader method="POST" url="/connections/{connection.type}/callback">
-  Create User Connection
+  Create User Connection Callback
 </RouteHeader>
 
 Create a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#connection-create) Gateway event.
@@ -817,6 +824,25 @@ Create a new connection for the current user. Returns a [connection](#connection
 | two_way_link_code? | string  | The code to use for two-way linking         |
 | insecure?          | boolean | Whether the connection is insecure          |
 | friend_sync?       | boolean | Whether to sync friends over the connection |
+
+<RouteHeader method="PUT" url="/users/@me/connections/{connection.type}/{connection.id}">
+  Create User Connection
+</RouteHeader>
+
+Create a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#connection-create) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is only usable to create contact sync connections (with an ID of @me). For all other connections, use [Authorize User Connection](#authorize-user-connection) and [Create User Connection Callback](#create-user-connection-callback).
+
+</Alert>
+
+###### JSON Params
+
+| Field        | Type    | Description                                 |
+| ------------ | ------- | ------------------------------------------- |
+| name         | string  | The username of the connection account      |
+| friend_sync? | boolean | Whether to sync friends over the connection |
 
 <RouteHeader method="GET" url="/users/@me/connections" supportsOAuth2="connections">
   Get User Connections
@@ -840,9 +866,9 @@ Returns a new access token for the given connection. Only available for Twitch, 
   List User Connection Subreddits
 </RouteHeader>
 
-Returns a list of subreddits the connected account moderates. Only available for Reddit connections.
+Returns a list of [subreddits](#subreddit-object) the connected account moderates. Only available for Reddit connections.
 
-##### Response Body
+##### Subreddit Object
 
 | Field       | Type    | Description                       |
 | ----------- | ------- | --------------------------------- |
@@ -853,11 +879,13 @@ Returns a list of subreddits the connected account moderates. Only available for
 ##### Example Object
 
 ```json
-{
-  "id": "t5_10rq6y",
-  "subscribers": 1019,
-  "url": "/r/discordapp/"
-}
+[
+  {
+    "id": "t5_10rq6y",
+    "subscribers": 1019,
+    "url": "/r/discordapp/"
+  }
+]
 ```
 
 <RouteHeader method="POST" url="/users/@me/connections/{connection.type}/{connection.id}/refresh">
