@@ -268,27 +268,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild-template#guild-template-object">
                 Guild Template Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#get-guild-template">
-                Get Guild Template
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#create-guild-from-guild-template">
-                Create Guild From Guild Template
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#get-guild-templates">
-                Get Guild Templates
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#create-guild-template">
-                Create Guild Template
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#sync-guild-template">
-                Sync Guild Template
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#modify-guild-template">
-                Modify Guild Template
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/guild-template#delete-guild-template">
-                Delete Guild Template
-              </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild-template#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
