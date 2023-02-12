@@ -130,110 +130,19 @@ export default function Navigation() {
               <NavigationSubLink href="/reference#snowflakes">Snowflakes</NavigationSubLink>
               <NavigationSubLink href="/reference#id-serialization">ID Serialization</NavigationSubLink>
               <NavigationSubLink href="/reference#iso8601-date/time">ISO8601 Date/Time</NavigationSubLink>
-              <NavigationSubLink href="/reference#nullable-and-optional-resource-fields">
-                Nullable and Optional Resource Fields
-              </NavigationSubLink>
               <NavigationSubLink href="/reference#consistency">Consistency</NavigationSubLink>
               <NavigationSubLink href="/reference#http-api">HTTP API</NavigationSubLink>
               <NavigationSubLink href="/reference#gateway-(websocket)-api">Gateway (WebSocket) API</NavigationSubLink>
               <NavigationSubLink href="/reference#message-formatting">Message Formatting</NavigationSubLink>
-              <NavigationSubLink href="/reference#image-formatting">Image Formatting</NavigationSubLink>
-              <NavigationSubLink href="/reference#image-data">Image Data</NavigationSubLink>
+              <NavigationSubLink href="/reference#cdn-formatting">CDN Formatting</NavigationSubLink>
+              <NavigationSubLink href="/reference#cdn-data">CDN Data</NavigationSubLink>
+              <NavigationSubLink href="/reference#uploading-files">Uploading Files</NavigationSubLink>
+              <NavigationSubLink href="/reference#locales">Locales</NavigationSubLink>
+              <NavigationSubLink href="/reference#documentation-reference">Documentation Reference</NavigationSubLink>
             </Fragment>
           }
         >
           Reference
-        </NavigationLink>
-      </NavigationSection>
-
-      <NavigationSection title="Interactions">
-        <NavigationLink
-          href="/interactions/application-commands"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/interactions/application-commands#application-command-object">
-                Application Command Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#authorizing-your-application">
-                Authorizing Your Application
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#registering-a-command">
-                Registering a Command
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#updating-and-deleting-a-command">
-                Updating and Deleting a Command
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#permissions">Permissions</NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#slash-commands">
-                Slash Commands
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#subcommands-and-subcommand-groups">
-                Subcommands and Subcommand Groups
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#user-commands">
-                User Commands
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#message-commands">
-                Message Commands
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/application-commands#endpoints">Endpoints</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Application Commands
-        </NavigationLink>
-        <NavigationLink
-          href="/interactions/message-components"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/interactions/message-components#what-is-a-component">
-                What is a Component
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/message-components#component-object">
-                Component Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/message-components#action-rows">Action Rows</NavigationSubLink>
-              <NavigationSubLink href="/interactions/message-components#responding-to-a-component-interaction">
-                Responding to a Component Interaction
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/message-components#custom-id">Custom ID</NavigationSubLink>
-              <NavigationSubLink href="/interactions/message-components#buttons">Buttons</NavigationSubLink>
-              <NavigationSubLink href="/interactions/message-components#select-menus">Select Menus</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Message Components
-        </NavigationLink>
-        <NavigationLink
-          href="/interactions/receiving-and-responding"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/interactions/receiving-and-responding#interaction-object">
-                Interaction Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#message-interaction-object">
-                Message Interaction Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#interactions-and-bot-users">
-                Interactions and Bot Users
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#receiving-an-interaction">
-                Receiving an Interaction
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#responding-to-an-interaction">
-                Responding to an Interaction
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#followup-messages">
-                Followup Messages
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#security-and-authorization">
-                Security and Authorization
-              </NavigationSubLink>
-              <NavigationSubLink href="/interactions/receiving-and-responding#endpoints">Endpoints</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Receiving &amp; Responding
         </NavigationLink>
       </NavigationSection>
 
@@ -692,6 +601,97 @@ export default function Navigation() {
           }
         >
           Voice Connections
+        </NavigationLink>
+      </NavigationSection>
+
+      <NavigationSection title="Interactions">
+        <NavigationLink
+          href="/interactions/application-commands"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/interactions/application-commands#application-command-object">
+                Application Command Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#authorizing-your-application">
+                Authorizing Your Application
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#registering-a-command">
+                Registering a Command
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#updating-and-deleting-a-command">
+                Updating and Deleting a Command
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#permissions">Permissions</NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#slash-commands">
+                Slash Commands
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#subcommands-and-subcommand-groups">
+                Subcommands and Subcommand Groups
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#user-commands">
+                User Commands
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#message-commands">
+                Message Commands
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/application-commands#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Application Commands
+        </NavigationLink>
+        <NavigationLink
+          href="/interactions/message-components"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/interactions/message-components#what-is-a-component">
+                What is a Component
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/message-components#component-object">
+                Component Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/message-components#action-rows">Action Rows</NavigationSubLink>
+              <NavigationSubLink href="/interactions/message-components#responding-to-a-component-interaction">
+                Responding to a Component Interaction
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/message-components#custom-id">Custom ID</NavigationSubLink>
+              <NavigationSubLink href="/interactions/message-components#buttons">Buttons</NavigationSubLink>
+              <NavigationSubLink href="/interactions/message-components#select-menus">Select Menus</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Message Components
+        </NavigationLink>
+        <NavigationLink
+          href="/interactions/receiving-and-responding"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/interactions/receiving-and-responding#interaction-object">
+                Interaction Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#message-interaction-object">
+                Message Interaction Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#interactions-and-bot-users">
+                Interactions and Bot Users
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#receiving-an-interaction">
+                Receiving an Interaction
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#responding-to-an-interaction">
+                Responding to an Interaction
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#followup-messages">
+                Followup Messages
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#security-and-authorization">
+                Security and Authorization
+              </NavigationSubLink>
+              <NavigationSubLink href="/interactions/receiving-and-responding#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Receiving &amp; Responding
         </NavigationLink>
       </NavigationSection>
     </nav>
