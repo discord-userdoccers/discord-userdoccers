@@ -11,7 +11,7 @@ export default function OpenGraph({
   description = "👽 ALIEN ALIEN ALIEN 👽",
 }: OpenGraphProps) {
   const router = useRouter();
-  const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}/developers/docs${router.asPath}`;
+  const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}${router.asPath}`;
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
   return (
