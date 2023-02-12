@@ -12,6 +12,7 @@ export default function OpenGraph({
 }: OpenGraphProps) {
   const router = useRouter();
   const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}/developers/docs${router.asPath}`;
+  const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
   return (
     <Head>
@@ -27,6 +28,9 @@ export default function OpenGraph({
       <meta property="og:site_name" content="Discord Userdoccers" key="og-site-name" />
       <meta property="og:title" content={title} key="og-title" />
       <meta property="og:description" content={description} key="og-desc" />
+
+      {/* Google Site Verification */}
+      {google_site_verification && <meta name="google-site-verification" content={google_site_verification} />}
     </Head>
   );
 }
