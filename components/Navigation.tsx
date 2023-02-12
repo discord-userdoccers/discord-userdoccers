@@ -393,6 +393,10 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/invite#invite-metadata-object">
                 Invite Metadata Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/invite#invite-guild-object">Invite Guild Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/invite#invite-channel-object">
+                Invite Channel Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/invite#invite-stage-instance-object">
                 Invite Stage Instance Object
               </NavigationSubLink>

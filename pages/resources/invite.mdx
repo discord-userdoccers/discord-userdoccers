@@ -6,21 +6,21 @@ Represents a code that when used, adds a user to a guild or group DM channel, or
 
 ###### Invite Structure
 
-| Field                         | Type                                                                                       | Description                                                                                                                                    |
-| ----------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| code                          | string                                                                                     | The invite code (unique ID)                                                                                                                    |
-| type?                         | integer                                                                                    | The [type of invite](#invite-type)                                                                                                             |
-| guild?                        | partial [guild](/resources/guild#guild-object) object                                      | The guild this invite is for, with an extra `welcome_screen` key denoting the guild's [welcome screen](/resources/guild#welcome-screen-object) |
-| channel                       | partial [channel](/resources/channel#channel-object) object                                | The channel this invite is for                                                                                                                 |
-| inviter?                      | partial [user](/resources/user#user-object) object                                         | The user who created the invite                                                                                                                |
-| target_type?                  | integer                                                                                    | The [type of target](#invite-target-type) for this voice channel invite                                                                        |
-| target_user?                  | partial [user](/resources/user#user-object) object                                         | The user whose stream to display for this voice channel stream invite                                                                          |
-| target_application?           | partial [application](/resources/application#application-object) object                    | The embedded application to open for this voice channel embedded application invite                                                            |
-| approximate_presence_count?\* | integer                                                                                    | Approximate count of online members                                                                                                            |
-| approximate_member_count?\*   | integer                                                                                    | Approximate count of total members                                                                                                             |
-| expires_at?                   | ?ISO8601 timestamp                                                                         | The expiration date of this invite                                                                                                             |
-| stage_instance?               | [invite stage instance](#invite-stage-instance-object) object                              | Stage instance data if there is a [public stage instance](/resources/stage-instance) in the stage channel this invite is for                   |
-| guild_scheduled_event?        | [guild scheduled event](/topics/guild-scheduled-event#guild-scheduled-event-object) object | Guild scheduled event data, only included if `guild_scheduled_event_id` contains a valid guild scheduled event ID                              |
+| Field                         | Type                                                                                       | Description                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| code                          | string                                                                                     | The invite code (unique ID)                                                                                                  |
+| type?                         | integer                                                                                    | The [type of invite](#invite-type)                                                                                           |
+| guild?                        | [invite guild](#invite-guild-object) object                                                | The guild this invite is for                                                                                                 |
+| channel                       | ?[invite channel](#invite-channel-object) object                                           | The channel this invite is for; `null` for friend invites that did not have a DM channel created                             |
+| inviter?                      | partial [user](/resources/user#user-object) object                                         | The user who created the invite                                                                                              |
+| target_type?                  | integer                                                                                    | The [type of target](#invite-target-type) for this guild invite                                                              |
+| target_user?                  | partial [user](/resources/user#user-object) object                                         | The user whose stream to display for this voice channel stream invite                                                        |
+| target_application?           | partial [application](/resources/application#application-object) object                    | The embedded application to open for this voice channel embedded application invite                                          |
+| approximate_presence_count?\* | integer                                                                                    | Approximate count of online members                                                                                          |
+| approximate_member_count?\*   | integer                                                                                    | Approximate count of total members                                                                                           |
+| expires_at?                   | ?ISO8601 timestamp                                                                         | The expiration date of this invite; if present and `null`, the invite never expires                                          |
+| stage_instance?               | [invite stage instance](#invite-stage-instance-object) object                              | Stage instance data if there is a [public stage instance](/resources/stage-instance) in the stage channel this invite is for |
+| guild_scheduled_event?        | [guild scheduled event](/topics/guild-scheduled-event#guild-scheduled-event-object) object | Guild scheduled event data, only included if `guild_scheduled_event_id` contains a valid guild scheduled event ID            |
 
 \* Only returned from the [Get Invite](#get-invite) endpoint when `with_counts` is `true`.
 
@@ -126,7 +126,6 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
 | max_age    | integer           | Duration (in seconds) after which the invite expires |
 | temporary  | boolean           | Whether this invite only grants temporary membership |
 | created_at | ISO8601 timestamp | When this invite was created                         |
-| revoked?   | boolean           | Whether this invite has been revoked                 |
 
 ###### Example Invite with Metadata Object
 
@@ -181,7 +180,66 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
 }
 ```
 
+### Invite Guild Object
+
+The guild an invite is for.
+
+###### Invite Guild Structure
+
+| Field                       | Type                                            | Description                                                                         |
+| --------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
+| id                          | snowflake                                       | The ID of this guild                                                                |
+| name                        | string                                          | The name of the guild (2-100 characters, excluding trailing and leading whitespace) |
+| icon                        | ?string                                         | The guild's [icon hash](/reference#image-formatting)                                |
+| splash                      | ?string                                         | The guild's [splash hash](/reference#image-formatting)                              |
+| verification_level          | integer                                         | [Verification level](/resources/guild#verification-level) required for the guild    |
+| features                    | array[string]                                   | Enabled [guild features](/resources/guild#guild-features)                           |
+| vanity_url_code             | ?string                                         | The vanity code for the guild                                                       |
+| description                 | ?string                                         | The description of the guild                                                        |
+| banner                      | ?string                                         | The guild's [banner hash](/reference#image-formatting)                              |
+| premium_subscription_count? | integer                                         | The number of premium subscriptions (boosts) this guild currently has               |
+| nsfw\*                      | boolean                                         | Whether or not the guild is considered NSFW                                         |
+| nsfw_level                  | integer                                         | The guild's [NSFW level](/resources/guild#guild-nsfw-level)                         |
+| welcome_screen?             | [welcome screen](#welcome-screen-object) object | The welcome screen of a Community guild, shown to new members                       |
+
+\* This field is deprecated and will be removed in a future API version. Use `nsfw_level` instead.
+
+### Invite Channel Object
+
+The channel an invite is for.
+
+###### Invite Channel Structure
+
+| Field       | Type                                                      | Description                                                    |
+| ----------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| id          | snowflake                                                 | The ID of this channel                                         |
+| type        | integer                                                   | The [type of channel](/resources/channel#channel-types)        |
+| name        | ?string                                                   | The name of the channel (1-100 characters)                     |
+| recipients? | array[partial [user](/resources/user#user-object) object] | The recipients of the DM; only the `username` field is present |
+| icon?       | ?string                                                   | The DM's [icon hash](/reference#image-formatting)              |
+
+###### Example Invite Channel Object
+
+```json
+{
+  "id": "1065785999734607943",
+  "name": null,
+  "type": 3,
+  "icon": null,
+  "recipients": [
+    {
+      "username": "Alien"
+    },
+    {
+      "username": "Alien 2: Electric Boogaloo"
+    }
+  ]
+}
+```
+
 ### Invite Stage Instance Object
+
+A stage instance attached to an invite.
 
 ###### Invite Stage Instance Structure
 
@@ -236,8 +294,20 @@ Returns an [invite](#invite-object) object for the given code.
 | with_expiration?          | boolean   | Whether the invite should contain the expiration date (default true)        |
 | guild_scheduled_event_id? | snowflake | The guild scheduled event to include with the invite                        |
 
+<RouteHeader method="POST" url="/invites/{invite.code}" supportsOAuth2="guilds.join">
+  Accept Invite
+</RouteHeader>
+
+Accepts an invite to a [guild](/resources/guild#invite-guild-object), [group DM](/resources/channel#invite-channel-object), or [DM](/resources/channel#invite-channel-object). Returns an [invite](#invite-object) object on success. May fire a [Guild Create](/topics/gateway-events#guild-create), [Channel Create](/topics/gateway-events#channel-create), and/or [Relationship Add](/topics/gateway-events#relationship-add) Gateway event.
+
+<Alert type="warn">
+
+For OAuth2 requests, only guild invites are supported and the bot attached to the application must be a member of the guild the invite is for.
+
+</Alert>
+
 <RouteHeader method="DELETE" url="/invites/{invite.code}" supportsAuditReason>
   Delete Invite
 </RouteHeader>
 
-Delete an invite. Requires the `MANAGE_CHANNELS` permission on the channel this invite belongs to, or `MANAGE_GUILD` to remove any invite across the guild, if the invite is to a guild. Returns an [invite](#invite-object) object on success. May fire a [Invite Delete](/topics/gateway#invite-delete) Gateway event.
+Delete an invite. Requires the `MANAGE_CHANNELS` permission on the channel this invite belongs to, or `MANAGE_GUILD` to remove any invite across the guild, if the invite is to a guild. Returns an [invite](#invite-object) object on success. May fire a [Invite Delete](/topics/gateway-events#invite-delete) Gateway event.
