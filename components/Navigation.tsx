@@ -228,11 +228,7 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/emoji#emoji-object">Emoji Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/emoji#list-guild-emojis">List Guild Emojis</NavigationSubLink>
-              <NavigationSubLink href="/resources/emoji#get-guild-emoji">Get Guild Emoji</NavigationSubLink>
-              <NavigationSubLink href="/resources/emoji#create-guild-emoji">Create Guild Emoji</NavigationSubLink>
-              <NavigationSubLink href="/resources/emoji#modify-guild-emoji">Modify Guild Emoji</NavigationSubLink>
-              <NavigationSubLink href="/resources/emoji#delete-guild-emoji">Delete Guild Emoji</NavigationSubLink>
+              <NavigationSubLink href="/resources/emoji#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
