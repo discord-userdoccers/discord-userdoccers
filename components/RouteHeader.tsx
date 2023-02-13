@@ -59,7 +59,7 @@ export default function RouteHeader({
           <Badge
             href="/resources/audit-log#x-audit-log-reason"
             name="Audit Log Reason"
-            tooltip="Supports the X-Audit-Log-Reason Header"
+            tooltip="Supports the X-Audit-Log-Reason header"
           />
         ) : null}
         {supportsOAuth2 !== undefined ? (
