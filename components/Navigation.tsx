@@ -247,6 +247,9 @@ export default function Navigation() {
                 Unavailable Guild Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/guild#expression-guild-object">
+                Expression Guild Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#integration-object">Integration Object</NavigationSubLink>
@@ -325,18 +328,10 @@ export default function Navigation() {
           href="/resources/sticker"
           subLinks={
             <Fragment>
+              <NavigationSubLink href="/resources/sticker#sticker-pack-object">Sticker Pack Object</NavigationSubLink>
               <NavigationSubLink href="/resources/sticker#sticker-object">Sticker Object</NavigationSubLink>
               <NavigationSubLink href="/resources/sticker#sticker-item-object">Sticker Item Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#sticker-pack-object">Sticker Pack Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#get-sticker">Get Sticker</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#list-nitro-sticker-packs">
-                List Nitro Sticker Packs
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#list-guild-stickers">List Guild Stickers</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#get-guild-sticker">Get Guild Sticker</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#create-guild-sticker">Create Guild Sticker</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#modify-guild-sticker">Modify Guild Sticker</NavigationSubLink>
-              <NavigationSubLink href="/resources/sticker#delete-guild-sticker">Delete Guild Sticker</NavigationSubLink>
+              <NavigationSubLink href="/resources/sticker#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
