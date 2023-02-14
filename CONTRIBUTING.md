@@ -33,13 +33,13 @@ Within tables:
 - Base types should be documented as `snowflake`, `string`, `integer`, or `boolean`. If the type is an object, it should be documented as `foo object` and `foo` should be linked to the object's documentation. If the type is an array, it should be documented as `array[foo object]` and `foo` should be linked to the object's documentation.
 - If a field is optional, it should be documented as `foo?`. If a field is nullable, the type should be documented as `?foo`.
 - If a field is deprecated, it should be documented as `foo *(deprecated)*` (or ommited if unnecessary and not yet documented).
-- In descriptions, capitals should be used, but periods should not be used.
+- In descriptions, capitals should be used, but periods should not be used. Abbreviations like "ID", "SKU", "URL", etc. should always be capitalized. Descriptions such as "The ID of the user" are preferred over "User ID" or "The user's ID".
 
 ###### Invite Channel Structure
 
 | Field       | Type                                                      | Description                                                    |
 | ----------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| id          | snowflake                                                 | The ID of this channel                                         |
+| id          | snowflake                                                 | The ID of the channel                                          |
 | type        | integer                                                   | The [type of channel](/resources/channel#channel-types)        |
 | name        | ?string                                                   | The name of the channel (1-100 characters)                     |
 | recipients? | array[partial [user](/resources/user#user-object) object] | The recipients of the DM; only the `username` field is present |
