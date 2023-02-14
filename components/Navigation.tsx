@@ -322,18 +322,7 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/resources/stage-instance#definitions">Definitions</NavigationSubLink>
               <NavigationSubLink href="/resources/stage-instance#auto-closing">Auto Closing</NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#create-stage-instance">
-                Create Stage Instance
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#get-stage-instance">
-                Get Stage Instance
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#modify-stage-instance">
-                Modify Stage Instance
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#delete-stage-instance">
-                Delete Stage Instance
-              </NavigationSubLink>
+              <NavigationSubLink href="/resources/stage-instance#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
