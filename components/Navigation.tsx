@@ -127,7 +127,7 @@ export default function Navigation() {
               <NavigationSubLink href="/reference#error-messages">Error Messages</NavigationSubLink>
               <NavigationSubLink href="/reference#authentication">Authentication</NavigationSubLink>
               <NavigationSubLink href="/reference#encryption">Encryption</NavigationSubLink>
-              <NavigationSubLink href="/reference#snowflakes">Snowflakes</NavigationSubLink>
+              <NavigationSubLink href="/reference#snowflake-format">Snowflake Format</NavigationSubLink>
               <NavigationSubLink href="/reference#id-serialization">ID Serialization</NavigationSubLink>
               <NavigationSubLink href="/reference#iso8601-date/time">ISO8601 Date/Time</NavigationSubLink>
               <NavigationSubLink href="/reference#consistency">Consistency</NavigationSubLink>
