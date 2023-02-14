@@ -2,209 +2,211 @@
 
 ## Audit Logs
 
-Whenever an admin action is performed on the API, an entry is added to the respective guild's audit log.
+When an administrative action is performed in a guild, an entry is added to its audit log. Viewing audit logs requires the `VIEW_AUDIT_LOG` permission and can be fetched using the [`GET /guilds/{guild.id}/audit-logs` endpoint](#get-guild-audit-log), or seen in the guild's **Server Settings**. All audit log entries are stored for 45 days.
 
 ### X-Audit-Log-Reason
 
-Certain endpoints support the `X-Audit-Log-Reason` header, which adds a reason in the audit log entry created from the action that was executed. This header supports URL-encoded UTF8 characters.
-
-<!-- TODO: maybe example image, maybe limits -->
+When performing an eligible action using the API, users can pass an `X-Audit-Log-Reason` header to indicate why the action was taken. More information is in the [audit log entry](#audit-log-entry-object) section.
 
 ### Audit Log Object
 
 ###### Audit Log Structure
 
-| Field             | Type                                                                        | Description                              |
-| ----------------- | --------------------------------------------------------------------------- | ---------------------------------------- |
-| webhooks          | array of [webhook](/resources/webhook#webhook-object) objects               | list of webhooks found in the audit log  |
-| users             | array of [user](/resources/user#user-object) objects                        | list of users found in the audit log     |
-| audit_log_entries | array of [audit log entry](#audit-log-entry-object) objects                 | list of audit log entries                |
-| integrations      | array of partial [integration](/resources/guild#integration-object) objects | list of partial integration objects      |
-| threads           | array of [channel](/resources/channel#channel-object) objects               | list of threads found in the audit log\* |
+| Field                  | Type                                                                                                    | Description                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| audit_log_entries      | array[[audit log entry](#audit-log-entry-object) object]                                                | Audit log entries                                  |
+| application_commands   | array[[application command](#DOCS_INTERACTIONS_APPLICATION_COMMANDS/application-command-object) object] | Application commands referenced in the audit log   |
+| auto_moderation_rules  | array[[auto moderation rule](/resources/auto-moderation#auto-moderation-rule-object) object]            | Auto moderation rules referenced in the audit log  |
+| guild_scheduled_events | array[[guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object]    | Guild scheduled events referenced in the audit log |
+| integrations           | array[partial [integration](/resources/guild#integration-object) object]                                | Partial integrations referenced in the audit log   |
+| threads\*              | array[thread-specific [channel](/resources/channel#channel-object) object]                              | Threads referenced in the audit log                |
+| users                  | array[[user](/resources/user#user-object) object]                                                       | Users referenced in the audit log                  |
+| webhooks               | array[[webhook](/resources/webhook#webhook-object) object]                                              | Webhooks referenced in the audit log               |
 
-\* Threads referenced in THREAD_CREATE and THREAD_UPDATE events are included in the threads map, since archived threads might not be kept in memory by clients.
-
-###### Example Partial Integration Object
-
-```json
-{
-  "id": "33590653072239123",
-  "name": "A Name",
-  "type": "twitch",
-  "account": {
-    "name": "twitchusername",
-    "id": "1234567"
-  }
-}
-```
+\* Threads referenced in `THREAD_CREATE` and `THREAD_UPDATE` events are included in the threads map, since archived threads might not be kept in memory by clients.
 
 ### Audit Log Entry Object
 
+Each audit log entry represents a single administrative action (or [event](#audit-log-events)), indicated by `action_type`. Most entries contain one to many changes in the `changes` array that affected an entity in Discord—whether that's a user, channel, guild, emoji, or something else.
+
+The information (and structure) of an entry's changes will be different depending on its type. For example, in `MEMBER_ROLE_UPDATE` events there is only one change: a member is either added or removed from a specific role. However, in `CHANNEL_CREATE` events there are many changes, including (but not limited to) the channel's name, type, and permission overwrites added. More details are in the [change object](#audit-log-change-object) section.
+
+Users can specify why an administrative action is being taken by passing an `X-Audit-Log-Reason` request header, which will be stored as the audit log entry's `reason` field. The `X-Audit-Log-Reason` header supports up to 512 URL-encoded UTF-8 characters. Reasons are visible in the client and when fetching audit log entries with the API.
+
 ###### Audit Log Entry Structure
 
-| Field       | Type                                                          | Description                                           |
-| ----------- | ------------------------------------------------------------- | ----------------------------------------------------- |
-| target_id   | ?string                                                       | id of the affected entity (webhook, user, role, etc.) |
-| changes?    | array of [audit log change](#audit-log-change-object) objects | changes made to the target_id                         |
-| user_id     | ?snowflake                                                    | the user who made the changes                         |
-| id          | snowflake                                                     | id of the entry                                       |
-| action_type | [audit log event](#audit-log-events)                          | type of action that occurred                          |
-| options?    | [optional audit entry info](#optional-audit-entry-info)       | additional info for certain action types              |
-| reason?     | string                                                        | the reason for the change (0-512 characters)          |
+| Field       | Type                                                       | Description                                           |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------- |
+| target_id   | ?string                                                    | ID of the affected entity (webhook, user, role, etc.) |
+| changes?    | array[[audit log change](#audit-log-change-object) object] | Changes made to the `target_id``                      |
+| user_id     | ?snowflake                                                 | The user who made the changes                         |
+| id          | snowflake                                                  | The ID of the entry                                   |
+| action_type | integer                                                    | The [type of action](#audit-log-events) that occurred |
+| options?    | [optional audit entry info](#optional-audit-entry-info)    | Additional info for certain action types              |
+| reason?     | string                                                     | The reason for the change (max 512 characters)        |
 
-###### Audit Log Events
+<Alert type="warn">
 
-| Event                    | Value |
-| ------------------------ | ----- |
-| GUILD_UPDATE             | 1     |
-| CHANNEL_CREATE           | 10    |
-| CHANNEL_UPDATE           | 11    |
-| CHANNEL_DELETE           | 12    |
-| CHANNEL_OVERWRITE_CREATE | 13    |
-| CHANNEL_OVERWRITE_UPDATE | 14    |
-| CHANNEL_OVERWRITE_DELETE | 15    |
-| MEMBER_KICK              | 20    |
-| MEMBER_PRUNE             | 21    |
-| MEMBER_BAN_ADD           | 22    |
-| MEMBER_BAN_REMOVE        | 23    |
-| MEMBER_UPDATE            | 24    |
-| MEMBER_ROLE_UPDATE       | 25    |
-| MEMBER_MOVE              | 26    |
-| MEMBER_DISCONNECT        | 27    |
-| BOT_ADD                  | 28    |
-| ROLE_CREATE              | 30    |
-| ROLE_UPDATE              | 31    |
-| ROLE_DELETE              | 32    |
-| INVITE_CREATE            | 40    |
-| INVITE_UPDATE            | 41    |
-| INVITE_DELETE            | 42    |
-| WEBHOOK_CREATE           | 50    |
-| WEBHOOK_UPDATE           | 51    |
-| WEBHOOK_DELETE           | 52    |
-| EMOJI_CREATE             | 60    |
-| EMOJI_UPDATE             | 61    |
-| EMOJI_DELETE             | 62    |
-| MESSAGE_DELETE           | 72    |
-| MESSAGE_BULK_DELETE      | 73    |
-| MESSAGE_PIN              | 74    |
-| MESSAGE_UNPIN            | 75    |
-| INTEGRATION_CREATE       | 80    |
-| INTEGRATION_UPDATE       | 81    |
-| INTEGRATION_DELETE       | 82    |
-| STAGE_INSTANCE_CREATE    | 83    |
-| STAGE_INSTANCE_UPDATE    | 84    |
-| STAGE_INSTANCE_DELETE    | 85    |
-| STICKER_CREATE           | 90    |
-| STICKER_UPDATE           | 91    |
-| STICKER_DELETE           | 92    |
-| THREAD_CREATE            | 110   |
-| THREAD_UPDATE            | 111   |
-| THREAD_DELETE            | 112   |
-
-###### Optional Audit Entry Info
-
-| Field              | Type      | Description                                                     | Action Type                                                                                                                        |
-| ------------------ | --------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| delete_member_days | string    | number of days after which inactive members were kicked         | MEMBER_PRUNE                                                                                                                       |
-| members_removed    | string    | number of members removed by the prune                          | MEMBER_PRUNE                                                                                                                       |
-| channel_id         | snowflake | channel in which the entities were targeted                     | MEMBER_MOVE & MESSAGE_PIN & MESSAGE_UNPIN & MESSAGE_DELETE & STAGE_INSTANCE_CREATE & STAGE_INSTANCE_UPDATE & STAGE_INSTANCE_DELETE |
-| message_id         | snowflake | id of the message that was targeted                             | MESSAGE_PIN & MESSAGE_UNPIN                                                                                                        |
-| count              | string    | number of entities that were targeted                           | MESSAGE_DELETE & MESSAGE_BULK_DELETE & MEMBER_DISCONNECT & MEMBER_MOVE                                                             |
-| id                 | snowflake | id of the overwritten entity                                    | CHANNEL_OVERWRITE_CREATE & CHANNEL_OVERWRITE_UPDATE & CHANNEL_OVERWRITE_DELETE                                                     |
-| type               | string    | type of overwritten entity - "0" for "role" or "1" for "member" | CHANNEL_OVERWRITE_CREATE & CHANNEL_OVERWRITE_UPDATE & CHANNEL_OVERWRITE_DELETE                                                     |
-| role_name          | string    | name of the role if type is "0" (not present if type is "1")    | CHANNEL_OVERWRITE_CREATE & CHANNEL_OVERWRITE_UPDATE & CHANNEL_OVERWRITE_DELETE                                                     |
-
-### Audit Log Change Object
-
-###### Audit Log Change Structure
-
-<Alert type="info">
-
-If `new_value` is not present in the change object, while `old_value` is, that means the property that was changed has been reset, or set to `null`
+For `APPLICATION_COMMAND_PERMISSION_UPDATE` events, the `target_id` is the command ID or the app ID since the `changes` array represents the entire `permissions` property on the [guild permissions](/interactions/application-commands#guild-application-command-permissions-structure) object.
 
 </Alert>
 
-| Field      | Type                           | Description                                           |
-| ---------- | ------------------------------ | ----------------------------------------------------- |
-| new_value? | [mixed](#audit-log-change-key) | new value of the key                                  |
-| old_value? | [mixed](#audit-log-change-key) | old value of the key                                  |
-| key        | string                         | name of audit log [change key](#audit-log-change-key) |
+###### Audit Log Events
 
-###### Audit Log Change Key
+The table below lists audit log events and values (the `action_type` field) that your app may receive.
 
-| Name                          | Object Changed                                                                                                    | Type                                                                      | Description                                                                                                                           |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| name                          | any                                                                                                               | string                                                                    | name changed                                                                                                                          |
-| description                   | [guild](/resources/guild#guild-object) or [sticker](/resources/sticker#sticker-object)                            | string                                                                    | description changed                                                                                                                   |
-| icon_hash                     | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | icon changed                                                                                                                          |
-| splash_hash                   | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | invite splash page artwork changed                                                                                                    |
-| discovery_splash_hash         | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | discovery splash changed                                                                                                              |
-| banner_hash                   | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | guild banner changed                                                                                                                  |
-| owner_id                      | [guild](/resources/guild#guild-object)                                                                            | snowflake                                                                 | owner changed                                                                                                                         |
-| region                        | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | region changed                                                                                                                        |
-| preferred_locale              | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | preferred locale changed                                                                                                              |
-| afk_channel_id                | [guild](/resources/guild#guild-object)                                                                            | snowflake                                                                 | afk channel changed                                                                                                                   |
-| afk_timeout                   | [guild](/resources/guild#guild-object)                                                                            | integer                                                                   | afk timeout duration changed                                                                                                          |
-| rules_channel_id              | [guild](/resources/guild#guild-object)                                                                            | snowflake                                                                 | id of the rules channel changed                                                                                                       |
-| public_updates_channel_id     | [guild](/resources/guild#guild-object)                                                                            | snowflake                                                                 | id of the public updates channel changed                                                                                              |
-| mfa_level                     | [guild](/resources/guild#guild-object)                                                                            | integer                                                                   | two-factor auth requirement changed                                                                                                   |
-| verification_level            | [guild](/resources/guild#guild-object)                                                                            | integer                                                                   | required verification level changed                                                                                                   |
-| explicit_content_filter       | [guild](/resources/guild#guild-object)                                                                            | integer                                                                   | change in [whose messages](/resources/guild#explicit-content-filter-level) are scanned and deleted for explicit content in the server |
-| default_message_notifications | [guild](/resources/guild#guild-object)                                                                            | integer                                                                   | default [message notification level](/resources/guild#default-message-notification-level) changed                                     |
-| vanity_url_code               | [guild](/resources/guild#guild-object)                                                                            | string                                                                    | guild invite vanity url changed                                                                                                       |
-| \$add                         | [guild](/resources/guild#guild-object)                                                                            | array of partial [role](/topics/permissions#role-object) objects          | new role added                                                                                                                        |
-| \$remove                      | [guild](/resources/guild#guild-object)                                                                            | array of partial [role](/topics/permissions#role-object) objects          | role removed                                                                                                                          |
-| prune_delete_days             | [guild](/resources/guild#guild-object)                                                                            | integer                                                                   | change in number of days after which inactive and role-unassigned members are kicked                                                  |
-| widget_enabled                | [guild](/resources/guild#guild-object)                                                                            | boolean                                                                   | server widget enabled/disable                                                                                                         |
-| widget_channel_id             | [guild](/resources/guild#guild-object)                                                                            | snowflake                                                                 | channel id of the server widget changed                                                                                               |
-| system_channel_id             | [guild](/resources/guild#guild-object)                                                                            | snowflake                                                                 | id of the system channel changed                                                                                                      |
-| position                      | [channel](/resources/channel#channel-object)                                                                      | integer                                                                   | text or voice channel position changed                                                                                                |
-| topic                         | [channel](/resources/channel#channel-object) or [stage instance](/resources/stage-instance#stage-instance-object) | string                                                                    | text channel topic or stage instance topic changed                                                                                    |
-| bitrate                       | [channel](/resources/channel#channel-object)                                                                      | integer                                                                   | voice channel bitrate changed                                                                                                         |
-| permission_overwrites         | [channel](/resources/channel#channel-object)                                                                      | array of [channel overwrite](/resources/channel#overwrite-object) objects | permissions on a channel changed                                                                                                      |
-| nsfw                          | [channel](/resources/channel#channel-object)                                                                      | boolean                                                                   | channel nsfw restriction changed                                                                                                      |
-| application_id                | [channel](/resources/channel#channel-object)                                                                      | snowflake                                                                 | application id of the added or removed webhook or bot                                                                                 |
-| rate_limit_per_user           | [channel](/resources/channel#channel-object)                                                                      | integer                                                                   | amount of seconds a user has to wait before sending another message changed                                                           |
-| permissions                   | [role](/topics/permissions#role-object)                                                                           | string                                                                    | [permissions](/topics/permissions#bitwise-permission-flags) for a role changed                                                        |
-| color                         | [role](/topics/permissions#role-object)                                                                           | integer                                                                   | role color changed                                                                                                                    |
-| hoist                         | [role](/topics/permissions#role-object)                                                                           | boolean                                                                   | role is now displayed/no longer displayed separate from online users                                                                  |
-| mentionable                   | [role](/topics/permissions#role-object)                                                                           | boolean                                                                   | role is now mentionable/unmentionable                                                                                                 |
-| allow                         | [role](/topics/permissions#role-object)                                                                           | string                                                                    | a permission on a text or voice channel was allowed for a role                                                                        |
-| deny                          | [role](/topics/permissions#role-object)                                                                           | string                                                                    | a permission on a text or voice channel was denied for a role                                                                         |
-| code                          | [invite](/resources/invite#invite-object)                                                                         | string                                                                    | invite code changed                                                                                                                   |
-| channel_id                    | [invite](/resources/invite#invite-object)                                                                         | snowflake                                                                 | channel for invite code changed                                                                                                       |
-| inviter_id                    | [invite](/resources/invite#invite-metadata-object)                                                                | snowflake                                                                 | person who created invite code changed                                                                                                |
-| max_uses                      | [invite](/resources/invite#invite-metadata-object)                                                                | integer                                                                   | change to max number of times invite code can be used                                                                                 |
-| uses                          | [invite](/resources/invite#invite-metadata-object)                                                                | integer                                                                   | number of times invite code used changed                                                                                              |
-| max_age                       | [invite](/resources/invite#invite-metadata-object)                                                                | integer                                                                   | how long invite code lasts changed                                                                                                    |
-| temporary                     | [invite](/resources/invite#invite-metadata-object)                                                                | boolean                                                                   | invite code is temporary/never expires                                                                                                |
-| deaf                          | [user](/resources/user#user-object)                                                                               | boolean                                                                   | user server deafened/undeafened                                                                                                       |
-| mute                          | [user](/resources/user#user-object)                                                                               | boolean                                                                   | user server muted/unmuted                                                                                                             |
-| nick                          | [user](/resources/user#user-object)                                                                               | string                                                                    | user nickname changed                                                                                                                 |
-| avatar_hash                   | [user](/resources/user#user-object)                                                                               | string                                                                    | user avatar changed                                                                                                                   |
-| id                            | any                                                                                                               | snowflake                                                                 | the id of the changed entity - sometimes used in conjunction with other keys                                                          |
-| type                          | any                                                                                                               | integer or string                                                         | type of entity created                                                                                                                |
-| enable_emoticons              | [integration](/resources/guild#integration-object)                                                                | boolean                                                                   | integration emoticons enabled/disabled                                                                                                |
-| expire_behavior               | [integration](/resources/guild#integration-object)                                                                | integer                                                                   | integration expiring subscriber behavior changed                                                                                      |
-| expire_grace_period           | [integration](/resources/guild#integration-object)                                                                | integer                                                                   | integration expire grace period changed                                                                                               |
-| user_limit                    | [voice channel](/resources/channel#channel-object)                                                                | integer                                                                   | new user limit in a voice channel                                                                                                     |
-| privacy_level                 | [stage instance](/resources/stage-instance#stage-instance-object)                                                 | integer ([privacy level](/resources/stage-instance#privacy-level))        | privacy level of the stage instance changed                                                                                           |
-| tags                          | [sticker](/resources/sticker#sticker-object)                                                                      | string                                                                    | related emoji of sticker changed                                                                                                      |
-| format_type                   | [sticker](/resources/sticker#sticker-object)                                                                      | integer ([format type](/resources/sticker#sticker-format-types))          | format type of sticker changed                                                                                                        |
-| asset                         | [sticker](/resources/sticker#sticker-object)                                                                      | string                                                                    | empty string                                                                                                                          |
-| available                     | [sticker](/resources/sticker#sticker-object)                                                                      | boolean                                                                   | availability of sticker changed                                                                                                       |
-| guild_id                      | [sticker](/resources/sticker#sticker-object)                                                                      | snowflake                                                                 | guild sticker is in changed                                                                                                           |
-| archived                      | [thread](/resources/channel#thread-metadata-object)                                                               | bool                                                                      | thread is now archived/unarchived                                                                                                     |
-| locked                        | [thread](/resources/channel#thread-metadata-object)                                                               | bool                                                                      | thread is now locked/unlocked                                                                                                         |
-| auto_archive_duration         | [thread](/resources/channel#thread-metadata-object)                                                               | integer                                                                   | auto archive duration changed                                                                                                         |
-| default_auto_archive_duration | [channel](/resources/channel#channel-object)                                                                      | integer                                                                   | default auto archive duration for newly created threads changed                                                                       |
+The **Object Changed** column notes which object's values may be included in the entry. Though there are exceptions, possible keys in the `changes` array typically correspond to the object's fields. The descriptions and types for those fields can be found in the linked documentation for the object.
 
-###### Example Partial Role Object
+If no object is noted, there won't be a `changes` array in the entry, though other fields like the `target_id` still exist and many have fields in the [`options` array](/resources/AUDIT_LOG/audit-log-entry-object-optional-audit-entry-info).
+
+> info
+> You should assume that your app may run into any field for the changed object, though none are guaranteed to be present. In most cases only a subset of the object's fields will be in the `changes` array.
+
+| Event                                       | Value | Description                                               | Object Changed                                                                                                                              |
+| ------------------------------------------- | ----- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| GUILD_UPDATE                                | 1     | Guild settings were updated                               | [Guild](/resources/guild#guild-object)                                                                                                      |
+| CHANNEL_CREATE                              | 10    | Channel was created                                       | [Channel](/resources/channel#channel-object)                                                                                                |
+| CHANNEL_UPDATE                              | 11    | Channel settings were updated                             | [Channel](/resources/channel#channel-object)                                                                                                |
+| CHANNEL_DELETE                              | 12    | Channel was deleted                                       | [Channel](/resources/channel#channel-object)                                                                                                |
+| CHANNEL_OVERWRITE_CREATE                    | 13    | Permission overwrite was added to a channel               | [Channel Overwrite](/resources/channel#overwrite-object)                                                                                    |
+| CHANNEL_OVERWRITE_UPDATE                    | 14    | Permission overwrite was updated for a channel            | [Channel Overwrite](/resources/channel#overwrite-object)                                                                                    |
+| CHANNEL_OVERWRITE_DELETE                    | 15    | Permission overwrite was deleted from a channel           | [Channel Overwrite](/resources/channel#overwrite-object)                                                                                    |
+| MEMBER_KICK                                 | 20    | Member was removed from guild                             |                                                                                                                                             |
+| MEMBER_PRUNE                                | 21    | Members were pruned from guild                            |                                                                                                                                             |
+| MEMBER_BAN_ADD                              | 22    | Member was banned from guild                              |                                                                                                                                             |
+| MEMBER_BAN_REMOVE                           | 23    | Guild ban was lifted for a member                         |                                                                                                                                             |
+| MEMBER_UPDATE                               | 24    | Member was updated in guild                               | [Member](/resources/guild#guild-member-object)                                                                                              |
+| MEMBER_ROLE_UPDATE                          | 25    | Member was added or removed from a role                   | [Partial Role](/topics/permissions#role-object)\*                                                                                           |
+| MEMBER_MOVE                                 | 26    | Member was moved to a different voice channel             |                                                                                                                                             |
+| MEMBER_DISCONNECT                           | 27    | Member was disconnected from a voice channel              |                                                                                                                                             |
+| BOT_ADD                                     | 28    | Bot user was added to guild                               |                                                                                                                                             |
+| ROLE_CREATE                                 | 30    | Role was created                                          | [Role](/topics/permissions#role-object)                                                                                                     |
+| ROLE_UPDATE                                 | 31    | Role was edited                                           | [Role](/topics/permissions#role-object)                                                                                                     |
+| ROLE_DELETE                                 | 32    | Role was deleted                                          | [Role](/topics/permissions#role-object)                                                                                                     |
+| INVITE_CREATE                               | 40    | Guild invite was created                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object)\*                                 |
+| INVITE_UPDATE                               | 41    | Guild invite was updated                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object)\*                                 |
+| INVITE_DELETE                               | 42    | Guild invite was deleted                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object)\*                                 |
+| WEBHOOK_CREATE                              | 50    | Webhook was created                                       | [Webhook](/resources/webhook#webhook-object)\*                                                                                              |
+| WEBHOOK_UPDATE                              | 51    | Webhook properties or channel were updated                | [Webhook](/resources/webhook#webhook-object)\*                                                                                              |
+| WEBHOOK_DELETE                              | 52    | Webhook was deleted                                       | [Webhook](/resources/webhook#webhook-object)\*                                                                                              |
+| EMOJI_CREATE                                | 60    | Emoji was created                                         | [Emoji](/resources/emoji#emoji-object)                                                                                                      |
+| EMOJI_UPDATE                                | 61    | Emoji name was updated                                    | [Emoji](/resources/emoji#emoji-object)                                                                                                      |
+| EMOJI_DELETE                                | 62    | Emoji was deleted                                         | [Emoji](/resources/emoji#emoji-object)                                                                                                      |
+| MESSAGE_DELETE                              | 72    | Single message was deleted                                |                                                                                                                                             |
+| MESSAGE_BULK_DELETE                         | 73    | Multiple messages were deleted                            |                                                                                                                                             |
+| MESSAGE_PIN                                 | 74    | Message was pinned to a channel                           |                                                                                                                                             |
+| MESSAGE_UNPIN                               | 75    | Message was unpinned from a channel                       |                                                                                                                                             |
+| INTEGRATION_CREATE                          | 80    | App was added to guild                                    | [Integration](/resources/guild#integration-object)                                                                                          |
+| INTEGRATION_UPDATE                          | 81    | App was updated (as an example, its scopes were updated)  | [Integration](/resources/guild#integration-object)                                                                                          |
+| INTEGRATION_DELETE                          | 82    | App was removed from guild                                | [Integration](/resources/guild#integration-object)                                                                                          |
+| STAGE_INSTANCE_CREATE                       | 83    | Stage instance was created (stage channel becomes live)   | [Stage Instance](/resources/stage-instance#stage-instance-object)                                                                           |
+| STAGE_INSTANCE_UPDATE                       | 84    | Stage instance details were updated                       | [Stage Instance](/resources/stage-instance#stage-instance-object)                                                                           |
+| STAGE_INSTANCE_DELETE                       | 85    | Stage instance was deleted (stage channel no longer live) | [Stage Instance](/resources/stage-instance#stage-instance-object)                                                                           |
+| STICKER_CREATE                              | 90    | Sticker was created                                       | [Sticker](/resources/sticker#sticker-object)                                                                                                |
+| STICKER_UPDATE                              | 91    | Sticker details were updated                              | [Sticker](/resources/sticker#sticker-object)                                                                                                |
+| STICKER_DELETE                              | 92    | Sticker was deleted                                       | [Sticker](/resources/sticker#sticker-object)                                                                                                |
+| GUILD_SCHEDULED_EVENT_CREATE                | 100   | Event was created                                         | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                                                      |
+| GUILD_SCHEDULED_EVENT_UPDATE                | 101   | Event was updated                                         | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                                                      |
+| GUILD_SCHEDULED_EVENT_DELETE                | 102   | Event was cancelled                                       | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                                                      |
+| THREAD_CREATE                               | 110   | Thread was created in a channel                           | [Thread](/resources/channel#thread-metadata-object)                                                                                         |
+| THREAD_UPDATE                               | 111   | Thread was updated                                        | [Thread](/resources/channel#thread-metadata-object)                                                                                         |
+| THREAD_DELETE                               | 112   | Thread was deleted                                        | [Thread](/resources/channel#thread-metadata-object)                                                                                         |
+| APPLICATION_COMMAND_PERMISSION_UPDATE       | 121   | Permissions were updated for a command                    | [Command Permission](/interactions/application-commands#application-command-permissions-object-application-command-permissions-structure)\* |
+| AUTO_MODERATION_RULE_CREATE                 | 140   | Auto Moderation rule was created                          | [Auto Moderation Rule](/resources/auto-moderation#auto-moderation-rule-object)                                                              |
+| AUTO_MODERATION_RULE_UPDATE                 | 141   | Auto Moderation rule was updated                          | [Auto Moderation Rule](/resources/auto-moderation#auto-moderation-rule-object)                                                              |
+| AUTO_MODERATION_RULE_DELETE                 | 142   | Auto Moderation rule was deleted                          | [Auto Moderation Rule](/resources/auto-moderation#auto-moderation-rule-object)                                                              |
+| AUTO_MODERATION_BLOCK_MESSAGE               | 143   | Message was blocked by Auto Moderation                    |                                                                                                                                             |
+| AUTO_MODERATION_FLAG_TO_CHANNEL             | 144   | Message was flagged by Auto Moderation                    |                                                                                                                                             |
+| AUTO_MODERATION_USER_COMMUNICATION_DISABLED | 145   | Member was timed out by Auto Moderation                   |                                                                                                                                             |
+
+\* Object has exception(s) to available keys. See the [exceptions](#audit-log-change-exceptions) section below for details.
+
+###### Optional Audit Entry Info
+
+| Field               | Type      | Description                                                     | Action Type                                                                                                                        |
+| ------------------- | --------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| delete_member_days? | string    | Number of days after which inactive members were kicked         | MEMBER_PRUNE                                                                                                                       |
+| members_removed?    | string    | Number of members removed by the prune                          | MEMBER_PRUNE                                                                                                                       |
+| channel_id?         | snowflake | The channel in which the entities were targeted                 | MEMBER_MOVE & MESSAGE_PIN & MESSAGE_UNPIN & MESSAGE_DELETE & STAGE_INSTANCE_CREATE & STAGE_INSTANCE_UPDATE & STAGE_INSTANCE_DELETE |
+| message_id?         | snowflake | The ID of the message that was targeted                         | MESSAGE_PIN & MESSAGE_UNPIN                                                                                                        |
+| count?              | string    | Number of entities that were targeted                           | MESSAGE_DELETE & MESSAGE_BULK_DELETE & MEMBER_DISCONNECT & MEMBER_MOVE                                                             |
+| id?                 | snowflake | The ID of the overwritten entity                                | CHANNEL_OVERWRITE_CREATE & CHANNEL_OVERWRITE_UPDATE & CHANNEL_OVERWRITE_DELETE                                                     |
+| type?               | string    | Type of overwritten entity - "0" for "role" or "1" for "member" | CHANNEL_OVERWRITE_CREATE & CHANNEL_OVERWRITE_UPDATE & CHANNEL_OVERWRITE_DELETE                                                     |
+| role_name?          | string    | The name of the role (only present if type is "0")              | CHANNEL_OVERWRITE_CREATE & CHANNEL_OVERWRITE_UPDATE & CHANNEL_OVERWRITE_DELETE                                                     |
+
+### Audit Log Change Object
+
+Many audit log events include a `changes` array in their [entry object](#audit-log-entry-structure). The [structure for the individual changes](#audit-log-change-structure) varies based on the event type and its changed objects, so apps shouldn't depend on a single pattern of handling audit log events.
+
+###### Audit Log Change Structure
+
+Some events don't follow the same pattern as other audit log events. Details about these exceptions are explained in [the next section](#audit-log-change-exceptions).
+
+<Alert type="info">
+
+If `new_value` is not present in the change object while `old_value` is, it indicates that the property has been reset or set to `null`. If `old_value` isn't included, it indicated that the property was previously `null`.
+
+</Alert>
+
+| Field      | Type                                | Description                                                                                                                        |
+| ---------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| new_value? | mixed (matches object field's type) | New value of the key                                                                                                               |
+| old_value? | mixed (matches object field's type) | Old value of the key                                                                                                               |
+| key        | string                              | Name of the changed entity, with a few [exceptions](#DOCS_RESOURCES_AUDIT_LOG/audit-log-change-object-audit-log-change-exceptions) |
+
+###### Audit Log Change Exceptions
+
+For most objects, the change keys may be any field on the changed object. The following table details the exceptions to this pattern.
+
+| Object Changed                                                                                            | Change Key Exceptions                                          | Change Object Exceptions                                                                                                                                                                                                                                    |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Command Permission](/interactions/application-commands#application-command-permissions-structure)        | A snowflake is used as the key                                 | The `changes` array contains objects with a `key` field representing the entity whose command was affected (role, channel, or user ID), a previous permissions object (with an `old_value` key), and an updated permissions object (with a `new_value` key) |
+| [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) | Additional `channel_id` key (instead of object's `channel.id`) |                                                                                                                                                                                                                                                             |
+| [Partial Role](/topics/permissions#role-object)                                                           | `$add` and `$remove` as keys                                   | `new_value` is an array of objects that contain the role `id` and `name`                                                                                                                                                                                    |
+| [Webhook](/resources/webhook#webhook-object)                                                              | `avatar_hash` key (instead of `avatar`)                        |                                                                                                                                                                                                                                                             |
+
+### Partial Integration Object
+
+###### Partial Integration Structure
+
+| Field           | Type                                          | Description                                           |
+| --------------- | --------------------------------------------- | ----------------------------------------------------- |
+| id              | snowflake                                     | The ID of the integration                             |
+| name            | string                                        | The name of the integration                           |
+| type            | string                                        | The type of integration (twitch, youtube, or discord) |
+| account         | [account](#integration-account-object) object | The integration's account information                 |
+| application_id? | snowflake                                     | The OAuth2 application for Discord integrations       |
+
+###### Example Partial Integration
+
+```json
+{
+  "id": "1029376264039039006",
+  "type": "discord",
+  "name": "Good University",
+  "account": {
+    "id": "971811349262917662",
+    "name": "Good University"
+  },
+  "application_id": "971811349262917662"
+}
+```
+
+### Partial Role Object
+
+###### Partial Role Structure
+
+| Field | Type      | Description          |
+| ----- | --------- | -------------------- |
+| id    | snowflake | The ID of the role   |
+| name  | string    | The name of the role |
+
+###### Example Partial Role
 
 ```json
 {
   "name": "I am a role",
-  "id": 584120723283509258
+  "id": "584120723283509258"
 }
 ```
 
@@ -218,9 +220,10 @@ Returns an [audit log](#audit-log-object) object for the guild. Requires the 'VI
 
 ###### Query String Params
 
-| Field       | Type      | Description                                                        |
-| ----------- | --------- | ------------------------------------------------------------------ |
-| user_id     | snowflake | filter the log for actions made by a user                          |
-| action_type | integer   | the type of [audit log event](#audit-log-events)                   |
-| before      | snowflake | filter the log before a certain entry id                           |
-| limit       | integer   | how many entries are returned (default 50, minimum 1, maximum 100) |
+| Field        | Type      | Description                                         |
+| ------------ | --------- | --------------------------------------------------- |
+| before?      | snowflake | Get entries before this entry ID                    |
+| after?       | snowflake | Get entries after this entry ID                     |
+| limit?       | integer   | Max number of entries to return (1-100, default 50) |
+| user_id?     | snowflake | Get actions made by a specific user                 |
+| action_type? | integer   | the type of [audit log event](#audit-log-events)    |

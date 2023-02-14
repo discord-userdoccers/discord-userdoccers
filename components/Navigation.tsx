@@ -174,7 +174,11 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/audit-log#audit-log-change-object">
                 Audit Log Change Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/audit-log#get-guild-audit-log">Get Guild Audit Log</NavigationSubLink>
+              <NavigationSubLink href="/resources/audit-log#partial-integration-object">
+                Partial Integration Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/audit-log#partial-role-object">Partial Role Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/audit-log#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
