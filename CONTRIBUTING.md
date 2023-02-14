@@ -30,7 +30,7 @@ Alert boxes are defined like so:
 
 Within tables:
 
-- Base types should be documented as `string`, `integer`, or `boolean`. If the type is an object, it should be documented as `foo object` and `foo` should be linked to the object's documentation. If the type is an array, it should be documented as `array[foo object]` and `foo` should be linked to the object's documentation.
+- Base types should be documented as `snowflake`, `string`, `integer`, or `boolean`. If the type is an object, it should be documented as `foo object` and `foo` should be linked to the object's documentation. If the type is an array, it should be documented as `array[foo object]` and `foo` should be linked to the object's documentation.
 - If a field is optional, it should be documented as `foo?`. If a field is nullable, the type should be documented as `?foo`.
 - If a field is deprecated, it should be documented as `foo *(deprecated)*` (or ommited if unnecessary and not yet documented).
 - In descriptions, capitals should be used, but periods should not be used.
