@@ -261,6 +261,25 @@ export default function Navigation() {
           Guild
         </NavigationLink>
         <NavigationLink
+          href="/resources/guild-scheduled-event"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/guild-scheduled-event#guild-scheduled-event-object">
+                Guild Scheduled Event Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild-scheduled-event#guild-scheduled-event-user-object">
+                Guild Scheduled Event User Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild-scheduled-event#subscribed-guild-scheduled-event-user-object">
+                Subscribed Guild Scheduled Event User Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild-scheduled-event#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Guild Scheduled Event
+        </NavigationLink>
+        <NavigationLink
           href="/resources/guild-template"
           subLinks={
             <Fragment>
