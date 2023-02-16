@@ -7,9 +7,9 @@ type DocLinkProps = JSX.IntrinsicElements["a"] & {
 
 function DocLink({ href, ...props }: DocLinkProps) {
   return (
-    <Link href={href}>
-      <a {...props} />
-    </Link>
+    (<Link href={href} {...props}>
+
+    </Link>)
   );
 }
 
