@@ -51,11 +51,11 @@ export default function RouteHeader({
       </div>
       <div className="flex gap-2 items-center mt-2">
         {mfa ? (
-            <Badge
-                href="/resources/user#user-object"
-                name="2FA Required"
-                tooltip="Requires a user with 2FA enabled to provide a valid 2FA code in the body"
-            />
+          <Badge
+            href="/resources/user#user-object"
+            name="2FA Required"
+            tooltip="Requires a user with 2FA enabled to provide a valid 2FA code in the body"
+          />
         ) : null}
         {supportsAuditReason ? (
           <Badge
