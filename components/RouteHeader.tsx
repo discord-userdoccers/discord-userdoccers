@@ -29,6 +29,7 @@ interface RouteHeaderProps {
   children: React.ReactNode;
   supportsAuditReason?: boolean;
   unauthenticated?: boolean;
+  mfa?: boolean;
   supportsOAuth2?: string | null;
 }
 
@@ -38,6 +39,7 @@ export default function RouteHeader({
   children,
   supportsAuditReason,
   unauthenticated,
+  mfa,
   supportsOAuth2,
 }: RouteHeaderProps) {
   return (
@@ -48,18 +50,25 @@ export default function RouteHeader({
         <code className="p-2 dark:text-text-dark text-text-light break-all">{url}</code>
       </div>
       <div className="flex gap-2 items-center mt-2">
-        {unauthenticated ? (
-          <Badge
-            href="/reference#unauthenticated-request"
-            name="Unauthenticated"
-            tooltip="Does not require authentication"
-          />
+        {mfa ? (
+            <Badge
+                href="/resources/user#user-object"
+                name="2FA Required"
+                tooltip="Requires a user with 2FA enabled to provide a valid 2FA code in the body"
+            />
         ) : null}
         {supportsAuditReason ? (
           <Badge
             href="/resources/audit-log#x-audit-log-reason"
             name="Audit Log Reason"
             tooltip="Supports the X-Audit-Log-Reason header"
+          />
+        ) : null}
+        {unauthenticated ? (
+          <Badge
+            href="/reference#unauthenticated-request"
+            name="Unauthenticated"
+            tooltip="Does not require authentication"
           />
         ) : null}
         {supportsOAuth2 !== undefined ? (
