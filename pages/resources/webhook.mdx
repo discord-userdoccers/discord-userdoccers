@@ -8,28 +8,34 @@ Used to represent a webhook.
 
 ###### Webhook Structure
 
-| Field           | Type                                                        | Description                                                                                              |
-| --------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| id              | snowflake                                                   | the id of the webhook                                                                                    |
-| type            | integer                                                     | the [type](#webhook-types) of the webhook                                                                |
-| guild_id?       | ?snowflake                                                  | the guild id this webhook is for, if any                                                                 |
-| channel_id      | ?snowflake                                                  | the channel id this webhook is for, if any                                                               |
-| user?           | partial [user](/resources/user#user-object) object          | the user this webhook was created by (not returned when getting a webhook with its token)                |
-| name            | ?string                                                     | the default name of the webhook                                                                          |
-| avatar          | ?string                                                     | the default user avatar [hash](/reference#cdn-formatting) of the webhook                                 |
-| token?          | string                                                      | the secure token of the webhook (returned for Incoming Webhooks)                                         |
-| application_id  | ?snowflake                                                  | the bot/OAuth2 application that created this webhook                                                     |
-| source_guild?   | partial [guild](/resources/guild#guild-object) object       | the guild of the channel that this webhook is following (returned for Channel Follower Webhooks)         |
-| source_channel? | partial [channel](/resources/channel#channel-object) object | the channel that this webhook is following (returned for Channel Follower Webhooks)                      |
-| url?            | string                                                      | the url used for executing the webhook (returned by the [webhooks](/topics/oauth2#webhooks) OAuth2 flow) |
+| Field                 | Type                                                        | Description                                                                                              |
+| --------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| id                    | snowflake                                                   | The ID of the webhook                                                                                    |
+| type                  | integer                                                     | The [type of webhook](#webhook-types)                                                                    |
+| guild_id?             | ?snowflake                                                  | The guild ID this webhook is for, if any                                                                 |
+| channel_id            | ?snowflake                                                  | The channel ID this webhook is for, if any                                                               |
+| user?\*               | partial [user](/resources/user#user-object) object          | The user this webhook was created by                                                                     |
+| name                  | ?string                                                     | The default name of the webhook (max 80 characters)                                                      |
+| avatar                | ?string                                                     | The default user [avatar hash](/reference#cdn-formatting) of the webhook                                 |
+| token?\*\*            | string                                                      | The secure token of the webhook (returned for `INCOMING` webhooks)                                       |
+| application_id        | ?snowflake                                                  | The application that created this webhook                                                                |
+| source_guild?\*\*\*   | partial [guild](/resources/guild#guild-object) object       | The guild of the channel that this webhook is following (returned for `CHANNEL_FOLLOWER` webhooks)       |
+| source_channel?\*\*\* | partial [channel](/resources/channel#channel-object) object | The channel that this webhook is following (returned for `CHANNEL_FOLLOWER` webhooks)                    |
+| url?                  | string                                                      | The URL used for executing the webhook (returned in the [webhooks](/topics/oauth2#webhooks) OAuth2 flow) |
+
+\* This field is not included when using the [Get Webhook with Token](#get-webhook-with-token) endpoint.
+
+\*\* For application-owned webhooks, this field is only returned to the application that created the webhook.
+
+\*\*\* These fields will not be included if the webhook creator has since lost access to the followed channel's guild.
 
 ###### Webhook Types
 
 | Value | Name             | Description                                                                                                    |
 | ----- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| 1     | Incoming         | Incoming Webhooks can post messages to channels with a generated token                                         |
-| 2     | Channel Follower | Channel Follower Webhooks are internal webhooks used with Channel Following to post new messages into channels |
-| 3     | Application      | Application webhooks are webhooks used with Interactions                                                       |
+| 1     | INCOMING         | Incoming Webhooks can post messages to channels with a generated token                                         |
+| 2     | CHANNEL_FOLLOWER | Channel Follower Webhooks are internal webhooks used with Channel Following to post new messages into channels |
+| 3     | APPLICATION      | Application webhooks are webhooks used with interactions                                                       |
 
 ###### Example Incoming Webhook
 
@@ -99,20 +105,24 @@ Used to represent a webhook.
 
 ## Endpoints
 
-<RouteHeader method="POST" url="/channels/{channel.id}/webhooks">
+<RouteHeader method="POST" url="/channels/{channel.id}/webhooks" supportsAuditReason>
   Create Webhook
 </RouteHeader>
 
-Creates a new webhook. Requires the `MANAGE_WEBHOOKS` permission. Returns a [webhook](#webhook-object) object on success. Webhook names follow our naming restrictions that can be found in our [Usernames and Nicknames](/resources/user#usernames-and-nicknames) documentation, with the following additional stipulations:
+Creates a new webhook. Requires the `MANAGE_WEBHOOKS` permission. Returns a [webhook](#webhook-object) object on success. Fires a [Webhooks Update](/topics/gateway#webhooks-update) Gateway event.
 
-- Webhook names cannot be: 'clyde'
+<Alert type="info">
+
+Webhook names follow the naming restrictions set out in the [Usernames and Nicknames](/resources/user#usernames-and-nicknames) documentation.
+
+</Alert>
 
 ###### JSON Params
 
-| Field   | Type                                 | Description                           |
-| ------- | ------------------------------------ | ------------------------------------- |
-| name    | string                               | name of the webhook (1-80 characters) |
-| avatar? | ?[image data](/reference#image-data) | image for the default webhook avatar  |
+| Field   | Type                                 | Description                                       |
+| ------- | ------------------------------------ | ------------------------------------------------- |
+| name    | string                               | The default name of the webhook (1-80 characters) |
+| avatar? | ?[image data](/reference#image-data) | image for the default webhook avatar              |
 
 <RouteHeader method="GET" url="/channels/{channel.id}/webhooks">
   Get Channel Webhooks
@@ -130,45 +140,45 @@ Returns a list of guild [webhook](#webhook-object) objects. Requires the `MANAGE
   Get Webhook
 </RouteHeader>
 
-Returns the new [webhook](#webhook-object) object for the given id.
+Returns a [webhook](#webhook-object) object for the given webhook ID.
 
 <RouteHeader method="GET" url="/webhooks/{webhook.id}/{webhook.token}" unauthenticated>
   Get Webhook with Token
 </RouteHeader>
 
-Same as above, except this call does not require authentication and returns no user in the webhook object.
+Same as above, except this call does not require authentication and returns no `user` key in the webhook object.
 
-<RouteHeader method="PATCH" url="/webhooks/{webhook.id}">
+<RouteHeader method="PATCH" url="/webhooks/{webhook.id}" supportsAuditReason>
   Modify Webhook
 </RouteHeader>
 
-Modifies a webhook. Requires the `MANAGE_WEBHOOKS` permission. Returns the updated [webhook](#webhook-object) object on success.
+Modifies a webhook. Requires the `MANAGE_WEBHOOKS` permission. Returns the updated [webhook](#webhook-object) object on success. Fires a [Webhooks Update](/topics/gateway#webhooks-update) Gateway event.
 
 <Alert type="info">
 
-All parameters to this endpoint are optional
+All parameters to this endpoint are optional.
 
 </Alert>
 
 ###### JSON Params
 
-| Field      | Type                                 | Description                                        |
-| ---------- | ------------------------------------ | -------------------------------------------------- |
-| name       | string                               | the default name of the webhook                    |
-| avatar     | ?[image data](/reference#image-data) | image for the default webhook avatar               |
-| channel_id | snowflake                            | the new channel id this webhook should be moved to |
+| Field       | Type                                 | Description                                    |
+| ----------- | ------------------------------------ | ---------------------------------------------- |
+| name?       | string                               | The default name of the webhook                |
+| avatar?     | ?[image data](/reference#image-data) | image for the default webhook avatar           |
+| channel_id? | snowflake                            | The channel ID this webhook should be moved to |
 
 <RouteHeader method="PATCH" url="/webhooks/{webhook.id}/{webhook.token}" unauthenticated>
   Modify Webhook with Token
 </RouteHeader>
 
-Same as above, except this call does not require authentication, does not accept a `channel_id` parameter in the body, and does not return a user in the webhook object.
+Same as above, except this call does not require authentication, does not accept a `channel_id` parameter, and returns no `user` key in the webhook object.
 
-<RouteHeader method="DELETE" url="/webhooks/{webhook.id}">
+<RouteHeader method="DELETE" url="/webhooks/{webhook.id}" supportsAuditReason>
   Delete Webhook
 </RouteHeader>
 
-Delete a webhook permanently. Requires the `MANAGE_WEBHOOKS` permission. Returns a 204 NO CONTENT response on success.
+Deletes a webhook permanently. Requires the `MANAGE_WEBHOOKS` permission. Returns a 204 empty response on success. Fires a [Webhooks Update](/topics/gateway#webhooks-update) Gateway event.
 
 <RouteHeader method="DELETE" url="/webhooks/{webhook.id}/{webhook.token}" unauthenticated>
   Delete Webhook with Token
@@ -180,7 +190,21 @@ Same as above, except this call does not require authentication.
   Execute Webhook
 </RouteHeader>
 
-Refer to [Uploading Files](/reference#uploading-files) for details on attachments and `multipart/form-data` requests.
+<Alert type="warn">
+
+Discord may strip certain characters from message content, like invalid unicode characters or characters which cause unexpected message formatting. If you are passing user-generated strings into message content, consider sanitizing the data to prevent unexpected behavior and using `allowed_mentions` to prevent unexpected mentions.
+
+</Alert>
+
+Posts a message to the webhook's channel. Returns a [message](#message-object) object or 204 empty response, depending on `wait`. Fires a [Message Create](/topics/gateway#message-create) Gateway event. See [message formatting](/reference#message-formatting) for more information on how to properly format messages.
+
+Files must be attached using a `multipart/form-data` body (or pre-uploaded to Discord's GCP bucket) as described in [Uploading Files](/reference#uploading-files).
+
+###### Limitations
+
+- When executing on a forum channel, _one of_ `thread_id` or `thread_name` must be provided.
+- The maximum request size when sending a message is `8 MiB`.
+- For the embed object, you can set every field except `type` (it will be `rich` regardless of if you try to set it), `provider`, `video`, and any `height`, `width`, or `proxy_url` values for images.
 
 <Alert type="info">
 
@@ -190,34 +214,31 @@ Note that when sending a message, you must provide a value for **at least one of
 
 ###### Query String Params
 
-| Field     | Type      | Description                                                                                                                                                                                  | Required |
-| --------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| wait      | boolean   | waits for server confirmation of message send before response, and returns the created message body (defaults to `false`; when `false` a message that is not saved does not return an error) | false    |
-| thread_id | snowflake | Send a message to the specified thread within a webhook's channel. The thread will automatically be unarchived.                                                                              | false    |
+| Field      | Type      | Description                                                                                                                                                                   |
+| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| wait?      | boolean   | Waits for confirmation of message send before response, and returns the created message body (default false; when false a message that is not saved does not return an error) |
+| thread_id? | snowflake | Send a message to the specified thread within a webhook's channel; the thread will automatically be unarchived                                                                |
 
 ###### JSON/Form Params
 
-| Field            | Type                                                                            | Description                                      | Required                     |
-| ---------------- | ------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------- |
-| content          | string                                                                          | the message contents (up to 2000 characters)     | one of content, file, embeds |
-| username         | string                                                                          | override the default username of the webhook     | false                        |
-| avatar_url       | string                                                                          | override the default avatar of the webhook       | false                        |
-| tts              | boolean                                                                         | true if this is a TTS message                    | false                        |
-| embeds           | array of up to 10 [embed](/resources/message#embed-object) objects              | embedded `rich` content                          | one of content, file, embeds |
-| allowed_mentions | [allowed mention object](/resources/message#allowed-mentions-object)            | allowed mentions for the message                 | false                        |
-| components\*     | array of [message component](/interactions/message-components#component-object) | the components to include with the message       | false                        |
-| files[n]\*\*     | file contents                                                                   | the contents of the file being sent              | one of content, file, embeds |
-| payload_json\*\* | string                                                                          | JSON encoded body of non-file params             | `multipart/form-data` only   |
-| attachments\*\*  | array of partial [attachment](/resources/message#attachment-object) objects     | attachment objects with filename and description | false                        |
+| Field             | Type                                                                                 | Description                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| username?         | string                                                                               | The name to override the default username of the webhook with                                                                                                |
+| avatar_url?       | string                                                                               | The avatar URL to override the default avatar of the webhook with                                                                                            |
+| thread_name?      | string                                                                               | The name for the thread to create (requires the webhook channel to be a forum channel)                                                                       |
+| content?          | string                                                                               | The message contents (up to 2000 characters)                                                                                                                 |
+| tts?              | boolean                                                                              | Whether this is a TTS message                                                                                                                                |
+| embeds?           | array[[embed](#embed-object) object]                                                 | Embedded `rich` content (max 10, 6000 characters)                                                                                                            |
+| allowed_mentions? | [allowed mention](#allowed-mentions-object) object                                   | Allowed mentions for the message                                                                                                                             |
+| components?\*\*   | array[[message component](/interactions/message-components#component-object) object] | The components to include with the message                                                                                                                   |
+| flags?            | integer                                                                              | The [message's flags](/resources/message#message-object-message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `IS_VOICE_MESSAGE` can be set) |
+| files[n]?\*       | file contents                                                                        | Contents of the file being sent (max 10)                                                                                                                     |
+| payload_json?\*   | string                                                                               | JSON-encoded body of non-file params                                                                                                                         |
+| attachments?\*    | array[partial [attachment](#attachment-object) object]                               | Partial attachment objects with `filename` and `description` (max 10)                                                                                        |
 
-\* Requires an application-owned webhook
-\*\* See [Uploading Files](/reference#uploading-files) for details.
+\* See [Uploading Files](/reference#uploading-files) for details.
 
-<Alert type="info">
-
-For the webhook embed objects, you can set every field except `type` (it will be `rich` regardless of if you try to set it), `provider`, `video`, and any `height`, `width`, or `proxy_url` values for images.
-
-</Alert>
+\*\* Requires an application-owned webhook.
 
 <RouteHeader method="POST" url="/webhooks/{webhook.id}/{webhook.token}/slack" unauthenticated>
   Execute Slack-Compatible Webhook
@@ -227,9 +248,10 @@ Refer to [Slack's documentation](https://api.slack.com/incoming-webhooks) for mo
 
 ###### Query String Params
 
-| Field | Type    | Description                                                                                                                                           | Required |
-| ----- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| wait  | boolean | waits for server confirmation of message send before response (defaults to `true`; when `false` a message that is not saved does not return an error) | false    |
+| Field      | Type      | Description                                                                                                                                                                   | Required |
+| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| wait?      | boolean   | Waits for confirmation of message send before response, and returns the created message body (default false; when false a message that is not saved does not return an error) |
+| thread_id? | snowflake | Send a message to the specified thread within a webhook's channel; the thread will automatically be unarchived                                                                |
 
 <RouteHeader method="POST" url="/webhooks/{webhook.id}/{webhook.token}/github" unauthenticated>
   Execute GitHub-Compatible Webhook
@@ -239,21 +261,22 @@ Add a new webhook to your GitHub repo (in the repo's settings), and use this end
 
 ###### Query String Params
 
-| Field | Type    | Description                                                                                                                                           | Required |
-| ----- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| wait  | boolean | waits for server confirmation of message send before response (defaults to `true`; when `false` a message that is not saved does not return an error) | false    |
+| Field      | Type      | Description                                                                                                                                                                   | Required |
+| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| wait?      | boolean   | Waits for confirmation of message send before response, and returns the created message body (default false; when false a message that is not saved does not return an error) |
+| thread_id? | snowflake | Send a message to the specified thread within a webhook's channel; the thread will automatically be unarchived                                                                |
 
 <RouteHeader method="GET" url="/webhooks/{webhook.id}/{webhook.token}/messages/{message.id}" unauthenticated>
   Get Webhook Message
 </RouteHeader>
 
-Returns a previously-sent webhook message from the same token. Returns a [message](/resources/message#message-object) object on success.
+Returns a previously-sent webhook [message](/resources/message#message-object) object from the same token.
 
 <RouteHeader method="PATCH" url="/webhooks/{webhook.id}/{webhook.token}/messages/{message.id}" unauthenticated>
   Edit Webhook Message
 </RouteHeader>
 
-Edits a previously-sent webhook message from the same token. Returns a [message](/resources/message#message-object) object on success.
+Edits a previously-sent webhook message from the same token. Returns the updated [message](/resources/message#message-object) object on success. Fires a [Message Update](/topics/gateway#message-update) Gateway event.
 
 When the `content` field is edited, the `mentions` array in the message object will be reconstructed from scratch based on the new content. The `allowed_mentions` field of the edit request controls how this happens. If there is no explicit `allowed_mentions` in the edit request, the content will be parsed with _default_ allowances, that is, without regard to whether or not an `allowed_mentions` was present in the request that originally created the message.
 
@@ -268,30 +291,30 @@ Starting with API v10, the `attachments` array must contain all attachments that
 
 <Alert type="info">
 
-All parameters to this endpoint are optional and nullable.
+All parameters to this endpoint are optional.
 
 </Alert>
 
 ###### JSON/Form Params
 
-| Field            | Type                                                                            | Description                                                     |
-| ---------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| content          | string                                                                          | the message contents (up to 2000 characters)                    |
-| embeds           | array of up to 10 [embed](/resources/message#embed-object) objects              | embedded `rich` content                                         |
-| file             | file contents                                                                   | the contents of the file being sent/edited                      |
-| payload_json     | string                                                                          | JSON encoded body of non-file params (multipart/form-data only) |
-| allowed_mentions | [allowed mention object](/resources/message#allowed-mentions-object)            | allowed mentions for the message                                |
-| attachments      | array of [attachment](/resources/message#attachment-object) objects             | attached files to keep                                          |
-| components\*     | array of [message component](/interactions/message-components#component-object) | the components to include with the message                      |
-| files[n]\*\*     | file contents                                                                   | the contents of the file being sent/edited                      |
-| payload_json\*\* | string                                                                          | JSON encoded body of non-file params (multipart/form-data only) |
-| attachments\*\*  | array of partial [attachment](/resources/message#attachment-object) objects     | attached files to keep and possible descriptions for new files  |
+| Field             | Type                                                                                 | Description                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| content?          | string                                                                               | The message contents (up to 2000 characters)                                                                                                                 |
+| tts?              | boolean                                                                              | Whether this is a TTS message                                                                                                                                |
+| embeds?           | array[[embed](#embed-object) object]                                                 | Embedded `rich` content (max 10, 6000 characters)                                                                                                            |
+| allowed_mentions? | [allowed mention](#allowed-mentions-object) object                                   | Allowed mentions for the message                                                                                                                             |
+| components?\*\*   | array[[message component](/interactions/message-components#component-object) object] | The components to include with the message                                                                                                                   |
+| flags?            | integer                                                                              | The [message's flags](/resources/message#message-object-message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `IS_VOICE_MESSAGE` can be set) |
+| files[n]?\*       | file contents                                                                        | Contents of the file being sent (max 10)                                                                                                                     |
+| payload_json?\*   | string                                                                               | JSON-encoded body of non-file params                                                                                                                         |
+| attachments?\*    | array[partial [attachment](#attachment-object) object]                               | Partial attachment objects with `filename` and `description` (max 10)                                                                                        |
 
-\* Requires an application-owned webhook
-\*\* See [Uploading Files](/reference#uploading-files) for details.
+\* See [Uploading Files](/reference#uploading-files) for details.
+
+\*\* Requires an application-owned webhook.
 
 <RouteHeader method="DELETE" url="/webhooks/{webhook.id}/{webhook.token}/messages/{message.id}" unauthenticated>
   Delete Webhook Message
 </RouteHeader>
 
-Deletes a message that was created by the webhook. Returns a 204 NO CONTENT response on success.
+Deletes a message that was created by the webhook. Returns a 204 empty response on success. Fires a [Message Delete](/topics/gateway#message-delete) Gateway event.
