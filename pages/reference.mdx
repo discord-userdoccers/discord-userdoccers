@@ -18,7 +18,7 @@ Some API and Gateway versions are now non-functioning, and are labeled as discon
 
 </Alert>
 
-Discord exposes different versions of our API[.](https://c.tenor.com/BuZl66EegkgAAAAC/westworld-dolores.gif) You should specify which version to use by including it in the request path like `https://discord.com/api/v{version_number}`. Omitting the version number from the route will route requests to the current default version (marked below).
+Discord exposes different versions of the API[.](https://c.tenor.com/BuZl66EegkgAAAAC/westworld-dolores.gif) You should specify which version to use by including it in the request path like `https://discord.com/api/v{version_number}`. Omitting the version number from the route will route requests to the current default version (marked below).
 
 ###### API Versions
 
@@ -163,9 +163,15 @@ Discord utilizes Twitter's [snowflake](https://github.com/twitter/snowflake/tree
 
 ### Snowflake IDs in Pagination
 
-We typically use snowflake IDs in many of our API routes for pagination. The standardized pagination paradigm we utilize is one in which you can specify IDs `before` and `after` in combination with `limit` to retrieve a desired page of results. You will want to refer to the specific endpoint documentation for details.
+Discord typically uses snowflake IDs in many API routes for pagination. The standardized pagination paradigm utilized is one in which you can specify IDs `before` and `after` in combination with `limit` to retrieve a desired page of results. You will want to refer to the specific endpoint documentation for details.
 
 It is useful to note that snowflake IDs are just numbers with a timestamp, so when dealing with pagination where you want results from the beginning of time (in Discord Epoch, but `0` works here too) or before/after a specific time you can generate a snowflake ID for that time.
+
+<Alert type="info">
+
+If the endpoint supports multiple pagination arguments, any `before`, `after`, and `around` keys are mutually exclusive (only one may be used at a time).
+
+</Alert>
 
 ###### Generating a Snowflake ID from a Timestamp Example
 
@@ -175,9 +181,9 @@ It is useful to note that snowflake IDs are just numbers with a timestamp, so wh
 
 ## ID Serialization
 
-There are some cases in which our API and Gateway may return IDs in an unexpected format. Internally, Discord stores IDs as integer snowflakes. When we serialize IDs to JSON, we transform `bigints` into strings. Given that all Discord IDs are snowflakes, you should always expect a string.
+There are some cases in which the API and Gateway may return IDs in an unexpected format. Internally, Discord stores IDs as integer snowflakes. When we serialize IDs to JSON, we transform `bigints` into strings. Given that all Discord IDs are snowflakes, you should always expect a string.
 
-However, there are cases in which passing something to our API will instead return IDs serialized as an integer; this is the case when you send our API or Gateway a value in an `id` field that is not `bigint` size. For example, when requesting `GUILD_MEMBERS_CHUNK` from our gateway:
+However, there are cases in which passing something to the API will instead return IDs serialized as an integer; this is the case when you send the API or Gateway a value in an `id` field that is not `bigint` size. For example, when requesting `GUILD_MEMBERS_CHUNK` from the gateway:
 
 ```
 // Send
@@ -206,11 +212,11 @@ You can see in this case that the sent `user_id` is not a `bigint`; therefore, w
 
 ## ISO8601 Date/Time
 
-Discord utilizes the [ISO8601 format](https://www.loc.gov/standards/datetime/iso-tc154-wg5_n0038_iso_wd_8601-1_2016-02-16.pdf) for most Date/Times returned in our models. This format is referred to as type `ISO8601` within tables in this documentation.
+Discord utilizes the [ISO8601 format](https://www.loc.gov/standards/datetime/iso-tc154-wg5_n0038_iso_wd_8601-1_2016-02-16.pdf) for most Date/Times returned in the API. This format is referred to as type `ISO8601` within tables in this documentation.
 
 ## Consistency
 
-Discord operates at a scale where true consistency is impossible. Because of this, lots of operations in our API and in-between our services are [eventually consistent](https://en.wikipedia.org/wiki/Eventual_consistency). Due to this, client actions can never be serialized and may be executed in _any_ order (if executed at all). Along with these constraints, events in Discord may:
+Discord operates at a scale where true consistency is impossible. Because of this, lots of operations in the API and in-between API services are [eventually consistent](https://en.wikipedia.org/wiki/Eventual_consistency). Due to this, client actions can never be serialized and may be executed in _any_ order (if executed at all). Along with these constraints, events in Discord may:
 
 - Never be sent to a client
 - Be sent _exactly_ one time to the client
@@ -242,7 +248,7 @@ Certain endpoints in the API are documented to accept booleans for their query s
 
 ## Gateway (WebSocket) API
 
-Discord's Gateway API is used for maintaining persistent, stateful websocket connections between your client and our servers. These connections are used for sending and receiving real-time events your client can use to track and update local state. The Gateway API uses secure websocket connections as specified in [RFC 6455](https://tools.ietf.org/html/rfc6455). For information on opening Gateway connections, please see the [Gateway API](/topics/gateway#gateways) section.
+Discord's Gateway API is used for maintaining persistent, stateful websocket connections between your client and Discord servers. These connections are used for sending and receiving real-time events your client can use to track and update local state. The Gateway API uses secure websocket connections as specified in [RFC 6455](https://tools.ietf.org/html/rfc6455). For information on opening Gateway connections, please see the [Gateway API](/topics/gateway#gateways) section.
 
 ## Message Formatting
 
@@ -483,6 +489,59 @@ For example:
 }
 ```
 
+### Uploading to GCP
+
+You can upload large attachments quickly directly to Discord's Google Cloud storage bucket, using the [Create Attachments](/resources/message#create-attachments) endpoint to generate upload URLs, and sending each generated URL a `PUT` request with the intended attachment as the body.
+
+An example implementation in Python pseudocode would be:
+
+```python
+import requests
+import os
+
+url = "https://discord.com/api/v10/channels/<my_channel_id>/attachments"
+
+headers = {
+    "Authorization": "Bot <my_bot_token>"
+}
+
+filename = "index.js"
+size = os.stat(filename).st_size
+
+json = {
+    "files": [{
+        "file_size": size,
+        "filename": filename
+    }]
+}
+
+r = requests.post(url, headers=headers, json=json)
+r.raise_for_status()
+
+upload = r.json()['attachments'][0]
+with open(filename, "r") as f:
+    data = f.read()
+    r = requests.put(upload['upload_url'], data=data)
+    r.raise_for_status()
+
+upload_filename = upload['upload_filename']
+```
+
+Now, instead of sending the attachment again in a form body in the request, you can just send the `upload_filename`! For example:
+
+```json
+{
+  "content": "look at my cute cat!",
+  "attachments": [
+    {
+      "id": "0",
+      "filename": "cat.png",
+      "uploaded_filename": "6a08e58a-265f-485a-8c85-5cd4df0edde0/cat.png"
+    }
+  ]
+}
+```
+
 ## Locales
 
 | Locale | Language Name         | Native Name         |
@@ -542,6 +601,14 @@ Instead, they will be marked with an asterisk, and the situation will be explain
 | optional_field?              | string  |
 | nullable_field               | ?string |
 | optional_and_nullable_field? | ?string |
+
+### Deprecated/Removed Fields
+
+Fields that are deprecated will be marked with a **(deprecated)** notice next to them. Fields that are removed (and are kept for completion's sake, such as in enums) will be ~~marked with strikethrough~~.
+
+### Event Fields
+
+Certain fields are only present in structures received over the Gateway. These fields will usually be documented in the Gateway section instead of the main structure.
 
 ### Badges
 

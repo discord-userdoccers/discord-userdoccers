@@ -209,6 +209,13 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/message#message-object">Message Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-activity-object">
+                Message Activity Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-call-object">Message Call Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-role-subscription-object">
+                Message Role Subscription Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#message-reference-object">
                 Message Reference Object
               </NavigationSubLink>
@@ -218,13 +225,9 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#reaction-object">Reaction Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#embed-object">Embed Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#attachment-object">Attachment Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#channel-mention-object">
-                Channel Mention Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#allowed-mentions-object">
                 Allowed Mentions Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#embed-limits">Embed Limits</NavigationSubLink>
               <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }

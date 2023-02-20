@@ -335,18 +335,56 @@ The [threads](/topics/threads) topic has some more information.
 }
 ```
 
+### Partial Channel Object
+
+A channel referenced in an [invite](/topics/invites#invite-object) or [message](/topics/message#message-object).
+
+###### Partial Channel Structure
+
+| Field       | Type                                                      | Description                                                    |
+| ----------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| id          | snowflake                                                 | The ID of the channel                                          |
+| type        | integer                                                   | The [type of channel](#channel-type)                           |
+| name        | ?string                                                   | The name of the channel (1-100 characters)                     |
+| recipients? | array[partial [user](/resources/user#user-object) object] | The recipients of the DM; only the `username` field is present |
+| icon?       | ?string                                                   | The group DM's [icon hash](/reference#cdn-formatting)          |
+| guild_id?\* | ?snowflake                                                | The ID of the guild the channel is in                          |
+
+\* Not present when the channel is received from an [invite](/topics/invites#invite-object), as it can be inferred from the `guild` field.
+
+###### Example Partial Channel Object
+
+```json
+{
+  "id": "1065785999734607943",
+  "name": null,
+  "type": 3,
+  "icon": null,
+  "recipients": [
+    {
+      "username": "Alien"
+    },
+    {
+      "username": "Alien 2: Electric Boogaloo"
+    }
+  ]
+}
+```
+
 ### Overwrite Object
 
 See [permissions](/topics/permissions#permissions) for more information about the `allow` and `deny` fields.
 
 ###### Overwrite Structure
 
-| Field | Type      | Description                                     |
-| ----- | --------- | ----------------------------------------------- |
-| id    | snowflake | Role or user ID                                 |
-| type  | integer   | Either 0 (role) or 1 (member)                   |
-| allow | string    | The bitwise value of all allowed permissions    |
-| deny  | string    | The bitwise value of all disallowed permissions |
+| Field  | Type      | Description                                     |
+| ------ | --------- | ----------------------------------------------- |
+| id     | snowflake | Role or user ID                                 |
+| type\* | integer   | Either 0 (role) or 1 (member)                   |
+| allow  | string    | The bitwise value of all allowed permissions    |
+| deny   | string    | The bitwise value of all disallowed permissions |
+
+\* In API v8 and below, this field uses the strings `role` and `member` instead of integer types.
 
 ### Thread Metadata Object
 
@@ -414,7 +452,7 @@ An object that represents a tag that is able to be applied to a thread in a `GUI
 
 | Field        | Type       | Description                                                                                                   |
 | ------------ | ---------- | ------------------------------------------------------------------------------------------------------------- |
-| id           | snowflake  | The id of the tag                                                                                             |
+| id           | snowflake  | The ID of the tag                                                                                             |
 | name         | string     | The name of the tag (max 20 characters)                                                                       |
 | moderated    | boolean    | Whether this tag can only be added to or removed from threads by members with the `MANAGE_THREADS` permission |
 | emoji_id\*   | ?snowflake | The ID of a guild's custom emoji                                                                              |
@@ -434,7 +472,7 @@ Returns a list of active [private channel](#channel-object) objects the user is 
   Create Private Channel
 </RouteHeader>
 
-One recipient creates or returns an existing [DM channel](#channel-object), none or multiple recipients create a [group DM channel](#channel-object). Returns a [private channel](#channel-object) object. Fires a [Channel Create](/topics/gateway-events#channel-create) Gateway event.
+One recipient creates or returns an existing [DM channel](#channel-object), none or multiple recipients create a [group DM channel](#channel-object). Returns a [private channel](#channel-object) object. Fires a [Channel Create](/topics/gateway#channel-create) Gateway event.
 
 If multiple channels with a single recipient exist, the most recent channel (largest ID) is returned.
 
@@ -481,7 +519,7 @@ All parameters to this endpoint are optional.
 
 ###### JSON Params
 
-If modifying a guild channel, requires the `MANAGE_CHANNELS` permission for the guild. If modifying permission overwrites, the `MANAGE_ROLES` permission is required. Only permissions the user has in the guild or channel can be allowed/denied (unless the user has a `MANAGE_ROLES` overwrite in the channel). Fires a [Channel Update](/topics/gateway#channel-update) Gateway event. If modifying a category, individual [Channel Update](/topics/gateway#channel-update) events will fire for each child channel that also changes.
+If modifying a guild channel, requires the `MANAGE_CHANNELS` permission for the guild. If modifying permission overwrites, the `MANAGE_ROLES` permission is required. Only permissions you have in the guild or parent channel (if applicable) can be allowed/denied (unless you have a `MANAGE_ROLES` overwrite in the channel). Fires a [Channel Update](/topics/gateway#channel-update) Gateway event. If modifying a category, individual [Channel Update](/topics/gateway#channel-update) events will fire for each child channel that also changes.
 
 If modifying a thread and setting `archived` to `false`, when `locked` is also `false`, only the `SEND_MESSAGES` permission is required. Otherwise, requires the `MANAGE_THREADS` permission. Requires the thread to have `archived` set to `false` or be set to `false` in the request. Fires a [Thread Update](/topics/gateway#thread-update) Gateway event.
 
@@ -534,11 +572,32 @@ For Community guilds, the Rules or Guidelines channel and the Community Updates 
 
 </Alert>
 
+###### Query String Params
+
+| Field   | Type    | Description                                                                    |
+| ------- | ------- | ------------------------------------------------------------------------------ |
+| silent? | boolean | Whether to leave the group DM without sending a system message (default false) |
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/messages/ack">
+  Delete Read State
+</RouteHeader>
+
+Delete a channel's read state for the current user. Returns a 204 empty response on success.
+
+This should be used to delete various read states of channels the client has not been able to access for a while.
+
+###### JSON Params
+
+| Field            | Type    | Description                                                                                                                              |
+| ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| version?         | integer | The version of the read state feature you are using (default 1, should be 2 to allow the usage of read state types other than `CHANNEL`) |
+| read_state_type? | integer | The [read state type](#read-state-type) to delete (default `CHANNEL`)                                                                    |
+
 <RouteHeader method="PUT" url="/channels/{channel.id}/permissions/{overwrite.id}" supportsAuditReason>
   Modify Channel Permissions
 </RouteHeader>
 
-Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the `MANAGE_ROLES` permission. Only permissions you have in the guild or channel can be allowed/denied (unless you have a `MANAGE_ROLES` overwrite in the channel). Returns a 204 empty response on success. Fires a [Channel Update](/topics/gateway#channel-update) Gateway event. For more information about permissions, see [permissions](/topics/permissions#permissions).
+Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the `MANAGE_ROLES` permission. Only permissions you have in the guild or parent channel (if applicable) can be allowed/denied (unless you have a `MANAGE_ROLES` overwrite in the channel). Returns a 204 empty response on success. Fires a [Channel Update](/topics/gateway#channel-update) Gateway event. For more information about permissions, see [permissions](/topics/permissions#permissions).
 
 ###### JSON Params
 
@@ -611,11 +670,83 @@ Follow a News Channel to send messages to a target channel. Requires the `MANAGE
 
 Post a typing indicator for the specified channel. Returns a 204 empty response on success. Fires a [Typing Start](/topics/gateway#typing-start) Gateway event.
 
+<RouteHeader method="GET" url="/channels/{channel.id}/call">
+  Get Call Eligibility
+</RouteHeader>
+
+Checks if the current user is eligible to start a call in the private channel.
+
+###### Response Body
+
+| Field    | Type    | Description                                                              |
+| -------- | ------- | ------------------------------------------------------------------------ |
+| ringable | boolean | Whether the user is additionally eligible to ring the other recipient(s) |
+
+<RouteHeader method="PATCH" url="/channels/{channel.id}/call">
+  Modify Call
+</RouteHeader>
+
+Modify the active call in a channel. Returns a 204 empty response on success. Fires a [Call Update](/topics/gateway#call-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field   | Type   | Description                                                              |
+| ------- | ------ | ------------------------------------------------------------------------ |
+| region? | string | The [voice region](/resources/voice#voice-region-object) ID for the call |
+
+<RouteHeader method="POST" url="/channels/{channel.id}/call/ring">
+  Ring Channel Recipients
+</RouteHeader>
+
+Rings the recipients of a channel to notify them of an active call. Returns a 204 empty response on success. Fires a [Call Update](/topics/gateway#call-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type              | Description                          |
+| ----------- | ----------------- | ------------------------------------ |
+| recipients? | ?array[snowflake] | The recipients to ring (default all) |
+
+<RouteHeader method="GET" url="/channels/{channel.id}/call/stop-ringing">
+  Stop Ringing Channel Recipients
+</RouteHeader>
+
+Stops ringing the recipients of a channel about an active call. Returns a 204 empty response on success. Fires a [Call Update](/topics/gateway#call-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type              | Description                    |
+| ----------- | ----------------- | ------------------------------ |
+| recipients? | ?array[snowflake] | The recipients to stop ringing |
+
 <RouteHeader method="PUT" url="/channels/{channel.id}/recipients/{user.id}">
   Add Channel Recipient
 </RouteHeader>
 
-Adds a recipient to a Group DM. Returns a 204 empty response on success. Fires a [Channel Recipient Add](/topics/gateway#channel-recipient-add) Gateway event.
+Adds a recipient to a group DM. Returns a 204 empty response on success. Fires a [Channel Recipient Add](/topics/gateway#channel-recipient-add) Gateway event.
+
+<Alert type="info">
+
+Regular group DMs can have up to 10 recipients. Staff group DMs can have up to 25 recipients.
+
+</Alert>
 
 <Alert type="warn">
 
@@ -636,7 +767,7 @@ In a managed group DM, only the managing application can add recipients.
   Remove Channel Recipient
 </RouteHeader>
 
-Removes a recipient from a Group DM. Requires ownership of the target channel. Returns a 204 empty response on success. Fires a [Channel Recipient Remove](/topics/gateway#channel-recipient-remove) Gateway event.
+Removes a recipient from a group DM. Requires ownership of the target channel. Returns a 204 empty response on success. Fires a [Channel Recipient Remove](/topics/gateway#channel-recipient-remove) Gateway event.
 
 <RouteHeader method="GET" url="/channels/{channel.id}/threads/active">
   Get Active Threads
@@ -821,24 +952,26 @@ In forum channels:
 
 <Alert type="info">
 
-Note that when sending a message, you must provide a value for at **least one of** `content`, `embeds`, `components`, `sticker_ids`, or `files[n]`.
+Note that when sending a message, you must provide a value for **at least one of** `content`, `embeds`, `components`, `sticker_ids`, or `files[n]`.
 
 </Alert>
 
-| Field                  | Type                                                                                 | Description                                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| content?               | string                                                                               | The message contents (max 2000 characters)                                                           |
-| embeds?                | array[[embed](/resources/message#embed-object) object]                               | Embedded `rich` content (max 6000 characters)                                                        |
-| embed **(deprecated)** | [embed](/resources/message#embed-object) object                                      | Embedded `rich` content (max 6000 characters), deprecated in favor of `embeds`                       |
-| allowed_mentions?      | [allowed mention object](/resources/message#allowed-mentions-object)                 | Allowed mentions for the message                                                                     |
-| components?            | array[[message component](/interactions/message-components/component-object) object] | Components to include with the message                                                               |
-| sticker_ids?           | array[snowflake]                                                                     | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                  |
-| files[n]?\*            | file contents                                                                        | Contents of the file being sent                                                                      |
-| payload_json?\*        | string                                                                               | JSON-encoded body of non-file params                                                                 |
-| attachments?\*         | array[partial [attachment](/resources/message#attachment-object) object]             | Attachment objects with `filename` and `description`                                                 |
-| flags?                 | integer                                                                              | [Message flags](/resources/message#message-object-message-flags) (only `SUPPRESS_EMBEDS` can be set) |
+| Field                       | Type                                                                                 | Description                                                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| content?                    | string                                                                               | The message contents (max 2000 characters)                                                                                                                   |
+| embeds?\*\*                 | array[[embed](/resources/message#embed-object) object]                               | Embedded `rich` content (max 6000 characters)                                                                                                                |
+| embed?\*\* **(deprecated)** | [embed](/resources/message#embed-object) object                                      | Embedded `rich` content (max 6000 characters), deprecated in favor of `embeds`                                                                               |
+| allowed_mentions?           | [allowed mention](/resources/message#allowed-mentions-object) object                 | Allowed mentions for the message                                                                                                                             |
+| components?\*\*             | array[[message component](/interactions/message-components/component-object) object] | Components to include with the message                                                                                                                       |
+| sticker_ids?                | array[snowflake]                                                                     | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                                                                          |
+| flags?                      | integer                                                                              | The [message's flags](/resources/message#message-object-message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `IS_VOICE_MESSAGE` can be set) |
+| files[n]?\*                 | file contents                                                                        | Contents of the file being sent                                                                                                                              |
+| payload_json?\*             | string                                                                               | JSON-encoded body of non-file params                                                                                                                         |
+| attachments?\*              | array[partial [attachment](/resources/message#attachment-object) object]             | Partial attachment objects with `filename` and `description`                                                                                                 |
 
 \* See [Uploading Files](/reference#uploading-files) for details.
+
+\*\* Cannot be used by user accounts.
 
 <RouteHeader method="POST" url="/channels/{channel.id}/post-data">
   Get Threads Post Data
@@ -961,3 +1094,43 @@ Removes the current user from a thread. Also requires the thread is not archived
 </RouteHeader>
 
 Removes a member from a thread. Requires the `MANAGE_THREADS` permission, or the creator of the thread if it is a `PRIVATE_THREAD`. Also requires the thread is not archived. Returns a 204 empty response on success. Fires a [Thread Members Update](/topics/gateway#thread-members-update) Gateway event.
+
+<RouteHeader method="POST" url="/channels/{channel.id}/tags" supportsAuditReason>
+  Create Channel Tag
+</RouteHeader>
+
+Creates a new tag in the forum channel. Requires the `MANAGE_CHANNELS` permission. Returns a [channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway#channel-update) Gateway event.
+
+###### JSON Params
+
+| Field         | Type       | Description                                                                                                                   |
+| ------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| name          | string     | The name of the tag (max 20 characters)                                                                                       |
+| moderated?    | boolean    | Whether this tag can only be added to or removed from threads by members with the `MANAGE_THREADS` permission (default false) |
+| emoji_id?\*   | ?snowflake | The ID of a guild's custom emoji                                                                                              |
+| emoji_name?\* | ?string    | The unicode character of the emoji                                                                                            |
+
+\* At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+<RouteHeader method="PATCH" url="/channels/{channel.id}/tags/{tag.id}" supportsAuditReason>
+  Modify Channel Tag
+</RouteHeader>
+
+Modifies a tag in the forum channel. Requires the `MANAGE_CHANNELS` permission. Returns a [channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway#channel-update) Gateway event.
+
+###### JSON Params
+
+| Field         | Type       | Description                                                                                                   |
+| ------------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
+| name?         | string     | The name of the tag (max 20 characters)                                                                       |
+| moderated?    | boolean    | Whether this tag can only be added to or removed from threads by members with the `MANAGE_THREADS` permission |
+| emoji_id?\*   | ?snowflake | The ID of a guild's custom emoji                                                                              |
+| emoji_name?\* | ?string    | The unicode character of the emoji                                                                            |
+
+\* At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/tags/{tag.id}" supportsAuditReason>
+  Delete Channel Tag
+</RouteHeader>
+
+Deletes a tag in the forum channel. Requires the `MANAGE_CHANNELS` permission. Returns a [channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway#channel-update) Gateway event.
