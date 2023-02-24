@@ -254,8 +254,8 @@ export default function Navigation() {
                 Unavailable Guild Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#expression-guild-object">
-                Expression Guild Object
+              <NavigationSubLink href="/resources/guild#discoverable-guild-object">
+                Discoverable Guild Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
