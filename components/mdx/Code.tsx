@@ -1,8 +1,8 @@
 // @ts-nocheck
 
 import classNames from "classnames";
-import Highlight, { Prism, defaultProps } from "prism-react-renderer";
-import React from "react";
+import Highlight, { defaultProps, Prism } from "prism-react-renderer";
+import { DetailedHTMLProps, ReactNode } from "react";
 
 import CopyButton from "../Copy";
 import CopyIcon from "../icons/Copy";
@@ -59,16 +59,20 @@ function cleanTokens(tokens: Token[][]): Token[][] {
 //   );
 // }
 
-interface CodeProps {
-  children?: string;
+interface ICodeProps {
+  // we know this is going to be a string
+  children?: ReactNode;
   className?: string;
   metastring?: string;
   file?: string | true;
-  [prop: string]: string | true;
 }
+
+type CodeProps = ICodeProps & Omit<DetailedHTMLProps, keyof ICodeProps>;
 
 // TODO: This module needs some love
 export default function Code({ children, className, metastring, file, ...props }: CodeProps) {
+  if (typeof children !== "string") throw new Error("Code content is not a string");
+
   const propList = ["copy", "terminal", "no-lines"];
 
   const language = className?.replace(/language-/, "");

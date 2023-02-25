@@ -12,11 +12,9 @@ function LinkList({ className, children }: { className: string; children: ReactN
 function LinkPanel({ title, href, children }: { title: string; href: string; children: ReactNode }) {
   return (
     <li className="bg-indigo-100 dark:bg-table-head-background-dark rounded-lg">
-      <Link href={href}>
-        <a className="block p-4">
-          <h4 className="text-center text-black dark:text-white text-lg font-bold">{title}</h4>
-          <Paragraph>{children}</Paragraph>
-        </a>
+      <Link href={href} className="block p-4">
+        <h4 className="text-center text-black dark:text-white text-lg font-bold">{title}</h4>
+        <Paragraph>{children}</Paragraph>
       </Link>
     </li>
   );
