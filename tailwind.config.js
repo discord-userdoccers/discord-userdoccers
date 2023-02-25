@@ -35,7 +35,7 @@ module.exports = {
         "theme-dark-sidebar": "#2e3136",
         "theme-dark-sidebar-text": "#b9bbbe",
         "theme-dark-sidebar-hover": "#393C43",
-        "neutral": colors.neutral,
+        "trueGray": colors.neutral,
 
         "green": colors.emerald,
         "yellow": colors.amber,
