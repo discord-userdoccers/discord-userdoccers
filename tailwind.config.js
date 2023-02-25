@@ -1,12 +1,7 @@
 const colors = require("tailwindcss/colors");
 
-/** @type {Parameters<import('tailwindcss')>[0]} */
 module.exports = {
-  mode: "jit",
-  purge: [
-    "./pages/**/*.{js,ts,md,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,md,jsx,tsx,mdx}",
-  ],
+  content: ["./pages/**/*.{js,ts,md,jsx,tsx,mdx}", "./components/**/*.{js,ts,md,jsx,tsx,mdx}"],
   darkMode: "class",
   theme: {
     extend: {
@@ -40,7 +35,11 @@ module.exports = {
         "theme-dark-sidebar": "#2e3136",
         "theme-dark-sidebar-text": "#b9bbbe",
         "theme-dark-sidebar-hover": "#393C43",
-        "trueGray": colors.trueGray,
+        "trueGray": colors.neutral,
+
+        "green": colors.emerald,
+        "yellow": colors.amber,
+        "purple": colors.violet,
       },
 
       // TODO: Change these out for whatever legitimate font family names discord uses,
@@ -58,11 +57,6 @@ module.exports = {
           "100%": { opacity: 1 },
         },
       },
-    },
-  },
-  variants: {
-    extend: {
-      animation: ["motion-safe"],
     },
   },
   plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")],

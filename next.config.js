@@ -10,6 +10,7 @@ const config = {
   reactStrictMode: true,
   basePath: "",
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
+  swcMinify: true,
 };
 
 module.exports = withMDX(config);

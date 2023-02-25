@@ -73,8 +73,8 @@ function NavigationLink({ href, subLinks, className, children }: NavigationLinkP
             <CaretFill className={caretClasses} />
           </button>
         )}
-        <Link href={href}>
-          <a className={linkClasses}>{children}</a>
+        <Link href={href} className={linkClasses}>
+          {children}
         </Link>
       </span>
       {isOpen && subLinks != null ? subLinks : null}
@@ -97,11 +97,9 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
 
   return (
     <span className="relative flex items-center ml-4">
-      <Link href={href}>
-        <a className={classes}>
-          {router.asPath === href ? <Caret className="absolute -ml-4 w-2 h-2" /> : null}
-          {children}
-        </a>
+      <Link href={href} className={classes}>
+        {router.asPath === href ? <Caret className="absolute -ml-4 w-2 h-2" /> : null}
+        {children}
       </Link>
     </span>
   );

@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { useRouter } from "next/router";
-import React, { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import Navigation from "./Navigation";
 import Bars from "./icons/Bars";
 import MenuContext from "../contexts/MenuContext";
@@ -13,8 +13,8 @@ export default function Menu() {
 
   const classes = classNames(
     [
-      "text-theme-light-text absolute -left-full pr-16 md:pr-0 top-0 w-full h-full flex z-40 transition-transform duration-300 transform-gpu",
-      "md:flex md:flex-shrink-0 md:left-auto md:relative md:w-auto md:transform-none md:transition-none",
+      "text-theme-light-text absolute -left-full pr-16 md:pr-0 top-0 w-full h-full flex z-40 transition-duration-300 transform-gpu",
+      "md:flex md:shrink-0 md:left-auto md:relative md:w-auto md:transform-none md:transition-none",
     ],
     {
       "translate-x-full ": open,
