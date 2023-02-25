@@ -1,4 +1,6 @@
-export default function Snowflake(props: unknown) {
+import { PropsWithChildren } from "react";
+
+export default function Snowflake(props: PropsWithChildren) {
   return (
     <svg
       id="Snowflake-Deconstruction-Example"
