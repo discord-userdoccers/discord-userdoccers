@@ -566,18 +566,13 @@ export default function Navigation() {
           href="/topics/voice-connections"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/topics/voice-connections#voice-gateway-versioning">
-                Voice Gateway Versioning
-              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#voice-gateway">Voice Gateway</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#connecting-to-voice">
                 Connecting to Voice
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-websocket-connection">
-                Establishing a Voice Websocket Connection
-              </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#heartbeating">Heartbeating</NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-udp-connection">
-                Establishing a Voice UDP Connection
+              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-server-connection">
+                Establishing a Voice Server Connection
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#encrypting-and-sending-voice">
                 Encrypting and Sending Voice
@@ -585,6 +580,12 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/voice-connections#speaking">Speaking</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#resuming-voice-connection">
                 Resuming Voice Connection
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#other-client-disconnection">
+                Other Client Disconnection
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
+                Voice Backend Version
               </NavigationSubLink>
             </Fragment>
           }
