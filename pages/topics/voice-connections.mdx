@@ -1,6 +1,6 @@
 # Voice
 
-Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#gateways) connection. However, they use a different set of payloads and a separate UDP-based connection for voice data transmission. Because UDP is used for both receiving and transmitting voice data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information). The Discord Voice servers implement functionality (see [IP Discovery](#ip-discovery)) for discovering the local machine's remote UDP IP/Port, which can assist in some network configurations. While video from a camera feed is sent in the same connection as voice, streaming (the "Go Live" feature) uses seperate Gateway Opcodes and a second below voice connection.
+Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#gateways) connection. However, they use a different set of payloads and a separate UDP-based connection for voice data transmission. Because UDP is used for both receiving and transmitting voice data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information). The Discord voice servers implement functionality (see [IP Discovery](#ip-discovery)) for discovering the local machine's remote UDP IP/Port, which can assist in some network configurations. While video from a camera feed is sent in the same connection as voice, streaming (the "Go Live" feature) uses seperate Gateway Opcodes and a second below voice connection.
 
 ## Voice Gateway
 
@@ -26,6 +26,7 @@ To ensure that you have the most up-to-date information, please use [version 7](
 | [Resume](#resume-structure)                     | Resumes a connection                       |
 | [Heartbeat](#example-heartbeat)                 | Maintains an active gateway connection     |
 | [Select Protocol](#select-protocol-structure)   | Selects the voice protocol and mode        |
+| [Speaking](#speaking-structure)                 | Indicates the user's speaking state        |
 | [Voice Backend Version](#voice-backend-version) | Requests the current voice backend version |
 
 ###### Gateway Events
@@ -36,9 +37,10 @@ To ensure that you have the most up-to-date information, please use [version 7](
 | [Ready](#ready-structure)                             | Contains SSRC, IP/Port, experiment, and encryption mode information                                      |
 | [Resumed](#resumed)                                   | Acknowledges a successful resume                                                                         |
 | [Session Description](#session-description-structure) | Acknowledges a successful Select Protocol and contains the information needed to send/receive voice data |
-| [Session Update](#session-update-structure)           | A change in the session description                                                                      |
-| [Client Disconnect](#other-client-disconnection)      | A user has disconnected from voice                                                                       |
-| [Voice Backend Version](#voice-backend-version)       | The current voice backend version requested by the client                                                |
+| [Session Update](#session-update-structure)           | Informs of a change in the session description                                                           |
+| [Speaking](#speaking-structure)                       | Indicates a user's speaking state                                                                        |
+| [Client Disconnect](#other-client-disconnection)      | Indicates a user has disconnected from voice                                                             |
+| [Voice Backend Version](#voice-backend-version)       | Indicates the current voice backend version, as requested by the client                                  |
 
 ## Connecting to Voice
 
@@ -88,7 +90,7 @@ Once we retrieve a `session_id`, `token`, and `endpoint` information, we can con
 }
 ```
 
-The voice server should respond with an Opcode 2 Ready payload, which informs us of the SSRC, connection IP/port, supported encryption modes, and experiments the voice server expects:
+The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of the SSRC, connection IP/port, supported encryption modes, and experiments the voice server expects:
 
 ###### Ready Structure
 
@@ -127,7 +129,7 @@ The voice server should respond with an Opcode 2 Ready payload, which informs us
 
 ## Heartbeating
 
-In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode 8 Hello](/topics/opcodes-and-status-codes#voice):
+In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode 8 Hello](#gateway-events):
 
 ###### Hello Structure
 
@@ -156,7 +158,7 @@ In order to maintain your WebSocket connection, you need to continuously send he
 }
 ```
 
-This is sent at the start of the connection. Be warned that the [Opcode 8 Hello](#gateway-events) structure differs by gateway version as shown in the above examples. Versions below v3 do not have an opcode or a data field denoted by `d`. v3 and above was updated to be structured like other payloads. Be sure to expect this different format based on your version.
+This is sent at the start of the connection. Be warned that the [Opcode 8 Hello](#gateway-events) structure differs by gateway version as shown in the above examples. Versions below v3 do not have `op` or `d` fields. v3 and above was updated to be structured like other payloads. Be sure to expect this different format based on your version.
 
 This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish. For example, the web client uses a heartbeat interval of `min(heartbeat_interval, 5000)` if the gateway version is v4 or above, and `heartbeat_interval * 0.1` otherwise. The desktop client uses the provided heartbeat interval if the gateway version is v4 or above, and `heartbeat_interval * 0.25` otherwise.
 
@@ -186,7 +188,7 @@ In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) th
 
 ## Establishing a Voice Connection
 
-Once we receive the properties of a voice server from our [Opcode 2 Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for voice data. First, we connect to the IP and port provided in the Ready payload. We then send a [Opcode 1 Select Protocol](/topics/opcodes-and-status-codes#voice) with details about our connection:
+Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for voice data. First, we connect to the IP and port provided in the Ready payload. We then send a [Opcode 1 Select Protocol](#gateway-events) with details about our connection:
 
 ###### Select Protocol Structure
 
@@ -237,7 +239,7 @@ Once we receive the properties of a voice server from our [Opcode 2 Ready](#read
 
 \* **\[Citation Needed\]**
 
-Finally, the voice server will respond with a [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [encrypting and sending](#encrypting-and-sending-voice) voice data:
+Finally, the voice server will respond with a [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [sending and receiving](#sending-and-receiving-voice) voice data:
 
 ###### Session Description Structure
 
@@ -276,7 +278,7 @@ Sometimes, the voice server will later send an [Opcode 14 Session Update](#gatew
 | video_codec?      | string | The new video codec to use                   |
 | media_session_id? | string | The new media session ID, used for analytics |
 
-We can now start encrypting and sending voice data over the previously established UDP connection.
+We can now start encrypting/decrypting and sending/receiving voice data over the previously established connection.
 
 <Alert type="warn">
 
@@ -286,7 +288,7 @@ The nonce has to be stripped from the payload before encrypting or decrypting au
 
 ### UDP Connections
 
-UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection. Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-payload) as outlined above, and receive our [Session Description](#session-description-payload) to begin sending/receiving voice data.
+UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection. Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-payload) to begin sending/receiving voice data.
 
 ##### IP Discovery
 
@@ -300,9 +302,11 @@ Generally routers on the Internet mask or obfuscate UDP ports through a process 
 | Address | Null-terminated string in response                             | 64 bytes |
 | Port    | Unsigned short                                                 | 2 bytes  |
 
-##### Encrypting and Sending Voice
+##### Sending and Receiving Voice
 
-Voice data sent to Discord should be encoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Voice Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data. Voice encryption uses the key passed in [Session Description](/topics/opcodes-and-status-codes#voice) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+Voice data sent to and received from Discord should be encoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Voice Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data. Voice encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+
+When receiving data, the user who sent the voice packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any voice data is received, so the user ID should always be available.
 
 ###### Voice Packet Structure
 
@@ -313,27 +317,34 @@ Voice data sent to Discord should be encoded with [Opus](https://www.opus-codec.
 | Sequence        | Unsigned short (big endian)   | 2 bytes |
 | Timestamp       | Unsigned integer (big endian) | 4 bytes |
 | SSRC            | Unsigned integer (big endian) | 4 bytes |
-| Encrypted audio | Binary data                   | n bytes |
+| Encrypted Audio | Binary data                   | n bytes |
 
 ### WebRTC Connections
 
-WebRTC allows for direct peer-to-peer voice connections, and is most commonly used in browsers. To use WebRTC, you must first send a [Select Protocol](#establishing-a-voice-connection) payload as outlined above, with the `protocol` field set to `webrtc`, and `data` set to the client's WebRTC SDP. The voice server will respond with a [Session Description](#session-description-payload) payload, with the `sdp` field set to the server's WebRTC SDP. The client can then use this SDP to establish a WebRTC connection.
+WebRTC allows for direct peer-to-peer voice connections, and is most commonly used in browsers. To use WebRTC, you must first send a [Select Protocol](#establishing-a-voice-connection) payload as outlined above, with the `protocol` field set to `webrtc`, and `data` set to the client's WebRTC SDP. The voice server will respond with a [Session Description](#session-description-structure) payload, with the `sdp` field set to the server's WebRTC SDP. The client can then use this SDP to establish a WebRTC connection.
 
 ## Speaking
 
-To notify the voice server that you are speaking or have stopped speaking, send an [Opcode 5 Speaking](/topics/opcodes-and-status-codes#voice) payload:
+To notify the voice server that you are speaking or have stopped speaking, send an [Opcode 5 Speaking](#gateway-commands) payload:
+
+<Alert type="warn">
+
+You must send at least one Speaking payload before sending or receiving voice data, or you will be disconnected with an Invalid SSRC error.
+
+</Alert>
 
 ###### Speaking Structure
 
-| Field      | Type    | Description                           |
-| ---------- | ------- | ------------------------------------- |
-| speaking\* | integer | The [speaking flags](#speaking-flags) |
-| delay      | integer | The speaking packet delay             |
-| ssrc       | integer | The SSRC of the speaking user         |
+| Field      | Type      | Description                                     |
+| ---------- | --------- | ----------------------------------------------- |
+| speaking\* | integer   | The [speaking flags](#speaking-flags)           |
+| ssrc       | integer   | The SSRC of the speaking user                   |
+| user_id?   | snowflake | The user ID of the speaking user (receive only) |
+| delay?     | integer   | The speaking packet delay (send only)           |
 
 \* For v4 and below, this field is a boolean.
 
-###### Example Speaking
+###### Example Speaking (Request)
 
 ```json
 {
@@ -342,6 +353,21 @@ To notify the voice server that you are speaking or have stopped speaking, send 
     "speaking": 5,
     "delay": 0,
     "ssrc": 1
+  }
+}
+```
+
+When a different user's speaking state is updated, the voice server will send an [Opcode 5 Speaking](#gateway-events) payload:
+
+###### Example Speaking (Response)
+
+```json
+{
+  "op": 5,
+  "d": {
+    "speaking": 5,
+    "ssrc": 2,
+    "user_id": "852892297661906993"
   }
 }
 ```
@@ -356,15 +382,11 @@ The following flags can be used as a bitwise mask. For example `5` would be prio
 | 1 << 1 | Soundshare | Transmission of context audio for video, no speaking indicator |
 | 1 << 2 | Priority   | Priority speaker, lowering audio of other speakers             |
 
-<Alert type="warn">
-
-You must send at least one Speaking payload before sending voice data, or you will be disconnected with an Invalid SSRC error.
-
-</Alert>
-
 ### Voice Data Interpolation
 
 When there's a break in the sent data, the packet transmission shouldn't simply stop. Instead, send five frames of silence (`0xF8, 0xFF, 0xFE`) before stopping to avoid unintended Opus interpolation with subsequent transmissions.
+
+Likewise, when you receive these five frames of silence, you know that the user has stopped speaking.
 
 ## Resuming Voice Connection
 
@@ -408,6 +430,8 @@ If the resume is unsuccessful—for example, due to an invalid session—the Web
 
 When a user disconnects from voice, the voice server will send an [Opcode 13 Client Disconnect](#gateway-payloads) payload:
 
+When received, the SSRC of the user should be discarded.
+
 ###### Client Disconnect Structure
 
 | Field   | Type      | Description                          |
@@ -429,6 +453,13 @@ When a user disconnects from voice, the voice server will send an [Opcode 13 Cli
 
 For analytics, the client may want to receive information about the voice backend's current version. This is only available on gateway v6 and above. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload:
 
+###### Voice Backend Version Structure
+
+| Field      | Type   | Description                 |
+| ---------- | ------ | --------------------------- |
+| voice      | string | The voice backend's version |
+| rtc_worker | string | The WebRTC worker's version |
+
 ###### Example Voice Backend Version (Request)
 
 ```json
@@ -438,16 +469,9 @@ For analytics, the client may want to receive information about the voice backen
 }
 ```
 
-In response, the voice server will send an [Opcode 16 Voice Backend Version](#gateway-payloads) with the version:
+In response, the voice server will send an [Opcode 16 Voice Backend Version](#gateway-payloads) payload with the versions:
 
-###### Voice Backend Version Structure
-
-| Field      | Type   | Description                 |
-| ---------- | ------ | --------------------------- |
-| voice      | string | The voice backend's version |
-| rtc_worker | string | The WebRTC worker's version |
-
-###### Example Voice Backend Version
+###### Example Voice Backend Version (Response)
 
 ```json
 {
