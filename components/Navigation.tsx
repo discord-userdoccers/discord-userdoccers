@@ -5,7 +5,7 @@ import React, { Fragment, useEffect } from "react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
-import Discord from "./icons/Discord";
+import Userdoccers from "./icons/Userdoccers";
 import useToggle from "../hooks/useToggle";
 
 interface MenuSelectionProps {
@@ -110,7 +110,7 @@ export default function Navigation() {
     <nav className="flex-1 self-stretch mt-5 px-6">
       <div className="hidden items-center -mt-4 mb-10 md:flex">
         <a href="/intro" className="hidden md:block">
-          <Discord className="w-9/12 text-black dark:text-white" />
+          <Userdoccers className="w-9/12 text-black dark:text-white" />
         </a>
         <ThemeSwitcher />
       </div>

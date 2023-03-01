@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useCallback, useContext } from "react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import Bars from "./icons/Bars";
-import Discord from "./icons/Discord";
+import Userdoccers from "./icons/Userdoccers";
 import MenuContext from "../contexts/MenuContext";
 
 export default function Header() {
@@ -25,7 +25,7 @@ export default function Header() {
         />
       </Link>
 
-      <Discord className="ml-auto mr-auto h-8 text-black dark:text-white" />
+      <Userdoccers className="ml-auto mr-auto h-8 text-black dark:text-white" />
 
       <ThemeSwitcher />
     </header>
