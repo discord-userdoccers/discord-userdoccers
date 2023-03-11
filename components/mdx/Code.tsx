@@ -112,8 +112,8 @@ export default function Code({ children, className, metastring, file, ...props }
                 let diffSymbol = "";
 
                 if (
-                  Object.values(SYMBOLS).includes(line[0]?.content?.[0]) ||
-                  (line[0]?.content === "" && Object.values(SYMBOLS).includes(line[1]?.content))
+                  Object.values(SYMBOLS).includes(line[0]?.content?.[0] as string) ||
+                  (line[0]?.content === "" && Object.values(SYMBOLS).includes(line[1]?.content as string))
                 ) {
                   diffSymbol = line[0]?.content?.length ? line[0].content[0] : line[1].content;
 
@@ -144,7 +144,7 @@ export default function Code({ children, className, metastring, file, ...props }
                           isDiff &&
                           (key === 0 || key === 1) &&
                           // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                          Object.values(SYMBOLS).includes(token.content.charAt(0))
+                          Object.values(SYMBOLS).includes(token.content.charAt(0) as string)
                         ) {
                           return (
                             // eslint-disable-next-line react/jsx-key
