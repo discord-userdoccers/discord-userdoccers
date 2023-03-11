@@ -91,19 +91,30 @@ bucket for the experiment.
 
 ###### User Experiment Assignment Structure
 
-| Field    | Type    | Description                                                      |
-| -------- | ------- | ---------------------------------------------------------------- |
-| hash     | integer | 32-bit unsigned Murmur3 hash of the experiment's name                             |
-| revision | integer | Current version of the rollout                                   |
-| bucket   | integer | The requesting user or fingerprint's assigned experiment bucket  |
-| override | integer | Overriden bucket for the user, holds more priority than `bucket` |
-| population | integer | The internal population group the requesting user or fingerprint is in |
-| hash_result | ?integer | The calculated [rollout position](#rollout-positions) to use |
+| Field       | Type     | Description                                                            |
+| ----------- | -------- | ---------------------------------------------------------------------- |
+| hash        | integer  | 32-bit unsigned Murmur3 hash of the experiment's name                  |
+| revision    | integer  | Current version of the rollout                                         |
+| bucket      | integer  | The requesting user or fingerprint's assigned experiment bucket        |
+| override    | integer  | Overriden bucket for the user, holds more priority than `bucket`       |
+| population  | integer  | The internal population group the requesting user or fingerprint is in |
+| hash_result | ?integer | The calculated [rollout position](#rollout-positions) to use           |
 
 ### Guild Experiments
 
 The data provided here is more detailed, because the client has to figure out itself the assigned bucket for each guild. It may
 seem daunting to parse this given the sheer amount of arrays/lists, but it's really quite simple.
+
+###### Guild Experiment Structure
+
+| Field               | Type                                                                    | Description                                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| hash                | integer                                                                 | 32-bit unsigned Murmur3 hash of the experiment's name                                                                                 |
+| hash_key            | ?string                                                                 | The human-readable experiment name (formatted as `year-month_name`) to use for hashing calculations; prioritized over the client name |
+| revision            | integer                                                                 | Current version of the rollout                                                                                                        |
+| populations         | array[[experiment population](#experiment-population-object)]           | The experiment rollout's populations                                                                                                  |
+| overrides           | array[[experiment bucket override](#experiment-bucket-override-object)] | Bucket overrides for this experiment                                                                                                  |
+| overrides_formatted | array[array[[experiment population](#experiment-population-object)]]    | Additional rollout populations, the top-level array has only one item                                                                 |
 
 ###### Example Guild Experiment
 
@@ -167,20 +178,16 @@ seem daunting to parse this given the sheer amount of arrays/lists, but it's rea
 ]
 ```
 
-###### Guild Experiment Structure
-
-| Field               | Type                                           | Description                                                           |
-| ------------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| hash                | integer                                        | 32-bit unsigned Murmur3 hash of the experiment's name                                  |
-| hash_key            | ?string                                        | The human-readable experiment name (formatted as `year-month_name`) to use for hashing calculations; prioritized over the client name |
-| revision            | integer                                        | Current version of the rollout                                        |
-| populations         | array[[experiment population](#experiment-population-object)]        | The experiment rollout's populations                                  |
-| overrides           | array[[experiment bucket override](#experiment-bucket-override-object)]     | Bucket overrides for this experiment                                  |
-| overrides_formatted | array[array[[experiment population](#experiment-population-object)]] | Additional rollout populations, the top-level array has only one item |
-
 ### Experiment Population Object
 
 The population object defines a set of filters and position ranges required to meet specific buckets.
+
+###### Experiment Population Structure
+
+| Field   | Type                                                                        | Description                                                                      |
+| ------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| ranges  | array[[experiment population range](#experiment-population-range-object)]   | The ranges for this population                                                   |
+| filters | array[[experiment population filter](#experiment-population-filter-object)] | The filters that the resource must satisfy before being eligible for this bucket |
 
 ###### Example Experiment Population
 
@@ -209,18 +216,25 @@ The population object defines a set of filters and position ranges required to m
 ]
 ```
 
-###### Experiment Population Structure
-
-| Field   | Type                                                  | Description                                                                      |
-| ------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
-| ranges  | array[[experiment population range](#experiment-population-range-object)]   | The ranges for this population                                                   |
-| filters | array[[experiment population filter](#experiment-population-filter-object)] | The filters that the resource must satisfy before being eligible for this bucket |
-
 ### Experiment Population Range Object
 
 These objects are actually represented as a JSON object, unlike most others on this page. This range is comprised of two integers, and
 if the filters are satisfied and the range includes the resource's [rollout position](#rollout-positions) then the client assumes the
 resource is then eligible for the bucket.
+
+###### Experiment Population Range Structure
+
+| Field   | Type                                                                                    | Description                      |
+| ------- | --------------------------------------------------------------------------------------- | -------------------------------- |
+| bucket  | integer                                                                                 | The bucket this range applies to |
+| rollout | array[[experiment population rollout](#experiment-population-rollout-structure) object] | The range rollout                |
+
+###### Experiment Population Rollout Structure
+
+| Field | Type    | Description             |
+| ----- | ------- | ----------------------- |
+| s     | integer | The start of this range |
+| e     | integer | The end of this range   |
 
 ###### Example Experiment Population Range
 
@@ -236,35 +250,16 @@ resource is then eligible for the bucket.
 ]
 ```
 
-###### Experiment Population Range Structure
-
-| Field   | Type             | Description                      |
-| ------- | ---------------- | -------------------------------- |
-| bucket  | integer          | The bucket this range applies to |
-| rollout | array[[experiment population rollout](#experiment-population-rollout-structure) object] | The range rollout |
-
-###### Experiment Population Rollout Structure
-
-| Field | Type    | Description             |
-| ----- | ------- | ----------------------- |
-| s     | integer | The start of this range |
-| e     | integer | The end of this range   |
-
 ### Experiment Population Filter Object
 
 This object defines the filters required to be eligible for the ranges.
 
-###### Experiment Population Filter Type
+###### Experiment Population Filter Structure
 
-| Type       | Name          | Signature                                                     | Description                                                    |
-| ---------- | ------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1604612045 | FEATURE       | [[, array[[guild feature](/resources/guild#guild-features)]]] | The guild features required for eligiblity                     |
-| 2404720969 | ID_RANGE      | [[, ?snowflake], [, ?snowflake]]                              | The range of snowflake resource IDs that are eligible          |
-| 2918402255 | MEMBER_COUNT  | [[, ?integer], [, ?integer]]                                  | The range of guild member counts that are eligible             |
-| 3013771838 | ID_LIST       | [[, array[snowflake]]]                                        | The list of snowflake resource IDs that are eligible           |
-| 4148745523 | HUB_TYPE      | [[, array[integer]]]                                          | The [type of hub](#/resources/guild#hub-type) that is eligible |
-| 188952590  | VANITY_URL    | [[, boolean]]                                                 | Whether a vanity is or is not required for eligibility         |
-| 2294888943 | RANGE_BY_HASH | [[, integer], [, integer]]                                    | Unknown                                                        |
+| Field | Type        | Description                                                                         |
+| ----- | ----------- | ----------------------------------------------------------------------------------- |
+| type  | integer     | The [type of population filter](#experiment-population-filter-type)                 |
+| value | filter data | The [experiment population filter requirements](#experiment-population-filter-type) |
 
 ###### Example Experiment Population Filter
 
@@ -278,17 +273,29 @@ This object defines the filters required to be eligible for the ranges.
 ]
 ```
 
-###### Experiment Population Filter Structure
+###### Experiment Population Filter Type
 
-| Field | Type                                    | Description                       |
-| ----- | --------------------------------------- | --------------------------------- |
-| type  | integer | The [type of population filter](#experiment-population-filter-type) |
-| value | filter data                             | The [experiment population filter requirements](#experiment-population-filter-type)  |
+| Type       | Name          | Signature                                                     | Description                                                    |
+| ---------- | ------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1604612045 | FEATURE       | [[, array[[guild feature](/resources/guild#guild-features)]]] | The guild features required for eligiblity                     |
+| 2404720969 | ID_RANGE      | [[, ?snowflake], [, ?snowflake]]                              | The range of snowflake resource IDs that are eligible          |
+| 2918402255 | MEMBER_COUNT  | [[, ?integer], [, ?integer]]                                  | The range of guild member counts that are eligible             |
+| 3013771838 | ID_LIST       | [[, array[snowflake]]]                                        | The list of snowflake resource IDs that are eligible           |
+| 4148745523 | HUB_TYPE      | [[, array[integer]]]                                          | The [type of hub](#/resources/guild#hub-type) that is eligible |
+| 188952590  | VANITY_URL    | [[, boolean]]                                                 | Whether a vanity is or is not required for eligibility         |
+| 2294888943 | RANGE_BY_HASH | [[, integer], [, integer]]                                    | Unknown                                                        |
 
 ### Experiment Bucket Override Object
 
 An override represents a manual setting by Discord staff to grant a resource early or specific access to an experiment. Contrary to what you'd
 expect, guild experiments can be and are often overriden and assigned to a user ID.
+
+###### Experiment Bucket Override Structure
+
+| Field | Type             | Description                             |
+| ----- | ---------------- | --------------------------------------- |
+| b     | integer          | Bucket assigned to these resources      |
+| k     | array[snowflake] | Resources granted access to this bucket |
 
 ###### Experiment Bucket Override Example
 
@@ -298,13 +305,6 @@ expect, guild experiments can be and are often overriden and assigned to a user 
   "k": ["882680660588904448", "882703776794959873", "859533785225494528", "859533828754505741"]
 }
 ```
-
-###### Experiment Bucket Override Structure
-
-| Field | Type             | Description                             |
-| ----- | ---------------- | --------------------------------------- |
-| b     | integer          | Bucket assigned to these resources      |
-| k     | array[snowflake] | Resources granted access to this bucket |
 
 ## Endpoints
 
@@ -322,14 +322,14 @@ A fingerprint will only be generated and returned if no authorization or fingerp
 
 ###### Query String Parameters
 
-| Field | Type | Description |
-| ----- | ----- | ------------- |
+| Field                   | Type    | Description                                               |
+| ----------------------- | ------- | --------------------------------------------------------- |
 | with_guild_experiments? | boolean | Whether to include guild experiments in the returned data |
 
 ###### Response Structure
 
-| Field              | Type                                              | Description                                               |
-| ------------------ | ------------------------------------------------- | --------------------------------------------------------- |
+| Field              | Type                                              | Description                                                           |
+| ------------------ | ------------------------------------------------- | --------------------------------------------------------------------- |
 | fingerprint?       | string                                            | A generated [fingerprint](#fingerprints) of the current date and time |
-| assignments        | array[[experiment assignment](#user-experiments)] | The assignment for this fingerprint or user               |
-| guild_experiments? | array[[guild experiment](#guild-experiments)]     | Guild experiment rollouts for the client to assign        |
+| assignments        | array[[experiment assignment](#user-experiments)] | The assignment for this fingerprint or user                           |
+| guild_experiments? | array[[guild experiment](#guild-experiments)]     | Guild experiment rollouts for the client to assign                    |
