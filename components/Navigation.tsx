@@ -1,12 +1,12 @@
 import classNames from "classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { Fragment, useEffect } from "react";
-import ThemeSwitcher from "./ThemeSwitcher";
+import React, { Fragment, useEffect, useState } from "react";
+import useToggle from "../hooks/useToggle";
 import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import Userdoccers from "./icons/Userdoccers";
-import useToggle from "../hooks/useToggle";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 interface MenuSelectionProps {
   title?: string;
@@ -89,16 +89,23 @@ interface NavigationSubLinkProps {
 
 function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
   const router = useRouter();
+
+  const [currentPath, setPath] = useState("");
+
   const classes = classNames("group flex items-center ml-6 px-2 py-1 w-full text-sm font-medium rounded-md", {
-    "text-dark dark:text-white": router.asPath === href,
+    "text-dark dark:text-white": currentPath === href,
     "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text dark:hover:text-white":
-      router.asPath !== href,
+      currentPath !== href,
   });
+
+  useEffect(() => {
+    setPath(router.asPath);
+  }, [router.asPath]);
 
   return (
     <span className="relative flex items-center ml-4">
       <Link href={href} className={classes}>
-        {router.asPath === href ? <Caret className="absolute -ml-4 w-2 h-2" /> : null}
+        {currentPath === href ? <Caret className="absolute -ml-4 w-2 h-2" /> : null}
         {children}
       </Link>
     </span>
@@ -436,6 +443,22 @@ export default function Navigation() {
           }
         >
           Gateway
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/experiments"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/experiments#fingerprints">Fingerprints</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#rollouts">Rollouts</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#user-experiments">User Experiments</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#guild-experiments">Guild Experiments</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#get-experiment-assignments">
+                Get Experiment Assignments
+              </NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Experiments
         </NavigationLink>
         <NavigationLink
           href="/topics/oauth2"
