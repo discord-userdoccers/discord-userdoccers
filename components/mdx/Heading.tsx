@@ -43,24 +43,24 @@ function Heading({ as: As, className, children }: HeadingProps) {
 
 export function H1({ className, ...props }: JSX.IntrinsicElements["h1"]) {
   const classes = classNames(
-    "not:first-of-type:mt-10 mb-8 text-4xl font-bold leading-tight sm:leading-loose",
+    "not:first-of-type:mt-2 mb-2 mt-3 text-4xl font-bold leading-tight sm:leading-loose",
     className
   );
   return <Heading as="h1" className={classes} {...props} />;
 }
 
 export function H2({ className, ...props }: JSX.IntrinsicElements["h2"]) {
-  const classes = classNames("mb-6 mt-8 text-2xl font-semibold leading-relaxed", className);
+  const classes = classNames("mb-4 mt-6 text-2xl font-semibold leading-relaxed", className);
   return <Heading as="h2" className={classes} {...props} />;
 }
 
 export function H3({ className, ...props }: JSX.IntrinsicElements["h3"]) {
-  const classes = classNames("mb-4 mt-6 text-xl font-medium leading-normal", className);
+  const classes = classNames("mb-2 mt-6 text-xl font-medium leading-normal", className);
   return <Heading as="h3" className={classes} {...props} />;
 }
 
 export function H4({ className, ...props }: JSX.IntrinsicElements["h4"]) {
-  const classes = classNames("mb-4 mt-6 text-lg font-medium leading-normal", className);
+  const classes = classNames("mb-2 mt-4 text-lg font-medium leading-normal", className);
   return <Heading as="h4" className={classes} {...props} />;
 }
 
