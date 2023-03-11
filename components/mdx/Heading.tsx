@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import React, { isValidElement } from "react";
+import React, { isValidElement, ReactNode } from "react";
 import HyperlinkIcon from "../icons/Hyperlink";
 
 function getText(node: React.ReactNode): string {
@@ -12,11 +12,11 @@ function getText(node: React.ReactNode): string {
   }
 
   if (isValidElement(node)) {
-    return getText(node.props.children);
+    return getText(node.props.children as ReactNode);
   }
 
   if (Array.isArray(node)) {
-    return node.map((element) => getText(element)).join("");
+    return node.map((element) => getText(element as ReactNode)).join("");
   }
   return "";
 }

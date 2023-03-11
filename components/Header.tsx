@@ -9,7 +9,7 @@ export default function Header() {
   const { setOpen } = useContext(MenuContext);
 
   const onMenuClick = useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       setOpen();
     },
