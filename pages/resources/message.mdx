@@ -589,6 +589,23 @@ Returns an array of [message](#message-object) objects in the channel. If operat
 
 Returns messages without the `reactions` key that match a search query in the guild or channel. The messages that are direct results will have an extra `hit` key set to `true`. If operating on a guild channel, this endpoint requires the `READ_MESSAGE_HISTORY` permission to be present on the current user.
 
+<Alert type="warn">
+
+If the guild/channel you are searching is not yet indexed, the endpoint will return a 202 accepted response. The response body will not contain any search results, and will look similar to an error response:
+
+```json
+{
+  "message": "Index not yet available. Try again later",
+  "code": 110000,
+  "document_indexed": 0,
+  "retry_after": 2
+}
+```
+
+You should retry the request after the timeframe specified in the `retry_after` field.
+
+</Alert>
+
 ###### Query String Params
 
 | Field                 | Type             | Description                                                              |
@@ -649,13 +666,15 @@ All types can be negated by prefixing them with `-`, which means results will no
 
 ###### Response Body
 
-| Field         | Type                                                                   | Description                                                                           |
-| ------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| messages      | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context)\* that match the query |
-| threads?      | array[[channel](/resources/channel#channel-object) object]             | The threads that are the channels of the returned messages                            |
-| members?      | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined           |
-| total_results | integer                                                                | The total number of results that match the query                                      |
-| analytics_id  | string                                                                 | The analytics ID for the search query                                                 |
+| Field                        | Type                                                                   | Description                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| messages                     | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context)\* that match the query |
+| threads?                     | array[[channel](/resources/channel#channel-object) object]             | The threads that are the channels of the returned messages                            |
+| members?                     | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined           |
+| total_results                | integer                                                                | The total number of results that match the query                                      |
+| analytics_id                 | string                                                                 | The analytics ID for the search query                                                 |
+| document_indexed?            | integer                                                                | Whether the guild/channels has been indexed yet (default 1, see above warning box)    |
+| doing_deep_historical_index? | boolean                                                                | The status of the guild/channel's deep historical indexing operation (if any)         |
 
 \* Surrounding context messages are no longer returned.
 
