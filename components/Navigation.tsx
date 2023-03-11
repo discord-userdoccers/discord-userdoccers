@@ -2,11 +2,11 @@ import classNames from "classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Fragment, useEffect, useState } from "react";
-import useToggle from "../hooks/useToggle";
+import ThemeSwitcher from "./ThemeSwitcher";
 import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
 import Userdoccers from "./icons/Userdoccers";
-import ThemeSwitcher from "./ThemeSwitcher";
+import useToggle from "../hooks/useToggle";
 
 interface MenuSelectionProps {
   title?: string;
