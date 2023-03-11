@@ -1,0 +1,322 @@
+# Experiments
+
+Experiments are a form of A/B testing used by Discord in the client- and server-side of their applications to serve
+different experiences or behaviours to different users randomly and/or based on location, client version, etc.
+
+At its core, rollouts are simply a YAML value inputted in the Discord admin panel, but obviously not all of the data in
+there is required by the clients so the actual value most clients see is obfuscated and complex to decipher.
+
+## Fingerprints
+
+Even the marketing website uses A/B tests to hook users into the app and so the app needs a unique way to identify the
+person using the website, so it resorts to using "fingerprints". Now this isn't the usual method of analysing a browser's
+unique traits, instead the [Get Experiment Rollouts](#get-experiment-rollouts) endpoint simply generates a new ID for each unauthenticated request
+which the marketing website then consumes.
+
+A fingerprint is comprised of a snowflake and a random hash value, presumably. It looks like this: `1084179945133187083.JQddgNMmwJPghoBtFmaH7jTmdsw`.
+
+<!-- TODO: link to auth page on this -->
+
+When signing up, the website then passes the fingerprint and the snowflake part of it is passed internally as the user's new
+ID. This means that theoretically the snowflake's creation time on a user's account represents the first time
+they ever visited the Discord homepage.
+
+## Rollouts
+
+Experiment rollouts are defined in _populations_ based on the user or guild's [rollout position](#rollout-positions)
+and can have _filters_ to narrow each population's availability.
+
+###### Example Rollout
+
+```md
+2023-02_stage_boosting (1816004721)
+
+### Treatment 1
+
+Filters
+
+Guild Features: [COMMUNITY]
+Member Count Range: 1000 - null
+Hash Range: Hash Key: 1816004721, Target: 10000
+
+Position Ranges
+
+5000-9500, 9500-10000
+
+### Control
+
+Filters
+
+Guild Features: [COMMUNITY]
+Member Count Range: 1000 - null
+
+Position Ranges
+
+0 - 10000
+
+### None
+
+Position Ranges
+
+0 - 10000
+```
+
+### Treatments
+
+`Control` and `None` are represented in the API as the integer values `0` and `-1`, respectively. Just as a warning, there are some instances of experiments having specific unnecessary treatments
+labelled as `Control` indexed as `1`.
+
+### Rollout Positions
+
+A rollout position is calculated using the following pseudo code, where `exp_name` is the human readable name for the experiment and `resource_id` is the user, fingerprint or guild's ID.
+This position is used in conjunction with the rollout populations and filters to figure out what the assigned bucket for the experiments are by simply checking which treatment the population is included in[.](https://gist.github.com/c3f521becd84b923c2778546c79a7a03)
+
+```py
+murmurhash3.hash('exp_name:resource_id', signed=False) % 1e4
+```
+
+## Data Structures
+
+There are two types of experiments, user experiments and guild experiments. Metadata and human-readable experiment names
+are available in the user-facing clients but API objects do not contain such data, except for guild experiments which do
+have a human readable name for some of them.
+
+All of the below objects are represented as arrays following the order in which the fields are displayed.
+
+### User Experiments
+
+User experiment data returned by the API is very limited. In contrast to the wide range of data the API provides for
+guild rollouts, the only values we can programmatically retrieve from the API are the user/[fingerprint](#fingerprints)'s assigned
+bucket for the experiment.
+
+###### User Experiment Assignment Structure
+
+| Field    | Type    | Description                                                      |
+| -------- | ------- | ---------------------------------------------------------------- |
+| hash     | integer | Murmur hash of the experiment's name                             |
+| revision | integer | Current version of the rollout                                   |
+| bucket   | integer | The requesting user or fingerprint's assigned experiment bucket  |
+| override | integer | Overriden bucket for the user, holds more priority than `bucket` |
+| position | integer | Position for the user in the internal rollout                    |
+
+### Guild Experiments
+
+The data provided here is more detailed, because the client has to figure out itself the assigned bucket for each guild. It may
+seem daunting to parse this given the sheer amount of arrays/lists, but it's really quite simple.
+
+###### Example Guild Experiment
+
+```json
+[
+  1405831955,
+  "2021-06_guild_role_subscriptions",
+  0,
+  [
+    [
+      [
+        [
+          -1,
+          [
+            {
+              "s": 7200,
+              "e": 10000
+            }
+          ]
+        ],
+        [
+          1,
+          [
+            {
+              "s": 0,
+              "e": 7200
+            }
+          ]
+        ]
+      ],
+      [
+        [
+          2294888943,
+          [
+            [2690752156, 1405831955],
+            [1982804121, 10000]
+          ]
+        ]
+      ]
+    ]
+  ],
+  [],
+  [
+    [
+      [
+        [
+          [
+            1,
+            [
+              {
+                "s": 0,
+                "e": 10000
+              }
+            ]
+          ]
+        ],
+        [[1604612045, [[1183251248, ["GUILD_ROLE_SUBSCRIPTIONS"]]]]]
+      ]
+    ]
+  ]
+]
+```
+
+###### Guild Experiment Rollout Structure
+
+| Field               | Type                                           | Description                                                           |
+| ------------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
+| hash                | integer                                        | Murmur hash of the experiment's name                                  |
+| hash_key            | ?string                                        | The experiment's human-readable name, formatted as `year-month_name`  |
+| revision            | integer                                        | Current version of the rollout                                        |
+| populations         | array[[population](#population-object)]        | The experiment rollout's populations                                  |
+| overrides           | array[[override](#bucket-override-object)]     | Bucket overrides for this experiment                                  |
+| overrides_formatted | array[array[[population](#population-object)]] | Additional rollout populations, the top-level array has only one item |
+
+### Population Object
+
+The population object defines a set of filters and position ranges required to meet specific buckets.
+
+###### Example Population
+
+```json
+[
+  [
+    [
+      -1,
+      [
+        {
+          "s": 7200,
+          "e": 10000
+        }
+      ]
+    ]
+  ],
+  [
+    [
+      2294888943,
+      [
+        [2690752156, 1405831955],
+        [1982804121, 10000]
+      ]
+    ]
+  ]
+]
+```
+
+###### Guild Experiment Population Structure
+
+| Field   | Type                                                  | Description                                                                      |
+| ------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+| ranges  | array[[population range](#population-range-object)]   | The ranges for this population                                                   |
+| filters | array[[population filter](#population-filter-object)] | The filters that the resource must satisfy before being eligible for this bucket |
+
+### Population Range Object
+
+These objects are actually represented as a JSON object, unlike most others on this page. This range is comprised of two integers, and
+if the filters are satisfied and the range includes the resource's [rollout position](#rollout-positions) then the client assumes the
+resource is then eligible for the bucket.
+
+###### Example Population Range
+
+```json
+[
+  1,
+  [
+    {
+      "s": 0,
+      "e": 4750
+    }
+  ]
+]
+```
+
+###### Experiment Population Range Structure
+
+| Field   | Type             | Description                      |
+| ------- | ---------------- | -------------------------------- |
+| bucket  | integer          | The bucket this range applies to |
+| rollout | array[[range]()] | The actual range objects         |
+
+###### Population Range Object Structure
+
+| Field | Type    | Description             |
+| ----- | ------- | ----------------------- |
+| s     | integer | The start of this range |
+| e     | integer | The end of this range   |
+
+### Population Filter Object
+
+This object defines the filters required to be eligible for the ranges.
+
+###### Population Filter Types
+
+| Name          | Hash       | Type Signature                                                | Notes                                                                             |
+| ------------- | ---------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| FEATURE       | 1604612045 | [[, array[[guild feature](/resources/guild#guild-features)]]] | All of the guild features specified are required for the resource to be eligible. |
+| ID_RANGE      | 2404720969 | [[, ?snowflake], [, ?snowflake]]                              | The resource's ID must be included in the range.                                  |
+| MEMBER_COUNT  | 2918402255 | [[, ?integer], [, ?integer]]                                  | The guild's member count must be included in the range.                           |
+| ID_LIST       | 3013771838 | [[, array[snowflake]]]                                        | The resource's ID must be specified in the list.                                  |
+| HUB_TYPE      | 4148745523 | [[, array[integer]]]                                          | Unknown                                                                           |
+| VANITY_URL    | 188952590  | [[, boolean]]                                                 | The boolean value must match whether the guild has a vanity url                   |
+| RANGE_BY_HASH | 2294888943 | [[, integer], [, integer]]                                    | Unknown                                                                           |
+
+###### Example Population Filter
+
+```json
+[
+  2294888943,
+  [
+    [2690752156, 1405831955],
+    [1982804121, 10000]
+  ]
+]
+```
+
+###### Population Filter Structure
+
+| Field | Type                                    | Description                       |
+| ----- | --------------------------------------- | --------------------------------- |
+| type  | [filter type hash](#population-filters) | Murmur3 hash of the filter's type |
+| value | filter data                             | Explained above in the enum       |
+
+### Bucket Override Object
+
+An override represents a manual setting by Discord staff to grant a resource early or specific access to an experiment. Contrary to what you'd
+expect, guild experiments can be and are often overriden and assigned to a user ID.
+
+###### Bucket Override Example
+
+```json
+{
+  "b": 1,
+  "k": ["882680660588904448", "882703776794959873", "859533785225494528", "859533828754505741"]
+}
+```
+
+###### Bucket Override Structure
+
+| Field | Type             | Description                             |
+| ----- | ---------------- | --------------------------------------- |
+| b     | integer          | Bucket assigned to these resources      |
+| k     | array[snowflake] | Resources granted access to this bucket |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/experiments">
+  Get Experiment Assignments
+</RouteHeader>
+
+Returns a fingerprint if not already set, and the [user experiment assignments](#user-experiments) for the fingerprint. Additionally, if `with_guild_experiments` is passed, returns the [guild experiment rollouts](#guild-experiments).
+
+###### Response Structure
+
+| Field              | Type                                              | Description                                               |
+| ------------------ | ------------------------------------------------- | --------------------------------------------------------- |
+| fingerprint?       | string                                            | Returns a randomly generated [fingerprint](#fingerprints) |
+| assignments        | array[[experiment assignment](#user-experiments)] | The assignment for this fingerprint or user               |
+| guild_experiments? | array[[guild experiment](#guild-experiments)]     | Guild experiment rollouts for the client to assign        |
