@@ -21,7 +21,13 @@ export default function CopyButton({ text, children }: CopyButtonProps) {
   });
 
   return (
-    <button type="button" className={classes} onClick={() => { void copy(); }}>
+    <button
+      type="button"
+      className={classes}
+      onClick={() => {
+        void copy();
+      }}
+    >
       {value}
     </button>
   );
