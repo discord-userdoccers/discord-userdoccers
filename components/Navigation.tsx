@@ -452,8 +452,8 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/experiments#rollouts">Rollouts</NavigationSubLink>
               <NavigationSubLink href="/topics/experiments#user-experiments">User Experiments</NavigationSubLink>
               <NavigationSubLink href="/topics/experiments#guild-experiments">Guild Experiments</NavigationSubLink>
-              <NavigationSubLink href="/topics/experiments#get-experiment-assignments">
-                Get Experiment Assignments
+              <NavigationSubLink href="/topics/experiments#endpoints">
+                Endpoints
               </NavigationSubLink>
             </Fragment>
           }
