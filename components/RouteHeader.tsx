@@ -31,6 +31,7 @@ interface RouteHeaderProps {
   unauthenticated?: boolean;
   mfa?: boolean;
   supportsOAuth2?: string | null;
+  deprecated?: boolean;
 }
 
 export default function RouteHeader({
@@ -41,6 +42,7 @@ export default function RouteHeader({
   unauthenticated,
   mfa,
   supportsOAuth2,
+  deprecated,
 }: RouteHeaderProps) {
   return (
     <Fragment>
@@ -76,6 +78,13 @@ export default function RouteHeader({
             href="/topics/oauth2"
             name="OAuth2"
             tooltip={`Supports OAuth2 for authentication${supportsOAuth2 ? ` with the "${supportsOAuth2}" scope` : ""}`}
+          />
+        ) : null}
+        {deprecated ? (
+          <Badge
+            href="/reference#deprecated-endpoint"
+            name="Deprecated"
+            tooltip="This endpoint is still active but should be avoided as it is considered deprecated."
           />
         ) : null}
       </div>
