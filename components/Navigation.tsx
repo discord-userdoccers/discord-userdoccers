@@ -418,31 +418,35 @@ export default function Navigation() {
           href="/topics/gateway"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/topics/gateway#payloads">Payloads</NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#gateway-events">Gateway Events</NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#connections">Connections</NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#gateway-intents">Gateway Intents</NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#rate-limiting">Rate Limiting</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#encoding-and-compression">
                 Encoding and Compression
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#connecting-to-the-gateway">
-                Connecting to the Gateway
-              </NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#resuming">Resuming</NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#gateway-intents">Gateway Intents</NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#rate-limiting">Rate Limiting</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#tracking-state">Tracking State</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#guild-availability">Guild Availability</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#sharding">Sharding</NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#sharding-for-very-large-bots">
-                Sharding for Very Large Bots
-              </NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#commands-and-events">Commands and Events</NavigationSubLink>
-              <NavigationSubLink href="/topics/gateway#get-gateway">Endpoints</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#session-start-limit-object">
                 Session Start Limit Object
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
           Gateway
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/gateway-events"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/gateway-events#send-events">Send Events</NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway-events#receive-events">Receive Events</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Gateway Events
         </NavigationLink>
         <NavigationLink
           href="/topics/experiments"
