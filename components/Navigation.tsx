@@ -330,6 +330,22 @@ export default function Navigation() {
           Invite
         </NavigationLink>
         <NavigationLink
+          href="/resources/premium-referral"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/premium-referral#premium-referral-object">
+                Premium Referral Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/premium-referral#premium-referral-eligibility-object">
+                Premium Referral Eligibility Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/premium-referral#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Premium Referral
+        </NavigationLink>
+        <NavigationLink
           href="/resources/stage-instance"
           subLinks={
             <Fragment>
