@@ -38,13 +38,17 @@ Within tables:
 
 ###### Invite Channel Structure
 
-| Field       | Type                                                      | Description                                                    |
-| ----------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| id          | snowflake                                                 | The ID of the channel                                          |
-| type        | integer                                                   | The [type of channel](/resources/channel#channel-type)         |
-| name        | ?string                                                   | The name of the channel (1-100 characters)                     |
-| recipients? | array[partial [user](/resources/user#user-object) object] | The recipients of the DM; only the `username` field is present |
-| icon?       | ?string                                                   | The DM's [icon hash](/reference#cdn-formatting)                |
+| Field         | Type                                                      | Description                                                    |
+| ------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| id            | snowflake                                                 | The ID of the channel                                          |
+| type          | integer                                                   | The [type of channel](/resources/channel#channel-type)         |
+| name ^1^      | ?string                                                   | The name of the channel (1-100 characters)                     |
+| recipients?   | array[partial [user](/resources/user#user-object) object] | The recipients of the DM; only the `username` field is present |
+| icon? ^1^ ^2^ | ?string                                                   | The DM's [icon hash](/reference#cdn-formatting)                |
+
+^1^ Notes on fields are done using footnotes. The syntax for footnotes is `^n^` where `n` is the number of the footnote. The footnote itself is defined at the bottom of the table.
+
+^2^ Please do not use asterisks (`*`) for footnotes!
 
 ## Enums
 
@@ -59,7 +63,7 @@ If enums are used in multiple places, they should be defined by the most relevan
 | 0     | NONE     | Invisible to everyone except the user themselves |
 | 1     | EVERYONE | Visible to everyone                              |
 
-Note that **Type** is used, *not* **Types** like in the documentation.
+Note that **Type** is used, *not* **Types** like in the official documentation.
 
 For enums that have strings as values, the name can be skipped like so:
 
