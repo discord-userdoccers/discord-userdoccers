@@ -1,0 +1,208 @@
+# Presence Resource
+
+### Presence Object
+
+A user's presence is their current status and activity. Presences are usually per-guild, but user accounts receive overall user presences for [friends and implicit relationships](/resources/user#relationship-object).
+
+###### Presence Structure
+
+| Field            | Type                                               | Description                                                               |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
+| user             | partial [user](/resources/user#user-object) object | The user whose presence is being updated                                  |
+| guild_id?        | snowflake                                          | ID of the guild the presence was updated in, if this is a guild presence  |
+| last_modified?\* | integer                                            | Unix time (in milliseconds) of when the user's presence was last modified |
+| status           | string                                             | The [status](#status-types) of the user                                   |
+| activities       | array[[activity](#activity-object) object]         | The current activities the user is partaking in                           |
+| client_status    | [client status](#client-status-object) object      | The platform-dependent status of the user                                 |
+
+\* This field is only sent for overall user presences.
+
+###### Status Type
+
+| Value       | Description      |
+| ----------- | ---------------- |
+| online      | Online           |
+| dnd         | Do Not Disturb   |
+| idle        | AFK              |
+| invisible\* | Shown as offline |
+| offline\*   | Offline          |
+| unknown\*\* | Unknown          |
+
+\* `invisible` can only be sent and never received. `offline` can only be received and never sent.
+
+\*\* This value can only be sent, and is used when the user's initial presence is unknown and should be assigned by the Gateway.
+
+### Client Status Object
+
+Active sessions are indicated with an "online", "idle", or "dnd" string per platform. If a user is offline or invisible, the corresponding field is not present.
+
+| Field       | Type   | Description                                                                                      |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------ |
+| desktop?    | string | The user's [status](#status-type) on an active desktop (Windows, Linux, Mac) application session |
+| mobile?     | string | The user's [status](#status-type) on an active mobile (iOS, Android) application session         |
+| web?\*      | string | The user's [status](#status-type) on an active web (browser) application session                 |
+| embedded?\* | string | The user's [status](#status-type) on an active embedded (Xbox, PlayStation) session              |
+
+\* This field is used as the default when the platform is not known.
+
+### Activity Object
+
+###### Activity Structure
+
+| Field           | Type                                               | Description                                                                           |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| name            | string                                             | The activity's name                                                                   |
+| type            | integer                                            | The [activity type](#activity-type)                                                   |
+| url?            | ?string                                            | Stream URL (only validated when type is `1`)                                          |
+| created_at      | integer                                            | Unix timestamp (in milliseconds) of when the activity was added to the user's session |
+| timestamps?     | [activity timestamps](#activity-timestamps) object | Unix timestamps (in milliseconds) for start and/or end of the game                    |
+| application_id? | snowflake                                          | Application ID of the game                                                            |
+| details?        | ?string                                            | What the user is currently doing                                                      |
+| state?          | ?string                                            | The user's current party status                                                       |
+| emoji?          | ?[activity emoji](#activity-emoji) object          | The emoji used for a custom status                                                    |
+| party?          | [activity party](#activity-party) object           | Information for the current party of the user                                         |
+| assets?         | [activity assets](#activity-assets) object         | Images for the presence and their hover texts                                         |
+| secrets?        | [activity secrets](#activity-secrets) object       | Secrets for rich presence joining and spectating                                      |
+| instance?       | boolean                                            | Whether or not the activity is an instanced game session                              |
+| flags?          | integer                                            | The [activity's flags](#activity-flags)                                               |
+| buttons?        | array[string]                                      | Custom buttons shown in rich presence (max 2)                                         |
+
+<Alert type="info">
+
+Bots are only able to send `name`, `type`, and optionally `url`.
+
+</Alert>
+
+###### Activity Type
+
+| Value | Name      | Format              | Example                              |
+| ----- | --------- | ------------------- | ------------------------------------ |
+| 0     | Game      | Playing {name}      | "Playing Rocket League"              |
+| 1\*   | Streaming | Streaming {details} | "Streaming Rocket League"            |
+| 2     | Listening | Listening to {name} | "Listening to Spotify"               |
+| 3     | Watching  | Watching {name}     | "Watching YouTube Together"          |
+| 4     | Custom    | {emoji} {name}      | "😃 I am cool"                       |
+| 5     | Competing | Competing in {name} | "Competing in Arena World Champions" |
+
+\* The streaming type currently only supports Twitch and YouTube. Only `https://twitch.tv/` and `https://youtube.com/` URLs will work.
+
+###### Activity Timestamps
+
+| Field  | Type    | Description                                             |
+| ------ | ------- | ------------------------------------------------------- |
+| start? | integer | Unix time (in milliseconds) of when the activity starts |
+| end?   | integer | Unix time (in milliseconds) of when the activity ends   |
+
+###### Activity Emoji
+
+| Field     | Type      | Description                    |
+| --------- | --------- | ------------------------------ |
+| name      | string    | The name of the emoji          |
+| id?       | snowflake | The ID of the emoji            |
+| animated? | boolean   | Whether this emoji is animated |
+
+###### Activity Party
+
+| Field | Type            | Description                                                   |
+| ----- | --------------- | ------------------------------------------------------------- |
+| id?   | string          | The ID of the party                                           |
+| size? | array[int, int] | The party's current and maximum size (current_size, max_size) |
+
+###### Activity Assets
+
+| Field        | Type   | Description                                                       |
+| ------------ | ------ | ----------------------------------------------------------------- |
+| large_image? | string | The large [activity asset image](#activity-asset-image)           |
+| large_text?  | string | Text displayed when hovering over the large image of the activity |
+| small_image? | string | The small [activity asset image](#activity-asset-image)           |
+| small_text?  | string | Text displayed when hovering over the small image of the activity |
+
+###### Activity Asset Image
+
+Activity asset images are arbitrary strings which usually contain snowflake IDs or prefixed image IDs. Treat data within this field carefully, as it is user-specifiable and not sanitized.
+
+To use an external image via media proxy, specify the URL as the field's value when sending. You will only receive the `mp:` prefix via the Gateway:
+
+| Type              | Format                   | Image URL                                                           |
+| ----------------- | ------------------------ | ------------------------------------------------------------------- |
+| Application Asset | `{application_asset_id}` | See [application asset image formatting](/reference#cdn-formatting) |
+| Media Proxy Image | `mp:{image_id}`          | `https://media.discordapp.net/{image_id}`                           |
+
+###### Activity Secrets
+
+| Field     | Type   | Description                               |
+| --------- | ------ | ----------------------------------------- |
+| join?     | string | The secret for joining a party            |
+| spectate? | string | The secret for spectating a game          |
+| match?    | string | The secret for a specific instanced match |
+
+###### Activity Flags
+
+| Value  | Name                        |
+| ------ | --------------------------- |
+| 1 << 0 | INSTANCE                    |
+| 1 << 1 | JOIN                        |
+| 1 << 2 | SPECTATE                    |
+| 1 << 3 | JOIN_REQUEST                |
+| 1 << 4 | SYNC                        |
+| 1 << 5 | PLAY                        |
+| 1 << 6 | PARTY_PRIVACY_FRIENDS       |
+| 1 << 7 | PARTY_PRIVACY_VOICE_CHANNEL |
+| 1 << 8 | EMBEDDED                    |
+
+###### Example Activity
+
+```json
+{
+  "details": "24H RL Stream for Charity",
+  "state": "Rocket League",
+  "name": "Twitch",
+  "type": 1,
+  "url": "https://www.twitch.tv/discord"
+}
+```
+
+###### Example Activity with Rich Presence
+
+```json
+{
+  "name": "Rocket League",
+  "type": 0,
+  "application_id": "379286085710381999",
+  "state": "In a Match",
+  "details": "Ranked Duos: 2-1",
+  "timestamps": {
+    "start": 15112000660000
+  },
+  "party": {
+    "id": "9dd6594e-81b3-49f6-a6b5-a679e6a060d3",
+    "size": [2, 2]
+  },
+  "assets": {
+    "large_image": "351371005538729000",
+    "large_text": "DFH Stadium",
+    "small_image": "351371005538729111",
+    "small_text": "Silver III"
+  },
+  "secrets": {
+    "join": "025ed05c71f639de8bfaa0d679d7c94b2fdce12f",
+    "spectate": "e7eb30d2ee025ed05c71ea495f770b76454ee4e0",
+    "match": "4b2fdce12f639de8bfa7e3591b71a0d679d7c93f"
+  }
+}
+```
+
+## Endpoints
+
+<RouteHeader method="GET" url="/presences" supportsOAuth2="activities.read">
+  Get Presences
+</RouteHeader>
+
+Returns the overall user presence for all of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object).
+
+###### Response Body
+
+| Field        | Type                                                                           | Description                                                                             |
+| ------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| presences    | array[[presence](#presence-object) object]                                     | The overall user presences of the user's non-offline friends and implicit relationships |
+| applications | array[partial [application](/resources/application#application-object) object] | The found game applications in the presences                                            |

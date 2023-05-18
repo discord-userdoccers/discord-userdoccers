@@ -346,6 +346,21 @@ export default function Navigation() {
           Premium Referral
         </NavigationLink>
         <NavigationLink
+          href="/resources/presence"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/presence#presence-object">Presence Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/presence#client-status-object">
+                Client Status Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/presence#activity-object">Activity Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/presence#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Presence
+        </NavigationLink>
+        <NavigationLink
           href="/resources/stage-instance"
           subLinks={
             <Fragment>
