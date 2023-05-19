@@ -451,6 +451,7 @@ export default function Navigation() {
             <Fragment>
               <NavigationSubLink href="/topics/gateway#gateway-events">Gateway Events</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#connections">Connections</NavigationSubLink>
+              <NavigationSubLink href="/topics/gateway#gateway-capabilities">Gateway Capabilities</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#gateway-intents">Gateway Intents</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#rate-limiting">Rate Limiting</NavigationSubLink>
               <NavigationSubLink href="/topics/gateway#encoding-and-compression">

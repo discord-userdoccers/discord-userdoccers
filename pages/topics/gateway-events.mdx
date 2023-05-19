@@ -497,9 +497,9 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | private_channels ^1^         | array[[channel](/resources/channel#channel-object) object]                 | The DMs and group DMs the user is participating in                                                                                                                                                                                                               |
 | connected_accounts           | array[[connection](/resources/user#connection-object)]                     | The third-party accounts the user has linked                                                                                                                                                                                                                     |
 | notes ^1^ ^5^                | map[snowflake, string]                                                     | A mapping of user IDs to notes the user has made for them                                                                                                                                                                                                        |
-| presences ^6^                | array[[presence](/resources/presence#presence-object)]                     | The presences of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object)                                                                                                                                                |
-| merged_presences ^6^         | [merged presences](#merged-presences-structure) object                     | The presences of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object), and any guild presences sent at startup                                                                                                       |
-| merged_members ^6^ ^7^       | array[array[[guild member](/resources/guild#guild-member-object) object]]  | The members of the user's guilds                                                                                                                                                                                                                                 |
+| presences ^6^                | array[[presence](/resources/presence#presence-object) object]              | The presences of the user's non-offline [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object)                                             |
+| merged_presences ^6^         | [merged presences](#merged-presences-structure) object                     | The presences of the user's non-offline [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object), and any guild presences sent at startup    |
+| merged_members ^6^ ^7^       | array[array[[guild member](/resources/guild#guild-member-object) object]]  | The members of the user's guilds, in the same order as the `guilds` array                                                                                                                                                                                        |
 | users ^6^                    | array[partial [user](/resources/user#user-object) object]                  | The deduped users across all objects in the event                                                                                                                                                                                                                |
 | application?                 | [gateway application](#gateway-application-structure) object               | The application of the connected user, if it is a bot                                                                                                                                                                                                            |
 | session_id                   | string                                                                     | Unique session ID, used for resuming connections                                                                                                                                                                                                                 |
@@ -539,10 +539,10 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 ###### Merged Presences Structure
 
-| Field      | Type                                                                 | Description                                                                                       |
-| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| friends    | array[[presence](/resources/presence#presence-object) object]        | Presences of the user's [friends and implicit relationships](/resources/user#relationship-object) |
-| guilds ^1^ | array[array[[presence](/resources/presence#presence-object) object]] | Presences of the user's guilds, in the same order as [the `guilds` array in Ready](#ready)        |
+| Field      | Type                                                                 | Description                                                                                                                                                                                          |
+| ---------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| friends    | array[[presence](/resources/presence#presence-object) object]        | Presences of the user's [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object) |
+| guilds ^1^ | array[array[[presence](/resources/presence#presence-object) object]] | Presences of the user's guilds, in the same order as [the `guilds` array in Ready](#ready)                                                                                                           |
 
 ^1^ See the [gateway guild](#gateway-guild-object) object documentation for more information about included data.
 
@@ -568,13 +568,15 @@ If this event is enabled, any fields received in it that are also present in [Re
 
 ###### Ready Supplemental Structure
 
-| Field                 | Type                                                              | Description                                                                                                                             |
-| --------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| guilds                | array[[supplemental guild](#supplemental-guild-structure) object] | The guilds the user is in                                                                                                               |
-| merged_members        | array[array[[member](/resources/guild#member-object) object]]     | Initial member data for every guild the user is in                                                                                      |
-| merged_presences      | [merged presences](#merged-presences-structure) object            | Initial presences for relationships and the user's guilds, in the same order as [the `guilds` array in Ready](#ready)                   |
-| lazy_private_channels | array[[channel](/resources/channel#channel-object) object]        | Additional DMs and group DMs the user is participating in, omitted from [Ready](#ready) because they were already in client state cache |
-| disclose              | array[string]                                                     | Upcoming changes that the client should disclose to the user                                                                            |
+| Field                 | Type                                                              | Description                                                                                                                                                                                                                                                   |
+| --------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| guilds                | array[[supplemental guild](#supplemental-guild-structure) object] | The guilds the user is in                                                                                                                                                                                                                                     |
+| merged_members ^1^    | array[array[[member](/resources/guild#member-object) object]]     | The members of the user's guilds, in the same order as the `guilds` array                                                                                                                                                                                     |
+| merged_presences ^1^  | [merged presences](#merged-presences-structure) object            | The presences of the user's non-offline [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object), and any guild presences sent at startup |
+| lazy_private_channels | array[[channel](/resources/channel#channel-object) object]        | Additional DMs and group DMs the user is participating in, omitted from [Ready](#ready) because they were already in client state cache                                                                                                                       |
+| disclose              | array[string]                                                     | Upcoming changes that the client should disclose to the user                                                                                                                                                                                                  |
+
+^1^ See the [gateway guild](#gateway-guild-object) object documentation for more information about included data.
 
 ###### Supplemental Guild Structure
 
@@ -715,7 +717,7 @@ Sent when a message is pinned or unpinned in a text channel. This is not sent wh
 | members ^1^                | array[[guild member](/resources/guild#guild-member-object) object]                                   | Members in the guild                                                                           |
 | channels                   | array[[channel](/resources/channel#channel-object) object]                                           | Channels in the guild                                                                          |
 | threads ^3^                | array[[channel](/resources/channel#channel-object) object]                                           | All active threads in the guild that current user has permission to view                       |
-| presences ^2^              | array[[presence update](#presence-update) object]                                                    | Presences of included guild members; will only include non-offline members for large guilds    |
+| presences ^2^              | array[[presence](/resources/presence#presence-object) object]                                        | Presences of included guild members; will only include non-offline members for large guilds    |
 | stage_instances            | array[[stage instance](/resources/stage-instance#stage-instance-object) object]                      | Stage instances in the guild                                                                   |
 | guild_scheduled_events     | array[[guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object] | Scheduled events in the guild                                                                  |
 | data_mode ^5^              | string                                                                                               | The [data mode](#data-mode) for this object                                                    |
@@ -725,11 +727,9 @@ Sent when a message is pinned or unpinned in a text channel. This is not sent wh
 | emojis                     | array[[emoji](/resources/emoji#emoji-object) object]                                                 | Custom guild emojis                                                                            |
 | premium_subscription_count | integer                                                                                              | The number of boosts this guild currently has                                                  |
 
-^1^ If a bot does not have the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), or if the guild has over 75k members, members and presences returned in this event will only contain your bot and users in voice channels.
+^1^ For bots without the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), user accounts, or guilds with over 75k members, this will only include the client's member and users in voice channels. User accounts additionally receive [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object), as well as users they have an open DM with.
 
-^1^ For bots without the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), user accounts, or guilds with over 75k members, this will only include the client's member and users in voice channels.
-
-^2^ User accounts only receive presences for non-offline [friends and implicit relationships](/resources/user#relationship-object). Bots with the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents) receive all presences.
+^2^ User accounts only receive presences for non-offline [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object), as well as users they have an open DM with. Bots with the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents) receive all presences.
 
 ^3^ User accounts are only synced threads they have been added to. Bots are synced all threads.
 
@@ -1168,9 +1168,17 @@ Sent when a bot removes all instances of a given emoji from the reactions of a m
 
 This event is sent when a user's presence or info, such as name or avatar, is updated. The inner payload is a [presence](/resources/presence#presence-object) object.
 
+For user accounts, this event is only sent for presences they are subscribed to. Users are automatically subscribed to the overall user presence and every per-guild presence of [friends and implicit relationships (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities))](/resources/user#relationship-object), as well as every per-guild presences of users they have an open DM with.
+
 <Alert type="warn">
 
-If you are using [Gateway Intents](/topics/gateway#gateway-intents), you _must_ specify the `GUILD_PRESENCES` intent in order to receive Presence Update events
+If you are using [Gateway Intents](/topics/gateway#gateway-intents), you _must_ specify the `GUILD_PRESENCES` intent in order to receive Presence Update events.
+
+</Alert>
+
+<Alert type="warn">
+
+Presence Update events are never received for the user's own presence. You _must_ track your own presence locally, or via the [Sessions Replace](#sessions-replace) event (if applicable).
 
 </Alert>
 
