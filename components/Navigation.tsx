@@ -163,6 +163,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/application#application-role-connection-metadata-object">
                 Application Role Connection Metadata Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
@@ -194,7 +195,9 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/channel#channel-object">Channel Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#overwrite-object">Overwrite Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#permission-overwrite-object">
+                Permission Overwrite Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#thread-metadata-object">
                 Thread Metadata Object
               </NavigationSubLink>
@@ -258,13 +261,13 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild#unavailable-guild-object">
                 Unavailable Guild Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild#user-guild-object">User Guild Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#discoverable-guild-object">
                 Discoverable Guild Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#integration-object">Integration Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#ban-object">Ban Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#welcome-screen-object">Welcome Screen Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#membership-screening-object">
@@ -307,6 +310,17 @@ export default function Navigation() {
           }
         >
           Guild Template
+        </NavigationLink>
+        <NavigationLink
+          href="/resources/integration"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/integration#integration-object">Integration Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/integration#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Integration
         </NavigationLink>
         <NavigationLink
           href="/resources/invite"

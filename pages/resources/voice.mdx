@@ -42,6 +42,12 @@ Used to represent a user's voice connection status.
 
 ### Voice Region Object
 
+<Alert type="warn">
+
+A special voice region ID of `deprecated` is used as the default in the deprecated [guild `region`](/resources/guild#guild-object) field.
+
+</Alert>
+
 ###### Voice Region Structure
 
 | Field      | Type    | Description                                                          |
@@ -58,4 +64,57 @@ Used to represent a user's voice connection status.
   Get Voice Regions
 </RouteHeader>
 
-Returns an array of [voice region](#voice-region-object) objects that can be used when setting a voice channel's [`rtc_region`](/resources/channel#channel-object).
+Returns an array of [voice region](#voice-region-object) objects that can be used when setting a [voice channel's `rtc_region`](/resources/channel#channel-object).
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/regions">
+  Get Guild Voice Regions
+</RouteHeader>
+
+Returns a list of [voice region](#voice-region-object) objects that can be used when setting a [voice channel's `rtc_region`](/resources/channel#channel-object). Unlike the similar [Get Voice Regions](#get-voice-regions) route, this returns VIP servers when the guild is VIP-enabled.
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/voice-states/@me">
+  Modify Current User Voice State
+</RouteHeader>
+
+Updates the current user's voice state in the given guild ID. Returns a 204 empty response on success. Fires a [Voice State Update](/topics/gateway-events#voice-state-update) Gateway event.
+
+###### JSON Params
+
+| Field                       | Type               | Description                                    |
+| --------------------------- | ------------------ | ---------------------------------------------- |
+| channel_id?                 | snowflake          | The ID of the channel the user is currently in |
+| suppress?                   | boolean            | Whether the user is suppressed in the channel  |
+| request_to_speak_timestamp? | ?ISO8601 timestamp | The time at which the user requested to speak  |
+
+###### Caveats
+
+There are currently several caveats for this endpoint:
+
+- `channel_id` must point to a stage channel
+- Current user must already have joined `channel_id`
+- You must have the `MUTE_MEMBERS` permission to unsuppress yourself; you can always suppress yourself
+- You must have the `REQUEST_TO_SPEAK` permission to request to speak; you can always clear your own request to speak
+- You can only set `request_to_speak_timestamp` to the present or a future time
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/voice-states/{user.id}">
+  Modify User Voice State
+</RouteHeader>
+
+Updates another user's voice state in the given guild ID. Returns a 204 empty response on success. Fires a [Voice State Update](/topics/gateway-events#voice-state-update) Gateway event.
+
+###### JSON Params
+
+| Field      | Type      | Description                                    |
+| ---------- | --------- | ---------------------------------------------- |
+| channel_id | snowflake | The ID of the channel the user is currently in |
+| suppress?  | boolean   | Whether the user is suppressed in the channel  |
+
+###### Caveats
+
+There are currently several caveats for this endpoint:
+
+- `channel_id` must point to a stage channel
+- Target user must already have joined `channel_id`
+- You must have the `MUTE_MEMBERS` permission
+- When unsuppressed, user accounts will have their `request_to_speak_timestamp` set to the current time; bot users will not
+- When suppressed, the user will have their `request_to_speak_timestamp` removed

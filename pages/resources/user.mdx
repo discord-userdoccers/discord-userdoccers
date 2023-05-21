@@ -124,7 +124,7 @@ There are other rules and restrictions not shared here for the sake of spam and 
 | accent_color? ^1^  | ?integer  | The user's banner color encoded as an integer representation of hexadecimal color code  |
 | public_flags?      | integer   | The public [flags](#user-flags) on a user's account                                     |
 
-^1^ Only included in [Get User](#get-user) and [Get User Profile](#get-user-profile) endpoints.
+^1^ Only guaranteed to be included when fetched through the [Get User](#get-user) and [Get User Profile](#get-user-profile) endpoints. May be included in data received through other API endpoints.
 
 ###### Example Partial User
 
@@ -439,7 +439,7 @@ The role connection object that an application has attached to a user.
 | platform_name         | ?string                                                                                                           | The vanity name of the platform a bot has connected (max 50 characters)                                                                                                                                                            |
 | platform_username     | ?string                                                                                                           | The username on the platform a bot has connected (max 100 characters)                                                                                                                                                              |
 | metadata              | object                                                                                                            | Object mapping [application role connection metadata](/resources/application#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
-| application?          | integration [application](/resources/application#application-object) object                                       | The application that owns the role connection                                                                                                                                                                                      |
+| application?          | [integration application](/resources/application#integration-application-object) object                           | The application that owns the role connection                                                                                                                                                                                      |
 | application_metadata? | array[[application role connection metadata](/resources/application#application-role-connection-metadata-object)] | The metadata that the application has set for the role connection                                                                                                                                                                  |
 
 ## Endpoints
@@ -464,22 +464,22 @@ All parameters to this endpoint are optional.
 
 ###### JSON Params
 
-| Field                     | Type                                 | Description                                                                                                                                       |
-| ------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| username?                 | string                               | The user's username; if changed may cause the user's discriminator to be randomized                                                               |
-| discriminator?            | string                               | The user's stringified 4-digit Discord tag; can only be changed for premium (Nitro) users, which triggers a reroll after the subscription expires |
-| avatar?                   | ?[image data](/reference#image-data) | The user's avatar                                                                                                                                 |
-| avatar_decoration?        | ?[image data](/reference#image-data) | The user's avatar decoration                                                                                                                      |
-| avatar_decoration_preset? | ?string                              | The user's avatar decoration selected from a list of presets                                                                                      |
-| email?                    | string                               | The user's email; if changing from a verified email `email_token` must be provided                                                                |
-| email_token? ^4^          | string                               | The user's email token from their previous email                                                                                                  |
-| bio?                      | ?string                              | The user's bio                                                                                                                                    |
-| banner?                   | ?[image data](/reference#image-data) | The user's banner; can only be changed for premium (Nitro) users                                                                                  |
-| accent_color?             | ?integer                             | The user's accent color as a hex integer                                                                                                          |
-| flags?                    | integer                              | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED`, `HAS_UNREAD_URGENT_MESSAGES`, and `DISABLE_PREMIUM` can be set)                  |
-| date_of_birth? ^2^        | ISO8601 timestamp                    | The user's date of birth; can only be set once                                                                                                    |
-| password? ^1^             | string                               | The user's current password; if the account does not have a password this sets it                                                                 |
-| new_password? ^3^         | string                               | The user's new password                                                                                                                           |
+| Field                     | Type                                 | Description                                                                                                                                                               |
+| ------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| username?                 | string                               | The user's username; if changed may cause the user's discriminator to be randomized                                                                                       |
+| discriminator?            | string                               | The user's stringified 4-digit Discord tag; can only be changed for users with an applicable premium (Nitro) plan, which triggers a reroll after the subscription expires |
+| avatar?                   | ?[image data](/reference#image-data) | The user's avatar; can be animated when the user has an applicable premium (Nitro) plan                                                                                   |
+| avatar_decoration?        | ?[image data](/reference#image-data) | The user's avatar decoration                                                                                                                                              |
+| avatar_decoration_preset? | ?string                              | The user's avatar decoration selected from a list of presets                                                                                                              |
+| email?                    | string                               | The user's email; if changing from a verified email `email_token` must be provided                                                                                        |
+| email_token? ^4^          | string                               | The user's email token from their previous email                                                                                                                          |
+| bio?                      | ?string                              | The user's bio                                                                                                                                                            |
+| banner?                   | ?[image data](/reference#image-data) | The user's banner; can only be changed for premium (Nitro) users                                                                                                          |
+| accent_color?             | ?integer                             | The user's accent color as a hex integer                                                                                                                                  |
+| flags?                    | integer                              | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED`, `HAS_UNREAD_URGENT_MESSAGES`, and `DISABLE_PREMIUM` can be set)                                          |
+| date_of_birth? ^2^        | ISO8601 timestamp                    | The user's date of birth; can only be set once                                                                                                                            |
+| password? ^1^             | string                               | The user's current password; if the account does not have a password this sets it                                                                                         |
+| new_password? ^3^         | string                               | The user's new password                                                                                                                                                   |
 
 ^1^ Required for changing `username`, `discriminator`, `email`, `date_of_birth`, or `new_password`.
 
@@ -487,7 +487,7 @@ All parameters to this endpoint are optional.
 
 ^3^ Changing the account password invalidates all active tokens. Don't fret though, as the `token` key in the response will be valid.
 
-^4^ This value can be obtained by requesting a verification code with the [Modify User Email](#modify-user-email) endpoint, and then using the [Verify User Email Change](#verify-user-email) endpoint.
+^4^ This value can be obtained by requesting a verification code with the [Modify User Email](#modify-user-email) endpoint, and then using the [Verify User Email Change](#verify-user-email-change) endpoint.
 
 <RouteHeader method="GET" url="/users/{user.id}">
   Get User
@@ -764,58 +764,6 @@ Verifies a verification code sent to the current user's email address to initiat
 | Field | Type   | Description                                                                                              |
 | ----- | ------ | -------------------------------------------------------------------------------------------------------- |
 | token | string | The email token; can be used with [Modify Current User](#modify-current-user) to change the user's email |
-
-<RouteHeader method="GET" url="/users/@me/guilds" supportsOAuth2="guilds">
-  Get User Guilds
-</RouteHeader>
-
-Returns a list of partial [guild](/resources/guild#guild-object) objects the current user is a member of.
-
-<Alert type="info">
-
-This endpoint returns 200 guilds by default, which is the maximum number of guilds a non-bot user can join. Therefore, pagination is **not needed** in order to get a list of the users' guilds, and all parameters are optional.
-
-</Alert>
-
-###### Query String Params
-
-| Field            | Type      | Description                                                               |
-| ---------------- | --------- | ------------------------------------------------------------------------- |
-| before?          | snowflake | Get guilds before this guild ID                                           |
-| after?           | snowflake | Get guilds after this guild ID                                            |
-| limit?           | integer   | Max number of guilds to return (1-200, default 200)                       |
-| with_counts? ^1^ | boolean   | Whether to include approximate member and presence counts (default false) |
-
-^1^ For OAuth2 requests, this parameter requires the additional `guilds.members.read` scope.
-
-###### Example Response
-
-```json
-[
-  {
-    "id": "80351110224678912",
-    "name": "1337 Krew",
-    "icon": "8342729096ea3675442027381ff50dfe",
-    "owner": true,
-    "permissions": "36953089",
-    "features": ["COMMUNITY", "NEWS"],
-    "approximate_member_count": 420,
-    "approximate_presence_count": 69
-  }
-]
-```
-
-<RouteHeader method="DELETE" url="/users/@me/guilds/{guild.id}">
-  Leave Guild
-</RouteHeader>
-
-Leave a guild. Returns a 204 empty response on success. Fires a [Guild Delete](/topics/gateway-events#guild-delete) and a [Guild Member Remove](/topics/gateway-events#guild-member-remove) Gateway event.
-
-###### JSON Params
-
-| Field    | Type    | Description                              |
-| -------- | ------- | ---------------------------------------- |
-| lurking? | boolean | Whether the user is lurking in the guild |
 
 <RouteHeader method="GET" url="/users/@me/mentions">
   Get Recent Mentions
@@ -1114,24 +1062,6 @@ All parameters to this endpoint are optional.
 
 Removes a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#user-relationship-delete) Gateway event.
 
-<RouteHeader method="GET" url="/users/@me/invites">
-  Get User Invites
-</RouteHeader>
-
-Returns a list of friend [invite](#invite-object) objects for the current user.
-
-<RouteHeader method="POST" url="/users/@me/invites">
-  Create User Invite
-</RouteHeader>
-
-Creates a new friend invite. Accepts an empty body. Returns a friend [invite](#invite-object) object on success.
-
-<RouteHeader method="DELETE" url="/users/@me/invites">
-  Revoke User invites
-</RouteHeader>
-
-Revokes all of the current user's friend invites. Returns a list of revoked friend [invite](#invite-object) objects on success.
-
 <RouteHeader method="GET" url="/users/@me/affinities/users">
   Get User Affinities
 </RouteHeader>
@@ -1236,43 +1166,3 @@ Returns the current user's premium usage for various perks. Only available for u
   }
 }
 ```
-
-<RouteHeader
-  method="GET"
-  url="/users/@me/applications/{application.id}/role-connection"
-  supportsOAuth2="role_connections.write"
->
-  Get User Application Role Connection
-</RouteHeader>
-
-Returns the [application role connection](#application-role-connection-object) for the user, without optional fields.
-
-<Alert type="warn">
-
-This endpoint is only usable with an OAuth2 access token with the `role_connections.write` scope for the application specified in the path.
-
-</Alert>
-
-<RouteHeader
-  method="PUT"
-  url="/users/@me/applications/{application.id}/role-connection"
-  supportsOAuth2="role_connections.write"
->
-  Modify User Application Role Connection
-</RouteHeader>
-
-<Alert type="warn">
-
-This endpoint is only usable with an OAuth2 access token with the `role_connections.write` scope for the application specified in the path.
-
-</Alert>
-
-Updates the application's role connection for the user. Returns the updated [application role connection](#application-role-connection-object) object on success.
-
-###### JSON Params
-
-| Field              | Type   | Description                                                                                                                                                                                                                        |
-| ------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| platform_name?     | string | The vanity name of the platform a bot has connected (max 50 characters)                                                                                                                                                            |
-| platform_username? | string | The username on the platform a bot has connected (max 100 characters)                                                                                                                                                              |
-| metadata?          | object | Object mapping [application role connection metadata](/resources/application#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
