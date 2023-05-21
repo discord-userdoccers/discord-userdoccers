@@ -47,6 +47,7 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | nsfw_level                      | integer                                                    | The [NSFW level](#nsfw-level) of the guild                                                                                 |
 | hub_type                        | ?integer                                                   | The [type of student hub](#hub-type) the guild is, if it is a student hub                                                  |
 | premium_progress_bar_enabled    | boolean                                                    | Whether the guild has the premium (boost) progress bar enabled                                                             |
+| latest_onboarding_question_id   | ?snowflake                                                 | The ID of the guild's latest [onboarding prompt option](#onboarding-prompt-option-structure)                               |
 | approximate_member_count? ^1^   | integer                                                    | Approximate count of total members in the guild                                                                            |
 | approximate_presence_count? ^1^ | integer                                                    | Approximate count of non-offline members in the guild                                                                      |
 
@@ -816,6 +817,122 @@ Discord is making significant changes to the membership screening API specifical
 
 </Alert>
 
+### Onboarding Object
+
+Represents the [onboarding](https://support.discord.com/hc/en-us/articles/11074987197975-Community-Onboarding-FAQ) flow for a guild.
+
+<Alert type="info">
+
+Onboarding enforces constraints when enabled. These constraints are that there must be at least 7 default channels and at least 5 of them must allow sending messages to the default (@everyone) role. The `mode` field modifies what is considered when enforcing these constraints.
+
+</Alert>
+
+###### Onboarding Structure
+
+| Field               | Type                                                            | Description                                                        |
+| ------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ |
+| guild_id            | snowflake                                                       | The ID of the guild this onboarding is part of                     |
+| prompts             | array[[onboarding prompt](#onboarding-prompt-structure) object] | The prompts shown during onboarding and in community customization |
+| default_channel_ids | array[snowflake]                                                | The channel IDs that members get opted into automatically          |
+| enabled             | boolean                                                         | Whether onboarding is enabled in the guild                         |
+| below_requirements  | boolean                                                         | Whether the guild is below the requirements for onboarding         |
+| mode                | integer                                                         | The current [criteria mode](#onboarding-mode) for onboarding       |
+
+###### Onboarding Mode
+
+Defines the criteria used to satisfy Onboarding constraints that are required for enabling.
+
+| Value | Name                | Description                                              |
+| ----- | ------------------- | -------------------------------------------------------- |
+| 0     | ONBOARDING_DEFAULT  | Count only default channels towards constraints          |
+| 1     | ONBOARDING_ADVANCED | Count default channels and questions towards constraints |
+
+###### Onboarding Prompt Structure
+
+| Field         | Type                                                                          | Description                                                                                     |
+| ------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| id            | snowflake                                                                     | The ID of the prompt                                                                            |
+| type          | integer                                                                       | The [type of prompt](#onboarding-prompt-type)                                                   |
+| options       | array[[onboarding prompt option](#onboarding-prompt-option-structure) object] | Options available within the prompt                                                             |
+| title         | string                                                                        | The title of the prompt                                                                         |
+| single_select | boolean                                                                       | Whether users are limited to selecting one option for the prompt                                |
+| required      | boolean                                                                       | Whether the prompt is required before a user completes the onboarding flow                      |
+| in_onboarding | boolean                                                                       | Wether the prompt is present in the onboarding flow, or only appears in community customization |
+
+###### Onboarding Prompt Option Structure
+
+| Field       | Type                                          | Description                                                      |
+| ----------- | --------------------------------------------- | ---------------------------------------------------------------- |
+| id          | snowflake                                     | The ID of the prompt option                                      |
+| channel_ids | array[snowflake]                              | The channel IDs a member is added to when the option is selected |
+| role_ids    | array[snowflake]                              | The role IDs assigned to a member when the option is selected    |
+| emoji       | [emoji](/resources/emoji#emoji-object) object | Emoji representing the option                                    |
+| title       | string                                        | The title of the option                                          |
+| description | ?string                                       | The description for the option                                   |
+
+###### Onboarding Prompt Type
+
+| Value | Name            | Description                                   |
+| ----- | --------------- | --------------------------------------------- |
+| 0     | MULTIPLE_CHOICE | Prompt offers multiple options to select from |
+| 1     | DROPDOWN        | Prompt offers a dropdown menu to select from  |
+
+###### Example Onboarding
+
+```json
+{
+  "guild_id": "960007075288915998",
+  "prompts": [
+    {
+      "id": "1067461047608422473",
+      "title": "What do you want to do in this community?",
+      "options": [
+        {
+          "id": "1067461047608422476",
+          "title": "Chat with Friends",
+          "description": "",
+          "emoji": {
+            "id": "1070002302032826408",
+            "name": "chat",
+            "animated": false
+          },
+          "role_ids": [],
+          "channel_ids": ["962007075288916001"]
+        },
+        {
+          "id": "1070004843541954678",
+          "title": "Get Gud",
+          "description": "We have excellent teachers!",
+          "emoji": {
+            "id": null,
+            "name": "😀",
+            "animated": false
+          },
+          "role_ids": ["982014491980083211"],
+          "channel_ids": []
+        }
+      ],
+      "single_select": false,
+      "required": false,
+      "in_onboarding": true,
+      "type": 0
+    }
+  ],
+  "default_channel_ids": [
+    "998678771706110023",
+    "998678693058719784",
+    "1070008122577518632",
+    "998678764340912138",
+    "998678704446263309",
+    "998678683592171602",
+    "998678699715067986"
+  ],
+  "enabled": true,
+  "mode": 0,
+  "below_requirements": false
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/guilds" supportsOAuth2="guilds">
@@ -1544,13 +1661,13 @@ Modifies the vanity invite for the guild. The guild must have the `VANITY_URL` o
   Get Guild Welcome Screen
 </RouteHeader>
 
-Returns the [Welcome Screen](#welcome-screen-object) object for the guild. Requires the `MANAGE_GUILD` permission if the welcome screen is not yet enabled, otherwise no permission is required.
+Returns the [welcome screen](#welcome-screen-object) object for the guild. Requires the `MANAGE_GUILD` permission if the welcome screen is not yet enabled, otherwise no permission is required.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/welcome-screen" supportsAuditReason>
   Modify Guild Welcome Screen
 </RouteHeader>
 
-Modifies the guild's [Welcome Screen](#welcome-screen-object). Requires the `MANAGE_GUILD` permission. Returns the updated [Welcome Screen](#welcome-screen-object) object. May fire a [Guild Update](/topics/gateway-events#guild-update) Gateway event.
+Modifies the guild's welcome screen. Requires the `MANAGE_GUILD` permission. Returns the updated [welcome screen](#welcome-screen-object) object. May fire a [Guild Update](/topics/gateway-events#guild-update) Gateway event.
 
 <Alert type="info">
 
@@ -1565,3 +1682,30 @@ All parameters to this endpoint are optional and nullable.
 | enabled?          | ?boolean                                                                   | Whether the welcome screen is enabled            |
 | description?      | ?string                                                                    | The welcome message shown in the welcome screen  |
 | welcome_channels? | ?array[[welcome screen channel](#welcome-screen-channel-structure) object] | The channels shown in the welcome screen (max 5) |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/onboarding">
+  Get Guild Onboarding
+</RouteHeader>
+
+Returns the [onboarding](#onboarding-object) object for the guild.
+
+<RouteHeader method="PUT" url="/guilds/{guild.id}/onboarding" supportsAuditReason>
+  Modify Guild Onboarding
+</RouteHeader>
+
+Modifies the onboarding configuration of the guild. Returns the updated [onboarding](#onboarding-object) object. Requires the `MANAGE_GUILD` permission. Fires a [Guild Update](/topics/gateway-events#guild-update) Gateway event.
+
+<Alert type="info">
+
+Onboarding enforces constraints when enabled. These constraints are that there must be at least 7 default channels and at least 5 of them must allow sending messages to the default (@everyone) role. The `mode` field modifies what is considered when enforcing these constraints.
+
+</Alert>
+
+###### JSON Params
+
+| Field                | Type                                                            | Description                                                        |
+| -------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ |
+| prompts?             | array[[onboarding prompt](#onboarding-prompt-structure) object] | The prompts shown during onboarding and in community customization |
+| default_channel_ids? | array[snowflake]                                                | The channel IDs that members get opted into automatically          |
+| enabled?             | boolean                                                         | Whether onboarding is enabled in the guild                         |
+| mode?                | integer                                                         | The current [criteria mode](#onboarding-mode) for onboarding       |
