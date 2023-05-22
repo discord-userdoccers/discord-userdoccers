@@ -410,6 +410,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#usernames-and-nicknames">
                 Usernames and Nicknames
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/user#unique-usernames">Unique Usernames</NavigationSubLink>
               <NavigationSubLink href="/resources/user#user-object">User Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#profile-metadata-object">
                 Profile Metadata Object

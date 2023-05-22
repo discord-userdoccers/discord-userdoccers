@@ -4,7 +4,7 @@ Users in Discord are generally considered the base entity. Users can spawn acros
 guilds, participate in text and voice chat, and much more. Users are separated by a distinction of "bot" vs "normal". Although they are similar, bot users are automated users that are attached to an application, "owned" by another user. Unlike normal users, bot users do
 _not_ have a limitation on the number of guilds they can be a part of.
 
-## Usernames and Nicknames
+### Usernames and Nicknames
 
 Discord enforces the following restrictions for usernames and nicknames:
 
@@ -25,6 +25,32 @@ The following restrictions are additionally enforced for webhook names:
 
 There are other rules and restrictions not shared here for the sake of spam and abuse mitigation, but the majority of users won't encounter them. It's important to properly handle all error messages returned by Discord when editing or updating names.
 
+### Unique Usernames
+
+Discord's username system is changing. Discriminators are being removed and new, unique usernames (`@name`) and display names are being introduced. Internally, this migration is referred to as "pomelo". You can read more details about how the changes to the username system affect user accounts in the [general Help Center article](https://dis.gd/usernames). To learn how it impacts bots specifically, you can read the [Developer Help Center article](https://dis.gd/app-usernames).
+
+A user's legacy `username#discriminator` tag will still be usable to [send friend requests](#send-friend-request), and will be available as a [profile badge](#profile-badge-structure) for migrated users.
+
+#### Identifying Migrated Users
+
+Pomelo will rollout to users over time rather than all at once. The value of a single zero (`0`) in the [`discriminator` field on the user object](#user-object) indicates that the user has ~~been pommeled~~ migrated to the new username system. Note that the discriminator for migrated users will _not_ be 4-digits like a standard discriminator (it is `0`, not `0000`). The value of the `username` field will become the migrated user's unique username.
+
+#### Migrating
+
+Users can only migrate their account to pomelo if they are in the rollout. A user is in the rollout if they have `pomelo` in the [`disclose` field on the Ready Supplemental event](/topics/gateway-events#ready-supplemental) and are [in the `2023-03_pomelo` user experiment](/topics/experiments#user-experiments).
+
+To migrate, users should first [check if the username they want is available](#get-pomelo-eligibility), and then [migrate their account to that username](#pomelo-user). If the username they want is not available, they can [get a list of suggested usernames](#get-pomelo-suggestions) to choose from.
+
+#### Display Names
+
+As part of pomelo, user accounts can define a non-unique display name. This value is a new nullable `global_name` field with a max length of 32 characters.
+
+For bots, the display name will be the same as their application's name.
+
+#### Default Avatars
+
+For users with migrated accounts, default avatar URLs will be based on the user ID instead of the discriminator. The URL can be calculated using `(user_id >> 22) % 5`.
+
 ### User Object
 
 ###### User Structure
@@ -32,8 +58,9 @@ There are other rules and restrictions not shared here for the sake of spam and 
 | Field                    | Type      | Description                                                                             |
 | ------------------------ | --------- | --------------------------------------------------------------------------------------- |
 | id                       | snowflake | The ID of the user                                                                      |
-| username                 | string    | The user's username, not unique across the platform                                     |
-| discriminator            | string    | The user's stringified 4-digit Discord tag                                              |
+| username ^5^             | string    | The user's username, may be unique across the platform                                  |
+| discriminator ^5^        | string    | The user's stringified 4-digit Discord tag                                              |
+| global_name ^5^          | ?string   | The user's display name (2-32 characters); for bots, this is the application name       |
 | avatar                   | ?string   | The user's [avatar hash](/reference#cdn-formatting)                                     |
 | avatar_decoration        | ?string   | The user's [avatar decoration hash](/reference#cdn-formatting)                          |
 | bot?                     | boolean   | Whether the user belongs to an OAuth2 application                                       |
@@ -64,36 +91,19 @@ There are other rules and restrictions not shared here for the sake of spam and 
 
 ^4^ Only included in the user object returned over the Gateway.
 
+^5^ See the [section on Discord's new username system](#unique-usernames) for more information.
+
 ###### Example User
 
 ```json
-// OAuth2
 {
   "id": "80351110224678912",
-  "username": "Nelly",
+  "username": "nelly",
+  "global_name": "Nelly",
   "avatar": "8342729096ea3675442027381ff50dfe",
-  "avatar_decoration": "v2_a_37dc2b53b273a457ff19ac2e3fda7e4c",
-  "discriminator": "1337",
+  "discriminator": "0",
   "public_flags": 64,
-  "flags": 64,
-  "banner": "06c16474723fe537c283b8efa61a30c8",
-  "accent_color": null,
-  "locale": "en-US",
-  "mfa_enabled": true,
-  "premium_type": 1,
-  "email": "nelly@discord.com",
-  "verified": true
-}
-
-// Full
-{
-  "id": "80351110224678912",
-  "username": "Nelly",
-  "discriminator": "1337",
-  "avatar": "8342729096ea3675442027381ff50dfe",
-  "avatar_decoration": "v2_a_37dc2b53b273a457ff19ac2e3fda7e4c",
-  "public_flags": 64,
-  "flags": 64,
+  "flags": 96,
   "purchased_flags": 10,
   "premium_usage_flags": 4,
   "banner": "06c16474723fe537c283b8efa61a30c8",
@@ -103,6 +113,7 @@ There are other rules and restrictions not shared here for the sake of spam and 
   "nsfw_allowed": true,
   "mfa_enabled": true,
   "premium_type": 1,
+  "avatar_decoration": "v2_a_37dc2b53b273a457ff19ac2e3fda7e4c",
   "email": "nelly@discord.com",
   "verified": true,
   "phone": "+18885940085"
@@ -114,8 +125,9 @@ There are other rules and restrictions not shared here for the sake of spam and 
 | Field              | Type      | Description                                                                             |
 | ------------------ | --------- | --------------------------------------------------------------------------------------- |
 | id                 | snowflake | The ID of the user                                                                      |
-| username           | string    | The user's username, not unique across the platform                                     |
-| discriminator      | string    | The user's stringified 4-digit Discord tag                                              |
+| username ^2^       | string    | The user's username, not unique across the platform                                     |
+| discriminator ^2^  | string    | The user's stringified 4-digit Discord tag                                              |
+| global_name? ^2^   | ?string   | The user's display name (2-32 characters); for bots, this is the application name       |
 | avatar             | ?string   | The user's [avatar hash](/reference#cdn-formatting)                                     |
 | avatar_decoration? | ?string   | The user's [avatar decoration hash](/reference#cdn-formatting)                          |
 | bot?               | boolean   | Whether the user belongs to an OAuth2 application                                       |
@@ -126,18 +138,21 @@ There are other rules and restrictions not shared here for the sake of spam and 
 
 ^1^ Only guaranteed to be included when fetched through the [Get User](#get-user) and [Get User Profile](#get-user-profile) endpoints. May be included in data received through other API endpoints.
 
+^2^ See the [section on Discord's new username system](#unique-usernames) for more information.
+
 ###### Example Partial User
 
 ```json
 {
   "id": "80351110224678912",
-  "username": "Nelly",
-  "discriminator": "1337",
-  "public_flags": 64,
+  "username": "nelly",
   "avatar": "8342729096ea3675442027381ff50dfe",
-  "avatar_decoration": "v2_a_37dc2b53b273a457ff19ac2e3fda7e4c",
+  "discriminator": "0",
+  "public_flags": 64,
   "banner": "06c16474723fe537c283b8efa61a30c8",
-  "accent_color": 16711680
+  "accent_color": 16711680,
+  "global_name": "Nelly",
+  "avatar_decoration": "v2_a_37dc2b53b273a457ff19ac2e3fda7e4c"
 }
 ```
 
@@ -406,11 +421,12 @@ A relationship between the current user and another user.
   "nickname": null,
   "user": {
     "id": "852892297661906993",
-    "username": "Alien",
+    "username": "alien",
+    "global_name": "Alien",
     "avatar": "14733482e560d9267c0a414b21b2fb8d",
-    "avatar_decoration": null,
-    "discriminator": "1337",
-    "public_flags": 64
+    "discriminator": "0",
+    "public_flags": 64,
+    "avatar_decoration": null
   },
   "since": "2023-02-10T01:58:05.348000+00:00"
 }
@@ -466,8 +482,9 @@ All parameters to this endpoint are optional.
 
 | Field                     | Type                                 | Description                                                                                                                                                               |
 | ------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| username?                 | string                               | The user's username; if changed may cause the user's discriminator to be randomized                                                                                       |
-| discriminator?            | string                               | The user's stringified 4-digit Discord tag; can only be changed for users with an applicable premium (Nitro) plan, which triggers a reroll after the subscription expires |
+| username? ^5^             | string                               | The user's username; if changed may cause the user's discriminator to be randomized                                                                                       |
+| discriminator? ^5^        | string                               | The user's stringified 4-digit Discord tag; can only be changed for users with an applicable premium (Nitro) plan, which triggers a reroll after the subscription expires |
+| global_name? ^5^          | ?string                              | The user's display name (2-32 characters)                                                                                                                                 |
 | avatar?                   | ?[image data](/reference#image-data) | The user's avatar; can be animated when the user has an applicable premium (Nitro) plan                                                                                   |
 | avatar_decoration?        | ?[image data](/reference#image-data) | The user's avatar decoration                                                                                                                                              |
 | avatar_decoration_preset? | ?string                              | The user's avatar decoration selected from a list of presets                                                                                                              |
@@ -488,6 +505,8 @@ All parameters to this endpoint are optional.
 ^3^ Changing the account password invalidates all active tokens. Don't fret though, as the `token` key in the response will be valid.
 
 ^4^ This value can be obtained by requesting a verification code with the [Modify User Email](#modify-user-email) endpoint, and then using the [Verify User Email Change](#verify-user-email-change) endpoint.
+
+^5^ If using pomelo, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username changed may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information.
 
 <RouteHeader method="GET" url="/users/{user.id}">
   Get User
@@ -539,6 +558,7 @@ All parameters to this endpoint are optional.
 | guild_member? ^1^             | [guild member](#guild-member-object) object                               | The guild member in the guild specified, with extra `bio` and `banner` keys denoting the guild member's bio and banner |
 | guild_member_profile? ^1^     | [profile metadata](#profile-metadata-object) object                       | The guild member's profile in the guild specified                                                                      |
 | guild_badges                  | array[[badge](#badge-object)]                                             | The guild member's guild-specific profile badges                                                                       |
+| legacy_username ^2^           | ?string                                                                   | The user's pre-migration `username#discriminator`, if applicable and shown                                             |
 | mutual_guilds?                | array[[mutual guild](#mutual-guild-structure)]                            | The mutual guilds of the user with the current user                                                                    |
 | mutual_friends_count?         | integer                                                                   | The number of mutual friends the user has with the current user                                                        |
 | connected_accounts            | array[partial [connected account](#connected-account-object)]             | The user's public connected accounts                                                                                   |
@@ -548,6 +568,8 @@ All parameters to this endpoint are optional.
 | premium_guild_since ^1^       | ?ISO8601 timestamp                                                        | The date the user's premium guild (boosting) subscription started                                                      |
 
 ^1^ These fields are unexpectedly missing or `null` if the user has blocked the current user.
+
+^2^ See the [section on Discord's new username system](#unique-usernames) for more information.
 
 ###### Profile Badge Structure
 
@@ -573,15 +595,17 @@ For a list of known profile badges, refer to [this Gist](https://gist.github.com
 {
   "user": {
     "id": "852892297661906993",
-    "username": "Alien",
+    "username": "alien",
+    "global_name": "Alien",
     "avatar": "9d52298a3ad006da31ac66a86230d9f2",
     "avatar_decoration": null,
-    "discriminator": "0040",
+    "discriminator": "0",
     "public_flags": 64,
     "flags": 64,
     "banner": "a_17a0757cf6121ccc07546de9bff3edb2",
     "accent_color": null,
-    "bio": "👽 Professional smoothbrain"
+    "bio": "👽 Professional smoothbrain",
+    "avatar_decoration": null
   },
   "connected_accounts": [
     {
@@ -611,7 +635,6 @@ For a list of known profile badges, refer to [this Gist](https://gist.github.com
     "avatar": null,
     "communication_disabled_until": null,
     "flags": 0,
-    "is_pending": false,
     "joined_at": "2016-01-01T00:00:00.00+00:00",
     "nick": null,
     "pending": false,
@@ -619,11 +642,12 @@ For a list of known profile badges, refer to [this Gist](https://gist.github.com
     "roles": [],
     "user": {
       "id": "852892297661906993",
-      "username": "Alien",
+      "username": "alien",
+      "global_name": "Alien",
       "avatar": "9d52298a3ad006da31ac66a86230d9f2",
-      "avatar_decoration": null,
-      "discriminator": "0040",
-      "public_flags": 4194368
+      "discriminator": "0",
+      "public_flags": 4194368,
+      "avatar_decoration": null
     },
     "bio": "👽 Professional alien",
     "banner": null,
@@ -647,11 +671,11 @@ For a list of known profile badges, refer to [this Gist](https://gist.github.com
         "type": null,
         "bot": {
           "id": "891436233903964161",
-          "username": "Lightbulb",
-          "display_name": null,
+          "username": "lightbulb",
+          "global_name": "Lightbulb",
           "avatar": "59fb354bf144ed784aa8bdef88d135bb",
           "avatar_decoration": null,
-          "discriminator": "5312",
+          "discriminator": "0",
           "public_flags": 0,
           "bot": true
         }
@@ -766,6 +790,72 @@ Verifies a verification code sent to the current user's email address to initiat
 | Field | Type   | Description                                                                                              |
 | ----- | ------ | -------------------------------------------------------------------------------------------------------- |
 | token | string | The email token; can be used with [Modify Current User](#modify-current-user) to change the user's email |
+
+<RouteHeader method="GET" url="/users/@me/pomelo-suggestions">
+  Get Pomelo Suggestions
+</RouteHeader>
+
+Returns a list of suggested unique username strings based on the current user's username.
+
+<Alert type="warn">
+
+This endpoint is used during the pomelo migration flow. The user must be in the rollout to use this endpoint. See the [section on Discord's new username system](#unique-usernames) for more information.
+
+</Alert>
+
+###### Example Response
+
+```json
+["gnarp", "gnap"]
+```
+
+<RouteHeader method="POST" url="/users/@me/pomelo-attempt">
+  Get Pomelo Eligibility
+</RouteHeader>
+
+Checks whether a unique username is available for the user to claim.
+
+<Alert type="warn">
+
+This endpoint is used during the pomelo migration flow. The user must be in the rollout to use this endpoint. See the [section on Discord's new username system](#unique-usernames) for more information.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description           |
+| -------- | ------ | --------------------- |
+| username | string | The username to check |
+
+###### Response Body
+
+| Field | Type    | Description                   |
+| ----- | ------- | ----------------------------- |
+| taken | boolean | Whether the username is taken |
+
+###### Example Response
+
+```json
+{ "taken": true }
+```
+
+<RouteHeader method="POST" url="/users/@me/pomelo">
+  Create Pomelo Migration
+</RouteHeader>
+
+Claims a unique username for the user. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is used during the pomelo migration flow. The user must be in the rollout to use this endpoint. See the [section on Discord's new username system](#unique-usernames) for more information.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description           |
+| -------- | ------ | --------------------- |
+| username | string | The username to claim |
 
 <RouteHeader method="GET" url="/users/@me/mentions">
   Get Recent Mentions
@@ -1019,10 +1109,12 @@ Returns a 204 empty response on success. Fires a [Relationship Add](/topics/gate
 
 ###### JSON Params
 
-| Field         | Type   | Description                                               |
-| ------------- | ------ | --------------------------------------------------------- |
-| username      | string | The username of the user to send a friend request to      |
-| discriminator | string | The discriminator of the user to send a friend request to |
+| Field             | Type    | Description                                                                |
+| ----------------- | ------- | -------------------------------------------------------------------------- |
+| username          | string  | The username of the user to send a friend request to                       |
+| discriminator ^1^ | ?string | The discriminator of the user to send a friend request to, if not migrated |
+
+^1^ `null` for migrated users. See the [section on Discord's new username system](#unique-usernames) for more information.
 
 <RouteHeader method="PUT" url="/users/@me/relationships/{user.id}">
   Create User Relationship
