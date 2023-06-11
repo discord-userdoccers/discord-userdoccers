@@ -347,13 +347,15 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Resumed](#resumed)                                                               | Acknowledges a successful [Resume](#resume)                                                                   |
 | [Auth Session Change](#auth-session-change)                                       | Current session's associated auth session ID changed                                                          |
 | [Application Command Permissions Update](#application-command-permissions-update) | Application command permission was updated                                                                    |
+| [Call Create](#call-create)                                                       | Private channel call was created                                                                              |
+| [Call Update](#call-update)                                                       | Private channel call was updated                                                                              |
+| [Call Delete](#call-delete)                                                       | Private channel call was deleted                                                                              |
 | [Channel Create](#channel-create)                                                 | New guild channel created                                                                                     |
 | [Channel Update](#channel-update)                                                 | Channel was updated                                                                                           |
 | [Channel Delete](#channel-delete)                                                 | Channel was deleted                                                                                           |
 | [Channel Pins Update](#channel-pins-update)                                       | Message was pinned or unpinned                                                                                |
 | [Channel Recipient Add](#channel-recipient-add)                                   | User joined a group DM channel                                                                                |
 | [Channel Recipient Remove](#channel-recipient-remove)                             | User was removed from a group DM channel                                                                      |
-| [Webhooks Update](#webhooks-update)                                               | Channel webhook was created, update, or deleted                                                               |
 | [Thread Create](#thread-create)                                                   | Thread was created, also sent when being added to a private thread                                            |
 | [Thread Update](#thread-update)                                                   | Thread was updated                                                                                            |
 | [Thread Delete](#thread-delete)                                                   | Thread was deleted                                                                                            |
@@ -396,17 +398,18 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Message Reaction Remove All](#message-reaction-remove-all)                       | All reactions were explicitly removed from a message                                                          |
 | [Message Reaction Remove Emoji](#message-reaction-remove-emoji)                   | All reactions for a given emoji were explicitly removed from a message                                        |
 | [Presence Update](#presence-update)                                               | User presence was updated                                                                                     |
+| [Relationship Add](#relationship-add)                                             | User had a relationship added                                                                                 |
+| [Relationship Update](#relationship-update)                                       | User had a relationship updated                                                                               |
+| [Relationship Remove](#relationship-remove)                                       | User had a relationship removed                                                                               |
 | [Stage Instance Create](#stage-instance-create)                                   | Stage instance was created                                                                                    |
 | [Stage Instance Update](#stage-instance-update)                                   | Stage instance was updated                                                                                    |
 | [Stage Instance Delete](#stage-instance-delete)                                   | Stage instance was deleted or closed                                                                          |
 | [Typing Start](#typing-start)                                                     | User started typing in a channel                                                                              |
 | [User Update](#user-update)                                                       | Current user changed                                                                                          |
 | [User Note Update](#user-note-update)                                             | User note was updated                                                                                         |
-| [Relationship Add](#relationship-add)                                             | User had a relationship added                                                                                 |
-| [Relationship Update](#relationship-update)                                       | User had a relationship updated                                                                               |
-| [Relationship Remove](#relationship-remove)                                       | User had a relationship removed                                                                               |
 | [Voice State Update](#voice-state-update)                                         | User joined, left, or moved a voice channel                                                                   |
 | [Voice Server Update](#voice-server-update)                                       | Voice connection server was updated                                                                           |
+| [Webhooks Update](#webhooks-update)                                               | Channel webhook was created, update, or deleted                                                               |
 
 #### Hello
 
@@ -634,6 +637,46 @@ Sent when the current session's associated auth session ID changes.
 #### Application Command Permissions Update
 
 Sent when an application command's permissions are updated. The inner payload is an [application command permissions](/interactions/application-commands#guild-application-command-permissions-structure) object.
+
+### Calls
+
+#### Call Create
+
+Sent when a user creates a call in a private channel, or to inform the client of an existing call after a [Request Call Connect](#request-call-connect).
+
+###### Call Create Structure
+
+| Field        | Type                                                             | Description                                                                         |
+| ------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| channel_id   | snowflake                                                        | The ID of the private channel this call is occuring in                              |
+| message_id   | snowflake                                                        | The ID of the message associated with the call                                      |
+| region       | string                                                           | The [voice region](/resources/voice#voice-region-object) ID the call is hosted from |
+| ringing      | array[snowflake]                                                 | The IDs of the users that are being rung to join the call                           |
+| voice_states | array[[voice state](/resources/voice#voice-state-object) object] | The voice states of the users already in the call                                   |
+
+#### Call Update
+
+Sent when metadata about a call changes.
+
+###### Call Update Structure
+
+| Field      | Type      | Description                                                                         |
+| ---------- | --------- | ----------------------------------------------------------------------------------- |
+| channel_id | snowflake | The ID of the private channel this call is occuring in                              |
+| message_id | snowflake | The ID of the message associated with the call                                      |
+| region     | string    | The [voice region](/resources/voice#voice-region-object) ID the call is hosted from |
+| ringing    | array     | The IDs of the users that are being rung to join the call                           |
+
+#### Call Delete
+
+Sent when a call is deleted, or becomes unavailable due to an outage.
+
+###### Call Delete Structure
+
+| Field        | Type      | Description                                            |
+| ------------ | --------- | ------------------------------------------------------ |
+| channel_id   | snowflake | The ID of the private channel this call is occuring in |
+| unavailable? | boolean   | Whether the call is unavailable due to an outage       |
 
 ### Channels
 
@@ -969,19 +1012,21 @@ Sent when a guild role is deleted.
 | guild_id | snowflake | id of the guild |
 | role_id  | snowflake | id of the role  |
 
-### Guild Scheduled Event Create
+### Guild Scheduled Events
+
+#### Guild Scheduled Event Create
 
 Sent when a guild scheduled event is created. The inner payload is a [guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object.
 
-### Guild Scheduled Event Update
+#### Guild Scheduled Event Update
 
 Sent when a guild scheduled event is updated. The inner payload is a [guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object.
 
-### Guild Scheduled Event Delete
+#### Guild Scheduled Event Delete
 
 Sent when a guild scheduled event is deleted. The inner payload is a [guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object.
 
-### Guild Scheduled Event User Add
+#### Guild Scheduled Event User Add
 
 Sent when a user has subscribed to a guild scheduled event.
 
@@ -996,7 +1041,7 @@ Sent when a user has subscribed to a guild scheduled event.
 | user_id                  | snowflake | id of the user                  |
 | guild_id                 | snowflake | id of the guild                 |
 
-### Guild Scheduled Event User Remove
+#### Guild Scheduled Event User Remove
 
 Sent when a user has unsubscribed from a guild scheduled event.
 
@@ -1228,37 +1273,6 @@ The `user` object within this event can be very partial. The only field which is
 
 </Alert>
 
-#### Typing Start
-
-Sent when a user starts typing in a channel.
-
-###### Typing Start Structure
-
-| Field      | Type                                                  | Description                                               |
-| ---------- | ----------------------------------------------------- | --------------------------------------------------------- |
-| channel_id | snowflake                                             | id of the channel                                         |
-| guild_id?  | snowflake                                             | id of the guild                                           |
-| user_id    | snowflake                                             | id of the user                                            |
-| timestamp  | integer                                               | unix time (in seconds) of when the user started typing    |
-| member?    | [member](/resources/guild#guild-member-object) object | the member who started typing if this happened in a guild |
-
-### Current User
-
-#### User Update
-
-Sent when properties about the current user change. Inner payload is a [user](/resources/user#user-object) object.
-
-#### User Note Update
-
-Sent when a note the current user has on another user is modified.
-
-###### User Note Update Structure
-
-| Field | Type      | Description               |
-| ----- | --------- | ------------------------- |
-| id    | snowflake | The ID of the user        |
-| note  | string    | The new note for the user |
-
 ### Relationships
 
 #### Relationship Add
@@ -1301,11 +1315,58 @@ Sent when a relationship is removed, relevant to the current user.
 | type     | integer   | The [type](/resources/user#relationship-type) of relationship   |
 | nickname | string    | The nickname of the user in this relationship (1-32 characters) |
 
+### Stage Instances
+
+#### Stage Instance Create
+
+Sent when a [Stage instance](/resources/stage-instance) is created (i.e. the stage is now "live"). inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
+
+#### Stage Instance Update
+
+Sent when a [Stage instance](/resources/stage-instance) has been updated. inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
+
+#### Stage Instance Delete
+
+Sent when a [Stage instance](/resources/stage-instance) has been deleted (i.e. the stage has been closed). inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
+
+### Typing
+
+#### Typing Start
+
+Sent when a user starts typing in a channel.
+
+###### Typing Start Structure
+
+| Field      | Type                                                  | Description                                               |
+| ---------- | ----------------------------------------------------- | --------------------------------------------------------- |
+| channel_id | snowflake                                             | id of the channel                                         |
+| guild_id?  | snowflake                                             | id of the guild                                           |
+| user_id    | snowflake                                             | id of the user                                            |
+| timestamp  | integer                                               | unix time (in seconds) of when the user started typing    |
+| member?    | [member](/resources/guild#guild-member-object) object | the member who started typing if this happened in a guild |
+
+### Current User
+
+#### User Update
+
+Sent when properties about the current user change. Inner payload is a [user](/resources/user#user-object) object.
+
+#### User Note Update
+
+Sent when a note the current user has on another user is modified.
+
+###### User Note Update Structure
+
+| Field | Type      | Description               |
+| ----- | --------- | ------------------------- |
+| id    | snowflake | The ID of the user        |
+| note  | string    | The new note for the user |
+
 ### Voice
 
 #### Voice State Update
 
-Sent when someone joins/leaves/moves voice channels. Inner payload is a [voice state](/resources/voice#voice-state-object) object.
+Sent when someone joins/leaves/moves voice channels or calls. Inner payload is a [voice state](/resources/voice#voice-state-object) object.
 
 #### Voice Server Update
 
@@ -1354,20 +1415,6 @@ Sent when a guild channel's webhook is created, updated, or deleted.
 #### Interaction Create
 
 Sent when a user uses an [Application Command](/interactions/application-commands/) or [Message Component](/interactions/message-components/). Inner payload is an [Interaction](/interactions/receiving-and-responding#interaction-structure).
-
-### Stage Instances
-
-#### Stage Instance Create
-
-Sent when a [Stage instance](/resources/stage-instance) is created (i.e. the stage is now "live"). inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
-
-#### Stage Instance Update
-
-Sent when a [Stage instance](/resources/stage-instance) has been updated. inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
-
-#### Stage Instance Delete
-
-Sent when a [Stage instance](/resources/stage-instance) has been deleted (i.e. the stage has been closed). inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
 
 ## Session Start Limit Object
 
