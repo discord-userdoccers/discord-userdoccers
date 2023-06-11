@@ -701,7 +701,13 @@ Sent when a channel relevant to the current user is deleted. The inner payload i
 Sent when a thread is created, relevant to the current user, or when the current user is added to a thread. The inner payload is a [channel](/resources/channel#channel-object) object.
 
 - When a thread is created, includes an additional `newly_created` boolean field.
-- When being added to an existing private thread, includes a [thread member](/resources/channel#thread-member-object) object.
+- When being added to an existing private thread, includes the optional [`member` field](/resources/channel#thread-member-object).
+
+###### Thread Create Structure Extra Fields
+
+| Field          | Type    | Description                         |
+| -------------- | ------- | ----------------------------------- |
+| newly_created? | boolean | Whether the thread was just created |
 
 #### Thread Update
 
@@ -713,7 +719,9 @@ Sent when a thread relevant to the current user is deleted. The inner payload is
 
 #### Thread List Sync
 
-Sent when the current user _gains_ access to a channel.
+Sent to sync a guild's active thread list, or to sync specific channel lists when the current user _gains_ access to a channel within a guild.
+
+For bots, all active threads are synced at startup. For user accounts, only joined threads are synced, and the full list is sent through this event on subscription.
 
 ###### Thread List Sync Structure
 
@@ -748,7 +756,7 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 | added_members? ^1^  | array[[thread member](/resources/channel#thread-member-object) object] | The users who were added to the thread                        |
 | removed_member_ids? | array of snowflakes                                                    | The IDs of the users who were removed from the thread         |
 
-^1^ Also include [guild member](/resources/guild#guild-member-object) and nullable [presence](#presence) objects.
+^1^ Also include [`member`](/resources/guild#guild-member-object) and nullable [`presence`](/resources/presence#presence-object) fields.
 
 #### Channel Pins Update
 
@@ -867,10 +875,10 @@ Sent when a user is banned from a guild.
 
 ###### Guild Ban Add Structure
 
-| Field    | Type                                               | Description     |
-| -------- | -------------------------------------------------- | --------------- |
-| guild_id | snowflake                                          | id of the guild |
-| user     | partial [user](/resources/user#user-object) object | the banned user |
+| Field    | Type                                               | Description         |
+| -------- | -------------------------------------------------- | ------------------- |
+| guild_id | snowflake                                          | The ID of the guild |
+| user     | partial [user](/resources/user#user-object) object | The banned user     |
 
 #### Guild Ban Remove
 
@@ -878,10 +886,10 @@ Sent when a user is unbanned from a guild.
 
 ###### Guild Ban Remove Structure
 
-| Field    | Type                                               | Description       |
-| -------- | -------------------------------------------------- | ----------------- |
-| guild_id | snowflake                                          | id of the guild   |
-| user     | partial [user](/resources/user#user-object) object | the unbanned user |
+| Field    | Type                                               | Description         |
+| -------- | -------------------------------------------------- | ------------------- |
+| guild_id | snowflake                                          | The ID of the guild |
+| user     | partial [user](/resources/user#user-object) object | The unbanned user   |
 
 #### Guild Emojis Update
 
@@ -889,10 +897,10 @@ Sent when a guild's emojis have been updated.
 
 ###### Guild Emojis Update Structure
 
-| Field    | Type      | Description                                      |
-| -------- | --------- | ------------------------------------------------ |
-| guild_id | snowflake | id of the guild                                  |
-| emojis   | array     | array of [emojis](/resources/emoji#emoji-object) |
+| Field    | Type                                                 | Description             |
+| -------- | ---------------------------------------------------- | ----------------------- |
+| guild_id | snowflake                                            | The ID of the guild     |
+| emojis   | array[[emoji](/resources/emoji#emoji-object) object] | The emojis in the guild |
 
 #### Guild Stickers Update
 
@@ -900,10 +908,10 @@ Sent when a guild's stickers have been updated.
 
 ###### Guild Stickers Update Structure
 
-| Field    | Type      | Description                                            |
-| -------- | --------- | ------------------------------------------------------ |
-| guild_id | snowflake | id of the guild                                        |
-| stickers | array     | array of [stickers](/resources/sticker#sticker-object) |
+| Field    | Type                                                       | Description               |
+| -------- | ---------------------------------------------------------- | ------------------------- |
+| guild_id | snowflake                                                  | The ID of the guild       |
+| stickers | array[[sticker](/resources/sticker#sticker-object) object] | The stickers in the guild |
 
 #### Guild Member Add
 
@@ -915,11 +923,13 @@ If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS`
 
 Sent when a new user joins a guild. The inner payload is a [guild member](/resources/guild#guild-member-object) object with an extra `guild_id` key:
 
+For user accounts, this event is only sent for themselves. Users are not automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) or users they have an open DM with upon them joining.
+
 ###### Guild Member Add Extra Fields
 
-| Field    | Type      | Description     |
-| -------- | --------- | --------------- |
-| guild_id | snowflake | id of the guild |
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
 
 #### Guild Member Remove
 
@@ -931,12 +941,14 @@ If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS`
 
 Sent when a user is removed from a guild (leave/kick/ban).
 
+For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
+
 ###### Guild Member Remove Structure
 
-| Field    | Type                                         | Description              |
-| -------- | -------------------------------------------- | ------------------------ |
-| guild_id | snowflake                                    | the id of the guild      |
-| user     | a [user](/resources/user#user-object) object | the user who was removed |
+| Field    | Type                                       | Description         |
+| -------- | ------------------------------------------ | ------------------- |
+| guild_id | snowflake                                  | The ID of the guild |
+| user     | [user](/resources/user#user-object) object | The removed user    |
 
 #### Guild Member Update
 
@@ -946,40 +958,47 @@ If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS`
 
 </Alert>
 
-Sent when a guild member is updated. This will also fire when the user object of a guild member changes.
+Sent when a guild member is updated. This will also fire when the user object of a guild member changes. Optional fields will only be included if changed.
+
+For user accounts, this event is only sent for members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
 
 ###### Guild Member Update Structure
 
-| Field                         | Type                                               | Description                                                                                                                                                                                                                          |
-| ----------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| guild_id                      | snowflake                                          | the id of the guild                                                                                                                                                                                                                  |
-| roles                         | array of snowflakes                                | user role ids                                                                                                                                                                                                                        |
-| user                          | partial [user](/resources/user#user-object) object | the user                                                                                                                                                                                                                             |
-| nick?                         | ?string                                            | nickname of the user in the guild                                                                                                                                                                                                    |
-| avatar                        | ?string                                            | the member's [guild avatar hash](/reference#cdm-formatting)                                                                                                                                                                          |
-| joined_at                     | ?ISO8601 timestamp                                 | when the user joined the guild                                                                                                                                                                                                       |
-| premium_since?                | ?ISO8601 timestamp                                 | when the user starting [boosting](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-) the guild                                                                                                             |
-| deaf?                         | boolean                                            | whether the user is deafened in voice channels                                                                                                                                                                                       |
-| mute?                         | boolean                                            | whether the user is muted in voice channels                                                                                                                                                                                          |
-| pending?                      | boolean                                            | whether the user has not yet passed the guild's [Membership Screening](/resources/guild#membership-screening-object) requirements                                                                                                    |
-| communication_disabled_until? | ?ISO8601 timestamp                                 | when the user's [timeout](https://support.discord.com/hc/en-us/articles/4413305239191-Time-Out-FAQ) will expire and the user will be able to communicate in the guild again, null or a time in the past if the user is not timed out |
+| Field                            | Type                                               | Description                                                                                                                                                                                                                          |
+| -------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| guild_id                         | snowflake                                          | The ID of the guild                                                                                                                                                                                                                  |
+| user                             | partial [user](/resources/user#user-object) object | The user this guild member represents                                                                                                                                                                                                |
+| nick?                            | ?string                                            | The guild-specific nickname of the member (1-32 characters)                                                                                                                                                                          |
+| avatar                           | ?string                                            | The member's [guild avatar hash](/reference#cdn-formatting)                                                                                                                                                                          |
+| roles                            | array[snowflake]                                   | The role IDs assigned to this member                                                                                                                                                                                                 |
+| joined_at                        | ISO8601 timestamp                                  | When the user joined the guild                                                                                                                                                                                                       |
+| premium_since                    | ?ISO8601 timestamp                                 | When the member subscribed to (started [boosting](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-)) the guild                                                                                            |
+| deaf?                            | boolean                                            | Whether the member is deafened in voice channels                                                                                                                                                                                     |
+| mute?                            | boolean                                            | Whether the member is muted in voice channels                                                                                                                                                                                        |
+| pending? ^1^                     | boolean                                            | Whether the member has not yet passed the guild's [membership screening](#membership-screening-object) requirements                                                                                                                  |
+| communication_disabled_until ^2^ | ?ISO8601 timestamp                                 | when the user's [timeout](https://support.discord.com/hc/en-us/articles/4413305239191-Time-Out-FAQ) will expire and the user will be able to communicate in the guild again, null or a time in the past if the user is not timed out |
+| flags                            | integer                                            | The [member's flags](#guild-member-flags)                                                                                                                                                                                            |
+
+^1^ Won't be included in contexts that are impossible for a pending member to exist in.
+
+^2^ If the value is a time in the past, the member's timeout has expired and they can communicate again. An event will not be sent when this happens.
 
 #### Guild Members Chunk
 
-Sent in response to [Guild Request Members](#request-guild-members).
+Sent in response to [Request Guild Members](#request-guild-members).
 You can use the `chunk_index` and `chunk_count` to calculate how many chunks are left for your request.
 
 ###### Guild Members Chunk Structure
 
-| Field       | Type                                                                  | Description                                                                                |
-| ----------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| guild_id    | snowflake                                                             | the id of the guild                                                                        |
-| members     | array of [guild member](/resources/guild#guild-member-object) objects | set of guild members                                                                       |
-| chunk_index | integer                                                               | the chunk index in the expected chunks for this response (0 <= chunk_index < chunk_count)  |
-| chunk_count | integer                                                               | the total number of expected chunks for this response                                      |
-| not_found?  | array                                                                 | if passing an invalid id to `REQUEST_GUILD_MEMBERS`, it will be returned here              |
-| presences?  | array of [presence](#presence) objects                                | if passing true to `REQUEST_GUILD_MEMBERS`, presences of the returned members will be here |
-| nonce?      | string                                                                | the nonce used in the [Guild Members Request](#request-guild-members)                      |
+| Field       | Type                                                               | Description                                                                                 |
+| ----------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| guild_id    | snowflake                                                          | The ID of the guild                                                                         |
+| members     | array[[guild member](/resources/guild#guild-member-object) object] | Chunked guild members                                                                       |
+| chunk_index | integer                                                            | The chunk index in the expected chunks for this response `(0 <= chunk_index < chunk_count)` |
+| chunk_count | integer                                                            | The total number of expected chunks for this response                                       |
+| not_found?  | array                                                              | The passed IDs that were not found                                                          |
+| presences?  | array[[presence](/resources/presence#presence) object]             | The presences of the returned members, if requested                                         |
+| nonce?      | string                                                             | The nonce used in [Request Guild Members](#request-guild-members), if any                   |
 
 #### Guild Role Create
 
@@ -987,10 +1006,10 @@ Sent when a guild role is created.
 
 ###### Guild Role Create Structure
 
-| Field    | Type                                             | Description         |
-| -------- | ------------------------------------------------ | ------------------- |
-| guild_id | snowflake                                        | the id of the guild |
-| role     | a [role](/topics/permissions#role-object) object | the role created    |
+| Field    | Type                                           | Description         |
+| -------- | ---------------------------------------------- | ------------------- |
+| guild_id | snowflake                                      | The ID of the guild |
+| role     | [role](/topics/permissions#role-object) object | The role created    |
 
 #### Guild Role Update
 
@@ -998,10 +1017,10 @@ Sent when a guild role is updated.
 
 ###### Guild Role Update Structure
 
-| Field    | Type                                             | Description         |
-| -------- | ------------------------------------------------ | ------------------- |
-| guild_id | snowflake                                        | the id of the guild |
-| role     | a [role](/topics/permissions#role-object) object | the role updated    |
+| Field    | Type                                           | Description         |
+| -------- | ---------------------------------------------- | ------------------- |
+| guild_id | snowflake                                      | The ID of the guild |
+| role     | [role](/topics/permissions#role-object) object | The role updated    |
 
 #### Guild Role Delete
 
@@ -1009,10 +1028,10 @@ Sent when a guild role is deleted.
 
 ###### Guild Role Delete Structure
 
-| Field    | Type      | Description     |
-| -------- | --------- | --------------- |
-| guild_id | snowflake | id of the guild |
-| role_id  | snowflake | id of the role  |
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
+| role_id  | snowflake | The ID of the role  |
 
 ### Guild Scheduled Events
 
@@ -1032,31 +1051,25 @@ Sent when a guild scheduled event is deleted. The inner payload is a [guild sche
 
 Sent when a user has subscribed to a guild scheduled event.
 
-> info
-> NOTE: this event is currently experimental and not officially supported
-
 ###### Guild Scheduled Event User Add Structure
 
-| Field                    | Type      | Description                     |
-| ------------------------ | --------- | ------------------------------- |
-| guild_scheduled_event_id | snowflake | id of the guild scheduled event |
-| user_id                  | snowflake | id of the user                  |
-| guild_id                 | snowflake | id of the guild                 |
+| Field                    | Type      | Description                         |
+| ------------------------ | --------- | ----------------------------------- |
+| guild_scheduled_event_id | snowflake | The ID of the guild scheduled event |
+| user_id                  | snowflake | The ID of the subscribed user       |
+| guild_id                 | snowflake | The ID of the guild                 |
 
 #### Guild Scheduled Event User Remove
 
 Sent when a user has unsubscribed from a guild scheduled event.
 
-> info
-> NOTE: this event is currently experimental and not officially supported
-
 ###### Guild Scheduled Event User Remove Structure
 
-| Field                    | Type      | Description                     |
-| ------------------------ | --------- | ------------------------------- |
-| guild_scheduled_event_id | snowflake | id of the guild scheduled event |
-| user_id                  | snowflake | id of the user                  |
-| guild_id                 | snowflake | id of the guild                 |
+| Field                    | Type      | Description                         |
+| ------------------------ | --------- | ----------------------------------- |
+| guild_scheduled_event_id | snowflake | The ID of the guild scheduled event |
+| user_id                  | snowflake | The ID of the subscribed user       |
+| guild_id                 | snowflake | The ID of the guild                 |
 
 ### Integrations
 
@@ -1066,29 +1079,29 @@ Sent when a guild integration is updated. This is sent in addition to one of the
 
 ###### Guild Integrations Update Structure
 
-| Field    | Type      | Description                                     |
-| -------- | --------- | ----------------------------------------------- |
-| guild_id | snowflake | id of the guild whose integrations were updated |
+| Field    | Type      | Description                                         |
+| -------- | --------- | --------------------------------------------------- |
+| guild_id | snowflake | The ID of the guild whose integrations were updated |
 
 #### Integration Create
 
 Sent when an integration is created. The inner payload is an [integration](/resources/guild#integration-object) object with an additional `guild_id` key:
 
-###### Integration Create Event Additional Fields
+###### Integration Create Structure Extra Fields
 
-| Field    | Type      | Description     |
-| -------- | --------- | --------------- |
-| guild_id | snowflake | id of the guild |
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
 
 #### Integration Update
 
 Sent when an integration is updated. The inner payload is an [integration](/resources/guild#integration-object) object with an additional `guild_id` key:
 
-###### Integration Update Event Additional Fields
+###### Integration Update Structure Extra Fields
 
-| Field    | Type      | Description     |
-| -------- | --------- | --------------- |
-| guild_id | snowflake | id of the guild |
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
 
 #### Integration Delete
 
@@ -1096,11 +1109,11 @@ Sent when an integration is deleted.
 
 ###### Integration Delete Structure
 
-| Field           | Type      | Description                                                   |
-| --------------- | --------- | ------------------------------------------------------------- |
-| id              | snowflake | integration id                                                |
-| guild_id        | snowflake | id of the guild                                               |
-| application_id? | snowflake | id of the bot/OAuth2 application for this discord integration |
+| Field           | Type      | Description                                         |
+| --------------- | --------- | --------------------------------------------------- |
+| id              | snowflake | The ID of the integration                           |
+| guild_id        | snowflake | The ID of the guild                                 |
+| application_id? | snowflake | The ID of the integrated OAuth2 application, if any |
 
 ### Invites
 
@@ -1110,20 +1123,20 @@ Sent when a new invite to a channel is created. Requires the `MANAGE_CHANNELS` p
 
 ###### Invite Create Structure
 
-| Field               | Type                                                                    | Description                                                                                                        |
-| ------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| channel_id          | snowflake                                                               | the channel the invite is for                                                                                      |
-| code                | string                                                                  | the unique invite [code](/resources/invite#invite-object)                                                          |
-| created_at          | ISO8601 timestamp                                                       | the time at which the invite was created                                                                           |
-| guild_id?           | snowflake                                                               | the guild of the invite                                                                                            |
-| inviter?            | partial [user](/resources/user#user-object) object                      | the user that created the invite                                                                                   |
-| max_age             | integer                                                                 | how long the invite is valid for (in seconds)                                                                      |
-| max_uses            | integer                                                                 | the maximum number of times the invite can be used                                                                 |
-| target_type?        | integer                                                                 | the [type of target](/resources/invite#invite-target-types) for this voice channel invite                          |
-| target_user?        | partial [user](/resources/user#user-object) object                      | the user whose stream to display for this voice channel stream invite                                              |
-| target_application? | partial [application](/resources/application#application-object) object | the embedded application to open for this voice channel embedded application invite                                |
-| temporary           | boolean                                                                 | whether or not the invite is temporary (invited users will be kicked on disconnect unless they're assigned a role) |
-| uses                | integer                                                                 | how many times the invite has been used (always will be 0)                                                         |
+| Field               | Type                                                                    | Description                                                                                       |
+| ------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| code                | string                                                                  | The invite code (unique ID)                                                                       |
+| channel_id          | snowflake                                                               | The ID of the channel the invite is for                                                           |
+| guild_id?           | snowflake                                                               | The ID of the guild this invite is for                                                            |
+| inviter?            | partial [user](/resources/user#user-object) object                      | The user who created the invite                                                                   |
+| target_type?        | integer                                                                 | The [type of target](/resources/invite#invite-target-type) for this guild invite                  |
+| target_user?        | partial [user](/resources/user#user-object) object                      | The user whose stream to display for this voice channel stream invite                             |
+| target_application? | partial [application](/resources/application#application-object) object | The embedded application to open for this voice channel embedded application invite               |
+| uses? ^1^           | integer                                                                 | Number of times this invite has been used                                                         |
+| max_uses? ^1^       | integer                                                                 | Max number of times this invite can be used                                                       |
+| max_age?            | integer                                                                 | Duration (in seconds) after which the invite expires (default 0)                                  |
+| temporary?          | boolean                                                                 | Whether this invite only grants temporary membership (default false for unsupported invite types) |
+| created_at          | ISO8601 timestamp                                                       | When this invite was created                                                                      |
 
 #### Invite Delete
 
@@ -1131,11 +1144,11 @@ Sent when an invite is deleted. Requires the `MANAGE_CHANNELS` permission.
 
 ###### Invite Delete Structure
 
-| Field      | Type      | Description                                               |
-| ---------- | --------- | --------------------------------------------------------- |
-| channel_id | snowflake | the channel of the invite                                 |
-| guild_id?  | snowflake | the guild of the invite                                   |
-| code       | string    | the unique invite [code](/resources/invite#invite-object) |
+| Field      | Type      | Description                             |
+| ---------- | --------- | --------------------------------------- |
+| code       | string    | The invite code (unique ID)             |
+| channel_id | snowflake | The ID of the channel the invite is for |
+| guild_id?  | snowflake | The ID of the guild this invite is for  |
 
 ### Messages
 
@@ -1427,10 +1440,10 @@ Sent when a guild channel's webhook is created, updated, or deleted.
 
 ###### Webhooks Update Structure
 
-| Field      | Type      | Description       |
-| ---------- | --------- | ----------------- |
-| guild_id   | snowflake | id of the guild   |
-| channel_id | snowflake | id of the channel |
+| Field      | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| guild_id   | snowflake | The ID of the guild   |
+| channel_id | snowflake | The ID of the channel |
 
 ### Interactions
 
