@@ -194,8 +194,12 @@ export default function Navigation() {
           href="/resources/auto-moderation"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/resources/auto-moderation#automod-rule-object">AutoMod Rule Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/auto-moderation#automod-action-object">AutoMod Action Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/auto-moderation#automod-rule-object">
+                AutoMod Rule Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/auto-moderation#automod-action-object">
+                AutoMod Action Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/auto-moderation#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
