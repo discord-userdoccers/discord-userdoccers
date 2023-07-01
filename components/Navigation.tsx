@@ -263,9 +263,6 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#user-guild-object">User Guild Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#discoverable-guild-object">
-                Discoverable Guild Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#ban-object">Ban Object</NavigationSubLink>
