@@ -1,5 +1,21 @@
 # Invite Resource
 
+Invites are used by users to join a guild or group DM, or to add a user to their friends list.
+
+### Temporary Invites
+
+Temporary invites (indicated by the [`temporary` field](#invite-object)) grant non-permanent access to a guild. Upon [accepting a temporary invite](#accept-invite), the user is added to the guild and can interact with it unconditionally until all of their sessions are disconnected. If the user does not have an active session at the time of accepting the invite, they will be removed after the next time they disconnect.
+
+<Alert type="info">
+
+If the user is granted a role after accepting a temporary invite, they will become permanent members of the guild.
+
+</Alert>
+
+###### Guest Invites
+
+Guest invites (indicated by the [`flags` field](#invite-object)), similar to temporary invites, also grant non-permanent access to a guild. However, unlike temporary invites, upon [accepting a guest invite](#accept-invite), the user does not become a member of the guild. The session ID provided during acceptance is dispatched a [Guild Create](/topics/gateway-events#guild-create) event containing only the channel the invite was for, and the user receives no other guild-specific events (except for [Guild Delete](/topics/gateway-events#guild-delete) when they are removed). Guest access only allows using a subset of endpoints required for interacting with voice channels, and access is removed after the user disconnects from the voice channel.
+
 ### Invite Object
 
 Represents a code that when used, adds a user to a guild or group DM channel, or creates a relationship between two users.
@@ -13,6 +29,7 @@ Represents a code that when used, adds a user to a guild or group DM channel, or
 | guild?                          | [invite guild](#invite-guild-object) object                                                | The guild this invite is for                                                                                                 |
 | channel                         | ?[partial channel](/resources/channel#partial-channel) object                              | The channel this invite is for; `null` for friend invites that did not have a DM channel created                             |
 | inviter?                        | partial [user](/resources/user#user-object) object                                         | The user who created the invite                                                                                              |
+| flags?                          | integer                                                                                    | The [invite's flags](#invite-flags)                                                                                          |
 | target_type?                    | integer                                                                                    | The [type of target](#invite-target-type) for this guild invite                                                              |
 | target_user?                    | partial [user](/resources/user#user-object) object                                         | The user whose stream to display for this voice channel stream invite                                                        |
 | target_application?             | partial [application](/resources/application#application-object) object                    | The embedded application to open for this voice channel embedded application invite                                          |
@@ -43,6 +60,12 @@ Represents a code that when used, adds a user to a guild or group DM channel, or
 
 ^1^ Invites with these target types are not returned in the [Get Guild Invites](/topics/guild#get-guild-invites) and [Get Channel Invites](/topics/channel#get-channel-invites) endpoints.
 They are also not deletable through [Delete Invite](#delete-invite).
+
+###### Invite Flags
+
+| Value  | Name  | Description                                                       |
+| ------ | ----- | ----------------------------------------------------------------- |
+| 1 << 0 | GUEST | The invite grants one-time access to a voice channel in the guild |
 
 ###### Example Invite Object
 
@@ -278,6 +301,12 @@ For OAuth2 requests, only guild invites are supported and the bot attached to th
 
 </Alert>
 
+###### JSON Params
+
+| Field       | Type   | Description                                                                               |
+| ----------- | ------ | ----------------------------------------------------------------------------------------- |
+| session_id? | string | The session ID that is accepting the invite, required for [guest invites](#guest-invites) |
+
 <RouteHeader method="DELETE" url="/invites/{invite.code}" supportsAuditReason>
   Delete Invite
 </RouteHeader>
@@ -324,6 +353,7 @@ In the case of a guild with the instant invite operation disabled by Discord, th
 
 | Field                  | Type      | Description                                                                                                                                                    |
 | ---------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| flags?                 | integer   | The [invite's flags](#invite-flags) (only `GUEST` can be set)                                                                                                  |
 | max_age? ^1^           | integer   | Number of seconds before expiry, or 0 for never (0-604800, default 86400)                                                                                      |
 | max_uses?              | integer   | Max number of uses or 0 for unlimited (0-100, default 0)                                                                                                       |
 | temporary?             | boolean   | Whether this invite only grants temporary membership (default false)                                                                                           |
