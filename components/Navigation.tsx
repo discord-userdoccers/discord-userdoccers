@@ -243,6 +243,29 @@ export default function Navigation() {
           Message
         </NavigationLink>
         <NavigationLink
+          href="/resources/discovery"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/discovery#searching-discovery">Searching Discovery</NavigationSubLink>
+              <NavigationSubLink href="/resources/discovery#discoverable-guild-object">
+                Discoverable Guild Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/discovery#discovery-requirements-object">
+                Discovery Requirements Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/discovery#discovery-metadata-object">
+                Discovery Metadata Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/discovery#discovery-category-object">
+                Discovery Category Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/discovery#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Discovery
+        </NavigationLink>
+        <NavigationLink
           href="/resources/emoji"
           subLinks={
             <Fragment>
