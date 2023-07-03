@@ -75,7 +75,7 @@ A rollout position is calculated using the following pseudo code, where `exp_nam
 This position is used in conjunction with the rollout populations and filters to figure out what the assigned bucket for the experiments are by simply checking which treatment the population is included in[.](https://gist.github.com/c3f521becd84b923c2778546c79a7a03)
 
 ```py
-murmurhash3.hash('exp_name:resource_id', signed=False) % 1e4
+mmh3.hash('exp_name:resource_id', signed=False) % 1000
 ```
 
 ## Data Structures
@@ -103,6 +103,9 @@ This object is represented as an array of the following fields:
 | override    | integer | Overriden bucket for the user, holds more priority than `bucket`                                  |
 | population  | integer | The internal population group the requesting user or fingerprint is in                            |
 | hash_result | integer | The calculated [rollout position](#rollout-positions) to use; prioritized over local calculations |
+| aa_mode ^1^ | integer | The experiment's A/A testing mode, represented as an integer-casted boolean                       |
+
+^1^ The bucket for A/A tested experiments should always be None (`-1`).
 
 ###### Example User Experiment
 
@@ -127,6 +130,13 @@ This object is represented as an array of the following fields:
 | populations         | array[[experiment population](#experiment-population-object)]           | The experiment rollout's populations                                                                                                  |
 | overrides           | array[[experiment bucket override](#experiment-bucket-override-object)] | Bucket overrides for this experiment                                                                                                  |
 | overrides_formatted | array[array[[experiment population](#experiment-population-object)]]    | Additional rollout populations, the top-level array has only one item                                                                 |
+| holdout_name ^1^    | ?string                                                                 | The human-readable experiment name (formatted as `year-month_name`) that this experiment is dependent on                              |
+| holdout_bucket ^1^  | ?integer                                                                | The required bucket for the experiment this experiment is dependent on                                                                |
+| aa_mode ^2^         | integer                                                                 | The experiment's A/A testing mode, represented as an integer-casted boolean                                                           |
+
+^1^ Failure to meet the holdout experiment's requirements will result in a bucket of None (`-1`).
+
+^2^ The bucket for A/A tested experiments should always be None (`-1`).
 
 ###### Example Guild Experiment
 
@@ -186,7 +196,10 @@ This object is represented as an array of the following fields:
         [[1604612045, [[1183251248, ["GUILD_ROLE_SUBSCRIPTIONS"]]]]]
       ]
     ]
-  ]
+  ],
+  null,
+  null,
+  0
 ]
 ```
 
