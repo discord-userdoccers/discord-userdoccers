@@ -1,0 +1,265 @@
+# Auto Moderation
+
+Auto Moderation, or AutoMod, is a feature which allows each [guild](/resources/guild) to set up rules that trigger based on some criteria. For example, a rule can trigger whenever a message contains a specific keyword.
+
+Rules can be configured to automatically execute actions whenever they trigger. For example, if a user tries to send a message which contains a certain keyword, a rule can trigger and block the message before it is sent.
+
+<Alert type="info">
+
+Users are required to have the `MANAGE_GUILD` permission to access all AutoMod resources.
+Some [action types](#automod-action-type) require additional permissions, i.e. the `TIMEOUT_USER` [action type](#automod-action-type) requires an additional `MODERATE_MEMBERS` permission.
+
+</Alert>
+
+### AutoMod Rule Object
+
+###### AutoMod Rule Structure
+
+| Field            | Type                                                   | Description                                                         |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| id               | snowflake                                              | The ID of the rule                                                  |
+| guild_id         | snowflake                                              | The ID of the guild which this rule belongs to                      |
+| name             | string                                                 | The name of the rule                                                |
+| creator_id       | snowflake                                              | The ID of the user that created the rule                            |
+| event_type       | integer                                                | The [type of event](#automod-event-type) that triggers the rule     |
+| trigger_type     | integer                                                | The [type of trigger](#automod-trigger-type) that invokes the rule  |
+| trigger_metadata | [trigger metadata](#automod-trigger-metadata)          | Metadata used to determine whether the rule should be triggered     |
+| actions          | array[[automod action](#automod-action-object) object] | The actions that will execute when the rule is triggered            |
+| enabled          | boolean                                                | Whether the rule is enabled                                         |
+| exempt_roles     | array[snowflake]                                       | The IDs of the roles that won't be affected by the rule (max 20)    |
+| exempt_channels  | array[snowflake]                                       | The IDs of the channels that won't be affected by the rule (max 50) |
+
+###### Example AutoMod Rule
+
+```json
+{
+  "id": "969707018069872670",
+  "guild_id": "613425648685547541",
+  "name": "Keyword Filter 1",
+  "creator_id": "423457898095789043",
+  "trigger_type": 1,
+  "event_type": 1,
+  "actions": [
+    {
+      "type": 1,
+      "metadata": { "custom_message": "Please keep financial discussions limited to the #finance channel" }
+    },
+    {
+      "type": 2,
+      "metadata": { "channel_id": "123456789123456789" }
+    },
+    {
+      "type": 3,
+      "metadata": { "duration_seconds": 60 }
+    }
+  ],
+  "trigger_metadata": {
+    "keyword_filter": ["cat*", "*dog", "*ana*", "i like c++"],
+    "regex_patterns": ["(b|c)at", "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"]
+  },
+  "enabled": true,
+  "exempt_roles": ["323456789123456789", "423456789123456789"],
+  "exempt_channels": ["523456789123456789"]
+}
+```
+
+###### AutoMod Trigger Type
+
+Characterizes the type of content which can trigger the rule.
+
+| Value | Name             | Description                                                                       |
+| ----- | ---------------- | --------------------------------------------------------------------------------- |
+| 1     | KEYWORD          | When message content contains words from a user defined list of keywords (max 6)  |
+| ~~2~~ | ~~HARMFUL_LINK~~ | ~~When message content contains any harmful links (max 1)~~                       |
+| 3     | SPAM             | When message content represents generic spam (max 1)                              |
+| 4     | KEYWORD_PRESET   | When message content contains words from internal predefined wordsets (max 1)     |
+| 5     | MENTION_SPAM     | When message content contains more unique mentions than allowed (max 1)           |
+| 6     | USER_PROFILE     | When a user's profile contains words from a user defined list of keywords (max 1) |
+| 7     | GUILD_POLICY     | When a user violates the guild rules (max 1)                                      |
+
+###### AutoMod Trigger Metadata
+
+Additional data used to determine whether a rule should be triggered. Different fields are relevant based on the [trigger type](#automod-trigger-type).
+
+| Field                           | Type           | Description                                                                                              | Trigger Type                                |
+| ------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| keyword_filter ^1^              | array[string]  | Substrings which will be searched for in content (1-60, max 1000)                                        | `KEYWORD`, `USER_PROFILE`                   |
+| regex_patterns ^2^              | array[string]  | Regular expression patterns which will be matched against content (1-260, max 10)                        | `KEYWORD`, `USER_PROFILE`                   |
+| presets                         | array[integer] | The [internally predefined wordsets](#automod-keyword-preset-type) which will be searched for in content | `KEYWORD_PRESET`                            |
+| allow_list ^3^                  | array[string]  | Substrings which should not trigger the rule (1-60, max 100 or 1000 respectively)                        | `KEYWORD`, `KEYWORD_PRESET`, `USER_PROFILE` |
+| mention_total_limit             | integer        | Number of unique role and user mentions allowed per message (max 50)                                     | `MENTION_SPAM`                              |
+| mention_raid_protection_enabled | boolean        | Whether to automatically detect mention raids                                                            | `MENTION_SPAM`                              |
+
+^1^ A keyword can be a phrase which contains multiple words. [Wildcard symbols](#automod-keyword-matching-strategies) can be used to customize how each keyword will be matched. Each keyword must be 60 characters or less.
+
+^2^ Only Rust flavored regex is currently supported, which can be tested in online editors such as [Rustexp](https://rustexp.lpil.uk/). Each regex pattern must be 260 characters or less.
+
+^3^ Each `allow_list` keyword can be a phrase which contains multiple words. [Wildcard symbols](#automod-keyword-matching-strategies) can be used to customize how each keyword will be matched. Rules with `KEYWORD` [trigger types](#automod-trigger-type) accept a maximum of 100 keywords. Rules with `KEYWORD_PRESET` [trigger types](#automod-trigger-type) accept a maximum of 1000 keywords.
+
+###### AutoMod Keyword Preset Type
+
+| Value | Name           | Description                                                  |
+| ----- | -------------- | ------------------------------------------------------------ |
+| 1     | PROFANITY      | Words that may be considered forms of swearing or cursing    |
+| 2     | SEXUAL_CONTENT | Words that refer to sexually explicit behavior or activity   |
+| 3     | SLURS          | Personal insults or words that may be considered hate speech |
+
+###### AutoMod Event Type
+
+Indicates in what event context a rule should be checked.
+
+| Value | Name               | Description                                         | Trigger Type                                                        |
+| ----- | ------------------ | --------------------------------------------------- | ------------------------------------------------------------------- |
+| 1     | MESSAGE_SEND       | When a member sends or edits a message in the guild | `KEYWORD`, `SPAM`, `KEYWORD_PRESET`, `MENTION_SPAM`, `GUILD_POLICY` |
+| 2     | GUILD_MEMBER_EVENT | When a member joins or updates their profile        | `USER_PROFILE`                                                      |
+
+###### AutoMod Keyword Matching Strategies
+
+Use the wildcard symbol (`*`) at the beginning or end of a keyword to define how it should be matched. All keywords are case insensitive.
+
+**Prefix** - Word must start with the keyword
+
+| Keyword   | Matches                               |
+| --------- | ------------------------------------- |
+| cat\*     | **cat**ch, **Cat**apult, **CAt**tLE   |
+| tra\*     | **tra**in, **tra**de, **TRA**ditional |
+| the mat\* | **the mat**rix                        |
+
+**Suffix** - Word must end with the keyword
+
+| Keyword   | Matches                             |
+| --------- | ----------------------------------- |
+| \*cat     | wild**cat**, copy**Cat**            |
+| \*tra     | ex**tra**, ul**tra**, orches**TRA** |
+| \*the mat | brea**the mat**                     |
+
+**Anywhere** - Keyword can appear anywhere in the content
+
+| Keyword     | Matches                     |
+| ----------- | --------------------------- |
+| \*cat\*     | lo**cat**ion, edu**Cat**ion |
+| \*tra\*     | abs**tra**cted, ou**tra**ge |
+| \*the mat\* | brea**the mat**ter          |
+
+**Whole Word** - Keyword is a full word or phrase and must be surrounded by whitespace
+
+| Keyword | Matches     |
+| ------- | ----------- |
+| cat     | **cat**     |
+| train   | **train**   |
+| the mat | **the mat** |
+
+### AutoMod Action Object
+
+An action which will execute whenever a rule is triggered.
+
+###### AutoMod Action Structure
+
+| Field         | Type                                        | Description                                                               |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------------------- |
+| type          | integer                                     | The [type of action](#automod-action-type)                                |
+| metadata? ^1^ | [action metadata](#automod-action-metadata) | Additional metadata needed during execution for this specific action type |
+
+^1^ See the "Action Type" column in [action metadata](#automod-action-metadata) to understand which `type` values require `metadata` to be set.
+
+###### AutoMod Action Type
+
+| Value | Name                   | Description                                                                                                                                             |
+| ----- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | BLOCK_MESSAGE          | Block a member's message and prevent it from being posted; a custom explanation can be specified and shown to members whenever their message is blocked |
+| 2     | SEND_ALERT_MESSAGE ^1^ | Log user content to a specified channel                                                                                                                 |
+| 3     | TIMEOUT_USER ^2^       | Timeout user for a specified duration                                                                                                                   |
+| 4     | QUARANTINE_USER ^3^    | Quarantine user indefinitely; quarantined users, similar to timed out users, are prevented from interacting with the guild in any way                   |
+
+^1^ Only a `SEND_ALERT_MESSAGE` action can be set up for `GUILD_POLICY` [trigger types](#automod-trigger-type).
+
+^2^ A `TIMEOUT_USER` action can only be set up for `KEYWORD` and `MENTION_SPAM` [trigger types](#automod-trigger-type). The `MODERATE_MEMBERS` permission is required to use the `TIMEOUT_USER` action type.
+
+^3^ A `QUARANTINE_USER` action can only be set up for `USER_PROFILE` [trigger types](#automod-trigger-type). The `MODERATE_MEMBERS` permission is required to use the `QUARANTINE_USER` action type.
+
+###### AutoMod Action Metadata
+
+Additional data used when an action is executed. Different fields are relevant based on the [action type](#automod-action-type).
+
+| Field            | Type      | Description                                                                            | Action Type        |
+| ---------------- | --------- | -------------------------------------------------------------------------------------- | ------------------ |
+| channel_id       | snowflake | The channel where user content should be logged                                        | SEND_ALERT_MESSAGE |
+| duration_seconds | integer   | Duration (in seconds) after which the timeout expires (max 2419200)                    | TIMEOUT_USER       |
+| custom_message?  | string    | Additional explanation that will be shown to members whenever their message is blocked | BLOCK_MESSAGE      |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/auto-moderation/rules">
+  Get Guild AutoMod Rules
+</RouteHeader>
+
+Returns a list of [automod rule](#automod-rule-object) objects for the configured rules in the guild. Requires the `MANAGE_GUILD` permission.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/auto-moderation/rules/{automod_rule.id}">
+  Get AutoMod Rule
+</RouteHeader>
+
+Returns an [automod rule](#automod-rule-object) object for the given rule ID in the guild. Requires the `MANAGE_GUILD` permission.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/auto-moderation/rules" supportsAuditReason>
+  Create AutoMod Rule
+</RouteHeader>
+
+Create a new automod rule in the guild. Returns an [automod rule](#automod-rule-object) on success. Fires an [Auto Moderation Rule Create](/topics/gateway-events#auto-moderation-rule-create) Gateway event. Requires the `MANAGE_GUILD` permission.
+
+<Alert type="info">
+
+See [trigger types](#automod-trigger-type) for limits on how many rules of each trigger type can be created per guild.
+
+</Alert>
+
+###### JSON Params
+
+| Field                 | Type                                                   | Description                                                         |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| name                  | string                                                 | The name of the rule                                                |
+| event_type            | integer                                                | The [type of event](#automod-event-type) that triggers the rule     |
+| trigger_type          | integer                                                | The [type of trigger](#automod-trigger-type) that invokes the rule  |
+| trigger_metadata? ^1^ | [trigger metadata](#automod-trigger-metadata)          | Metadata used to determine whether the rule should be triggered     |
+| actions               | array[[automod action](#automod-action-object) object] | The actions that will execute when the rule is triggered            |
+| enabled?              | boolean                                                | Whether the rule is enabled (default false)                         |
+| exempt_roles?         | array[snowflake]                                       | The IDs of the roles that won't be affected by the rule (max 20)    |
+| exempt_channels? ^2^  | array[snowflake]                                       | The IDs of the channels that won't be affected by the rule (max 50) |
+
+^1^ See the "Trigger Types" column in [trigger metadata](#automod-trigger-metadata) to understand which [trigger types](#automod-trigger-type) require `trigger_metadata` to be set.
+
+^2^ Only applicable to `KEYWORD`, `SPAM`, `KEYWORD_PRESET`, `MENTION_SPAM`, and `GUILD_POLICY` [trigger types](#automod-trigger-type).
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/auto-moderation/rules/{automod_rule.id}" supportsAuditReason>
+  Modify AutoMod Rule
+</RouteHeader>
+
+Modify an existing rule in the guild. Returns an [automod rule](#automod-rule-object) on success. Fires an [Auto Moderation Rule Update](/topics/gateway-events#auto-moderation-rule-update) Gateway event. Requires the `MANAGE_GUILD` permission.
+
+<Alert type="info">
+
+All parameters for this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field                 | Type                                                   | Description                                                         |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| name?                 | string                                                 | The name of the rule                                                |
+| event_type?           | integer                                                | The [type of event](#automod-event-type) that triggers the rule     |
+| trigger_metadata? ^1^ | [trigger metadata](#automod-trigger-metadata)          | Metadata used to determine whether the rule should be triggered     |
+| actions?              | array[[automod action](#automod-action-object) object] | The actions that will execute when the rule is triggered            |
+| enabled?              | boolean                                                | Whether the rule is enabled (default false)                         |
+| exempt_roles?         | array[snowflake]                                       | The IDs of the roles that won't be affected by the rule (max 20)    |
+| exempt_channels? ^2^  | array[snowflake]                                       | The IDs of the channels that won't be affected by the rule (max 50) |
+
+^1^ See the "Trigger Types" column in [trigger metadata](#automod-trigger-metadata) to understand which [trigger types](#automod-trigger-type) require `trigger_metadata` to be set.
+
+^2^ Only applicable to `KEYWORD`, `SPAM`, `KEYWORD_PRESET`, `MENTION_SPAM`, and `GUILD_POLICY` [trigger types](#automod-trigger-type).
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/auto-moderation/rules/{automod_rule.id}" supportsAuditReason>
+  Delete AutoMod Rule
+</RouteHeader>
+
+Delete a rule in the guild. Returns a 204 empty response on success. Fires an [Auto Moderation Rule Delete](/topics/gateway-events#auto-moderation-rule-delete) Gateway event. Requires the `MANAGE_GUILD` permission.
