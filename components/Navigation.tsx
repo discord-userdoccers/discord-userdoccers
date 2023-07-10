@@ -499,6 +499,33 @@ export default function Navigation() {
 
       <NavigationSection title="Topics">
         <NavigationLink
+          href="/topics/client-distribution"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/client-distribution#web">Web</NavigationSubLink>
+              <NavigationSubLink href="/topics/client-distribution#desktop">Desktop</NavigationSubLink>
+              <NavigationSubLink href="/topics/client-distribution#mobile">Mobile</NavigationSubLink>
+              <NavigationSubLink href="/topics/client-distribution#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Client Distribution
+        </NavigationLink>
+        <NavigationLink
+          href="/topics/experiments"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/experiments#fingerprints">Fingerprints</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#rollouts">Rollouts</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#user-experiments">User Experiments</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#guild-experiments">Guild Experiments</NavigationSubLink>
+              <NavigationSubLink href="/topics/experiments#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Experiments
+        </NavigationLink>
+        <NavigationLink
           href="/topics/gateway"
           subLinks={
             <Fragment>
@@ -532,20 +559,6 @@ export default function Navigation() {
           }
         >
           Gateway Events
-        </NavigationLink>
-        <NavigationLink
-          href="/topics/experiments"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/topics/experiments#fingerprints">Fingerprints</NavigationSubLink>
-              <NavigationSubLink href="/topics/experiments#rollouts">Rollouts</NavigationSubLink>
-              <NavigationSubLink href="/topics/experiments#user-experiments">User Experiments</NavigationSubLink>
-              <NavigationSubLink href="/topics/experiments#guild-experiments">Guild Experiments</NavigationSubLink>
-              <NavigationSubLink href="/topics/experiments#endpoints">Endpoints</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Experiments
         </NavigationLink>
         <NavigationLink
           href="/topics/oauth2"
