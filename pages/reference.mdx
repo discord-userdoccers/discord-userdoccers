@@ -8,7 +8,7 @@ Discord's API is based around two core layers, a HTTPS/REST API for general oper
 
 <Alert type="info">
 
-Discord offers a canary API for testing changes before they are pushed to the regular API. The canary API is not guaranteed to be stable, and is available at `https://canary.discord.com/api`.
+Discord offers a canary API for testing changes before they are pushed to the regular API. The canary API is not guaranteed to be stable, and can be used at the dedicated URL or [with debug options](#debugging).
 
 </Alert>
 
@@ -250,6 +250,60 @@ The HTTP API implements a process for limiting and preventing excessive requests
 ### Boolean Query Strings
 
 Certain endpoints in the API are documented to accept booleans for their query string parameters. While there is no standard system for boolean representation in query string parameters, Discord represents such cases using `True`, `true`, or `1` for true and `False`, `false` or `0` for false.
+
+### Debugging
+
+The HTTP API accepts an optional `X-Debug-Options` header with a comma-delimited list of debug options. The options in this list can be arbitrary, but the below options have effects:
+
+| Value  | Description                                            |
+| ------ | ------------------------------------------------------ |
+| canary | Forcefully routes the request to the canary API        |
+| trace  | Forcefully [traces the request with APM](#apm-tracing) |
+
+###### APM Tracing
+
+Discord offers an APM (Application Performance Monitoring) service that allows Discord employees to view traces of requests made to the API. This is useful for debugging issues with the API, and can be enabled by setting `trace` in the `X-Debug-Options` header as described above.
+
+When tracing requests, you must provide an additional `X-Client-Trace-ID` header with a unique identifier for the request. This identifier can be generated with the following pseudocode:
+
+```py
+import base64
+import random
+import struct
+import time
+
+class IDGenerator:
+    def __init__(self):
+        self.prefix = random.randint(0, 0xFFFFFFFF) & 0xFFFFFFFF
+        self.creation_time = int(time.time() * 1000)
+        self.sequence = 0
+
+    def generate(self, user_id: int = 0):
+        uuid = bytearray(24)
+        # Lowest signed 32 bits
+        struct.pack_into("<I", uuid, 0, user_id & 0xFFFFFFFF)
+        struct.pack_into("<I", uuid, 4, user_id >> 32)
+        struct.pack_into("<I", uuid, 8, self.prefix)
+        # Lowest signed 32 bits
+        struct.pack_into("<I", uuid, 12, self.creation_time & 0xFFFFFFFF)
+        struct.pack_into("<I", uuid, 16, self.creation_time >> 32)
+        struct.pack_into("<I", uuid, 20, self.sequence)
+        self.sequence += 1
+        return base64.b64encode(uuid).decode("utf-8")
+
+if __name__ == "__main__":
+    generator = IDGenerator()
+    # Use 0 for user_id if you don't have one
+    generator.generate(user_id or 0)
+```
+
+After the request is completed, the trace may be viewed by navigating to `https://app.datadoghq.com/apm/traces?query=@guid.x-client-trace-id:"{trace_id}"&showAllSpans=true` (replacing the `{trace_id}` with the value you provided).
+
+<Alert type="info">
+
+The ability to view APM traces is only available to Discord employees.
+
+</Alert>
 
 ## Gateway (WebSocket) API
 
