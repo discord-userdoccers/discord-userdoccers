@@ -13,7 +13,7 @@ export default function Header() {
       event.preventDefault();
       setOpen();
     },
-    [setOpen]
+    [setOpen],
   );
 
   return (

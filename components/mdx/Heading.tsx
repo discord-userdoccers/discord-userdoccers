@@ -44,7 +44,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
 export function H1({ className, ...props }: JSX.IntrinsicElements["h1"]) {
   const classes = classNames(
     "not:first-of-type:mt-2 mb-2 mt-3 text-4xl font-bold leading-tight sm:leading-loose",
-    className
+    className,
   );
   return <Heading as="h1" className={classes} {...props} />;
 }

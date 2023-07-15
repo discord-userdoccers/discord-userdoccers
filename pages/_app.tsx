@@ -26,7 +26,7 @@ export default function App({ Component, pageProps }: AppProps) {
     {
       "opacity-50": sidebarOpen,
       "opacity-0 pointer-events-none": !sidebarOpen,
-    }
+    },
   );
 
   useEffect(() => {

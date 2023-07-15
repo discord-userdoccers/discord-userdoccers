@@ -90,11 +90,21 @@ export default function Code({ children, className, metastring, file, ...props }
     <div className="code-block relative my-6 font-mono rounded-md">
       {/* <InfoBar fileName={file} language={language} /> */}
       <Highlight {...defaultProps} code={children} language={language}>
-        {({ className: blockClassName, tokens, getLineProps, getTokenProps }) => (
+        {({
+          className: blockClassName,
+          tokens,
+          getLineProps,
+          getTokenProps,
+        }: {
+          className: string;
+          tokens: Token[][];
+          getLineProps: (options: { line: Token[]; key: number }) => React.HTMLAttributes<HTMLElement>;
+          getTokenProps: (options: { token: Token; key: number }) => React.HTMLAttributes<HTMLElement>;
+        }) => (
           <pre
             className={classNames(
               "relative inline-grid grid-rows-max-content m-0 mb-4 w-full leading-normal overflow-auto",
-              blockClassName
+              blockClassName,
             )}
           >
             {/* eslint-disable-next-line react/prop-types */}
@@ -106,7 +116,7 @@ export default function Code({ children, className, metastring, file, ...props }
               </div>
             )}
             <code className="p-4 px-1.5 rounded-md">
-              {cleanTokens(tokens).map((line, i) => {
+              {cleanTokens(tokens).map((line: Token[], i: number) => {
                 const lineClass = {};
                 let isDiff = false;
                 let diffSymbol = "";

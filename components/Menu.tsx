@@ -19,7 +19,7 @@ export default function Menu() {
     {
       "translate-x-full ": open,
       "translate-x-none md:flex": !open,
-    }
+    },
   );
 
   useEffect(() => {

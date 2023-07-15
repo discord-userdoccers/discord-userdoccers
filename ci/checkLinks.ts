@@ -1,8 +1,8 @@
+import { readdirSync, readFileSync, statSync } from "fs";
+import path from "path";
 import * as github from "@actions/core";
 import chalk from "chalk";
-import { readdirSync, readFileSync, statSync } from "fs";
 import { JSDOM } from "jsdom";
-import path from "path";
 const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE! : process.cwd();
 
 function importDirectory(directory: string, extension: string, subdirectories = true) {
@@ -45,7 +45,7 @@ function scanFile(
   name: string,
   splitFile: string[],
   valid: Map<string, string[]>,
-  results: github.AnnotationProperties[]
+  results: github.AnnotationProperties[],
 ): void {
   let multilineCode = false;
   splitFile.forEach((line, lineNum) => {
@@ -126,7 +126,7 @@ try {
     `/${navFile.slice(0, -".tsx".length)}`,
     file,
     validLinks,
-    ownResults
+    ownResults,
   );
 } catch {
   console.warn("Navigation file not found!");
@@ -154,7 +154,7 @@ for (const [name, raw] of mdxFiles) {
     name.slice(0, -extLength),
     file,
     validLinks,
-    ownResults
+    ownResults,
   );
 }
 
@@ -168,7 +168,7 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
     output += resultArr.reduce<string>((result, props) => {
       total += 1;
       return `${result}  ${props.startLine ?? ""}:${props.startColumn ?? ""}-${props.endColumn ?? ""}  ${chalk.yellow(
-        "warning"
+        "warning",
       )}  ${props.title ?? ""}\n`;
     }, "");
     output += "\n";
@@ -192,7 +192,7 @@ function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>):
           result.startLine ?? 0
         },col=${result.startColumn ?? 0},endColumn=${result.endColumn ?? result.startColumn ?? 0}::${
           result.title ?? "Invalid Link"
-        }`
+        }`,
       );
     }
     github.endGroup();
