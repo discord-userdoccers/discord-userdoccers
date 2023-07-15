@@ -25,9 +25,10 @@ Represents a code that when used, adds a user to a guild or group DM channel, or
 | Field                           | Type                                                                                       | Description                                                                                                                  |
 | ------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | code                            | string                                                                                     | The invite code (unique ID)                                                                                                  |
-| type?                           | integer                                                                                    | The [type of invite](#invite-type)                                                                                           |
-| guild?                          | [invite guild](#invite-guild-object) object                                                | The guild this invite is for                                                                                                 |
+| type                            | integer                                                                                    | The [type of invite](#invite-type)                                                                                           |
 | channel                         | ?[partial channel](/resources/channel#partial-channel) object                              | The channel this invite is for; `null` for friend invites that did not have a DM channel created                             |
+| guild_id?                       | snowflake                                                                                  | The ID of the guild this invite is for                                                                                       |
+| guild?                          | [invite guild](#invite-guild-object) object                                                | The guild this invite is for                                                                                                 |
 | inviter?                        | partial [user](/resources/user#user-object) object                                         | The user who created the invite                                                                                              |
 | flags?                          | integer                                                                                    | The [invite's flags](#invite-flags)                                                                                          |
 | target_type?                    | integer                                                                                    | The [type of target](#invite-target-type) for this guild invite                                                              |
@@ -35,11 +36,20 @@ Represents a code that when used, adds a user to a guild or group DM channel, or
 | target_application?             | partial [application](/resources/application#application-object) object                    | The embedded application to open for this voice channel embedded application invite                                          |
 | approximate_member_count? ^1^   | integer                                                                                    | Approximate count of total members in the guild or group DM                                                                  |
 | approximate_presence_count? ^1^ | integer                                                                                    | Approximate count of non-offline members in the guild                                                                        |
-| expires_at?                     | ?ISO8601 timestamp                                                                         | The expiry date of the invite; if present and `null`, the invite never expires                                               |
+| expires_at                      | ?ISO8601 timestamp                                                                         | The expiry date of the invite, if it expires                                                                                 |
 | stage_instance?                 | [invite stage instance](#invite-stage-instance-object) object                              | Stage instance data if there is a [public stage instance](/resources/stage-instance) in the stage channel this invite is for |
 | guild_scheduled_event?          | [guild scheduled event](/topics/guild-scheduled-event#guild-scheduled-event-object) object | Guild scheduled event data, only included if `guild_scheduled_event_id` contains a valid guild scheduled event ID            |
+| created_at                      | ISO8601 timestamp                                                                          | When this invite was created                                                                                                 |
+| uses? ^2^                       | integer                                                                                    | Number of times this invite has been used                                                                                    |
+| max_uses? ^2^                   | integer                                                                                    | Max number of times this invite can be used                                                                                  |
+| max_age                         | integer                                                                                    | Duration (in seconds) after which the invite expires                                                                         |
+| temporary? ^3^                  | boolean                                                                                    | Whether this invite only grants temporary membership (default false for unsupported invite types)                            |
 
 ^1^ Only included when fetched from the [Get Invite](#get-invite) endpoint with `with_counts` set to `true`.
+
+^2^ This information is not tracked or returned for group DM invites. However, they always have a `max_uses` of 0.
+
+^3^ [Temporary invites](#temporary-invites) are only supported for guilds.
 
 ###### Invite Type
 
@@ -135,31 +145,24 @@ They are also not deletable through [Delete Invite](#delete-invite).
   "approximate_member_count": 100,
   "approximate_presence_count": 35
 }
-```
 
-### Invite Metadata Object
-
-Extra information about an invite, will extend the [invite](#invite-object) object.
-
-###### Invite Metadata Structure
-
-| Field         | Type              | Description                                                                                       |
-| ------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
-| uses? ^1^     | integer           | Number of times this invite has been used                                                         |
-| max_uses? ^1^ | integer           | Max number of times this invite can be used                                                       |
-| max_age?      | integer           | Duration (in seconds) after which the invite expires (default 0)                                  |
-| temporary?    | boolean           | Whether this invite only grants temporary membership (default false for unsupported invite types) |
-| created_at    | ISO8601 timestamp | When this invite was created                                                                      |
-
-^1^ This information is not tracked or returned for group DM invites. However, they always have a `max_uses` of 0.
-
-###### Example Invite with Metadata Object
-
-```json
 {
-  "code": "eh387fhdwq",
   "type": 0,
-  "expires_at": null,
+  "code": "jvuBeT38",
+  "inviter": {
+    "id": "852892297661906993",
+    "username": "alien",
+    "avatar": "05145cc5646fbcba277b6d5ea2030610",
+    "discriminator": "0",
+    "public_flags": 4194432,
+    "banner": null,
+    "accent_color": null,
+    "global_name": "Alien",
+    "avatar_decoration": null,
+  },
+  "max_age": 604800,
+  "created_at": "2023-07-15T18:30:11.047000+00:00",
+  "expires_at": "2023-07-22T18:30:11+00:00",
   "guild": {
     "id": "1046920999469330512",
     "name": "Alien Network",
@@ -185,25 +188,62 @@ Extra information about an invite, will extend the [invite](#invite-object) obje
       ]
     }
   },
+  "guild_id": "1046920999469330512",
   "channel": {
     "id": "1057241425793798144",
-    "name": "alien",
-    "type": 2
+    "type": 2,
+    "name": "alien noises"
   },
-  "inviter": {
-    "id": "852892297661906993",
-    "username": "alien",
-    "global_name": "Alien",
-    "avatar": null,
-    "avatar_decoration": null,
-    "discriminator": "0",
-    "public_flags": 64
+  "target_type": 2,
+  "target_application": {
+    "id": "880218394199220334",
+    "name": "Watch Together",
+    "icon": "ec48acbad4c32efab4275cb9f3ca3a58",
+    "description": "Create and watch a playlist of YouTube videos with your friends. Your choice to share the remote or not. ",
+    "type": null,
+    "cover_image": "3cc9446876ae9eec6e06ff565703c292",
+    "bot": {
+      "id": "880218394199220334",
+      "username": "Watch Together",
+      "avatar": "fe2b7fa334817b0346d57416ad75e93b",
+      "discriminator": "5319",
+      "public_flags": 0,
+      "bot": true,
+      "banner": null,
+      "accent_color": null,
+      "global_name": null,
+      "avatar_decoration": null,
+    },
+    "summary": "",
+    "bot_public": false,
+    "bot_require_code_grant": false,
+    "terms_of_service_url": "https://discord.com/terms",
+    "privacy_policy_url": "https://discord.com/privacy",
+    "verify_key": "e2aaf50fbe2fd9d025ac669035f5efb89099931690fba9dc28efb7eaade7f96d",
+    "flags": 1179648,
+    "max_participants": -1,
+    "tags": ["Video Player", "Watch"],
+    "hook": true,
+    "embedded_activity_config": {
+      "activity_preview_video_asset_id": "1104184163201990836",
+      "supported_platforms": ["web", "ios", "android"],
+      "default_orientation_lock_state": 2,
+      "tablet_default_orientation_lock_state": 1,
+      "requires_age_gate": false,
+      "premium_tier_requirement": null,
+      "free_period_starts_at": null,
+      "free_period_ends_at": null,
+      "client_platform_config": {
+        "ios": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
+        "web": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
+        "android": { "label_type": 0, "label_until": null, "release_phase": "global_launch" }
+      },
+      "shelf_rank": 1
+    }
   },
   "uses": 0,
   "max_uses": 0,
-  "max_age": 0,
-  "temporary": false,
-  "created_at": "2023-02-11T19:55:33.221000+00:00"
+  "temporary": false
 }
 ```
 
@@ -286,7 +326,6 @@ Returns an [invite](#invite-object) object for the given code.
 | Field                     | Type      | Description                                                                 |
 | ------------------------- | --------- | --------------------------------------------------------------------------- |
 | with_counts?              | boolean   | Whether the invite should contain approximate member counts (default false) |
-| with_expiration?          | boolean   | Whether the invite should contain the expiration date (default true)        |
 | guild_scheduled_event_id? | snowflake | The guild scheduled event to include with the invite                        |
 
 <RouteHeader method="POST" url="/invites/{invite.code}" supportsOAuth2="guilds.join">
@@ -317,25 +356,19 @@ Deletes an invite. Requires the `MANAGE_CHANNELS` permission on the channel this
   Get Guild Invites
 </RouteHeader>
 
-Returns a list of [invite](#invite-object) objects (with [invite metadata](#invite-metadata-object)) for the guild. Requires the `MANAGE_GUILD` permission.
+Returns a list of [invite](#invite-object) objects for the guild. Requires the `MANAGE_GUILD` permission.
 
 <RouteHeader method="GET" url="/channels/{channel.id}/invites">
   Get Channel Invites
 </RouteHeader>
 
-Returns a list of [invite](#invite-object) objects (with [invite metadata](#invite-metadata-object)) for the channel. Only usable for guild channels and group DMs. Requires the `MANAGE_CHANNELS` permission if the channel is in a guild.
+Returns a list of [invite](#invite-object) objects for the channel. Only usable for guild channels and group DMs. Requires the `MANAGE_CHANNELS` permission if the channel is in a guild.
 
 <RouteHeader method="POST" url="/channels/{channel.id}/invites" supportsAuditReason>
   Create Channel Invite
 </RouteHeader>
 
-Creates a new [invite](#invite-object) object for the channel. Only usable for guild channels and group DMs. Requires the `CREATE_INSTANT_INVITE` permission if the channel is in a guild. Returns an [invite](#invite-object) object (with [invite metadata](#invite-metadata-object)). Fires an [Invite Create](/topics/gateway-events#invite-create) Gateway event if the channel is in a guild.
-
-<Alert type="info">
-
-All parameters to this endpoint are optional.
-
-</Alert>
+Creates a new [invite](#invite-object) object for the channel. Only usable for guild channels and group DMs. Requires the `CREATE_INSTANT_INVITE` permission if the channel is in a guild. Returns an [invite](#invite-object) object. Fires an [Invite Create](/topics/gateway-events#invite-create) Gateway event if the channel is in a guild.
 
 <Alert type="warn">
 
@@ -346,6 +379,12 @@ This does not work on managed Group DMs.
 <Alert type="warn">
 
 In the case of a guild with the instant invite operation disabled by Discord, this endpoint will return an unexpected 204 empty response.
+
+</Alert>
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
 
 </Alert>
 
