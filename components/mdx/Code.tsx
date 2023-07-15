@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import classNames from "classnames";
-import Highlight, { defaultProps, Prism } from "prism-react-renderer";
+import { Highlight, Prism } from "prism-react-renderer";
 import { DetailedHTMLProps, ReactNode } from "react";
 
 import CopyButton from "../Copy";
@@ -89,7 +89,7 @@ export default function Code({ children, className, metastring, file, ...props }
   return (
     <div className="code-block relative my-6 font-mono rounded-md">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight {...defaultProps} code={children} language={language}>
+      <Highlight code={children} language={language ?? "txt"}>
         {({
           className: blockClassName,
           tokens,
