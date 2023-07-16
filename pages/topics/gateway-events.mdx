@@ -81,6 +81,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Create Speed Test](#create-speed-test)                   | Create a voice speed test                                              |
 | [Delete Speed Test](#delete-speed-test)                   | Delete a voice speed test                                              |
 | [Request Last Messages](#request-last-messages)           | Request last messages for a guild's channels                           |
+| [Search recent Members](#search-recent-members)           | Similar to OP 8, used for Member Safety.                               |
 
 #### Identify
 
@@ -328,6 +329,82 @@ Used to request a private channel's pre-existing call data, created before the G
   "op": 12,
   "d": {
     "channel_id": "957057010334048288"
+  }
+}
+```
+
+#### Search Recent Members
+
+{/* TODO: improve description */}
+
+Used to search members for Member Safety. You can request up-to 1000 members per call
+
+The `continuation_token` is a member id calculated by the following algorithm
+
+```py
+from math import ceil
+from typing import TypedDict
+
+class State(TypedDict):
+  page_size: int
+  current_page: int
+  continuation_token: str | None
+
+search_chunk_size = 1000 # Max per call
+
+def calculate_new_continuation_token(guild_id: str, sorted_member_ids: list[str], state: State) -> str | None:
+  # `sorted_member_ids` is an array of member IDs sorted by their `joined_at` field (descending).
+  # You do not need to calculate a `continuation_token` if you haven't performed an initial Search Recent Members call,
+  # the array is empty until a `GUILD_MEMBERS_CHUNK` event recieved after a Search Recent Members call,
+  # sorting can be performed by converting the `joined_at` ISO 8601 timestamp in the guild member object
+  # to a UNIX timestamp and sorting the result in an descending numerical order.
+
+  member_count = get_guild_member_count(guild_id) or len(sorted_member_ids)
+  
+  sorted_member_size = len(sorted_member_ids) - 1
+  last_member_id = sorted_member_ids[sorted_member_size]
+
+  minimum_chunk_size = min(search_chunk_size, sorted_member_size)
+
+  current_index = state["current_page"] * state["page_size"]
+  new_continuation_token = sorted_member_ids[current_index - 1] or last_member_id
+
+  if not state["continuation_token"]:
+    return state["continuation_token"] if current_index < minimum_chunk_size else new_continuation_token
+
+  try:
+    previous_continuation_token_index = sorted_member_ids.index(state["continuation_token"])
+
+    if current_index > member_count:
+      return last_member_id
+
+    if (previous_continuation_token_index - current_index) >= 0:
+      return state["continuation_token"]
+
+    if ceil(current_index / minimum_chunk_size) > ceil(previous_continuation_token_index / minimum_chunk_size):
+      return new_continuation_token
+  except ValueError:
+    return new_continuation_token
+
+  return state["continuation_token"]
+```
+
+###### Search Recent Members Structure
+
+| Field              | Type       | Description                                 |
+| ------------------ | ---------- | ------------------------------------------- |
+| guild_id           | snowflake  | ID of guild to search                       |
+| query              | string     | A username of ID to search for              |
+| continuation_token | ?snowflake | Token/member ID to continue pagination from |
+
+###### Example Search Recent Members
+
+```json
+{
+  "op": 35,
+  "d": {
+    "guild_id": "957057010334048288",
+    "query": ""
   }
 }
 ```
