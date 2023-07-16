@@ -343,57 +343,12 @@ Used to search the recently joined members in a guild. Fires a [Guild Members Ch
 | ----------------------- | ---------- | ------------------------------------------- |
 | guild_id                | snowflake  | The ID of the guild to search members for |
 | query ^1^               | string     | String that the username/nickname starts with, or an empty string to return all members |
-| continuation_token ^2^  | ?snowflake | The calculated token to continue pagination from |
+| continuation_token ^2^  | ?snowflake | The member ID to continue pagination from |
 
-^1^ When a non-empty string the resultant `GUILD_MEMBERS_CHUNK` contains only one member.
-^2^ The `continuation_token` is a member id calculated by the following Python pseudocode:
+^1^ When a query is provided, results are limited to one member.
 
-```py
-from math import ceil
-from typing import TypedDict
+^2^ Pagination is based on the [`joined_at`](/resources/guild#guild-member-object) field descending. To paginate, you provide the member ID of the member that joined the earliest in the previously received [Guild Members Chunk](#guild-members-chunk).
 
-SEARCH_CHUNK_SIZE = 1000
-
-class State(TypedDict):
-  page_size: int
-  current_page: int
-  continuation_token: str | None
-
-def calculate_new_continuation_token(guild_id: str, sorted_member_ids: list[str], state: State) -> str | None:
-  # `sorted_member_ids` is an array of member IDs sorted by their `joined_at` field (descending)
-  # You do not need to calculate a `continuation_token` if you haven't performed an initial Search Recent Members call,
-  # the array is empty until a `GUILD_MEMBERS_CHUNK` event received after a Search Recent Members call,
-  # sorting can be performed by converting the `joined_at` ISO8601 timestamp in the guild member object
-  # to a UNIX timestamp and sorting the result in descending numerical order
-
-  member_count = get_guild_member_count(guild_id) or len(sorted_member_ids)
-
-  sorted_member_size = len(sorted_member_ids) - 1
-  last_member_id = sorted_member_ids[sorted_member_size]
-
-  minimum_chunk_size = min(SEARCH_CHUNK_SIZE, sorted_member_size)
-
-  current_index = state["current_page"] * state["page_size"]
-  new_continuation_token = sorted_member_ids[current_index - 1] or last_member_id
-
-  if not state["continuation_token"]:
-    return state["continuation_token"] if current_index < minimum_chunk_size else new_continuation_token
-
-  try:
-    previous_continuation_token_index = sorted_member_ids.index(state["continuation_token"])
-
-    if current_index > member_count:
-      return last_member_id
-
-    if (previous_continuation_token_index - current_index) >= 0:
-      return state["continuation_token"]
-
-    if ceil(current_index / minimum_chunk_size) > ceil(previous_continuation_token_index / minimum_chunk_size):
-      return new_continuation_token
-  except ValueError:
-    return new_continuation_token
-
-  return state["continuation_token"]
 
 ###### Example Search Recent Members
 
