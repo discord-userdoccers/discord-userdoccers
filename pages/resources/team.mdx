@@ -1,0 +1,264 @@
+# Team Resource
+
+Teams are groups of developers on Discord who want to collaborate on apps. On other platforms, these may be referred to as "organizations", "companies", or "teams". Discord went with the name Teams because it best encompassed all the awesome conglomerates of devs that work together to make awesome things on Discord. Also, none of you ever got picked for kickball in gym class, so now you get to be on a team.
+
+## What Do They Do
+
+Teams allow you and other Discord users to share access to apps. No more sharing login credentials in order to reset the token on a bot that your friend owns but you work on, or other such cases.
+
+For game developers, this means that you can get your engineers access to your app for credentials they may need, your marketing folks access to store page management, and your finance people access to sales and performance metrics.
+
+<Alert type="danger">
+
+For the initial release, Teams only support one kind of user: Admin. Admins have full access to all parts of an app _except_ for deleting the app and adding/removing users. That can only be done by the owner of the Team.
+
+</Alert>
+
+### Team Object
+
+###### Team Structure
+
+| Field                          | Type                                              | Description                                                       |
+| ------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------- |
+| id                             | snowflake                                         | The ID of the team                                                |
+| name                           | string                                            | The name of the team                                              |
+| icon ^1^                       | ?string                                           | The team's [icon hash](/reference#cdn-formatting)                 |
+| owner_user_id                  | snowflake                                         | The ID of the team's owner                                        |
+| members? ^2^                   | array[[team member](#team-members-object) object] | The members in the team                                           |
+| payout_account_status? ^3^     | integer                                           | The [status of the team's payout account](#payout-account-status) |
+| stripe_connect_account_id? ^4^ | string                                            | The ID of the team's Stripe Connect account                       |
+
+^1^ The default team icon uses the same images as [default avatars](/reference#cdn-formatting) and can be calculated using `team_id % 5`.
+
+^2^ Only provided in the [application](/resources/application#application-object) object.
+
+^3^ Only included when fetched from [Get Team](#get-team) or [Get Teams](#get-teams) with `include_payout_account_status` set to `true`.
+
+^4^ Only included when fetched from [Get Team](#get-team).
+
+###### Payout Account Status
+
+| Value | Name            | Description                                                       |
+| ----- | --------------- | ----------------------------------------------------------------- |
+| 1     | UNSUBMITTED     | The team has not submitted a payout account application           |
+| 2     | PENDING         | The team's payout account application is pending approval         |
+| 3     | ACTION_REQUIRED | The team's payout account requires action to receive payouts      |
+| 4     | ACTIVE          | The team's payout account is active and can receive payouts       |
+| 5     | BLOCKED         | The team's payout account is blocked and cannot receive payouts   |
+| 6     | SUSPENDED       | The team's payout account is suspended and cannot receive payouts |
+
+###### Example Team
+
+```json
+{
+  "id": "1110738998453837384",
+  "icon": null,
+  "name": "Power",
+  "owner_user_id": "852892297661906993",
+  "payout_account_status": 1
+}
+```
+
+### Team Member Object
+
+###### Team Member Structure
+
+| Field            | Type                                               | Description                                                  |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| user             | partial [user](/resources/user#user-object) object | The user this team member represents                         |
+| team_id          | snowflake                                          | The ID of the team the user is a member of                   |
+| membership_state | integer                                            | The user's [membership state](#membership-state) on the team |
+| permissions      | array[string]                                      | The permissions the member has; currently has no effect      |
+
+###### Membership State
+
+| Value | Name     | Description                      |
+| ----- | -------- | -------------------------------- |
+| 1     | INVITED  | The user is invited              |
+| 2     | ACCEPTED | The user has accepted the invite |
+
+##### Example Team Member
+
+```json
+{
+  "user": {
+    "id": "852892297661906993",
+    "username": "alien",
+    "global_name": "Alien",
+    "avatar": "05145cc5646fbcba277b6d5ea2030610",
+    "discriminator": "0",
+    "public_flags": 64,
+    "avatar_decoration": null
+  },
+  "team_id": "1110738998453870732",
+  "membership_state": 2,
+  "permissions": ["*"]
+}
+```
+
+### Company Object
+
+Represents a development/publishing company working on a game on Discord.
+
+###### Company Structure
+
+| Field | Type      | Description             |
+| ----- | --------- | ----------------------- |
+| id    | snowflake | The ID of the company   |
+| name  | string    | The name of the company |
+
+###### Example Company
+
+```json
+{
+  "id": "1058932127820939295",
+  "name": "AlienTec"
+}
+```
+
+## Endpoints
+
+<RouteHeader method="GET" url="/teams">
+  Get Teams
+</RouteHeader>
+
+Returns a list of [team](#team-object) objects that the current user is a member of.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### Query String Params
+
+| Field                          | Type    | Description                                                                                             |
+| ------------------------------ | ------- | ------------------------------------------------------------------------------------------------------- |
+| include_payout_account_status? | boolean | Whether to include team [payout account status](#payout-account-status) in the response (default false) |
+
+<RouteHeader method="POST" url="/teams">
+  Create Team
+</RouteHeader>
+
+Creates a new team. Returns a [team](#team-object) object on success.
+
+<Alert type="warn">
+
+This action requires the user to have MFA enabled.
+
+</Alert>
+
+###### JSON Params
+
+| Field | Type   | Description          |
+| ----- | ------ | -------------------- |
+| name  | string | The name of the team |
+
+<RouteHeader method="GET" url="/teams/{team.id}">
+  Get Team
+</RouteHeader>
+
+Returns a [team](#team-object) object for the given team ID.
+
+<RouteHeader method="PATCH" url="/teams/{team.id}" mfa>
+  Modify Team
+</RouteHeader>
+
+Modifies a team. Returns the updated [team](#team-object) object on success.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field          | Type                                 | Description                                            |
+| -------------- | ------------------------------------ | ------------------------------------------------------ |
+| name?          | string                               | The name of the team                                   |
+| icon?          | ?[image data](/reference#image-data) | The team's icon                                        |
+| owner_user_id? | snowflake                            | The ID of the team's owner (must be the current owner) |
+
+<RouteHeader method="POST" url="/teams/{team.id}/delete" mfa>
+  Delete Team
+</RouteHeader>
+
+Deletes a team permanently. User must be the owner of the team. Returns a 204 empty response on success.
+
+get team members
+
+<RouteHeader method="GET" url="/teams/{team.id}/members">
+  Get Team Members
+</RouteHeader>
+
+Returns a list of [team member](#team-member-object) objects for the given team ID.
+
+<RouteHeader method="POST" url="/teams/{team.id}/members" mfa>
+  Add Team Member
+</RouteHeader>
+
+Invites a user to the team. Returns a [team member](#team-member-object) object on success.
+
+###### JSON Params
+
+| Field             | Type    | Description                                              |
+| ----------------- | ------- | -------------------------------------------------------- |
+| username          | string  | The username of the user to invite                       |
+| discriminator ^1^ | ?string | The discriminator of the user to invite, if not migrated |
+
+^1^ `null` for migrated users. See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
+
+<RouteHeader method="PUT" url="/teams/{team.id}/members/{user.id}">
+  Modify Team Member
+</RouteHeader>
+
+Modifies a team member. Must be the owner of the team. Returns the updated [team member](#team-member-object) object on success.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field        | Type          | Description                                              |
+| ------------ | ------------- | -------------------------------------------------------- |
+| permissions? | array[string] | The permissions the member has (currently has no effect) |
+
+<RouteHeader method="DELETE" url="/teams/{team.id}/members/{user.id}">
+  Remove Team Member
+</RouteHeader>
+
+Removes a team member. Must be the owner of the team unless you are removing yourself. Returns a 204 empty response on success.
+
+<RouteHeader method="GET" url="/teams/{team.id}/applications">
+  Get Team Applications
+</RouteHeader>
+
+Returns a list of [application](/resources/application#application-object) objects for the given team ID.
+
+<RouteHeader method="GET" url="/companies">
+  Search Companies
+</RouteHeader>
+
+Returns a list of [company](#company-object) objects that match the given query. If no results are found, returns a 204 empty response.
+
+###### Query String Params
+
+| Field  | Type   | Description                          |
+| ------ | ------ | ------------------------------------ |
+| query? | string | Query to match company names against |
+
+<RouteHeader method="POST" url="/teams/{team.id}/companies">
+  Create Company
+</RouteHeader>
+
+Creates a new company under this team. Returns a [company](#company-object) object on success.
+
+###### JSON Params
+
+| Field | Type   | Description             |
+| ----- | ------ | ----------------------- |
+| name  | string | The name of the company |
