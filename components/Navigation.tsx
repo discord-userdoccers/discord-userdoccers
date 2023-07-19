@@ -455,6 +455,7 @@ export default function Navigation() {
             <Fragment>
               <NavigationSubLink href="/resources/team#team-object">Team Object</NavigationSubLink>
               <NavigationSubLink href="/resources/team#team-member-object">Team Member Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/team#team-payout-object">Team Payout Object</NavigationSubLink>
               <NavigationSubLink href="/resources/team#company-object">Company Object</NavigationSubLink>
               <NavigationSubLink href="/resources/team#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
