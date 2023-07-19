@@ -453,7 +453,6 @@ export default function Navigation() {
           href="/resources/team"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/resources/team#what-do-they-do">What Do They Do</NavigationSubLink>
               <NavigationSubLink href="/resources/team#team-object">Team Object</NavigationSubLink>
               <NavigationSubLink href="/resources/team#team-member-object">Team Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/team#company-object">Company Object</NavigationSubLink>
