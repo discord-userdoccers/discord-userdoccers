@@ -30,7 +30,7 @@ interface RouteHeaderProps {
   supportsAuditReason?: boolean;
   unauthenticated?: boolean;
   mfa?: boolean;
-  supportsOAuth2?: string | null;
+  supportsOAuth2?: string | boolean;
   deprecated?: boolean;
 }
 
@@ -73,18 +73,18 @@ export default function RouteHeader({
             tooltip="Does not require authentication"
           />
         ) : null}
-        {supportsOAuth2 !== undefined ? (
+        {supportsOAuth2 ? (
           <Badge
             href="/topics/oauth2"
             name="OAuth2"
-            tooltip={`Supports OAuth2 for authentication${supportsOAuth2 ? ` with the "${supportsOAuth2}" scope` : ""}`}
+            tooltip={`Supports OAuth2 for authentication${supportsOAuth2 !== true ? ` with the "${supportsOAuth2}" scope` : ""}`}
           />
         ) : null}
         {deprecated ? (
           <Badge
             href="/reference#deprecated-endpoint"
             name="Deprecated"
-            tooltip="This endpoint is still active but should be avoided as it is considered deprecated."
+            tooltip="This endpoint is still active but should be avoided as it is considered deprecated"
           />
         ) : null}
       </div>
