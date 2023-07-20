@@ -166,8 +166,14 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/application#application-install-params-object">
                 Application Install Params Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-proxy-config-object">
+                Application Proxy Config Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/application#embedded-activity-config-object">
                 Embedded Activity Config Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-asset-object">
+                Application Asset Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/application#application-role-connection-object">
                 Application Role Connection Object

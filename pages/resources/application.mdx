@@ -14,7 +14,7 @@
 | type                                         | ?integer                                                                | The [type of the application](#application-type), if any                                                                                                                             |
 | flags                                        | integer                                                                 | the [application's flags](/resources/application#application-flags) (including private)                                                                                              |
 | primary_sku_id? ^1^                          | snowflake                                                               | The ID of the application's primary SKU (game, application subscription, etc.)                                                                                                       |
-| verify_key                                   | string                                                                  | The hex encoded application public key for verification in interactions and the GameSDK's [GetTicket](/game-sdk/applications#getticket)                                              |
+| verify_key                                   | string                                                                  | The hex encoded client public key for verification in interactions and the GameSDK's [GetTicket](/game-sdk/applications#getticket)                                                   |
 | guild_id?                                    | snowflake                                                               | The ID of the guild linked to the application                                                                                                                                        |
 | eula_id?                                     | snowflake                                                               | The ID of the [EULA](/resources/store#eula-object) required to play the application's game                                                                                           |
 | slug? ^1^                                    | string                                                                  | The URL slug that links to the primary store page of the application                                                                                                                 |
@@ -82,7 +82,7 @@ Partial applications may have any combination of fields, depending on the contex
 | type                                         | ?integer                                                                | The [type of the application](#application-type), if any                                                                                                                        |
 | flags                                        | integer                                                                 | the [application's flags](/resources/application#application-flags) (including private)                                                                                         |
 | primary_sku_id? ^1^                          | snowflake                                                               | The ID of the application's primary SKU (game, application subscription, etc.)                                                                                                  |
-| verify_key                                   | string                                                                  | The hex encoded application public key for verification in interactions and the GameSDK's [GetTicket](/game-sdk/applications#getticket)                                         |
+| verify_key                                   | string                                                                  | The hex encoded client public key for verification in interactions and the GameSDK's [GetTicket](/game-sdk/applications#getticket)                                              |
 | guild_id?                                    | snowflake                                                               | The ID of the guild linked to the application                                                                                                                                   |
 | eula_id?                                     | snowflake                                                               | The ID of the [EULA](/resources/store#eula-object) required to play the application's game                                                                                      |
 | slug? ^1^                                    | string                                                                  | The URL slug that links to the primary store page of the application                                                                                                            |
@@ -391,6 +391,34 @@ Partial applications may have any combination of fields, depending on the contex
 }
 ```
 
+### Application Proxy Config Object
+
+###### Application Proxy Config Structure
+
+| Field  | Type                                                                            | Description                  |
+| ------ | ------------------------------------------------------------------------------- | ---------------------------- |
+| urlMap | array[[application proxy mapping](#application-proxy-mapping-structure) object] | The URLs mapped to the proxy |
+
+###### Application Proxy Mapping Structure
+
+| Field  | Type   | Description             |
+| ------ | ------ | ----------------------- |
+| prefix | string | The prefix on the proxy |
+| target | string | The domain to proxy     |
+
+###### Example Application Proxy Config
+
+```json
+{
+  "urlMap": [
+    {
+      "prefix": "/api",
+      "target": "api.example.com"
+    }
+  ]
+}
+```
+
 ### Embedded Activity Config Object
 
 ###### Embedded Activity Config Structure
@@ -472,6 +500,33 @@ Partial applications may have any combination of fields, depending on the contex
   },
   "shelf_rank": 1,
   "application_id": "880218394199220334"
+}
+```
+
+### Application Asset Object
+
+###### Application Asset Structure
+
+| Field | Type    | Description                                      |
+| ----- | ------- | ------------------------------------------------ |
+| id    | string  | The ID of the asset                              |
+| type  | integer | The [type of the asset](#application-asset-type) |
+| name  | string  | The name of the asset                            |
+
+###### Application Asset Type
+
+| Value | Name | Description |
+| ----- | ---- | ----------- |
+| 1     | ONE  | Unknown     |
+| 2     | TWO  | Unknown     |
+
+###### Example Application Asset
+
+```json
+{
+  "id": "1131721726514954381",
+  "type": 1,
+  "name": "alien"
 }
 ```
 
@@ -574,7 +629,7 @@ Creates a new application. Returns an [application](#application-object) object 
   Get Application
 </RouteHeader>
 
-Returns an [application](#application-object) object for the given ID. You must own the application (or be a part of the team that owns it) to get this information.
+Returns an [application](#application-object) object for the given ID. User must be the owner of the application or member of the current team.
 
 <RouteHeader method="GET" url="/applications/@me">
   Get Current Application
@@ -592,7 +647,7 @@ This endpoint is not usable by user accounts.
   Modify Application
 </RouteHeader>
 
-Modifies an application. Returns the updated [application](#application-object) object on success.
+Modifies an application. User must be the owner of the application or member of the current team. Returns the updated [application](#application-object) object on success.
 
 <Alert type="info">
 
@@ -673,7 +728,7 @@ All parameters to this endpoint are optional.
   Delete Application
 </RouteHeader>
 
-Deletes an application permanently. User must be the owner of the application or team. Returns a 204 empty response on success.
+Deletes an application permanently. User must be the owner of the application or current team. Returns a 204 empty response on success.
 
 <RouteHeader method="POST" url="/applications/{application.id}/transfer" mfa>
   Transfer Application
@@ -687,11 +742,190 @@ Transfers ownership of an application to a [team](/resources/team). User must be
 | ------- | --------- | ------------------------------------------- |
 | team_id | snowflake | The ID of the team to transfer ownership to |
 
+<RouteHeader method="POST" url="/applications/{application.id}/reset" mfa>
+  Reset Application Secret
+</RouteHeader>
+
+Resets the application's client secret. This revokes all previous secrets and returns a new secret. User must be the owner of the application or member of the current team.
+
+###### Response Body
+
+| Field  | Type   | Description                              |
+| ------ | ------ | ---------------------------------------- |
+| secret | string | The client secret key of the application |
+
+###### Example Response
+
+```json
+{
+  "secret": "937it3ow87i4ery69876wqire"
+}
+```
+
+<RouteHeader method="POST" url="/applications/{application.id}/bot" mfa deprecated>
+  Create Application Bot
+</RouteHeader>
+
+Creates and attaches a bot to the given application ID. User must be the owner of the application or member of the current team.
+
+<Alert type="info">
+
+All newly-created applications have a bot attached by default, so this endpoint is only useful for older applications.
+
+</Alert>
+
+###### Response Body
+
+| Field | Type    | Description                                      |
+| ----- | ------- | ------------------------------------------------ |
+| token | ?string | The token of the bot, if a bot was newly created |
+
+###### Example Response
+
+```json
+{
+  "token": "NzIyNDUwMzAzOTE5NTg3NDA5.GRj2Bt.cPbrvvjxglZXK4dTcIPDMvfq0LxJcilsIYW01A"
+}
+```
+
+<RouteHeader method="PATCH" url="/applications/{application.id}/bot">
+  Modify Application Bot
+</RouteHeader>
+
+Modifies the application's bot. User must be the owner of the application or member of the current team. Returns the updated [user](/resources/user#user-object) object on success.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field     | Type                                 | Description                           |
+| --------- | ------------------------------------ | ------------------------------------- |
+| username? | string                               | The user's username (2-32 characters) |
+| avatar?   | ?[image data](/reference#image-data) | The user's avatar                     |
+
+<RouteHeader method="POST" url="/applications/{application.id}/bot/reset" mfa>
+  Reset Application Bot Token
+</RouteHeader>
+
+Resets the application's bot token. This revokes all previous tokens and returns a new token. User must be the owner of the application or member of the current team.
+
+###### Response Body
+
+| Field | Type   | Description          |
+| ----- | ------ | -------------------- |
+| token | string | The token of the bot |
+
+<RouteHeader method="GET" url="/applications/{application.id}/discoverability-state">
+  Get Application Discoverability State
+</RouteHeader>
+
+Returns information about the application's eligibility for application directory. User must be the owner of the application or member of the current team.
+
+###### Response Body
+
+| Field                       | Type                                                                                               | Description                                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| discoverability_state       | integer                                                                                            | The current application directory [discoverability state](#application-discoverability-state) of the application    |
+| discovery_eligibility_flags | integer                                                                                            | The current application directory [eligibility flags](#application-discovery-eligibility-flags) for the application |
+| bad_commands                | array[[application command](/interactions/application-commands#application-command-object) object] | Not safe for work commands that are not allowed in the application directory                                        |
+
+<RouteHeader method="GET" url="/applications/{application.id}/embedded-activity-config">
+  Get Application Embedded Activity Config
+</RouteHeader>
+
+Returns the [embedded activity config](#embedded-activity-config-object) object for the given application ID. User must be the owner of the application or member of the current team.
+
+<RouteHeader method="PATCH" url="/applications/{application.id}/embedded-activity-config">
+  Modify Application Embedded Activity Config
+</RouteHeader>
+
+Modifies the embedded activity config for the given application ID. User must be the owner of the application or member of the current team. Returns the updated [embedded activity config](#embedded-activity-config-object) object on success.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field                                   | Type                                                                                               | Description                                                                                                      |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| activity_preview_video_asset_id?        | ?snowflake                                                                                         | The ID of the application asset to preview the activity with                                                     |
+| supported_platforms?                    | ?array[string]                                                                                     | The [platforms this activity is supported on](#embedded-activity-platform-type)                                  |
+| default_orientation_lock_state?         | integer                                                                                            | The default [orientation lock state](#embedded-activity-orientation-lock-state-type) for the activity on mobile  |
+| tablet_default_orientation_lock_state?  | integer                                                                                            | The default [orientation lock state](#embedded-activity-orientation-lock-state-type) for the activity on tablets |
+| requires_age_gate?                      | boolean                                                                                            | Whether the activity is age gated                                                                                |
+| free_period_starts_at? **(deprecated)** | ?ISO8601 timestamp                                                                                 | When the current free period for the activity starts, if any                                                     |
+| free_period_ends_at? **(deprecated)**   | ?ISO8601 timestamp                                                                                 | When the current free period for the activity ends, if any                                                       |
+| client_platform_config?                 | map[string, [embedded activity platform config](#embedded-activity-platform-config-object) object] | The release configuration for the activity on each [platform](#embedded-activity-platform-type)                  |
+| shelf_rank?                             | integer                                                                                            | The rank of the activity in the activity shelf sort order                                                        |
+
+<RouteHeader method="GET" url="/applications/{application.id}/proxy-config">
+  Get Application Proxy Config
+</RouteHeader>
+
+Returns the [application proxy config](#application-proxy-config) object for the given application ID. User must be the owner of the application or member of the current team.
+
+<RouteHeader method="POST" url="/applications/{application.id}/proxy-config">
+  Modify Application Proxy Config
+</RouteHeader>
+
+Replaces the proxy config for the given application ID. User must be the owner of the application or member of the current team. Returns the updated [application proxy config](#application-proxy-config-object) object on success.
+
+<RouteHeader method="GET" url="/oauth2/applications/{application.id}/assets" unauthenticated>
+  Get Application Assets
+</RouteHeader>
+
+Returns a list of [application assets](/resources/application#application-asset-object) for the given application ID.
+
+<RouteHeader method="POST" url="/oauth2/applications/{application.id}/assets">
+  Create Application Asset
+</RouteHeader>
+
+Creates a new application asset for the given application ID. User must be the owner of the application or member of the current team. Returns an [application asset](/resources/application#application-asset-object) object on success.
+
+<Alert type="info">
+
+Due to caching, it may take a while for the asset to be retrievable after creation.
+
+</Alert>
+
+###### JSON Params
+
+| Field | Type                                | Description                                      |
+| ----- | ----------------------------------- | ------------------------------------------------ |
+| name  | string                              | The name of the asset                            |
+| type  | integer                             | The [type of the asset](#application-asset-type) |
+| image | [image data](/reference#image-data) | The asset's image                                |
+
+<RouteHeader method="DELETE" url="/oauth2/applications/{application.id}/assets/{asset.id}">
+  Delete Application Asset
+</RouteHeader>
+
+Deletes an application asset permanently. User must be the owner of the application or member of the current team. Returns a 204 empty response on success.
+
+<RouteHeader method="GET" url="/applications/detectable">
+  Get Detectable Applications
+</RouteHeader>
+
+Returns a list of partial [application](#application-object) objects representing games that can be detected by Discord for rich presence.
+
+<Alert type="info">
+
+Because of the size of this list, this endpoint's response headers will include an [`ETag` header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag). This can be used in conjunction with the [`If-None-Match` header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match) to check if the list has changed since the last request, avoiding unnecessary large data transfer.
+
+</Alert>
+
 <RouteHeader method="GET" url="/applications/public">
   Get Partial Applications
 </RouteHeader>
 
-Returns a list of [partial application](#application-object) objects for the given IDs.
+Returns a list of partial [application](#application-object) objects for the given IDs.
 
 ###### Query String Params
 
