@@ -77,7 +77,9 @@ export default function RouteHeader({
           <Badge
             href="/topics/oauth2"
             name="OAuth2"
-            tooltip={`Supports OAuth2 for authentication${supportsOAuth2 !== true ? ` with the "${supportsOAuth2}" scope` : ""}`}
+            tooltip={`Supports OAuth2 for authentication${
+              supportsOAuth2 !== true ? ` with the "${supportsOAuth2}" scope` : ""
+            }`}
           />
         ) : null}
         {deprecated ? (
