@@ -365,6 +365,9 @@ export default function Navigation() {
             <Fragment>
               <NavigationSubLink href="/resources/invite#temporary-invites">Temporary Invites</NavigationSubLink>
               <NavigationSubLink href="/resources/invite#invite-object">Invite Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/invite#invite-metadata-object">
+                Invite Metadata Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/invite#invite-guild-object">Invite Guild Object</NavigationSubLink>
               <NavigationSubLink href="/resources/invite#invite-channel-object">
                 Invite Channel Object
