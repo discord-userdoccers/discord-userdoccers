@@ -157,8 +157,26 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/application#application-object">Application Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/application#install-params-object">
-                Install Params Object
+              <NavigationSubLink href="/resources/application#application-executable-object">
+                Application Executable Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-sku-object">
+                Application SKU Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-install-params-object">
+                Application Install Params Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-proxy-config-object">
+                Application Proxy Config Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#embedded-activity-config-object">
+                Embedded Activity Config Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-asset-object">
+                Application Asset Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/application#application-role-connection-object">
+                Application Role Connection Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/application#application-role-connection-metadata-object">
                 Application Role Connection Metadata Object
@@ -441,6 +459,20 @@ export default function Navigation() {
           Sticker
         </NavigationLink>
         <NavigationLink
+          href="/resources/team"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/team#team-object">Team Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/team#team-member-object">Team Member Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/team#team-payout-object">Team Payout Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/team#company-object">Company Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/team#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Teams
+        </NavigationLink>
+        <NavigationLink
           href="/resources/user"
           subLinks={
             <Fragment>
@@ -455,9 +487,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#harvest-object">Harvest Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#connection-object">Connection Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#relationship-object">Relationship Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/user#application-role-connection-object">
-                Application Role Connection Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/user#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
@@ -637,20 +666,6 @@ export default function Navigation() {
           }
         >
           Rate Limits
-        </NavigationLink>
-        <NavigationLink
-          href="/topics/teams"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/topics/teams#what-do-they-do">What Do They Do</NavigationSubLink>
-              <NavigationSubLink href="/topics/teams#how-do-i-make-one">How Do I Make One</NavigationSubLink>
-              <NavigationSubLink href="/topics/teams#apps-on-teams">Apps on Teams</NavigationSubLink>
-              <NavigationSubLink href="/topics/teams#what-next">What Next</NavigationSubLink>
-              <NavigationSubLink href="/topics/teams#data-models">Data Models</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Teams
         </NavigationLink>
         <NavigationLink
           href="/topics/threads"
