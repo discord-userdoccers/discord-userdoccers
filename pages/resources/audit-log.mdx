@@ -47,20 +47,23 @@ Users can specify why an administrative action is being taken by passing an `X-A
 
 <Alert type="warn">
 
-For `APPLICATION_COMMAND_PERMISSION_UPDATE` events, the `target_id` is the command ID or the app ID since the `changes` array represents the entire `permissions` property on the [guild permissions](/interactions/application-commands#guild-application-command-permissions-structure) object.
+For `APPLICATION_COMMAND_PERMISSION_UPDATE` events, the `target_id` is the command ID or the application ID since the `changes` array represents the entire `permissions` property on the [guild permissions](/interactions/application-commands#guild-application-command-permissions-structure) object.
 
 </Alert>
 
 ###### Audit Log Events
 
-The table below lists audit log events and values (the `action_type` field) that your app may receive.
+The table below lists audit log events and values (the `action_type` field) that you may receive.
 
 The **Object Changed** column notes which object's values may be included in the entry. Though there are exceptions, possible keys in the `changes` array typically correspond to the object's fields. The descriptions and types for those fields can be found in the linked documentation for the object.
 
-If no object is noted, there won't be a `changes` array in the entry, though other fields like the `target_id` still exist and many have fields in the [`options` array](/resources/AUDIT_LOG/audit-log-entry-object-optional-audit-entry-info).
+If no object is noted, there won't be a `changes` array in the entry, though other fields like the `target_id` still exist and many have fields in the [`options` array](#optional-audit-entry-info).
 
-> info
-> You should assume that your app may run into any field for the changed object, though none are guaranteed to be present. In most cases only a subset of the object's fields will be in the `changes` array.
+<Alert type="info">
+
+You should assume that you may run into any field for the changed object, though none are guaranteed to be present. In most cases only a subset of the object's fields will be in the `changes` array.
+
+</Alert>
 
 | Event                                       | Value | Description                                               | Object Changed                                                                                                                                |
 | ------------------------------------------- | ----- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -135,7 +138,7 @@ If no object is noted, there won't be a `changes` array in the entry, though oth
 | count?                             | string    | Number of entities that were targeted                                                                      | `MESSAGE_DELETE`, `MESSAGE_BULK_DELETE`, `MEMBER_DISCONNECT`, `MEMBER_MOVE`                                                                          |
 | delete_member_days?                | string    | Number of days after which inactive members were kicked                                                    | `MEMBER_PRUNE`                                                                                                                                       |
 | id?                                | snowflake | The ID of the overwritten entity                                                                           | `CHANNEL_OVERWRITE_CREATE`, `CHANNEL_OVERWRITE_UPDATE`, `CHANNEL_OVERWRITE_DELETE`                                                                   |
-| integration_type                   | string    | The [type of integration](/resources/integration#integration-type) which performed the action              | `MEMBER_KICK`, `MEMBER_ROLE_UPDATE`                                                                                                                  |
+| integration_type?                  | string    | The [type of integration](/resources/integration#integration-type) which performed the action              | `MEMBER_KICK`, `MEMBER_ROLE_UPDATE`                                                                                                                  |
 | members_removed?                   | string    | Number of members removed by the prune                                                                     | `MEMBER_PRUNE`                                                                                                                                       |
 | message_id?                        | snowflake | The ID of the message that was targeted                                                                    | `MESSAGE_PIN`, `MESSAGE_UNPIN`                                                                                                                       |
 | role_name?                         | string    | The name of the role (only present if type is "0")                                                         | `CHANNEL_OVERWRITE_CREATE`, `CHANNEL_OVERWRITE_UPDATE`, `CHANNEL_OVERWRITE_DELETE`                                                                   |
@@ -157,22 +160,29 @@ If `new_value` is not present in the change object while `old_value` is, it indi
 
 </Alert>
 
-| Field      | Type                                | Description                                                                                                                        |
-| ---------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| new_value? | mixed (matches object field's type) | New value of the key                                                                                                               |
-| old_value? | mixed (matches object field's type) | Old value of the key                                                                                                               |
-| key        | string                              | Name of the changed entity, with a few [exceptions](#DOCS_RESOURCES_AUDIT_LOG/audit-log-change-object-audit-log-change-exceptions) |
+| Field      | Type                                | Description                                                                       |
+| ---------- | ----------------------------------- | --------------------------------------------------------------------------------- |
+| new_value? | mixed (matches object field's type) | New value of the key                                                              |
+| old_value? | mixed (matches object field's type) | Old value of the key                                                              |
+| key        | string                              | Name of the changed entity, with a few [exceptions](#audit-log-change-exceptions) |
 
 ###### Audit Log Change Exceptions
 
 For most objects, the change keys may be any field on the changed object. The following table details the exceptions to this pattern.
 
-| Object Changed                                                                                            | Change Key Exceptions                                          | Change Object Exceptions                                                                                                                                                                                                                                    |
-| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Command Permission](/interactions/application-commands#application-command-permissions-structure)        | A snowflake is used as the key                                 | The `changes` array contains objects with a `key` field representing the entity whose command was affected (role, channel, or user ID), a previous permissions object (with an `old_value` key), and an updated permissions object (with a `new_value` key) |
-| [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) | Additional `channel_id` key (instead of object's `channel.id`) |                                                                                                                                                                                                                                                             |
-| [Partial Role](/topics/permissions#role-object)                                                           | `$add` and `$remove` as keys                                   | `new_value` is an array of objects that contain the role `id` and `name`                                                                                                                                                                                    |
-| [Webhook](/resources/webhook#webhook-object)                                                              | `avatar_hash` key (instead of `avatar`)                        |                                                                                                                                                                                                                                                             |
+<Alert type="info">
+
+In addition to the exceptions below, the `key` field may be appended with `_hash` when the change is related to a CDN asset. For example, `banner_hash` is present instead of `banner`.
+
+</Alert>
+
+| Object Changed                                                                                            | Change Key Exceptions                                                                                                                             | Change Object Exceptions                                                                                                                                                                                                                                    |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                            | `$add_keyword_filter`, `$remove_keyword_filter`, `$add_regex_patterns`, `$remove_regex_patterns`, `$add_allow_list`, `$remove_allow_list` as keys | `new_value` and `old_value` are arrays of strings representing the keywords, regex patterns, or allow list items that were added or removed                                                                                                                 |
+| [Command Permission](/interactions/application-commands#application-command-permissions-structure)        | A snowflake is used as the key                                                                                                                    | The `changes` array contains objects with a `key` field representing the entity whose command was affected (role, channel, or user ID), a previous permissions object (with an `old_value` key), and an updated permissions object (with a `new_value` key) |
+| [Guild Member](/resources/guild#guild-member-object)                                                      | Additional `bypasses_verification` key (instead of object's `flags`)                                                                              | `new_value` and `old_value` are booleans representing whether the member bypasses verification                                                                                                                                                              |
+| [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) | Additional `channel_id` and `inviter_id` keys (instead of object's `channel.id` and `inviter.id`)                                                 |                                                                                                                                                                                                                                                             |
+| [Partial Role](/topics/permissions#role-object)                                                           | `$add` and `$remove` as keys                                                                                                                      | `new_value` is an array of objects that contain the role `id` and `name`                                                                                                                                                                                    |
 
 ### Partial Integration Object
 
