@@ -45,7 +45,7 @@ Pomelo will rollout to users over time rather than all at once. The value of a s
 
 Users can only migrate their account to pomelo if they are in the rollout. A user is in the rollout if they have `pomelo` in the [`disclose` field on the Ready Supplemental event](/topics/gateway-events#ready-supplemental) and are [in the `2023-03_pomelo` user experiment](/topics/experiments#user-experiments).
 
-To migrate, users should first [check if the username they want is available](#get-pomelo-eligibility), and then [migrate their account to that username](#pomelo-user). If the username they want is not available, they can [get a list of suggested usernames](#get-pomelo-suggestions) to choose from.
+To migrate, users should first [check if the username they want is available](#get-pomelo-eligibility), and then [migrate their account to that username](#create-pomelo-migration). If the username they want is not available, they can [get a list of suggested usernames](#get-pomelo-suggestions) to choose from.
 
 #### Display Names
 
@@ -177,7 +177,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 7  | HYPESQUAD_ONLINE_HOUSE_2   | HypeSquad Brilliance                                                                        | Yes    |
 | 1 << 8  | HYPESQUAD_ONLINE_HOUSE_3   | HypeSquad Balance                                                                           | Yes    |
 | 1 << 9  | PREMIUM_EARLY_SUPPORTER    | Early Premium (Nitro) Supporter                                                             | Yes    |
-| 1 << 10 | TEAM_PSEUDO_USER           | User is a [Team](#topics/teams)                                                             | Yes    |
+| 1 << 10 | TEAM_PSEUDO_USER           | User is a [Team](/resources/team)                                                           | Yes    |
 | 1 << 11 | INTERNAL_APPLICATION       | User has a pending partner or bot verification application                                  | No     |
 | 1 << 12 | SYSTEM                     | User is a system user (i.e. official Discord account)                                       | Yes    |
 | 1 << 13 | HAS_UNREAD_URGENT_MESSAGES | User has unread urgent system messages; an urgent message is one sent from Trust and Safety | No     |
@@ -325,23 +325,23 @@ The connection object that the user has attached.
 
 ###### Connection Structure
 
-| Field               | Type                                                                    | Description                                                             |
-| ------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| id                  | string                                                                  | ID of the connection account                                            |
-| type                | string                                                                  | The [type](#connection-type) of the connection                          |
-| name                | string                                                                  | The username of the connection account                                  |
-| verified            | boolean                                                                 | Whether the connection is verified                                      |
-| metadata?           | object                                                                  | Service-specific metadata about the connection                          |
-| metadata_visibility | integer                                                                 | [Visibility](#visibility-type) of the connection's metadata             |
-| revoked             | boolean                                                                 | whether the connection is revoked                                       |
-| integrations        | array[partial [guild integration](/resources/guild#integration-object)] | The guild integrations attached to the connection                       |
-| friend_sync         | boolean                                                                 | Whether friend sync is enabled for this connection                      |
-| show_activity       | boolean                                                                 | Whether activities related to this connection will be shown in presence |
-| two_way_link        | boolean                                                                 | Whether this connection has a corresponding third party OAuth2 token    |
-| visibility          | integer                                                                 | [Visibility](#visibility-type) of the connection                        |
-| access_token? ^1^   | string                                                                  | The access token for the connection account                             |
+| Field               | Type                                                                          | Description                                                             |
+| ------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| id                  | string                                                                        | ID of the connection account                                            |
+| type                | string                                                                        | The [type](#connection-type) of the connection                          |
+| name                | string                                                                        | The username of the connection account                                  |
+| verified            | boolean                                                                       | Whether the connection is verified                                      |
+| metadata?           | object                                                                        | Service-specific metadata about the connection                          |
+| metadata_visibility | integer                                                                       | [Visibility](#visibility-type) of the connection's metadata             |
+| revoked             | boolean                                                                       | whether the connection is revoked                                       |
+| integrations        | array[partial [guild integration](/resources/integration#integration-object)] | The guild integrations attached to the connection                       |
+| friend_sync         | boolean                                                                       | Whether friend sync is enabled for this connection                      |
+| show_activity       | boolean                                                                       | Whether activities related to this connection will be shown in presence |
+| two_way_link        | boolean                                                                       | Whether this connection has a corresponding third party OAuth2 token    |
+| visibility          | integer                                                                       | [Visibility](#visibility-type) of the connection                        |
+| access_token? ^1^   | string                                                                        | The access token for the connection account                             |
 
-^1^ Not included when [fetching a user's connections](#get-current-users) via OAuth2.
+^1^ Not included when [fetching a user's connections](#get-user-connections) via OAuth2.
 
 ###### Example Connection
 
@@ -369,14 +369,14 @@ The connection object that the user has attached.
 
 ###### Partial Connection Structure
 
-| Field         | Type                                                                    | Description                                       |
-| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------- |
-| id            | string                                                                  | ID of the connection account                      |
-| type          | string                                                                  | The [type](#connection-type) of the connection    |
-| name          | string                                                                  | The username of the connection account            |
-| verified      | boolean                                                                 | Whether the connection is verified                |
-| metadata?     | object                                                                  | Service-specific metadata about the connection    |
-| integrations? | array[partial [guild integration](/resources/guild#integration-object)] | The guild integrations attached to the connection |
+| Field         | Type                                                                          | Description                                       |
+| ------------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| id            | string                                                                        | ID of the connection account                      |
+| type          | string                                                                        | The [type](#connection-type) of the connection    |
+| name          | string                                                                        | The username of the connection account            |
+| verified      | boolean                                                                       | Whether the connection is verified                |
+| metadata?     | object                                                                        | Service-specific metadata about the connection    |
+| integrations? | array[partial [guild integration](/resources/integration#integration-object)] | The guild integrations attached to the connection |
 
 ###### Example Partial Connection
 
@@ -573,22 +573,22 @@ All parameters to this endpoint are optional.
 
 ###### Response Body
 
-| Field                         | Type                                                                                            | Description                                                                                                            |
-| ----------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| user                          | partial [user](#user-object) object                                                             | The user object with an extra `bio` key denoting the user's bio                                                        |
-| user_profile ^1^              | [profile metadata](#profile-metadata-object) object                                             | The user's profile metadata                                                                                            |
-| badges                        | array[[badge](#badge-object)]                                                                   | The user's profile badges                                                                                              |
-| guild_member? ^1^             | [guild member](#guild-member-object) object                                                     | The guild member in the guild specified, with extra `bio` and `banner` keys denoting the guild member's bio and banner |
-| guild_member_profile? ^1^     | [profile metadata](#profile-metadata-object) object                                             | The guild member's profile in the guild specified                                                                      |
-| guild_badges                  | array[[badge](#badge-object)]                                                                   | The guild member's guild-specific profile badges                                                                       |
-| legacy_username ^2^           | ?string                                                                                         | The user's pre-migration `username#discriminator`, if applicable and shown                                             |
-| mutual_guilds?                | array[[mutual guild](#mutual-guild-structure)]                                                  | The mutual guilds of the user with the current user                                                                    |
-| mutual_friends_count?         | integer                                                                                         | The number of mutual friends the user has with the current user                                                        |
-| connected_accounts            | array[partial [connected account](#connected-account-object)]                                   | The user's public connected accounts                                                                                   |
-| application_role_connections? | array[[application role connection](/resources/application#application-role-connection-object)] | The user's application role connections for the role specified                                                         |
-| premium_type ^1^              | ?integer                                                                                        | The user's [premium type](#premium-type)                                                                               |
-| premium_since ^1^             | ?ISO8601 timestamp                                                                              | The date the user's premium (Nitro) subscription started                                                               |
-| premium_guild_since ^1^       | ?ISO8601 timestamp                                                                              | The date the user's premium guild (boosting) subscription started                                                      |
+| Field                         | Type                                                                                                   | Description                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| user                          | partial [user](#user-object) object                                                                    | The user object with an extra `bio` key denoting the user's bio                                                        |
+| user_profile ^1^              | [profile metadata](#profile-metadata-object) object                                                    | The user's profile metadata                                                                                            |
+| badges                        | array[[profile badge](#profile-badge-structure) object]                                                | The user's profile badges                                                                                              |
+| guild_member? ^1^             | [guild member](/resources/guild#guild-member-object) object                                            | The guild member in the guild specified, with extra `bio` and `banner` keys denoting the guild member's bio and banner |
+| guild_member_profile? ^1^     | [profile metadata](#profile-metadata-object) object                                                    | The guild member's profile in the guild specified                                                                      |
+| guild_badges                  | array[[profile badge](#profile-badge-structure) objcet]                                                | The guild member's guild-specific profile badges                                                                       |
+| legacy_username ^2^           | ?string                                                                                                | The user's pre-migration `username#discriminator`, if applicable and shown                                             |
+| mutual_guilds?                | array[[mutual guild](#mutual-guild-structure) object]                                                  | The mutual guilds of the user with the current user                                                                    |
+| mutual_friends_count?         | integer                                                                                                | The number of mutual friends the user has with the current user                                                        |
+| connected_accounts            | array[partial [connection](#connection-object) object]                                                 | The user's public connected accounts                                                                                   |
+| application_role_connections? | array[[application role connection](/resources/application#application-role-connection-object) object] | The user's application role connections for the role specified                                                         |
+| premium_type ^1^              | ?integer                                                                                               | The user's [premium type](#premium-type)                                                                               |
+| premium_since ^1^             | ?ISO8601 timestamp                                                                                     | The date the user's premium (Nitro) subscription started                                                               |
+| premium_guild_since ^1^       | ?ISO8601 timestamp                                                                                     | The date the user's premium guild (boosting) subscription started                                                      |
 
 ^1^ These fields are unexpectedly missing or `null` if the user has blocked the current user.
 
@@ -1026,7 +1026,7 @@ Returns an authorization link that can be used for authorizing a new connection.
   Create User Connection Callback
 </RouteHeader>
 
-Creates a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#connection-create) Gateway event.
+Creates a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
 
 ###### JSON Params
 
@@ -1043,7 +1043,7 @@ Creates a new connection for the current user. Returns a [connection](#connectio
   Create User Connection
 </RouteHeader>
 
-Creates a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#connection-create) Gateway event.
+Creates a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
 
 <Alert type="warn">
 
@@ -1068,7 +1068,7 @@ Returns a list of [connection](#connection-object) objects.
   Get User Connection Access Token
 </RouteHeader>
 
-Returns a new access token for the given connection. Only available for Twitch, YouTube, and Spotify connections. Fires a [User Connections Update](/topics/gateway-events#connection-update) Gateway event.
+Returns a new access token for the given connection. Only available for Twitch, YouTube, and Spotify connections. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
 
 ###### Response Body
 

@@ -387,9 +387,6 @@ export default function Navigation() {
                 Invite Metadata Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/invite#invite-guild-object">Invite Guild Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/invite#invite-channel-object">
-                Invite Channel Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/invite#invite-stage-instance-object">
                 Invite Stage Instance Object
               </NavigationSubLink>
@@ -499,7 +496,7 @@ export default function Navigation() {
             <Fragment>
               <NavigationSubLink href="/resources/voice#voice-state-object">Voice State Object</NavigationSubLink>
               <NavigationSubLink href="/resources/voice#voice-region-object">Voice Region Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/voice#list-voice-regions">List Voice Regions</NavigationSubLink>
+              <NavigationSubLink href="/resources/voice#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
@@ -604,12 +601,7 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#bots">Bots</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#webhooks">Webhooks</NavigationSubLink>
-              <NavigationSubLink href="/topics/oauth2#get-current-bot-application-information">
-                Get Current Bot Application Information
-              </NavigationSubLink>
-              <NavigationSubLink href="/topics/oauth2#get-current-authorization-information">
-                Get Current Authorization Information
-              </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
@@ -671,11 +663,10 @@ export default function Navigation() {
           href="/topics/threads"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/topics/threads#disclaimer">Disclaimer</NavigationSubLink>
               <NavigationSubLink href="/topics/threads#backwards-compatibility">
                 Backwards Compatibility
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/threads#new-thread-fields">New Thread Fields</NavigationSubLink>
+              <NavigationSubLink href="/topics/threads#thread-fields">Thread Fields</NavigationSubLink>
               <NavigationSubLink href="/topics/threads#public-&-private-threads">
                 Public & Private Threads
               </NavigationSubLink>
@@ -692,8 +683,8 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/threads#new-message-types">New Message Types</NavigationSubLink>
               <NavigationSubLink href="/topics/threads#enumerating-threads">Enumerating Threads</NavigationSubLink>
               <NavigationSubLink href="/topics/threads#webhooks">Webhooks</NavigationSubLink>
-              <NavigationSubLink href="/topics/threads#additional-context-on-the-the-thread_list_sync-and-thread_create-dispatches">
-                Additional context on the the THREAD_LIST_SYNC and THREAD_CREATE dispatches
+              <NavigationSubLink href="/topics/threads#details-about-thread-access-and-syncing">
+                Details About Thread Access and Syncing
               </NavigationSubLink>
             </Fragment>
           }
@@ -709,11 +700,12 @@ export default function Navigation() {
                 Connecting to Voice
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#heartbeating">Heartbeating</NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-server-connection">
-                Establishing a Voice Server Connection
+              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-websocket-connection">
+                Establishing a Voice WebSocket Connection
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#encrypting-and-sending-voice">
-                Encrypting and Sending Voice
+              <NavigationSubLink href="/topics/voice-connections#udp-connections">UDP Connections</NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#webrtc-connections">
+                WebRTC Connections
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#speaking">Speaking</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#resuming-voice-connection">
