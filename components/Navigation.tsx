@@ -2,6 +2,7 @@ import classNames from "classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Fragment, useEffect, useState } from "react";
+import Searchbar from "./Searchbar";
 import ThemeSwitcher from "./ThemeSwitcher";
 import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
@@ -115,14 +116,18 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
 export default function Navigation() {
   return (
     <nav className="flex-1 self-stretch mt-5 px-6">
-      <div className="hidden items-center -mt-4 mb-10 md:flex">
+      <div className="hidden items-center -mt-4 mb-8 md:flex">
         <a href="/intro" className="hidden md:block">
           <Userdoccers className="w-9/12 text-black dark:text-white" />
         </a>
         <ThemeSwitcher />
       </div>
 
-      <NavigationSection title="Documentation">
+      <NavigationSection>
+        <div id="searchContainer" className="w-full flex-1 flex">
+          <Searchbar />
+        </div>
+
         <NavigationLink href="/intro">Intro</NavigationLink>
         <NavigationLink
           href="/reference"
