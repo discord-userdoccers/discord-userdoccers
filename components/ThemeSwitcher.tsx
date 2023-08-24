@@ -37,7 +37,7 @@ export default function ThemeSwitcher() {
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 w-56 dark:bg-table-row-background-secondary-dark bg-white rounded-md focus:outline-none shadow-lg divide-gray-100 dark:divide-gray-900 divide-y origin-top-right ring-1 ring-brand-blurple ring-opacity-5">
+        <Menu.Items className="absolute right-0 mt-2 w-56 dark:bg-table-row-background-secondary-dark bg-white rounded-md focus:outline-none shadow-lg divide-gray-100 dark:divide-gray-900 divide-y origin-top-right ring-1 ring-brand-blurple ring-opacity-5 z-40">
           <div className="px-1 py-1">
             <Menu.Item>
               {({ active }) => (
