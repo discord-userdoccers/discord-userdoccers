@@ -10,7 +10,12 @@ import CopyIcon from "../icons/Copy";
 
 // Extend base classes
 globalThis.Prism = Prism;
+import("prismjs/components/prism-csharp");
 import("prismjs/components/prism-docker");
+import("prismjs/components/prism-javascript");
+import("prismjs/components/prism-json");
+import("prismjs/components/prism-python");
+import("prismjs/components/prism-typescript");
 
 const diffBgColorMap = {
   "+": "var(--prism-highlight-add)",
@@ -89,7 +94,7 @@ export default function Code({ children, className, metastring, file, ...props }
   return (
     <div className="code-block relative my-6 font-mono rounded-md">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight code={children} language={language ?? "txt"}>
+      <Highlight code={children} language={language ?? ""}>
         {({
           className: blockClassName,
           tokens,

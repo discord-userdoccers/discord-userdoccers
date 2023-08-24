@@ -1,5 +1,5 @@
-import supersub from "remark-supersub";
 import createMDX from "@next/mdx";
+import supersub from "remark-supersub";
 
 /** @type {import('next').NextConfig} */
 const config = {
