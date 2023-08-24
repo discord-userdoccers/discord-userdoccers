@@ -55,8 +55,8 @@ export default function RouteHeader({
         {mfa ? (
           <Badge
             href="/resources/user#user-object"
-            name="2FA Required"
-            tooltip="Requires a user with 2FA enabled to provide a valid 2FA code in the body for certain operations"
+            name="MFA Required"
+            tooltip="Requires a user with MFA enabled to provide a valid MFA code in the body for certain operations"
           />
         ) : null}
         {supportsAuditReason ? (

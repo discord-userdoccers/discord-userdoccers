@@ -24,7 +24,7 @@ Details about Gateway event payloads are in the [Gateway events documentation](/
 
 ### Sending Events
 
-When sending a Gateway event (like when [performing an initial handshake](/topics/gateway-events#identify) or [updating presence](/topics/gateway-events#update-presence)), your client must send an [event payload object](/topics/gateway-events#gateway-payload-structure) with a valid OPCode (`op`) and inner data object (`d`).
+When sending a Gateway event (like when [performing an initial handshake](/topics/gateway-events#identify) or [updating presence](/topics/gateway-events#update-presence)), your client must send an [event payload object](/topics/gateway-events#gateway-payload-structure) with a valid Opcode (`op`) and inner data object (`d`).
 
 <Alert type="info">
 
@@ -51,7 +51,7 @@ All events that you can receive over the Gateway are in the [Gateway events docu
 
 #### Dispatch Events
 
-[OPCode 0 Dispatch](/topics/gateway-events#gateway-payload-structure) events are the most common type of event you will receive. Gateway events which represent actions taking place in a guild will be sent to your client as Dispatch events.
+[Opcode 0 Dispatch](/topics/gateway-events#gateway-payload-structure) events are the most common type of event you will receive. Gateway events which represent actions taking place in a guild will be sent to your client as Dispatch events.
 
 When your client is parsing a Dispatch event:
 
@@ -75,14 +75,14 @@ At a high-level, Gateway connections consist of the following cycle:
 ![Flowchart with an overview of Gateway connection lifecycle](/images/gateway-lifecycle.svg)
 
 1. Client establishes a connection with the Gateway after fetching and caching a WebSocket URL using the [Get Gateway](/topics/gateway#get-gateway) or [Get Gateway Bot](/topics/gateway#get-gateway-bot) endpoint.
-2. Discord sends the client an [OPCode 10 Hello](#hello-event) event containing a heartbeat interval in milliseconds. **Read the section on [connecting](#connecting).**
-3. Client starts the heartbeat task: it sends an [OPCode 1 Heartbeat](#sending-heartbeats) event, then continue to send them every heartbeat interval until the connection is closed.
-   - Discord will respond to each Heartbeat event with an [OPCode 11 Heartbeat ACK](#sending-heartbeats) event to confirm it was received. If the client doesn't receive a Heartbeat ACK before the next heartbeat interval, it should close the connection and reconnect.
-   - Discord may send the client an [OPCode 1 Heartbeat](#sending-heartbeats) event, in which case it should respond with an [OPCode 1 Heartbeat](#sending-heartbeats) event immediately.
-4. Client sends an [OPCode 2 Identify](#identifying) event to perform the initial handshake with the Gateway.
+2. Discord sends the client an [Opcode 10 Hello](#hello-event) event containing a heartbeat interval in milliseconds. **Read the section on [connecting](#connecting).**
+3. Client starts the heartbeat task: it sends an [Opcode 1 Heartbeat](#sending-heartbeats) event, then continue to send them every heartbeat interval until the connection is closed.
+   - Discord will respond to each Heartbeat event with an [Opcode 11 Heartbeat ACK](#sending-heartbeats) event to confirm it was received. If the client doesn't receive a Heartbeat ACK before the next heartbeat interval, it should close the connection and reconnect.
+   - Discord may send the client an [Opcode 1 Heartbeat](#sending-heartbeats) event, in which case it should respond with an [Opcode 1 Heartbeat](#sending-heartbeats) event immediately.
+4. Client sends an [Opcode 2 Identify](#identifying) event to perform the initial handshake with the Gateway.
 5. Discord sends the client a [Ready](#ready-event) event which indicates the handshake was successful and the connection is established. The Ready event contains a `resume_gateway_url` that the client should keep track of to determine the WebSocket URL it should use to resume. **Read the section on [the Ready event](#ready-event).**
 6. The connection may be dropped for a variety of reasons. Whether the client can [resume](#resuming) the connection or whether it must re-identify is determined by a variety of factors like the [OPcode](/topics/opcodes-and-status-codes#gateway-opcodes) and [close code](/topics/opcodes-and-status-codes#gateway-close-event-codes) that it receives. **Read the section on [disconnecting](#disconnecting).**
-7. If the client **can** resume/reconnect, it should open a new connection using `resume_gateway_url`, then send an [OPCode 6 Resume](#resuming) event. If it **cannot** resume/reconnect, it should open a new connection using the cached URL from step #1, then repeat the whole Gateway cycle. _Yipee!_
+7. If the client **can** resume/reconnect, it should open a new connection using `resume_gateway_url`, then send an [Opcode 6 Resume](#resuming) event. If it **cannot** resume/reconnect, it should open a new connection using the cached URL from step #1, then repeat the whole Gateway cycle. _Yipee!_
 
 ### Connecting
 
@@ -102,7 +102,7 @@ When connecting to the URL, it's a good idea to explicitly pass the API version 
 
 #### Hello Event
 
-Once connected, the client will receive an [OPCode 10 Hello](/topics/gateway-events#hello) event, with information on the connection's heartbeat interval (`heartbeat_interval`).
+Once connected, the client will receive an [Opcode 10 Hello](/topics/gateway-events#hello) event, with information on the connection's heartbeat interval (`heartbeat_interval`).
 
 The heartbeat interval indicates the how often (in milliseconds) you must send a heartbeat in order to maintain the active connection. Heartbeating is detailed in the [sending heartbeats](#sending-heartbeats) section.
 
@@ -112,7 +112,7 @@ Heartbeats are pings used to let Discord know that your client is still actively
 
 #### Heartbeat Interval
 
-Upon receiving [OPCode 10 Hello](#hello-event), your client should immediately send its first [OPCode 1 Heartbeat](/topics/gateway-events#heartbeat) event (with optional jitter). From that point until the connection is closed, your client must continually send Discord a heartbeat every `heartbeat_interval` milliseconds. If your client fails to send a heartbeat event in time, your connection will be closed and you will be forced to [resume](#resuming).
+Upon receiving [Opcode 10 Hello](#hello-event), your client should immediately send its first [Opcode 1 Heartbeat](/topics/gateway-events#heartbeat) event (with optional jitter). From that point until the connection is closed, your client must continually send Discord a heartbeat every `heartbeat_interval` milliseconds. If your client fails to send a heartbeat event in time, your connection will be closed and you will be forced to [resume](#resuming).
 
 When sending a heartbeat, your client will need to include the last sequence number your app received in the `d` field. The sequence number is sent in every Dispatch [event payload](/topics/gateway-events#gateway-payload-structure) (in the `s` field). If you haven't received any events yet, you should pass `null` in the `d` field.
 
@@ -124,7 +124,7 @@ The first heartbeat may be offset by a value between 0 and `heartbeat_interval` 
 
 You _can_ send heartbeats before the `heartbeat_interval` elapses, but you should avoid doing so unless necessary. There is already tolerance in the `heartbeat_interval` that will cover network latency, so you don't need to account for it in your implementation.
 
-When you send a heartbeat, the Gateway will respond with an [OPCode 11 Heartbeat ACK](/topics/gateway-events#heartbeat-ack), which is an acknowledgement that the heartbeat was received.
+When you send a heartbeat, the Gateway will respond with an [Opcode 11 Heartbeat ACK](/topics/gateway-events#heartbeat-ack), which is an acknowledgement that the heartbeat was received.
 
 If a client does not receive a heartbeat ACK between its attempts at sending heartbeats, this may be due to a failed or "zombied" connection. The client should immediately terminate the connection with any close code besides `1000` or `1001`, then reconnect and attempt to [resume](#resuming).
 
@@ -136,17 +136,17 @@ In the event of a service outage where you stay connected to the Gateway, you sh
 
 #### Heartbeat Requests
 
-In addition to the Heartbeat interval, the Gateway may request additional heartbeats from your client by sending an [OPCode 1 Heartbeat](/topics/gateway-events#heartbeat) event. Upon receiving the event, your client should immediately heartbeat without waiting the remainder of the current interval.
+In addition to the Heartbeat interval, the Gateway may request additional heartbeats from your client by sending an [Opcode 1 Heartbeat](/topics/gateway-events#heartbeat) event. Upon receiving the event, your client should immediately heartbeat without waiting the remainder of the current interval.
 
-Just like normal, the Gateway will respond with an [OPCode 11 Heartbeat ACK](/topics/gateway-events#heartbeat-ack) event.
+Just like normal, the Gateway will respond with an [Opcode 11 Heartbeat ACK](/topics/gateway-events#heartbeat-ack) event.
 
 ### Identifying
 
-After the connection is open and you are heartbeating, your client should send an [OPCode 2 Identify](/topics/gateway-events#identify). This event is tje initial handshake with the Gateway that's required before your client can begin sending or receiving most Gateway events.
+After the connection is open and you are heartbeating, your client should send an [Opcode 2 Identify](/topics/gateway-events#identify). This event is tje initial handshake with the Gateway that's required before your client can begin sending or receiving most Gateway events.
 
-Users are limited by maximum concurrency (in the [session start limit object](#session-start-limit-object)) when identifying. If your client exceeds this limit, the Gateway will respond with an [OPCode 9 Invalid Session](/topics/gateway-events#invalid-session) event.
+Users are limited by maximum concurrency (in the [session start limit object](#session-start-limit-object)) when identifying. If your client exceeds this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) event.
 
-After your client sends a valid identify payload, the Gateway will respond with a [Ready](/topics/gateway-events#ready) event which indicates a successfully-connected state with the Gateway. The Ready event is sent as a standard [OPCode 0 Dispatch](/topics/gateway-events#gateway-payload-structure).
+After your client sends a valid identify payload, the Gateway will respond with a [Ready](/topics/gateway-events#ready) event which indicates a successfully-connected state with the Gateway. The Ready event is sent as a standard [Opcode 0 Dispatch](/topics/gateway-events#gateway-payload-structure).
 
 <Alert type="warn">
 
@@ -192,23 +192,23 @@ When your client is disconnected, Discord has a process for reconnecting and res
 
 There are a handful of scenarios when you should attempt to resume:
 
-1. You receive an [OPCode 7 Reconnect](/topics/gateway-events#reconnect) event
+1. You receive an [Opcode 7 Reconnect](/topics/gateway-events#reconnect) event
 2. You're disconnected with a [close code](/topics/opcodes-and-status-codes#gateway-close-event-codes) that indicates you can reconnect, or don't receive _any_ close code.
-3. You receives an [OPCode 9 Invalid Session](/topics/gateway-events#invalid-session) event with the `d` field set to `true`. This is an unlikely scenario, but it is possible.
+3. You receives an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) event with the `d` field set to `true`. This is an unlikely scenario, but it is possible.
 
 #### Preparing to Resume
 
-Before your client can send an [OPCode 6 Resume](/topics/gateway-events#resume) event, it will need three values: the `session_id` and the `resume_gateway_url` from the [Ready](#ready-event) event, and the sequence number (`s`) from the last [OPCode 0 Dispatch](/topics/gateway-events#gateway-payload-structure) event it received before the disconnect.
+Before your client can send an [Opcode 6 Resume](/topics/gateway-events#resume) event, it will need three values: the `session_id` and the `resume_gateway_url` from the [Ready](#ready-event) event, and the sequence number (`s`) from the last [Opcode 0 Dispatch](/topics/gateway-events#gateway-payload-structure) event it received before the disconnect.
 
 After the connection is closed, your client should open a new connection using `resume_gateway_url` rather than the URL used to initially connect. If you don't use the `resume_gateway_url` when reconnecting, you will experience disconnects at a higher rate than normal.
 
-Once the new connection is opened, your client should send an [OPCode 6 Resume](/topics/gateway-events#resume) event using the `session_id` and `seq` mentioned above.
+Once the new connection is opened, your client should send an [Opcode 6 Resume](/topics/gateway-events#resume) event using the `session_id` and `seq` mentioned above.
 
 When resuming, you do not need to send an identify event after opening the connection.
 
 If successful, the Gateway will send the missed events in order, finishing with a [Resumed](/topics/gateway-events#resumed) event to signal event replay has finished and that all subsequent events will be new.
 
-If the client does not reconnect in time, the replay buffer will overfill and the session will be invalidated. In this case, the client will receive an [OPCode 9 Invalid Session](/topics/gateway-events#invalid-session) and should disconnect. After disconnect, the client should create a new connection with the cached URL from the [Get Gateway](#get-gateway) or the [Get Gateway Bot](#get-gateway-bot) endpoint, then [identify](#identifying).
+If the client does not reconnect in time, the replay buffer will overfill and the session will be invalidated. In this case, the client will receive an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) and should disconnect. After disconnect, the client should create a new connection with the cached URL from the [Get Gateway](#get-gateway) or the [Get Gateway Bot](#get-gateway-bot) endpoint, then [identify](#identifying).
 
 ## Gateway Capabilities
 
@@ -444,7 +444,7 @@ This section is about Gateway rate limits, not [HTTP API rate limits](/topics/ra
 
 Clients can send 120 [Gateway events](/topics/gateway-events) per [connection](#connections) every 60 seconds, meaning an average of 2 commands per second. Clients that surpass the limit are immediately disconnected from the Gateway. Similar to other rate limits, repeat offenders will have their API access revoked.
 
-Clients also have a limit for [concurrent](#session-start-limit-object) [identify](#identifying) requests allowed per 5 seconds. If you hit this limit, the Gateway will respond with an [OPCode 9 Invalid Session](/topics/gateway-events#invalid-session).
+Clients also have a limit for [concurrent](#session-start-limit-object) [identify](#identifying) requests allowed per 5 seconds. If you hit this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session).
 
 ## Encoding and Compression
 

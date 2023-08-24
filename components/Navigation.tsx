@@ -137,7 +137,7 @@ export default function Navigation() {
               <NavigationSubLink href="/reference#iso8601-date/time">ISO8601 Date/Time</NavigationSubLink>
               <NavigationSubLink href="/reference#consistency">Consistency</NavigationSubLink>
               <NavigationSubLink href="/reference#http-api">HTTP API</NavigationSubLink>
-              <NavigationSubLink href="/reference#gateway-(websocket)-api">Gateway (WebSocket) API</NavigationSubLink>
+              <NavigationSubLink href="/reference#gateway-api">Gateway API</NavigationSubLink>
               <NavigationSubLink href="/reference#message-formatting">Message Formatting</NavigationSubLink>
               <NavigationSubLink href="/reference#cdn-formatting">CDN Formatting</NavigationSubLink>
               <NavigationSubLink href="/reference#cdn-data">CDN Data</NavigationSubLink>
