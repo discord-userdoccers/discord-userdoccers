@@ -1,8 +1,11 @@
 const colors = require("tailwindcss/colors");
 
+/**
+ * @type {import('tailwindcss/tailwind-config').TailwindConfig}
+ */
 module.exports = {
   content: ["./pages/**/*.{js,ts,md,jsx,tsx,mdx}", "./components/**/*.{js,ts,md,jsx,tsx,mdx}"],
-  darkMode: "class",
+  darkMode: ["class", "[data-theme='dark']"],
   theme: {
     extend: {
       padding: {

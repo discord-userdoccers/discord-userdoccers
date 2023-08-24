@@ -8,6 +8,8 @@ import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
+
+import "@docsearch/css";
 import "../stylesheets/tailwind.css";
 import "../stylesheets/styles.css";
 import "../stylesheets/scrollbar.css";
@@ -36,7 +38,7 @@ export default function App({ Component, pageProps }: AppProps) {
   });
 
   return (
-    <ThemeProvider defaultTheme="system" attribute="class">
+    <ThemeProvider defaultTheme="system" attribute="data-theme">
       <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
         {/* eslint-disable-next-line react/jsx-pascal-case */}
         <MDX>

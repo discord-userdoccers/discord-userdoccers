@@ -2,6 +2,7 @@ import classNames from "classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Fragment, useEffect, useState } from "react";
+import Searchbar from "./Searchbar";
 import ThemeSwitcher from "./ThemeSwitcher";
 import Caret from "./icons/Caret";
 import CaretFill from "./icons/CaretFill";
@@ -122,7 +123,11 @@ export default function Navigation() {
         <ThemeSwitcher />
       </div>
 
-      <NavigationSection title="Documentation">
+      <NavigationSection>
+        <div id="searchContainer" className="w-full flex-1 flex">
+          <Searchbar />
+        </div>
+
         <NavigationLink href="/intro">Intro</NavigationLink>
         <NavigationLink
           href="/reference"
