@@ -13,6 +13,7 @@ export default function Searchbar() {
       apiKey={config.apiKey}
       indexName={config.index}
       placeholder="Search documentation"
+      insights
     />
   );
 }
