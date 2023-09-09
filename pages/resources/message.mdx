@@ -172,15 +172,12 @@ The type of rendered message is determined via converting the message's `timesta
   "components": [],
   "reactions": [
     {
-      "emoji": {
-        "id": null,
-        "name": "‼️"
-      },
+      "emoji": { "id": null, "name": "‼️" },
       "count": 2,
-      "burst_count": 1,
+      "count_details": { "burst": 0, "normal": 82 },
       "burst_colors": ["#f0ca59", "#4c704f", "#e07f45", "#f0ae59", "#f0bc59", "#f0a059", "#e08e45", "#f0984a"],
-      "burst_me": false,
-      "me": true
+      "me_burst": false,
+      "me": false
     }
   ]
 }
@@ -322,21 +319,28 @@ There are multiple message types that have a `message_reference` object. Since m
 
 ###### Reaction Structure
 
-| Field        | Type                                                  | Description                                              |
-| ------------ | ----------------------------------------------------- | -------------------------------------------------------- |
-| count        | integer                                               | Total amount of times this emoji has been used to react  |
-| burst_count  | integer                                               | Amount of times this emoji has been used to burst-react  |
-| me           | boolean                                               | Whether the current user reacted using this emoji        |
-| burst_me     | boolean                                               | Whether the current user burst-reacted using this emoji  |
-| burst_colors | array[string]                                         | The hex-encoded colors to render the burst reaction with |
-| emoji        | partial [emoji](/resources/emoji#emoji-object) object | Reaction emoji information                               |
+| Field         | Type                                                               | Description                                                         |
+| ------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| count         | integer                                                            | Total amount of times this emoji has been used to react             |
+| count_details | [reaction count details](#reaction-count-details-structure) object | Details about the number of times this emoji has been used to react |
+| me            | boolean                                                            | Whether the current user reacted using this emoji                   |
+| me_burst      | boolean                                                            | Whether the current user burst-reacted using this emoji             |
+| emoji         | partial [emoji](/resources/emoji#emoji-object) object              | Reaction emoji information                                          |
+| burst_colors  | array[string]                                                      | The hex-encoded colors to render the burst reaction with            |
+
+###### Reaction Count Details Structure
+
+| Field  | Type    | Description                                                |
+| ------ | ------- | ---------------------------------------------------------- |
+| normal | integer | Amount of times this emoji has been used to react normally |
+| burst  | integer | Amount of times this emoji has been used to burst-react    |
 
 ###### Reaction Type
 
-| Value | Name   | Description       |
-| ----- | ------ | ----------------- |
-| 0     | NORMAL | A normal reaction |
-| 1     | BURST  | A burst reaction  |
+| Value | Name   | Description              |
+| ----- | ------ | ------------------------ |
+| 0     | NORMAL | A normal reaction        |
+| 1     | BURST  | A burst (super) reaction |
 
 ### Embed Object
 
@@ -917,13 +921,19 @@ Hides a message from the feed of the guild the channel belongs to. Returns a 204
 Get a list of users that reacted with this emoji. Returns an array of partial [user](/resources/user#user-object) objects.
 The `emoji` must be [URL Encoded](https://en.wikipedia.org/wiki/Percent-encoding) or the request will fail. To use custom emoji, you must encode it in the format `name:id` with the emoji name and emoji ID.
 
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
 ###### Query String Params
 
-| Field | Type      | Description                                                                  |
-| ----- | --------- | ---------------------------------------------------------------------------- |
-| after | snowflake | Get users after this user ID                                                 |
-| limit | integer   | Max number of users to return (1-100, default 25)                            |
-| type? | integer   | The [type of reaction](#reaction-types) to get users for (default `REGULAR`) |
+| Field  | Type      | Description                                                                  |
+| ------ | --------- | ---------------------------------------------------------------------------- |
+| after? | snowflake | Get users after this user ID                                                 |
+| limit? | integer   | Max number of users to return (1-100, default 25)                            |
+| type?  | integer   | The [type of reaction](#reaction-types) to get users for (default `REGULAR`) |
 
 <RouteHeader method="PUT" url="/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me">
   Create Reaction
@@ -938,14 +948,17 @@ The `emoji` must be [URL Encoded](https://en.wikipedia.org/wiki/Percent-encoding
 | ----- | ------- | -------------------------------------------------------------------- |
 | type? | integer | The [type of reaction](#reaction-type) to create (default `REGULAR`) |
 
-<RouteHeader method="DELETE" url="/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me">
+<RouteHeader method="DELETE" url="/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{reaction_type}/@me">
   Delete Own Reaction
 </RouteHeader>
 
 Deletes a reaction the current user has made for the message. Returns a 204 empty response on success. Fires a [Message Reaction Remove](/topics/gateway-events#message-reaction-remove) Gateway event.
 The `emoji` must be [URL Encoded](https://en.wikipedia.org/wiki/Percent-encoding) or the request will fail. To use custom emoji, you must encode it in the format `name:id` with the emoji name and emoji ID.
 
-<RouteHeader method="DELETE" url="/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{user.id}">
+<RouteHeader
+  method="DELETE"
+  url="/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{reaction_type}/{user.id}"
+>
   Delete Reaction
 </RouteHeader>
 
