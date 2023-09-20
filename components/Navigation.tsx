@@ -426,6 +426,9 @@ export default function Navigation() {
                 Client Status Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/presence#activity-object">Activity Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/presence#activity-metadata-object">
+                Activity Metadata Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/presence#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
