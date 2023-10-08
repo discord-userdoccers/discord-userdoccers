@@ -63,10 +63,6 @@ If enums are used in multiple places, they should be defined by the most relevan
 | 0     | NONE     | Invisible to everyone except the user themselves |
 | 1     | EVERYONE | Visible to everyone                              |
 
-Note that **Type** is used, *not* **Types** like in the official documentation.
-
-For enums that have strings as values, the name can be skipped like so:
-
 ###### Platform Type
 
 | Value   | Description                   |
@@ -74,3 +70,27 @@ For enums that have strings as values, the name can be skipped like so:
 | web     | Represents the web platform   |
 | mobile  | Represents a mobile platform  |
 | desktop | Represents a desktop platform |
+
+Note that **Type** is used, *not* **Types** like in the official documentation.
+
+For enums that have strings as values, the name can be skipped like so:
+
+## Flags
+
+Defined very similarly to enums, flags are used to define a set of constants that can be combined. They are used in many places in the documentation, and should be defined at the end of their relevant object section like so:
+
+If flags are used in multiple places, they should be defined by the most relevant section.
+
+###### User Flags
+
+| Value  | Name  | Description                   |
+| ------ | ----- | ----------------------------- |
+| 1 << 0 | ADMIN | This user is an administrator |
+
+Note that the `IS_` prefix is removed from any flag names that may contain it, as it is redundant.
+
+## Miscellaneous
+
+This is a collection of guidelines that apply to the whole documentation.
+
+- The documentation should be written in American English, as this reflects what the API uses. This means that words like "color" should be used instead of "colour", and "favorite" should be used instead of "favourite".
