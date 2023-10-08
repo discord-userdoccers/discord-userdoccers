@@ -662,6 +662,9 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/rate-limits#invalid-request-limit-aka-cloudflare-bans">
                 Invalid Request Limit aka CloudFlare bans
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/rate-limits#unavailable-resources">
+                Unavailable Resources
+              </NavigationSubLink>
             </Fragment>
           }
         >
