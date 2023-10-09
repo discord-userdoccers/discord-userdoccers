@@ -737,11 +737,11 @@ export default function Navigation() {
 
       <NavigationSection title="Remote Authentication">
         <NavigationLink
-          href="/remote-authentication/intro"
+          href="/remote-authentication/introduction"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/remote-authentication/intro#how-it-works">How it Works</NavigationSubLink>
-              <NavigationSubLink href="/remote-authentication/intro#how-to-use">How to Use</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/introduction#how-it-works">How it Works</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/introduction#how-to-use">How to Use</NavigationSubLink>
             </Fragment>
           }
         >
