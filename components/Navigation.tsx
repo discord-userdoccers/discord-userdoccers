@@ -735,6 +735,48 @@ export default function Navigation() {
         </NavigationLink>
       </NavigationSection>
 
+      <NavigationSection title="Remote Authentication">
+        <NavigationLink
+          href="/remote-authentication/intro"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/remote-authentication/intro#how-it-works">How it Works</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/intro#how-to-use">How to Use</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Introduction
+        </NavigationLink>
+        <NavigationLink
+          href="/remote-authentication/desktop"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/remote-authentication/desktop#remote-authentication-gateway">
+                Remote Authentication Gateway
+              </NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/desktop#connecting">Connecting</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/desktop#handshaking">Handshaking</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/desktop#heartbeating">Heartbeating</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/desktop#finalizing">Finalizing</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/desktop#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Desktop
+        </NavigationLink>
+        <NavigationLink
+          href="/remote-authentication/mobile"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/remote-authentication/mobile#protocol">Protocol</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/mobile#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Mobile
+        </NavigationLink>
+      </NavigationSection>
+
       <NavigationSection title="Interactions">
         <NavigationLink
           href="/interactions/application-commands"
@@ -823,54 +865,6 @@ export default function Navigation() {
           }
         >
           Receiving &amp; Responding
-        </NavigationLink>
-      </NavigationSection>
-
-      <NavigationSection title="Remote Authentication">
-        <NavigationLink
-          href="/remote-authentication/intro"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/remote-authentication/intro#how-it-works">
-                How it Works
-              </NavigationSubLink>
-              <NavigationSubLink href="/remote-authentication/intro#how-to-use">
-                How to Use
-              </NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Introduction
-        </NavigationLink>
-        <NavigationLink
-          href="/remote-authentication/desktop"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/remote-authentication/intro#how-it-works">
-                How it Works
-              </NavigationSubLink>
-              <NavigationSubLink href="/remote-authentication/intro#how-to-use">
-                How to Use
-              </NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Desktop
-        </NavigationLink>
-        <NavigationLink
-          href="/remote-authentication/mobile"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/remote-authentication/mobile#protocol">
-                Protocol
-              </NavigationSubLink>
-              <NavigationSubLink href="/remote-authentication/mobile#endpoints">
-                Endpoints
-              </NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Mobile
         </NavigationLink>
       </NavigationSection>
     </nav>
