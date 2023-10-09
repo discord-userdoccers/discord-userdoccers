@@ -740,7 +740,9 @@ export default function Navigation() {
           href="/remote-authentication/introduction"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/remote-authentication/introduction#how-it-works">How it Works</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/introduction#how-it-works">
+                How it Works
+              </NavigationSubLink>
               <NavigationSubLink href="/remote-authentication/introduction#how-to-use">How to Use</NavigationSubLink>
             </Fragment>
           }
