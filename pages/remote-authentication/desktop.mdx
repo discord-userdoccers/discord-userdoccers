@@ -1,0 +1,342 @@
+# Remote Authentication (Desktop)
+
+In the context of remote authentication, the desktop client is the device that wants to be authenticated by the already logged-in mobile client.
+See the [introduction](/remote-authentication/intro) for more information.
+
+## Remote Authentication Gateway
+
+The desktop implementation of remote authentication uses WebSocket connections, operating similarly to the [Gateway](/topics/gateway#connections) connection.
+However, it has a separate set of payloads and events, as well as a simplified packet structure.
+
+###### Gateway Versions
+
+| Version | Status       | Default  |
+| ------- | ------------ | -------- |
+| 2       | Available    | ✓ Client |
+| 1       | Discontinued |          |
+
+### Gateway Payloads
+
+In practice, opcodes are lower-cased with under_scores joining each word in the name. For instance, [Nonce Proof](#nonce-proof) would be `nonce_proof`.
+
+For readability, opcodes in the following documentation are typically left in Title Case.
+
+Remote authentication Gateway event payloads are flat packets, with the `op` field indicating the type of payload, and the rest of the fields being the payload data.
+
+###### Example Gateway Payload
+
+```json
+{
+  "op": "hello",
+  "timeout_ms": 142637,
+  "heartbeat_interval": 41250
+}
+```
+
+###### Gateway Commands
+
+| Name                                       | Description                                   |
+| ------------------------------------------ | --------------------------------------------- |
+| [Init](#init-structure)                    | Start a new remote auth session               |
+| [Heartbeat](#heartbeating)                 | Maintain an active WebSocket connection       |
+| [Nonce Proof](#nonce-proof-structure-send) | Submit a cryprographic proof of the handshake |
+
+###### Gateway Events
+
+| Name                                                  | Description                                                                                                   |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [Hello](#hello-structure)                             | Defines the heartbeat and timeout intervals                                                                   |
+| [Heartbeat ACK](#heartbeating)                        | Acknowledges a received client heartbeat                                                                      |
+| [Nonce Proof](#nonce-proof-structure-receive)         | Requests a cryptographic proof of the handshake                                                               |
+| [Pending Remote Init](#pending-remote-init-structure) | Acknowledges a successful handshake                                                                           |
+| [Pending Ticket](#pending-ticket-structure)           | Acknowledges a successful [mobile session creation](/remote-authentication/mobile#create-remote-auth-session) |
+| [Pending Login](#pending-login-structure)             | Indicates that the mobile session was [finished](/remote-authentication/mobile#finish-remote-auth)            |
+| [Cancel](#example-cancel)                             | Indicates that the mobile session was [canceled](/remote-authentication/mobile#cancel-remote-auth)            |
+
+###### Gateway Close Event Codes
+
+| Code | Description       | Explanation                                                                                                                                                           |
+| ---- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1000 | Normal closure    | The remote auth session was [finished](/remote-authentication/mobile#finish-remote-auth) or [canceled](/remote-authentication/mobile#cancel-remote-auth) successfully |
+| 4000 | Unknown error     | We're not sure what went wrong; try reconnecting?                                                                                                                     |
+| 4001 | Handshake failure | The [initial handshake](#handshaking) failed; maybe reconnect and try again?                                                                                          |
+| 4002 | Decode error      | You sent an invalid payload; don't do that!                                                                                                                           |
+| 4003 | Timeout           | Your session [timed out](#hello-structure); reconnect and start a new one                                                                                             |
+
+### Connecting
+
+For the remote authentication Gateway, the URL you can use to open a WebSocket connection [is static](#endpoint).
+
+When connecting to the URL, you must explicitly pass the API version as a query parameter. For example, `wss://remote-auth-gateway.discord.gg/?v=2` is a URL a client may use to connect to the Gateway.
+
+<Alert type="warn">
+
+When connecting to the remote authentication Gateway, you must specify an `Origin` header, set to one of `https://discord.com`, `https://ptb.discord.com`, or `https://canary.discord.com`.
+If the origin is invalid, the connection will be rejected. This is to prevent malicious websites from using remote authentication to hijack user accounts.
+
+</Alert>
+
+###### Endpoint
+
+```
+wss://remote-auth-gateway.discord.gg/
+```
+
+###### Query String Params
+
+| Field | Type    | Description                             |
+| ----- | ------- | --------------------------------------- |
+| v     | integer | [API Version](#gateway-versions) to use |
+
+### Handshaking
+
+Once you open a connection to the Gateway, you will receive an [Opcode Hello](#hello-structure) payload, which contains the heartbeat interval and timeout duration. See the [heartbeating](#heartbeating) section for more information.
+
+At this point, you should generate a 2048-bit RSA-OAEP keypair that will be used in further communications. This will be verified by the Gateway using a nonce proof. An example in Python pseudocode would be:
+
+```py
+import base64
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+
+private_key = rsa.generate_private_key(
+    public_exponent=65537,
+    key_size=2048,
+)
+public_key = private_key.public_key()
+```
+
+###### Hello Structure
+
+| Field              | Type    | Description                                                                                                        |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| heartbeat_interval | integer | The minimum interval (in milliseconds) the client should heartbeat at                                              |
+| timeout_ms ^1^     | integer | The lifespan of the remote auth session (in milliseconds) before the connection is closed, typically a few minutes |
+
+^1^ When the timeout duration passes, the Gateway will close with a [`4003` close code](#gateway-close-event-codes).
+
+###### Example Hello
+
+```json
+{
+  "op": "hello",
+  "timeout_ms": 142637,
+  "heartbeat_interval": 41250
+}
+```
+
+Upon receiving the [Opcode Hello](#hello-structure) payload, you should immediately send an [Opcode Init](#init-structure) containing the public key that all future communication will be encrypted with.
+
+An example in Python pseudocode would be:
+
+```py
+spki = public_key.public_bytes(
+    encoding=serialization.Encoding.DER,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+)
+encoded_public_key = base64.b64encode(spki).decode("utf-8")
+```
+
+###### Init Structure
+
+| Field              | Type   | Description                                                          |
+| ------------------ | ------ | -------------------------------------------------------------------- |
+| encoded_public_key | string | The base64-encoded SPKI of the client's 2048-bit RSA-OAEP public key |
+
+###### Example Init
+
+```json
+{
+  "op": "init",
+  "encoded_public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo2PGAKj4v6r6sPJtgJe2eIDCM8uEHKpYCSDmp+pun9vqiqPt4pDToS1vGtwTwc5hKKqtIo+I/5veBpGWSD/veuB0xVb/JbkPn847Q+mXAb6c9vRMJVkA7l9GaZdN49U5bnGJi009aNBoy9cAcP/19H6TLpHmZ9RojnqGqlCUdyAiqceTDTzPqov4ST3GJSyKPydL3ZVpPf5P/PGyNfISuESKA2CxGCoBvB4H6/FH7cwSFelyqhwwHPZcyxBjF/3iXx+k1PdS01y0NoTRun4p76bE9rWnecIWONPFvCkby8Xs/OqQ8QcAoLkfVj5L29Ut1+Kmwwfg3nzc4glZa6RuTwIDAQAB"
+}
+```
+
+If the Gateway accepts the public key, it will respond with an [Opcode Nonce Proof](#nonce-proof-structure-receive) payload, which contains a nonce that you must decrypt with your private key.
+
+###### Nonce Proof Structure (Receive)
+
+| Field           | Type   | Description                                                     |
+| --------------- | ------ | --------------------------------------------------------------- |
+| encrypted_nonce | string | The base64-encoded nonce encrypted with the client's public key |
+
+###### Example Nonce Proof (Receive)
+
+```json
+{
+  "op": "nonce_proof",
+  "encrypted_nonce": "GrOYi2wz9athue0mTNrdlnWGqJYkqu8tPe2uGr9V7CRwqVWDjgUI06gsPKszkORgB92P1P84V04fo7hG0tkQ/kDVNbVguACKfE4AIUUQXQFSkTVaGbZ2+FsItsoqOd+955EvkBK2oMz+kWlYILTQcISip9g5ZrY9SoKQvk7HDW9DliSteZivHzXQOc5RyecyeexOcV8oyC1zTk+uyVUTv3g7fcZ1Y81AK6u4+hvnEKGjOyEn+lbOotkNwcMC02xyVBX3IysSuNXf/f8/6gPMBNUHXEtlvhYx9AMCsPrPKkiilV7HpLN3oIvAfsZnyxbYcNiC6YS7z7VIPRaXEWW76w=="
+}
+```
+
+You should then send an [Opcode Nonce Proof](#nonce-proof-structure-send) payload containing a base64URL-encoded representation of the decrypted nonce's SHA-256 digest.
+
+An example in Python pseudocode would be:
+
+```py
+nonce = private_key.decrypt(
+    base64.b64decode(encrypted_nonce),
+    padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
+)
+nonce_proof = base64.urlsafe_b64encode(
+    hashes.Hash(hashes.SHA256()).update(nonce).finalize()
+).decode("utf-8").rstrip("=")
+```
+
+###### Nonce Proof Structure (Send)
+
+| Field | Type   | Description                                                 |
+| ----- | ------ | ----------------------------------------------------------- |
+| nonce | string | The base64URL-encoded SHA-256 digest of the decrypted nonce |
+
+###### Example Nonce Proof (Send)
+
+```json
+{
+  "op": "nonce_proof",
+  "nonce": "1xFdzsYTFMtZuUarGNKpBpMANyqNpRXpDFaxl8wFeQBUnVuY60d9j-or80f36xusAVTmUL90jwHrxMVPGZXJ8ahqDAiXByEOjkreJXZdPRbnvDkHHyqUP0QgHQBvrKq5Cba9-SDO8pFSc9T1YMWGut7n34xx6txX-QR7wDcZAoghq5EBl04WRlnt1DWfX2wMA7NuL1GFIZdw10IedBZ13E72BXnDasX97XMX_ldbxKwee6ABGf18zde2oHbTqw"
+}
+```
+
+<Alert type="info">
+
+If any part of the handshake fails, the Gateway will close with a [`4001` close code](#gateway-close-event-codes).
+
+</Alert>
+
+If the Gateway accepts the nonce proof, it will respond with an [Opcode Pending Remote Init](#pending-remote-init-structure) payload, which indicates that the key exchange was successful and the remote auth session is ready.
+
+At this point, the fingerprint can be used to [create a remote auth session](/remote-authentication/mobile#create-remote-auth-session) on the mobile client.
+The fingerprint is typically communicated using a QR code with the following format: `https://discord.com/ra/<fingerprint>`.
+
+<Alert type="info">
+
+Clients should verify the sent fingerprint is the same as the base64URL-encoded SHA-256 digest of the client's public key as a security measure.
+If the fingerprints do not match, the client should close the connection and reconnect.
+
+</Alert>
+
+###### Pending Remote Init Structure
+
+| Field       | Type   | Description                                                     |
+| ----------- | ------ | --------------------------------------------------------------- |
+| fingerprint | string | The base64URL-encoded SHA-256 digest of the client's public key |
+
+###### Example Pending Remote Init
+
+```json
+{
+  "op": "pending_remote_init",
+  "fingerprint": "UZ0-kOVzXDZTFVV5_QlpURSO2BQHrtkKWHNpIGoDI0k"
+}
+```
+
+### Heartbeating
+
+In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode Hello](#hello-structure):
+
+This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish.
+
+After receiving [Opcode Hello](#hello-structure), you should send [Opcode Heartbeat](#example-heartbeat) every elapsed interval:
+
+<Alert type="info">
+
+The first heartbeat may be offset by a value between 0 and `heartbeat_interval` in order to prevent too many clients from connecting at the same time (which could cause an influx of traffic).
+
+</Alert>
+
+In return, you will be sent back an [Opcode Heartbeat ACK](#example-heartbeat-ack).
+If a client does not receive a heartbeat ACK between its attempts at sending heartbeats, this may be due to a failed or "zombied" connection.
+The client should immediately terminate the connection and reconnect.
+
+###### Example Heartbeat
+
+```json
+{ "op": "heartbeat" }
+```
+
+###### Example Heartbeat ACK
+
+```json
+{ "op": "heartbeat_ack" }
+```
+
+### Finalizing
+
+Once the mobile client [creates a remote auth session](/remote-authentication/mobile#create-remote-auth-session) (scans the QR code), the Gateway will send an [Opcode Pending Ticket](#pending-ticket-structure) payload, which contains the information of the user that is attempting to authenticate.
+
+###### Pending Ticket Structure
+
+| Field                  | Type   | Description                                                                                       |
+| ---------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| encrypted_user_payload | string | The base64-encoded [user payload](#user-payload-structure) encrypted with the client's public key |
+
+###### User Payload Structure
+
+The user payload is a colon-separated string in the format `852892297661906993:0:05145cc5646fbcba277b6d5ea2030610:dolfies`.
+
+It contains the following fields (see the [user](/resources/user#user-object) object for more information):
+
+| Field         | Type      | Description                                                              |
+| ------------- | --------- | ------------------------------------------------------------------------ |
+| id            | snowflake | The ID of the user                                                       |
+| discriminator | string    | The user's stringified 4-digit Discord tag                               |
+| avatar        | ?string   | The user's [avatar hash](/reference#cdn-formatting)                      |
+| username      | string    | The user's username, may be unique across the platform (2-32 characters) |
+
+###### Example Pending Ticket
+
+```json
+{
+  "op": "pending_ticket",
+  "encrypted_user_payload": "MeJm9TeLa9S+/gUYZlm69TQqT3eqz1sG6f5Ym84lGCH7Hde/Dpv/knXX+wWp8WeyLPHYGn1smpTaGxwHmuvee1IZv8ybP9WeVscsBnrXpO7Fg2aT3hZJfPStncJxI0Uq+JhjqQ1V2lLuhoraeBrZbl/e0CBNhv0wmIGzFow6G078MQvikg20Jr+/2wRgY/buXuipqfW9RYIZUyr3Dl+MRW8EodKU3SOBgqaVpHETDLXkmb6rsvYU+O78iUu+cvTK3A0GkajxmhJ2nfg79iQBuLU6qJm7sN9mHy2uKAExa5TUJfeeCqXjTr1uROozlyBmCMjeP+Srrg37r0y2pkjYCg=="
+}
+```
+
+At this point, the desktop client will either receive an [Opcode Pending Login](#pending-login-structure) or [Opcode Cancel](#example-cancel) event.
+Both of these events will result in the Gateway closing with a [`1000` close code](#gateway-close-event-codes). If neither of these events occur (the mobile client does not finish or cancel), the Gateway will eventually timeout and close with a [`4003` close code](#gateway-close-event-codes).
+
+If the mobile client [finishes remote auth](/remote-authentication/mobile#finish-remote-auth), the Gateway will send an [Opcode Pending Login](#pending-login-structure) payload, which indicates that the authentication was successful.
+
+###### Pending Login Structure
+
+| Field  | Type   | Description                                                                   |
+| ------ | ------ | ----------------------------------------------------------------------------- |
+| ticket | string | The ticket that can be used to [obtain a token](#exchange-remote-auth-ticket) |
+
+###### Example Pending Login
+
+```json
+{
+  "op": "pending_login",
+  "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.HYoNwT.1X5Qs3Sd2Z2sDf3sFFFwd22_MccjcmwY"
+}
+```
+
+If the mobile client [cancels remote auth](/remote-authentication/mobile#cancel-remote-auth), the Gateway will send an [Opcode Cancel](#example-cancel) payload, which indicates that the authentication was canceled.
+
+###### Example Cancel
+
+```json
+{ "op": "cancel" }
+```
+
+## Endpoints
+
+<RouteHeader method="POST" url="/users/@me/remote-auth/login">
+  Exchange Remote Auth Ticket
+</RouteHeader>
+
+Exchanges a remote auth ticket for an [authentication token](/reference#authentication).
+
+###### JSON Params
+
+| Field  | Type   | Description                                                            |
+| ------ | ------ | ---------------------------------------------------------------------- |
+| ticket | string | The ticket obtained from the [remote authentication flow](#finalizing) |
+
+###### Response Body
+
+| Field           | Type   | Description                                                     |
+| --------------- | ------ | --------------------------------------------------------------- |
+| encrypted_token | string | The authentication token encrypted with the client's public key |
