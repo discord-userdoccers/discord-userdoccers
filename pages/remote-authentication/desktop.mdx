@@ -35,10 +35,10 @@ Remote authentication Gateway event payloads are flat packets, with the `op` fie
 
 ###### Gateway Commands
 
-| Name                                  | Description                                   |
-| ------------------------------------- | --------------------------------------------- |
-| [Init](#init-structure)               | Start a new remote auth session               |
-| [Heartbeat](#heartbeating)            | Maintain an active WebSocket connection       |
+| Name                                       | Description                                   |
+| ------------------------------------------ | --------------------------------------------- |
+| [Init](#init-structure)                    | Start a new remote auth session               |
+| [Heartbeat](#heartbeating)                 | Maintain an active WebSocket connection       |
 | [Nonce Proof](#nonce-proof-structure-send) | Submit a cryprographic proof of the handshake |
 
 ###### Gateway Events
@@ -47,7 +47,7 @@ Remote authentication Gateway event payloads are flat packets, with the `op` fie
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | [Hello](#hello-structure)                             | Defines the heartbeat and timeout intervals                                                                   |
 | [Heartbeat ACK](#heartbeating)                        | Acknowledges a received client heartbeat                                                                      |
-| [Nonce Proof](#nonce-proof-structure-receive)                 | Requests a cryptographic proof of the handshake                                                               |
+| [Nonce Proof](#nonce-proof-structure-receive)         | Requests a cryptographic proof of the handshake                                                               |
 | [Pending Remote Init](#pending-remote-init-structure) | Acknowledges a successful handshake                                                                           |
 | [Pending Ticket](#pending-ticket-structure)           | Acknowledges a successful [mobile session creation](/remote-authentication/mobile#create-remote-auth-session) |
 | [Pending Login](#pending-login-structure)             | Indicates that the mobile session was [finished](/remote-authentication/mobile#finish-remote-auth)            |
@@ -90,7 +90,7 @@ wss://remote-auth-gateway.discord.gg/
 
 ### Handshaking
 
-Once you open a connection to the Gateway, you will receive an [Opcode Hello](#gateway-events) payload, which contains the heartbeat interval and timeout duration. See the [heartbeating](#heartbeating) section for more information.
+Once you open a connection to the Gateway, you will receive an [Opcode Hello](#hello-structure) payload, which contains the heartbeat interval and timeout duration. See the [heartbeating](#heartbeating) section for more information.
 
 At this point, you should generate a 2048-bit RSA-OAEP keypair that will be used in further communications. This will be verified by the Gateway using a nonce proof. An example in Python pseudocode would be:
 
@@ -125,7 +125,7 @@ public_key = private_key.public_key()
 }
 ```
 
-Upon receiving the [Opcode Hello](#gateway-events) payload, you should immediately send an [Opcode Init](#gateway-commands) containing the public key that all future communication will be encrypted with.
+Upon receiving the [Opcode Hello](#hello-structure) payload, you should immediately send an [Opcode Init](#init-structure) containing the public key that all future communication will be encrypted with.
 
 An example in Python pseudocode would be:
 
@@ -152,7 +152,7 @@ encoded_public_key = base64.b64encode(spki).decode("utf-8")
 }
 ```
 
-If the Gateway accepts the public key, it will respond with an [Opcode Nonce Proof](#gateway-events) payload, which contains a nonce that you must decrypt with your private key.
+If the Gateway accepts the public key, it will respond with an [Opcode Nonce Proof](#nonce-proof-structure-receive) payload, which contains a nonce that you must decrypt with your private key.
 
 ###### Nonce Proof Structure (Receive)
 
@@ -169,7 +169,7 @@ If the Gateway accepts the public key, it will respond with an [Opcode Nonce Pro
 }
 ```
 
-You should then send an [Opcode Nonce Proof](#gateway-commands) payload containing a base64URL-encoded representation of the decrypted nonce's SHA-256 digest.
+You should then send an [Opcode Nonce Proof](#nonce-proof-structure-send) payload containing a base64URL-encoded representation of the decrypted nonce's SHA-256 digest.
 
 An example in Python pseudocode would be:
 
@@ -204,7 +204,7 @@ If any part of the handshake fails, the Gateway will close with a [`4001` close 
 
 </Alert>
 
-If the Gateway accepts the nonce proof, it will respond with an [Opcode Pending Remote Init](#gateway-events) payload, which indicates that the key exchange was successful and the remote auth session is ready.
+If the Gateway accepts the nonce proof, it will respond with an [Opcode Pending Remote Init](#pending-remote-init-structure) payload, which indicates that the key exchange was successful and the remote auth session is ready.
 
 At this point, the fingerprint can be used to [create a remote auth session](/remote-authentication/mobile#create-remote-auth-session) on the mobile client.
 The fingerprint is typically communicated using a QR code with the following format: `https://discord.com/ra/<fingerprint>`.
@@ -226,11 +226,11 @@ The fingerprint is typically communicated using a QR code with the following for
 
 ### Heartbeating
 
-In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode Hello](#gateway-events):
+In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode Hello](#hello-structure):
 
 This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish.
 
-After receiving [Opcode Hello](#gateway-events), you should send [Opcode Heartbeat](#gateway-events) every elapsed interval:
+After receiving [Opcode Hello](#hello-structure), you should send [Opcode Heartbeat](#example-heartbeat) every elapsed interval:
 
 <Alert type="info">
 
@@ -238,7 +238,7 @@ The first heartbeat may be offset by a value between 0 and `heartbeat_interval` 
 
 </Alert>
 
-In return, you will be sent back an [Opcode Heartbeat ACK](#gateway-events).
+In return, you will be sent back an [Opcode Heartbeat ACK](#example-heartbeat-ack).
 If a client does not receive a heartbeat ACK between its attempts at sending heartbeats, this may be due to a failed or "zombied" connection.
 The client should immediately terminate the connection and reconnect.
 
@@ -256,7 +256,7 @@ The client should immediately terminate the connection and reconnect.
 
 ### Finalizing
 
-Once the mobile client [creates a remote auth session](/remote-authentication/mobile#create-remote-auth-session) (scans the QR code), the Gateway will send an [Opcode Pending Ticket](#gateway-events) payload, which contains the information of the user that is attempting to authenticate.
+Once the mobile client [creates a remote auth session](/remote-authentication/mobile#create-remote-auth-session) (scans the QR code), the Gateway will send an [Opcode Pending Ticket](#pending-ticket-structure) payload, which contains the information of the user that is attempting to authenticate.
 
 ###### Pending Ticket Structure
 
@@ -286,10 +286,10 @@ It contains the following fields (see the [user](/resources/user#user-object) ob
 }
 ```
 
-At this point, the desktop client will either receive an [Opcode Pending Login](#gateway-events) or [Opcode Cancel](#gateway-events) event.
+At this point, the desktop client will either receive an [Opcode Pending Login](#pending-login-structure) or [Opcode Cancel](#example-cancel) event.
 Both of these events will result in the Gateway closing with a [`1000` close code](#gateway-close-event-codes). If neither of these events occur (the mobile client does not finish or cancel), the Gateway will eventually timeout and close with a [`4003` close code](#gateway-close-event-codes).
 
-If the mobile client [finishes remote auth](/remote-authentication/mobile#finish-remote-auth), the Gateway will send an [Opcode Pending Login](#gateway-events) payload, which indicates that the authentication was successful.
+If the mobile client [finishes remote auth](/remote-authentication/mobile#finish-remote-auth), the Gateway will send an [Opcode Pending Login](#pending-login-structure) payload, which indicates that the authentication was successful.
 
 ###### Pending Login Structure
 
@@ -306,7 +306,7 @@ If the mobile client [finishes remote auth](/remote-authentication/mobile#finish
 }
 ```
 
-If the mobile client [cancels remote auth](/remote-authentication/mobile#cancel-remote-auth), the Gateway will send an [Opcode Cancel](#gateway-events) payload, which indicates that the authentication was canceled.
+If the mobile client [cancels remote auth](/remote-authentication/mobile#cancel-remote-auth), the Gateway will send an [Opcode Cancel](#example-cancel) payload, which indicates that the authentication was canceled.
 
 ###### Example Cancel
 
