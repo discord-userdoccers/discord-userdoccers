@@ -58,7 +58,8 @@
 | discoverability_state                        | integer                                                                 | The current [application directory discoverability state](#application-discoverability-state) of the application                                                                                                                 |
 | discovery_eligibility_flags                  | integer                                                                 | The current [application directory eligibility flags](#application-discovery-eligibility-flags) for the application                                                                                                              |
 | monetization_state                           | integer                                                                 | The current [application monetization state](#application-monetization-state) of the application                                                                                                                                 |
-| monetization_eligibility_flags               | integer                                                                 | The current [application monetization eligibility flags](#application-monetization-eligibility-flags) for the application                                                                                                        |
+| monetization_eligibility_flags? ^2^          | integer                                                                 | The current [application monetization eligibility flags](#application-monetization-eligibility-flags) for the application                                                                                                        |
+| is_monetized? ^2^                            | boolean                                                                 | Whether the application [has an application premium subscription set up](https://support.discord.com/hc/en-us/articles/9359445233303-Premium-App-Subscriptions-FAQ)                                                              |
 | max_participants?                            | integer                                                                 | The maximum possible participants in the application's embedded activity (-1 for no limit)                                                                                                                                       |
 | embedded_activity_config?                    | [embedded activity config](#embedded-activity-config-object) object     | The configuration for the application's embedded activity                                                                                                                                                                        |
 
@@ -77,6 +78,8 @@
 <Alert type="warn">
 
 Partial applications may have any combination of fields, depending on the context in which they are provided. Certain data may be included or omitted depending on what data is needed for the given operation. Fields [marked as required](/reference#nullable-and-optional-resource-fields) will always be present.
+
+Further complicating things, some optional fields may be omitted if their value is `null`, even if the specific partial does include this data.
 
 </Alert>
 
@@ -102,6 +105,7 @@ Partial applications may have any combination of fields, depending on the contex
 | overlay?                                     | boolean                                                                 | Whether the application's game supports the [Discord overlay](https://support.discord.com/hc/en-us/articles/217659737-Game-Overlay-101) (default false)                         |
 | overlay_warn?                                | boolean                                                                 | Whether the [Discord overlay](https://support.discord.com/hc/en-us/articles/217659737-Game-Overlay-101) is known to be problematic with this application's game (default false) |
 | overlay_compatibility_hook?                  | boolean                                                                 | Unknown (default false)                                                                                                                                                         |
+| bot?                                         | partial [user](/resources/user#user-object) object                      | The bot attached to this application                                                                                                                                            |
 | team? ^2^                                    | ?[team](/resources/team#team-object) object                             | The team that owns the application                                                                                                                                              |
 | developers?                                  | array[[company](/resources/team#company-object) object]                 | The companies that developed the application                                                                                                                                    |
 | publishers?                                  | array[[company](/resources/team#company-object) object]                 | The companies that published the application                                                                                                                                    |
@@ -116,6 +120,7 @@ Partial applications may have any combination of fields, depending on the contex
 | tags?                                        | array[string]                                                           | Tags describing the content and functionality of the application (max 20 characters, max 5)                                                                                     |
 | install_params?                              | [application install params](#application-install-params-object) object | The default in-app authorization link for the integration                                                                                                                       |
 | custom_install_url?                          | string                                                                  | The default custom authorization link for the integration                                                                                                                       |
+| is_monetized?                                | boolean                                                                 | Whether the application [has an application premium subscription set up](https://support.discord.com/hc/en-us/articles/9359445233303-Premium-App-Subscriptions-FAQ)             |
 | max_participants?                            | integer                                                                 | The maximum possible participants in the application's embedded activity (-1 for no limit)                                                                                      |
 | embedded_activity_config?                    | [embedded activity config](#embedded-activity-config-object) object     | The configuration for the application's embedded activity                                                                                                                       |
 
@@ -123,7 +128,7 @@ Partial applications may have any combination of fields, depending on the contex
 
 ^2^ Only present when fetched from the [Get Guild Applications](#get-guild-applications) endpoint. You must own the application or be a member of the owning team to receive this information.
 
-^3^ In some cases, these fields may still be provided instead of `integration_public` and `integration_require_code_grant`. These fields will not be present if the application is does not have a bot.
+^3^ In some cases, these fields may still be provided instead of `integration_public` and `integration_require_code_grant`. These fields will not be present if the application does not have a bot.
 
 ###### Application Type
 
@@ -134,7 +139,7 @@ Partial applications may have any combination of fields, depending on the contex
 | 3 ^1^ | TICKETED_EVENTS      | A limited application used for ticketed event SKUs                                |
 | 4 ^1^ | CREATOR_MONETIZATION | A limited application used for creator monetization (e.g. role subscription) SKUs |
 
-^1^ Applications of these types cannot be used through most of the regular applications API outlined here.
+^1^ Applications of these types cannot be used through most of the regular applications APIs outlined here.
 
 ###### Application Flags
 
@@ -326,6 +331,7 @@ Partial applications may have any combination of fields, depending on the contex
   "discovery_eligibility_flags": 36294,
   "monetization_state": 1,
   "monetization_eligibility_flags": 0,
+  "is_monetized": false,
   "publishers": [{ "id": "1058932127820939295", "name": "AlienTec" }],
   "developers": [{ "id": "1058932084854509568", "name": "Alien Games" }],
   "team": null
@@ -340,10 +346,21 @@ Partial applications may have any combination of fields, depending on the contex
   "name": "Watch Together",
   "icon": "ec48acbad4c32efab4275cb9f3ca3a58",
   "description": "Create and watch a playlist of YouTube videos with your friends. Your choice to share the remote or not. ",
-  "summary": "",
   "type": null,
   "cover_image": "3cc9446876ae9eec6e06ff565703c292",
-  "hook": true,
+  "bot": {
+    "id": "880218394199220334",
+    "username": "Watch Together",
+    "avatar": "fe2b7fa334817b0346d57416ad75e93b",
+    "discriminator": "5319",
+    "public_flags": 0,
+    "bot": true,
+    "banner": null,
+    "accent_color": null,
+    "global_name": null,
+    "avatar_decoration_data": null
+  },
+  "summary": "",
   "bot_public": false,
   "bot_require_code_grant": false,
   "terms_of_service_url": "https://discord.com/terms",
@@ -351,6 +368,9 @@ Partial applications may have any combination of fields, depending on the contex
   "verify_key": "e2aaf50fbe2fd9d025ac669035f5efb89099931690fba9dc28efb7eaade7f96d",
   "flags": 1179648,
   "max_participants": -1,
+  "tags": ["Video Player", "Watch"],
+  "hook": true,
+  "is_monetized": false,
   "embedded_activity_config": {
     "activity_preview_video_asset_id": "1104184163201990836",
     "supported_platforms": ["web", "ios", "android"],
@@ -361,13 +381,13 @@ Partial applications may have any combination of fields, depending on the contex
     "free_period_starts_at": null,
     "free_period_ends_at": null,
     "client_platform_config": {
-      "android": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
       "ios": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
+      "android": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
       "web": { "label_type": 0, "label_until": null, "release_phase": "global_launch" }
     },
-    "shelf_rank": 1
-  },
-  "tags": ["Video Player", "Watch"]
+    "shelf_rank": 3,
+    "has_csp_exception": false
+  }
 }
 ```
 
@@ -488,6 +508,7 @@ Partial applications may have any combination of fields, depending on the contex
 | free_period_ends_at **(deprecated)**      | ?ISO8601 timestamp                                                                                    | When the current free period for the activity ends, if any                                                       |
 | client_platform_config                    | map[string, [embedded activity platform config](#embedded-activity-platform-config-structure) object] | The release configuration for the activity on each [platform](#embedded-activity-platform-type)                  |
 | shelf_rank                                | integer                                                                                               | The rank of the activity in the activity shelf sort order                                                        |
+| has_csp_exception                         | boolean                                                                                               | Whether the activity is not routed through the Discord activity proxy                                            |
 
 ^1^ Omitted in the [application object](#application-object).
 
@@ -550,7 +571,8 @@ Partial applications may have any combination of fields, depending on the contex
     "ios": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
     "web": { "label_type": 0, "label_until": null, "release_phase": "global_launch" }
   },
-  "shelf_rank": 1,
+  "shelf_rank": 3,
+  "has_csp_exception": false,
   "application_id": "880218394199220334"
 }
 ```
@@ -735,7 +757,8 @@ All parameters to this endpoint are optional.
 | tags?                                    | ?array[string]                                                           | Tags describing the content and functionality of the application (max 20 characters, max 5)                                                                                              |
 | install_params?                          | ?[application install params](#application-install-params-object) object | The default in-app authorization link for the integration                                                                                                                                |
 | custom_install_url?                      | ?string                                                                  | The default custom authorization link for the integration                                                                                                                                |
-| discoverability_state?                   | integer                                                                  | The current application directory [discoverability state](#application-discoverability-state) of the application (only `NOT_DISCOVERABLE` and `DISCOVERABLE` is supported)               |
+| discoverability_state?                   | integer                                                                  | The current [application directory discoverability state](#application-discoverability-state) of the application (only `NOT_DISCOVERABLE` and `DISCOVERABLE` is supported)               |
+| monetization_state?                      | integer                                                                  | The current [application monetization state](#application-monetization-state) of the application (only `NONE` and `ENABLED` is supported)                                                |
 | max_participants?                        | ?integer                                                                 | The maximum possible participants in the application's embedded activity (-1 for no limit)                                                                                               |
 
 ^1^ The sending of Gateway events over the interactions endpoint requires [interactions version 2](#application-interactions-version).
@@ -922,13 +945,13 @@ All parameters to this endpoint are optional.
   Get Application Proxy Config
 </RouteHeader>
 
-Returns the [application proxy config](#application-proxy-config-object) object for the given application ID. User must be the owner of the application or member of the current team.
+Returns the application's [activity proxy config](#application-proxy-config-object) object for the given application ID. User must be the owner of the application or member of the current team.
 
 <RouteHeader method="POST" url="/applications/{application.id}/proxy-config">
   Modify Application Proxy Config
 </RouteHeader>
 
-Replaces the proxy config for the given application ID. User must be the owner of the application or developer of the current team. Returns the updated [application proxy config](#application-proxy-config-object) object on success.
+Replaces the activity proxy config for the given application ID. User must be the owner of the application or developer of the current team. Returns the updated [application proxy config](#application-proxy-config-object) object on success.
 
 ###### JSON Params
 
