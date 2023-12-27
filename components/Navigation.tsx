@@ -241,9 +241,7 @@ export default function Navigation() {
                 Thread Metadata Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#thread-member-object">Thread Member Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#partial-emoji-object">
-                Partial Emoji Object
-              </NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#partial-emoji-object">Partial Emoji Object</NavigationSubLink>
               <NavigationSubLink href="/resources/channel#forum-tag-object">Forum Tag Object</NavigationSubLink>
               <NavigationSubLink href="/resources/channel#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
