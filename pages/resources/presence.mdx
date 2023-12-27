@@ -6,16 +6,13 @@ A user's presence is their current status and activity. Presences are usually pe
 
 ###### Presence Structure
 
-| Field              | Type                                               | Description                                                               |
-| ------------------ | -------------------------------------------------- | ------------------------------------------------------------------------- |
-| user               | partial [user](/resources/user#user-object) object | The user whose presence is being updated                                  |
-| guild_id?          | snowflake                                          | ID of the guild the presence was updated in, if this is a guild presence  |
-| last_modified? ^1^ | integer                                            | Unix time (in milliseconds) of when the user's presence was last modified |
-| status             | string                                             | The [status](#status-type) of the user                                    |
-| activities         | array[[activity](#activity-object) object]         | The current activities the user is partaking in                           |
-| client_status      | [client status](#client-status-object) object      | The platform-dependent status of the user                                 |
-
-^1^ Only sent for overall user presences.
+| Field         | Type                                               | Description                                                              |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| user          | partial [user](/resources/user#user-object) object | The user whose presence is being updated                                 |
+| guild_id?     | snowflake                                          | ID of the guild the presence was updated in, if this is a guild presence |
+| status        | string                                             | The [status](#status-type) of the user                                   |
+| activities    | array[[activity](#activity-object) object]         | The current activities the user is partaking in                          |
+| client_status | [client status](#client-status-object) object      | The platform-dependent status of the user                                |
 
 ###### Status Type
 
@@ -52,12 +49,12 @@ Active sessions are indicated with a status per platform. If a user is offline o
 | Field           | Type                                                         | Description                                                                           |
 | --------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | id              | string                                                       | The ID of the activity; only unique across a single user's activities                 |
-| name            | string                                                       | The name of the activity                                                              |
+| name ^1^        | string                                                       | The name of the activity                                                              |
 | type            | integer                                                      | The [activity type](#activity-type)                                                   |
-| url? ^1^        | ?string                                                      | The stream URL                                                                        |
+| url? ^2^        | ?string                                                      | The stream URL                                                                        |
 | created_at      | integer                                                      | Unix timestamp (in milliseconds) of when the activity was added to the user's session |
 | session_id?     | ?string                                                      | The ID of the session associated with the activity                                    |
-| platform? ^2^   | string                                                       | The [platform](#activity-platform-type) the activity is being played on               |
+| platform? ^3^   | string                                                       | The [platform](#activity-platform-type) the activity is being played on               |
 | timestamps?     | [activity timestamps](#activity-timestamps-structure) object | Unix timestamps (in milliseconds) for start and/or end of the game                    |
 | application_id? | snowflake                                                    | The ID of the application representing the game the user is playing                   |
 | details?        | ?string                                                      | What the user is currently doing                                                      |
@@ -65,19 +62,21 @@ Active sessions are indicated with a status per platform. If a user is offline o
 | sync_id?        | string                                                       | The ID of the synced activity (e.g. Spotify song ID)                                  |
 | flags?          | integer                                                      | The [activity's flags](#activity-flags)                                               |
 | buttons?        | array[string]                                                | Custom buttons shown in rich presence (max 2)                                         |
-| emoji?          | ?[activity emoji](#activity-emoji-structure) object          | The emoji used for a custom status                                                    |
+| emoji?          | ?[activity emoji](#activity-emoji-structure) object          | The emoji used for a custom/hang status                                               |
 | party?          | [activity party](#activity-party-structure) object           | Information for the current party of the user                                         |
 | assets?         | [activity assets](#activity-assets-structure) object         | Images for the presence and their hover texts                                         |
-| secrets? ^3^    | [activity secrets](#activity-secrets-structure) object       | Secrets for rich presence joining and spectating (send-only)                          |
-| metadata? ^3^   | [activity metadata](#activity-metadata-object) object        | Additional metadata for the activity (send-only)                                      |
+| secrets? ^5^    | [activity secrets](#activity-secrets-structure) object       | Secrets for rich presence joining and spectating (send-only)                          |
+| metadata? ^5^   | [activity metadata](#activity-metadata-object) object        | Additional metadata for the activity (send-only)                                      |
 
-^1^ The `STREAMING` type currently only supports Twitch and YouTube. Only `https://twitch.tv/` and `https://youtube.com/` URLs will work.
+^1^ The `name` of a `CUSTOM` activity should always be "Custom Status". The `name` of a `HANG` activity should always be "Hang Status".
 
-^2^ This field is not supported for traditional presences (i.e. presences sent by regular clients over the Gateway) and is instead used to differentiate between various headless and embedded activities.
+^2^ The `STREAMING` type currently only supports Twitch and YouTube. Only `https://twitch.tv/` and `https://youtube.com/` URLs will work.
 
-^3^ For retrieving rich presence metadata, see [Get Activity Metadata](#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](#get-activity-secret).
+^3^ This field is not supported for traditional presences (i.e. presences sent by regular clients over the Gateway) and is instead used to differentiate between various headless and embedded activities.
 
-^4^ In case of the `HANG_STATUS` type, this field should be one of the [hang status types](#activity-hang-status-type). If set to `"custom"`, the `details` field should be used to specify the custom text.
+^4^ In the case of the `HANG` type, this field should be one of the [hang status types](#activity-hang-status-type). If set to `custom`, the `details` field should be used to specify the custom text, and the `emoji` field should be used to specify the custom emoji.
+
+^5^ These fields are send-only. For retrieving rich presence metadata, see [Get Activity Metadata](#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](#get-activity-secret).
 
 <Alert type="info">
 
@@ -87,21 +86,25 @@ Bots are only able to send `name`, `type`, `state`, and optionally `url`.
 
 ###### Activity Type
 
-| Value | Name        | Format              | Example                              |
-| ----- | ----------- | ------------------- | ------------------------------------ |
-| 0     | PLAYING     | Playing {name}      | "Playing Rocket League"              |
-| 1     | STREAMING   | Streaming {details} | "Streaming Rocket League"            |
-| 2     | LISTENING   | Listening to {name} | "Listening to Spotify"               |
-| 3     | WATCHING    | Watching {name}     | "Watching YouTube Together"          |
-| 4     | CUSTOM      | {emoji} {name}      | "😃 I am cool"                       |
-| 5     | COMPETING   | Competing in {name} | "Competing in Arena World Champions" |
-| 6     | HANG_STATUS | {emoji} {name}      | "Chilling tbh"                       |
+| Value | Name      | Format                           | Example                              |
+| ----- | --------- | -------------------------------- | ------------------------------------ |
+| 0     | PLAYING   | Playing {name}                   | "Playing Rocket League"              |
+| 1     | STREAMING | Streaming {details}              | "Streaming Rocket League"            |
+| 2     | LISTENING | Listening to {name}              | "Listening to Spotify"               |
+| 3     | WATCHING  | Watching {name}                  | "Watching YouTube Together"          |
+| 4     | CUSTOM    | {emoji} {state}                  | "😃 I am cool"                       |
+| 5     | COMPETING | Competing in {name}              | "Competing in Arena World Champions" |
+| 6     | HANG ^1^  | {state} or {emoji} {details} ^2^ | "Chilling tbh"                       |
+
+^1^ This type is only displayed if the user has an active voice state.
+
+^2^ See [activity hang status type](#activity-hang-status-type) for more information.
 
 ###### Activity Platform Type
 
 | Value    | Description               |
 | -------- | ------------------------- |
-| desktop  | Desktop                   |
+| desktop  | Desktop (headless)        |
 | xbox     | Xbox integration          |
 | samsung  | Samsung integration       |
 | ios      | iOS                       |
@@ -112,6 +115,8 @@ Bots are only able to send `name`, `type`, `state`, and optionally `url`.
 
 ###### Activity Hang Status Type
 
+When a `HANG` activity's `state` is set to one of these values, a built-in corresponding emoji will be used instead of the custom `emoji` field.
+
 | Value      | Example        |
 | ---------- | -------------- |
 | chilling   | Chilling tbh   |
@@ -121,21 +126,23 @@ Bots are only able to send `name`, `type`, `state`, and optionally `url`.
 | eating     | Grubbin        |
 | in-transit | Wandering IRL  |
 | watching   | Watchin' stuff |
-| custom     | {text}         |
+| custom     | {details}      |
 
 ###### Activity Flags
 
-| Value  | Name                          | Description                                                            |
-| ------ | ----------------------------- | ---------------------------------------------------------------------- |
-| 1 << 0 | INSTANCE                      | This activity is an instanced game session                             |
-| 1 << 1 | JOIN                          | This activity can be joined by other users                             |
-| 1 << 2 | SPECTATE **(deprecated)**     | This activity can be spectated by other users                          |
-| 1 << 3 | JOIN_REQUEST **(deprecated)** | This activity requires a request to join                               |
-| 1 << 4 | SYNC                          | This activity can be synced                                            |
-| 1 << 5 | PLAY                          | This activity can be played                                            |
-| 1 << 6 | PARTY_PRIVACY_FRIENDS         | This activity's party can be joined by friends                         |
-| 1 << 7 | PARTY_PRIVACY_VOICE_CHANNEL   | This activity's party can be joined by users in the same voice channel |
-| 1 << 8 | EMBEDDED                      | This activity is embedded within the Discord client                    |
+| Value      | Name                        | Description                                                            |
+| ---------- | --------------------------- | ---------------------------------------------------------------------- |
+| 1 << 0     | INSTANCE                    | This activity is an instanced game session                             |
+| 1 << 1     | JOIN                        | This activity can be joined by other users                             |
+| 1 << 2     | SPECTATE **(deprecated)**   | This activity can be spectated by other users                          |
+| ~~1 << 3~~ | ~~JOIN_REQUEST~~ ^1^        | ~~This activity requires a request to join~~                           |
+| 1 << 4     | SYNC                        | This activity can be synced                                            |
+| 1 << 5     | PLAY                        | This activity can be played                                            |
+| 1 << 6     | PARTY_PRIVACY_FRIENDS       | This activity's party can be joined by friends                         |
+| 1 << 7     | PARTY_PRIVACY_VOICE_CHANNEL | This activity's party can be joined by users in the same voice channel |
+| 1 << 8     | EMBEDDED                    | This activity is embedded within the Discord client                    |
+
+^1^ Activities no longer need to be explicitly flagged as join requestable.
 
 ###### Activity Action Type
 
