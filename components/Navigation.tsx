@@ -244,6 +244,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/channel#default-reaction-object">
                 Default Reaction Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#icon-emoji-object">Icon Emoji Object</NavigationSubLink>
               <NavigationSubLink href="/resources/channel#forum-tag-object">Forum Tag Object</NavigationSubLink>
               <NavigationSubLink href="/resources/channel#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
