@@ -356,23 +356,25 @@ The connection object that the user has attached.
 
 ###### Connection Structure
 
-| Field               | Type                                                                          | Description                                                             |
-| ------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| id                  | string                                                                        | ID of the connection account                                            |
-| type                | string                                                                        | The [type](#connection-type) of the connection                          |
-| name                | string                                                                        | The username of the connection account                                  |
-| verified            | boolean                                                                       | Whether the connection is verified                                      |
-| metadata?           | object                                                                        | Service-specific metadata about the connection                          |
-| metadata_visibility | integer                                                                       | [Visibility](#visibility-type) of the connection's metadata             |
-| revoked             | boolean                                                                       | whether the connection is revoked                                       |
-| integrations        | array[partial [guild integration](/resources/integration#integration-object)] | The guild integrations attached to the connection                       |
-| friend_sync         | boolean                                                                       | Whether friend sync is enabled for this connection                      |
-| show_activity       | boolean                                                                       | Whether activities related to this connection will be shown in presence |
-| two_way_link        | boolean                                                                       | Whether this connection has a corresponding third party OAuth2 token    |
-| visibility          | integer                                                                       | [Visibility](#visibility-type) of the connection                        |
-| access_token? ^1^   | string                                                                        | The access token for the connection account                             |
+| Field                | Type                                                                      | Description                                                             |
+| -------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| id                   | string                                                                    | ID of the connection account                                            |
+| type                 | string                                                                    | The [type](#connection-type) of the connection                          |
+| name                 | string                                                                    | The username of the connection account                                  |
+| verified             | boolean                                                                   | Whether the connection is verified                                      |
+| metadata?            | object                                                                    | Service-specific metadata about the connection                          |
+| metadata_visibility  | integer                                                                   | [Visibility](#visibility-type) of the connection's metadata             |
+| revoked              | boolean                                                                   | whether the connection is revoked                                       |
+| integrations ^1^ ^2^ | array[[connection integration](#connection-integration-structure) object] | The guild integrations attached to the connection                       |
+| friend_sync          | boolean                                                                   | Whether friend sync is enabled for this connection                      |
+| show_activity        | boolean                                                                   | Whether activities related to this connection will be shown in presence |
+| two_way_link         | boolean                                                                   | Whether this connection has a corresponding third party OAuth2 token    |
+| visibility           | integer                                                                   | [Visibility](#visibility-type) of the connection                        |
+| access_token? ^1^    | string                                                                    | The access token for the connection account                             |
 
 ^1^ Not included when [fetching a user's connections](#get-user-connections) via OAuth2.
+
+^2^ These integrations can be used to [join your own sub-enabled guild or the guild of a creator you are supporting](/resources/integration#join-integration-guild).
 
 ###### Example Connection
 
@@ -400,14 +402,13 @@ The connection object that the user has attached.
 
 ###### Partial Connection Structure
 
-| Field         | Type                                                                          | Description                                       |
-| ------------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
-| id            | string                                                                        | ID of the connection account                      |
-| type          | string                                                                        | The [type](#connection-type) of the connection    |
-| name          | string                                                                        | The username of the connection account            |
-| verified      | boolean                                                                       | Whether the connection is verified                |
-| metadata?     | object                                                                        | Service-specific metadata about the connection    |
-| integrations? | array[partial [guild integration](/resources/integration#integration-object)] | The guild integrations attached to the connection |
+| Field     | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| id        | string  | ID of the connection account                   |
+| type      | string  | The [type](#connection-type) of the connection |
+| name      | string  | The username of the connection account         |
+| verified  | boolean | Whether the connection is verified             |
+| metadata? | object  | Service-specific metadata about the connection |
 
 ###### Example Partial Connection
 
@@ -426,6 +427,35 @@ The connection object that the user has attached.
 }
 ```
 
+###### Connection Integration Structure
+
+| Field   | Type                                                                        | Description                                                        |
+| ------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| id ^1^  | snowflake                                                                   | The ID of the integration                                          |
+| type    | string                                                                      | The [type of integration](/resources/integration#integration-type) |
+| account | [account](/resources/integration#integration-account-structure) object      | The integration's account information                              |
+| guild   | [integration guild](/resources/integration#integration-guild-object) object | The guild that the integration is attached to                      |
+
+^1^ This field may also be the literal string "twitch-partners" to represent the Twitch Partners integration.
+
+###### Example Connection Integration
+
+```json
+{
+  "id": "twitch-partners",
+  "type": "twitch",
+  "account": {
+    "id": "92473777",
+    "name": "discordapp"
+  },
+  "guild": {
+    "id": "107939014299901952",
+    "name": "Twitch Partners",
+    "icon": "62450d21b75478191962d9c4b81831ae"
+  }
+}
+```
+
 ###### Connection Type
 
 | Value           | Name                |
@@ -433,6 +463,7 @@ The connection object that the user has attached.
 | battlenet       | Battle.net          |
 | contacts ^2^    | Contact Sync        |
 | crunchyroll     | Crunchyroll         |
+| domain          | Domain              |
 | ebay            | eBay                |
 | epicgames       | Epic Games          |
 | facebook        | Facebook            |
@@ -1071,15 +1102,15 @@ Creates a new connection for the current user. Returns a [connection](#connectio
 | friend_sync?       | boolean | Whether to sync friends over the connection |
 | openid_params?     | object  | Additional parameters for OpenID Connect    |
 
-<RouteHeader method="PUT" url="/users/@me/connections/{connection.type}/{connection.id}">
-  Create User Connection
+<RouteHeader method="PUT" url="/users/@me/connections/contacts/{connection.id}">
+  Create Contact Sync Connection
 </RouteHeader>
 
-Creates a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+Creates a new contact sync connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
 
 <Alert type="warn">
 
-This endpoint is only usable to create contact sync connections (with an ID of @me). For all other connections, use [Authorize User Connection](#authorize-user-connection) and [Create User Connection Callback](#create-user-connection-callback).
+This endpoint is only usable to create contact sync connections (nominally with an ID of @me). For most other connections, use [Authorize User Connection](#authorize-user-connection) and [Create User Connection Callback](#create-user-connection-callback).
 
 </Alert>
 
@@ -1089,6 +1120,32 @@ This endpoint is only usable to create contact sync connections (with an ID of @
 | ------------ | ------- | ------------------------------------------- |
 | name         | string  | The username of the connection account      |
 | friend_sync? | boolean | Whether to sync friends over the connection |
+
+<RouteHeader method="POST" url="/users/@me/connections/domain/{connection.id}">
+  Create Domain Connection
+</RouteHeader>
+
+Creates a new domain connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is only usable to create domain connections. For most other connections, use [Authorize User Connection](#authorize-user-connection) and [Create User Connection Callback](#create-user-connection-callback).
+
+</Alert>
+
+<Alert type="info">
+
+When attempting to create a domain connection, Discord will verify that the domain is owned by the user. If this verification fails, the endpoint will return an error response:
+
+```json
+{"message": "Unable to validate domain.", "code": 50187, "proof": "dh=dceaca792e3c40fcf356a9297949940af5cfe538"}
+```
+
+The `proof` provided must be added to the domain's DNS records as a TXT record with the name `_discord.<domain>`. Alternatively, the proof can be served at `https://<domain>/.well-known/discord`.
+
+After adding the proof, the request should be retried.
+
+</Alert>
 
 <RouteHeader method="GET" url="/users/@me/connections" supportsOAuth2="connections">
   Get User Connections
@@ -1162,7 +1219,13 @@ Not all connection types support all parameters.
   Delete User Connection
 </RouteHeader>
 
-Deletes a connection. Returns a 204 empty response on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+Deletes a connection. Returns a 204 empty response on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) and may fire a [Guild Delete](/topics/gateway-events#guild-delete) Gateway event.
+
+<Alert type="warn">
+
+Deleting a connection will remove you from any guilds you joined via the connection's [integrations](#connection-integration-structure).
+
+</Alert>
 
 <RouteHeader method="GET" url="/users/@me/relationships" supportsOAuth2="relationships.read">
   Get User Relationships

@@ -377,6 +377,12 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/integration#integration-object">Integration Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/integration#integration-application-object">
+                Integration Application Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/integration#integration-guild-object">
+                Integration Guild Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/integration#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }

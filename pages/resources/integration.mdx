@@ -8,31 +8,33 @@ Integrations represent a connection between a service and a guild. This may incl
 
 | Field                             | Type                                                                                                                     | Description                                                                         |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| id                                | snowflake                                                                                                                | The ID of the integration                                                           |
+| id ^1^                            | snowflake                                                                                                                | The ID of the integration                                                           |
 | name                              | string                                                                                                                   | The name of the integration                                                         |
 | type                              | string                                                                                                                   | The [type of integration](#integration-type)                                        |
 | enabled                           | boolean                                                                                                                  | Whether this integration is enabled                                                 |
 | account                           | [integration account](#integration-account-structure) object                                                             | Integration account information                                                     |
-| syncing? ^1^                      | boolean                                                                                                                  | Whether this integration is syncing                                                 |
-| role_id? ^1^                      | snowflake                                                                                                                | Role ID that this integration uses for subscribers                                  |
-| enable_emoticons? ^1^             | boolean                                                                                                                  | Whether emoticons should be synced for this integration (Twitch only)               |
-| expire_behavior? ^1^              | integer                                                                                                                  | The [behavior of expiring subscribers](#integration-expire-behavior)                |
-| expire_grace_period? ^1^          | integer                                                                                                                  | The grace period before expiring subscribers (one of 1, 3, 7, 14, 30, in days)      |
-| synced_at? ^1^                    | ISO8601 timestamp                                                                                                        | When this integration was last synced                                               |
-| subscriber_count? ^1^             | integer                                                                                                                  | How many subscribers this integration has                                           |
-| revoked? ^1^                      | boolean                                                                                                                  | Whether this integration has been revoked                                           |
-| application? ^2^                  | [integration application](#integration-application-structure) object                                                     | The integrated OAuth2 application                                                   |
-| scopes? ^2^                       | array[string]                                                                                                            | The [scopes](/topics/oauth2#oauth2-scopes) the application has been authorized with |
-| role_connections_metadata ^2^ ^3^ | array[[application role connection metadata](/resources/application#application-role-connection-metadata-object) object] | The metadata that the application has set for role connections                      |
-| user? ^4^                         | partial [user](/resources/user#user-object) object                                                                       | The user that added this integration                                                |
+| syncing? ^2^                      | boolean                                                                                                                  | Whether this integration is syncing                                                 |
+| role_id? ^2^                      | snowflake                                                                                                                | Role ID that this integration uses for subscribers                                  |
+| enable_emoticons? ^2^             | boolean                                                                                                                  | Whether emoticons should be synced for this integration (Twitch only)               |
+| expire_behavior? ^2^              | integer                                                                                                                  | The [behavior of expiring subscribers](#integration-expire-behavior)                |
+| expire_grace_period? ^2^          | integer                                                                                                                  | The grace period before expiring subscribers (one of 1, 3, 7, 14, 30, in days)      |
+| synced_at? ^2^                    | ISO8601 timestamp                                                                                                        | When this integration was last synced                                               |
+| subscriber_count? ^2^             | integer                                                                                                                  | How many subscribers this integration has                                           |
+| revoked? ^2^                      | boolean                                                                                                                  | Whether this integration has been revoked                                           |
+| application? ^3^                  | [integration application](#integration-application-structure) object                                                     | The integrated OAuth2 application                                                   |
+| scopes? ^3^                       | array[string]                                                                                                            | The [scopes](/topics/oauth2#oauth2-scopes) the application has been authorized with |
+| role_connections_metadata ^3^ ^4^ | array[[application role connection metadata](/resources/application#application-role-connection-metadata-object) object] | The metadata that the application has set for role connections                      |
+| user? ^5^                         | partial [user](/resources/user#user-object) object                                                                       | The user that added this integration                                                |
 
-^1^ Only provided for Twitch and YouTube integrations.
+^1^ This field may also be the literal string "twitch-partners" to represent the Twitch Partners integration.
 
-^2^ Only provided for Discord application integrations.
+^2^ Only provided for Twitch and YouTube integrations.
 
-^3^ Only included when fetched from [Get Guild Integrations](#get-guild-integrations) with `include_role_connections_metadata` set to `true`.
+^3^ Only provided for Discord application integrations.
 
-^4^ Only included for integrations when fetched through the [Get Guild Integrations](#get-guild-integrations) endpoint. Some older or internally-created integrations may not have an attached user.
+^4^ Only included when fetched from [Get Guild Integrations](#get-guild-integrations) with `include_role_connections_metadata` set to `true`.
+
+^5^ Only included for integrations when fetched through the [Get Guild Integrations](#get-guild-integrations) endpoint. Some older or internally-created integrations may not have an attached user.
 
 ###### Integration Type
 
@@ -77,6 +79,16 @@ Integrations represent a connection between a service and a guild. This may incl
 | role_connections_verification_url? ^1^ | ?string                                                                        | The role connection verification entry point of the integration; when configured, this will render the application as a verification method in guild role verification configuration |
 
 ^1^ Only present when fetched from the [Get Guild Integrations](#get-guild-integrations) endpoint with `include_role_connections_metadata` set to `true`.
+
+### Integration Guild Object
+
+###### Integration Guild Structure
+
+| Field | Type      | Description                                                                          |
+| ----- | --------- | ------------------------------------------------------------------------------------ |
+| id    | snowflake | The ID of the guild                                                                  |
+| name  | string    | TThe name of the guild (2-100 characters, excluding trailing and leading whitespace) |
+| icon  | ?string   | The guild's [icon hash](/reference#cdn-formatting)                                   |
 
 ## Endpoints
 
@@ -164,18 +176,6 @@ Migrates all Discord application integrations in the guild to the [`applications
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
 | integration_ids_with_app_commands | array[snowflake] | The IDs of migrated integrations that now have application commands registered |
 
-<RouteHeader method="PUT" url="/channels/{channel.id}/integrations/consent">
-  Modify Channel Integration Consent
-</RouteHeader>
-
-Approves or withdraws consent to adding Discord application integrations in the private channel. Returns a 204 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
-
-###### JSON Parameters
-
-| Field   | Type    | Description                                                                  |
-| ------- | ------- | ---------------------------------------------------------------------------- |
-| consent | boolean | Whether to consent to adding Discord application integrations in the channel |
-
 <RouteHeader method="GET" url="/channels/{channel.id}/integrations">
   Get Channel Integrations
 </RouteHeader>
@@ -193,6 +193,18 @@ This endpoint returns a maximum of 50 integrations. If a channel has more integr
 </RouteHeader>
 
 Removes the given integration ID from the channel. Returns a 204 empty response on success. Fires an [Integration Delete](#integration-object) Gateway event.
+
+<RouteHeader method="POST" url="/integrations/{integration.id}/join">
+  Join Integration Guild
+</RouteHeader>
+
+Joins the user to the given integration ID's guild. Returns a 204 empty response on success. Fires a [Guild Create](/topics/gateway-events#guild-create) Gateway event.
+
+<Alert type="info">
+
+This endpoint is only usable with [integrations found on the user's connections](/resources/user#connection-object).
+
+</Alert>
 
 <RouteHeader method="GET" url="/users/@me/guilds/integration-application-ids">
   Get Guild Integration Application IDs
