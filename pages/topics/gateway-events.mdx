@@ -82,6 +82,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Delete Speed Test](#delete-speed-test)                   | Delete a voice speed test                                              |
 | [Request Last Messages](#request-last-messages)           | Request last messages for a guild's channels                           |
 | [Search Recent Members](#search-recent-members)           | Request recently-joined members for a guild                            |
+| [Request Channel Statuses](#request-channel-statuses)     | Request voice channel statuses for a guild                             |
 
 #### Identify
 
@@ -405,6 +406,27 @@ Used to search the 10,000 most recently joined members in a guild. Fires a [Guil
 }
 ```
 
+#### Request Channel Statuses
+
+Used to request the voice channel statuses for a guild. Fires a [Channel Statuses](#channel-statuses) Gateway event with the requested statuses.
+
+###### Request Channel Statuses Structure
+
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
+
+###### Example Request Channel Statuses
+
+```json
+{
+  "op": 36,
+  "d": {
+    "guild_id": "957057010334048288"
+  }
+}
+```
+
 ## Receive Events
 
 Received events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by Discord to a client through a Gateway connection. Received events correspond to events that happen relevant to the current user and the guilds it is a member of.
@@ -430,6 +452,8 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Channel Create](#channel-create)                                                 | New guild channel created                                                                                     |
 | [Channel Update](#channel-update)                                                 | Channel was updated                                                                                           |
 | [Channel Delete](#channel-delete)                                                 | Channel was deleted                                                                                           |
+| [Channel Statuses](#channel-statuses)                                             | Response to [Request Channel Statuses](#request-channel-statuses)                                             |
+| [Voice Channel Status Update](#voice-channel-status-update)                       | Voice channel status was updated                                                                              |
 | [Channel Pins Update](#channel-pins-update)                                       | Message was pinned or unpinned                                                                                |
 | [Channel Recipient Add](#channel-recipient-add)                                   | User joined a group DM channel                                                                                |
 | [Channel Recipient Remove](#channel-recipient-remove)                             | User was removed from a group DM channel                                                                      |
@@ -800,13 +824,79 @@ Sent when a new guild channel is created, relevant to the current user. The inne
 
 #### Channel Update
 
-Sent when a channel is updated. The inner payload is a [channel](/resources/channel#channel-object) object. This is not sent when the field `last_message_id` is altered. To keep track of the `last_message_id` changes, you must listen for [Message Create](#message-create) events (or [Thread Create](#thread-create) events for thread-only channels).
+Sent when a channel is updated. The inner payload is a [channel](/resources/channel#channel-object) object. This is not sent when the field `last_message_id` or `status` is altered.
+To keep track of the `last_message_id` changes, you must listen for [Message Create](#message-create) events (or [Thread Create](#thread-create) events for thread-only channels).
+To keep track of the `status` changes, you must listen for [Voice Channel Status Update](#voice-channel-status-update) events.
 
 This event may reference roles or guild members that no longer exist in a guild.
 
 #### Channel Delete
 
 Sent when a channel relevant to the current user is deleted. The inner payload is a [channel](/resources/channel#channel-object) object.
+
+#### Channel Statuses
+
+Sent in response to [Request Channel Statuses](#request-channel-statuses). Contains the statuses for all voice channels that have one set.
+
+###### Channel Statuses Structure
+
+| Field    | Type                                                      | Description                      |
+| -------- | --------------------------------------------------------- | -------------------------------- |
+| guild_id | snowflake                                                 | The ID of the guild              |
+| channels | array[[channel status](#channel-status-structure) object] | The voice channels with statuses |
+
+###### Channel Status Structure
+
+| Field  | Type      | Description                                          |
+| ------ | --------- | ---------------------------------------------------- |
+| id     | snowflake | The ID of the channel                                |
+| status | string    | The status of the voice channel (max 500 characters) |
+
+#### Voice Channel Status Update
+
+Sent when a voice channel's status is updated.
+
+###### Voice Channel Status Update Structure
+
+| Field    | Type      | Description                                          |
+| -------- | --------- | ---------------------------------------------------- |
+| id       | snowflake | The ID of the voice channel                          |
+| guild_id | snowflake | The ID of the guild                                  |
+| status   | ?string   | The status of the voice channel (max 500 characters) |
+
+#### Channel Pins Update
+
+Sent when a message is pinned or unpinned in a text channel. This is not sent when a pinned message is deleted.
+
+###### Channel Pins Update Structure
+
+| Field               | Type               | Description                                    |
+| ------------------- | ------------------ | ---------------------------------------------- |
+| guild_id?           | snowflake          | The ID of the guild                            |
+| channel_id          | snowflake          | The ID of the channel                          |
+| last_pin_timestamp? | ?ISO8601 timestamp | When the most recent pinned message was pinned |
+
+#### Channel Recipient Add
+
+Sent when a user is added to a group direct message channel.
+
+###### Channel Recipient Add Structure
+
+| Field      | Type                                               | Description            |
+| ---------- | -------------------------------------------------- | ---------------------- |
+| channel_id | snowflake                                          | The ID of the channel  |
+| user       | partial [user](/resources/user#user-object) object | The user who was added |
+
+#### Channel Recipient Remove
+
+Sent when a user is removed from a group direct message channel.
+
+###### Channel Recipient Remove Structure
+
+| Field      | Type                                               | Description              |
+| ---------- | -------------------------------------------------- | ------------------------ |
+| channel_id | snowflake                                          | The ID of the channel    |
+| user       | partial [user](/resources/user#user-object) object | The user who was removed |
 
 #### Thread Create
 
@@ -869,40 +959,6 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 | removed_member_ids? | array of snowflakes                                                    | The IDs of the users who were removed from the thread         |
 
 ^1^ Also include [`member`](/resources/guild#guild-member-object) and nullable [`presence`](/resources/presence#presence-object) fields.
-
-#### Channel Pins Update
-
-Sent when a message is pinned or unpinned in a text channel. This is not sent when a pinned message is deleted.
-
-###### Channel Pins Update Structure
-
-| Field               | Type               | Description                                    |
-| ------------------- | ------------------ | ---------------------------------------------- |
-| guild_id?           | snowflake          | The ID of the guild                            |
-| channel_id          | snowflake          | The ID of the channel                          |
-| last_pin_timestamp? | ?ISO8601 timestamp | When the most recent pinned message was pinned |
-
-#### Channel Recipient Add
-
-Sent when a user is added to a group direct message channel.
-
-###### Channel Recipient Add Structure
-
-| Field      | Type                                               | Description            |
-| ---------- | -------------------------------------------------- | ---------------------- |
-| channel_id | snowflake                                          | The ID of the channel  |
-| user       | partial [user](/resources/user#user-object) object | The user who was added |
-
-#### Channel Recipient Remove
-
-Sent when a user is removed from a group direct message channel.
-
-###### Channel Recipient Remove Structure
-
-| Field      | Type                                               | Description              |
-| ---------- | -------------------------------------------------- | ------------------------ |
-| channel_id | snowflake                                          | The ID of the channel    |
-| user       | partial [user](/resources/user#user-object) object | The user who was removed |
 
 ### Guilds
 
