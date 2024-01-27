@@ -7,9 +7,246 @@ Rules can be configured to automatically execute actions whenever they trigger. 
 <Alert type="info">
 
 Users are required to have the `MANAGE_GUILD` permission to access all AutoMod resources.
-Some [action types](#automod-action-type) require additional permissions, i.e. the `TIMEOUT_USER` [action type](#automod-action-type) requires an additional `MODERATE_MEMBERS` permission.
+Some [action types](#automod-action-type) and [alert action types](#automod-alert-action-type) require additional permissions (i.e. the `TIMEOUT_USER` [action type](#automod-action-type) requires an additional `MODERATE_MEMBERS` permission and the `DELETE_USER_MESSAGE` [alert action type](#automod-alert-action-type) requires an additional `MANAGE_MESSAGES` permission).
 
 </Alert>
+
+### AutoMod System Messages
+
+AutoMod system messages are sent as standard [messages](/resources/channel#message-object) in the guild with the `AUTO_MODERATION_ACTION` [message type](/resources/channel#message-object-message-types).
+If no user is associated with the system message, the author is the AutoMod system account (`1008776202191634432`).
+
+These messages have a special [embed](/resources/channel#embed-object) structure which contains information about the action that was taken.
+The custom embed fields below are collapsed as a list of key-value pairs into the `fields` array on the [embed object](/resources/channel#embed-object).
+
+<Alert type="warn">
+
+As [embed field values](/resources/channel#embed-field-structure) are strings, all below fields are serialized as strings, even if the type is specified as otherwise.
+
+</Alert>
+
+#### AutoMod Alert
+
+Sent when a [`SEND_ALERT_MESSAGE` action type](#automod-action-type) is triggered.
+
+The author of the message is the user which generated the content that triggered the rule.
+The [embed description](/resources/channel#embed-object) contains the user message content that triggered the rule, if applicable.
+
+###### AutoMod Alert Embed Structure
+
+| Field                         | Type                                                                         | Description                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| rule_name                     | string                                                                       | The name of the [automod rule](#automod-rule-object) that was triggered                                         |
+| decision_id                   | string                                                                       | The ID of the decision that was executed                                                                        |
+| decision_reason?              | string                                                                       | The reason for the decision that was executed                                                                   |
+| channel_id?                   | snowflake                                                                    | The ID of the channel in which the user content was posted                                                      |
+| flagged_message_id?           | snowflake                                                                    | The ID of the message that triggered the rule                                                                   |
+| keyword                       | string                                                                       | The word or phrase configured that triggered the rule                                                           |
+| keyword_matched_content       | string                                                                       | The substring in content that triggered the rule                                                                |
+| block_profile_update_type?    | string                                                                       | The [type of profile update](#automod-profile-update-type) that was blocked                                     |
+| quarantine_user?              | string                                                                       | The [reason for quarantining the user](#automod-quarantine-user-reason)                                         |
+| quarantine_user_action?       | string                                                                       | The [action taken on the quarantined user](#automod-quarantine-user-action)                                     |
+| quarantine_event?             | string                                                                       | The [user action](#automod-quarantine-event-type) that triggered the rule                                       |
+| voice_channel_status_outcome? | string                                                                       | The [outcome of the voice channel status update](#automod-voice-channel-status-outcome) that triggered the rule |
+| timeout_duration?             | integer                                                                      | Duration (in seconds) after which the timeout expires                                                           |
+| alert_actions_execution?      | [alert actions execution](#automod-alert-actions-execution-structure) object | The actions that were executed on the AutoMod alert                                                             |
+
+###### AutoMod Profile Update Type
+
+| Value           | Description                                     |
+| --------------- | ----------------------------------------------- |
+| nickname_update | When a user updates their nickname in the guild |
+| nickname_reset  | When a user resets their nickname in the guild  |
+
+###### AutoMod Quarantine User Reason
+
+| Value        | Description                                  |
+| ------------ | -------------------------------------------- |
+| username     | The user's username triggered the rule       |
+| display_name | The user's display name triggered the rule   |
+| bio          | The user's bio triggered the rule            |
+| nickname     | The user's guild nickname triggered the rule |
+
+###### AutoMod Quarantine User Action
+
+| Value                | Description                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| block_guest_join     | The guest was prevented from joining the guild                                                                                    |
+| block_profile_update | The user was prevented from updating their profile in the guild                                                                   |
+| quarantine_user      | The user was quarantined; quarantined users, similar to timed out users, are prevented from interacting with the guild in any way |
+
+###### AutoMod Quarantine Event Type
+
+| Value           | Description                              |
+| --------------- | ---------------------------------------- |
+| guild_join      | When a user joins the guild              |
+| message_send    | When a user sends a message in the guild |
+| username_update | When a user updates their username       |
+
+###### AutoMod Voice Channel Status Outcome
+
+| Value   | Description                                            |
+| ------- | ------------------------------------------------------ |
+| flagged | The voice channel status update was flagged by AutoMod |
+| blocked | The voice channel status update was blocked by AutoMod |
+
+###### AutoMod Alert Actions Execution Structure
+
+| Field   | Type                                                                | Description                                                                                             |
+| ------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| v       | integer                                                             | The alert actions execution protocol version (currently 0)                                              |
+| actions | map[string, [alert action](#automod-alert-action-structure) object] | The actions that were executed on the AutoMod alert, keyed by [action type](#automod-alert-action-type) |
+
+###### AutoMod Alert Action Type
+
+| Value | Name                | Description                                       |
+| ----- | ------------------- | ------------------------------------------------- |
+| 1     | SET_COMPLETED       | Marks the alert as completed                      |
+| 2     | UNSET_COMPLETED     | Marks the alert as not completed                  |
+| 3     | DELETE_USER_MESSAGE | Deletes the user message that triggered the alert |
+| 4     | SUBMIT_FEEDBACK     | Reports an issue with the alert to Discord        |
+
+###### AutoMod Alert Action Structure
+
+| Field | Type              | Description                                 |
+| ----- | ----------------- | ------------------------------------------- |
+| actor | snowflake         | The ID of the user that executed the action |
+| ts    | ISO8601 timestamp | When the action was executed                |
+
+###### Example AutoMod Alert Embed
+
+```json
+{
+  "type": "auto_moderation_message",
+  "description": "can i say alien 🥺",
+  "fields": [
+    {
+      "name": "rule_name",
+      "value": "No aliens",
+      "inline": false
+    },
+    {
+      "name": "channel_id",
+      "value": "1121695809839308901",
+      "inline": false
+    },
+    {
+      "name": "decision_id",
+      "value": "22a2df4cf7904b81a17faa3e3930af7d",
+      "inline": false
+    },
+    {
+      "name": "keyword",
+      "value": "alien",
+      "inline": false
+    },
+    {
+      "name": "keyword_matched_content",
+      "value": "alien",
+      "inline": false
+    },
+    {
+      "name": "flagged_message_id",
+      "value": "1200705269110411274",
+      "inline": false
+    },
+    {
+      "name": "timeout_duration",
+      "value": "600",
+      "inline": false
+    },
+    {
+      "name": "alert_actions_execution",
+      "value": "{\"v\": 0, \"actions\": {\"3\": {\"actor\": \"852892297661906993\", \"ts\": \"2024-01-27T07:34:12.145393+00:00\"}, \"1\": {\"actor\": \"852892297661906993\", \"ts\": \"2024-01-27T07:38:29.292345+00:00\"}}}",
+      "inline": false
+    }
+  ]
+}
+```
+
+#### AutoMod Incident Notification
+
+Sent when a guild incident activity alert is triggered.
+
+###### AutoMod Incident Notification Embed Structure
+
+| Field                              | Type              | Description                                                                                                                                 |
+| ---------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| notification_type?                 | string            | The [type of notification](#automod-incident-notification-type) that was triggered (default `raid`)                                         |
+| decision_id?                       | string            | The ID of the decision that was executed                                                                                                    |
+| action_by_user_id?                 | snowflake         | The ID of the user that executed the action (only applicable to `activity_alerts_enabled` [notification types](#automod-notification-type)) |
+| raid_type?                         | string            | The [type of raid](#automod-raid-type) that was detected                                                                                    |
+| raid_datetime?                     | ISO8601 timestamp | When the raid was detected                                                                                                                  |
+| join_attempts?                     | integer           | The approximate number of join attempts as part of the raid                                                                                 |
+| dms_sent?                          | integer           | The approximate number of sent DMs as part of the raid                                                                                      |
+| suspicious_mention_activity_until? | ISO8601 timestamp | When the mention activity restrictions will end (only applicable to `mention_raid` [notification types](#automod-notification-type))        |
+| resolved_reason?                   | string            | The [reason for resolving the notification](#automod-raid-resolution-reason)                                                                |
+
+###### AutoMod Incident Notification Type
+
+| Value                   | Description                               |
+| ----------------------- | ----------------------------------------- |
+| activity_alerts_enabled | Activity alerts were enabled in the guild |
+| raid                    | A raid was detected                       |
+| mention_raid            | A mention raid was detected               |
+
+###### AutoMod Raid Type
+
+| Value        | Description                 |
+| ------------ | --------------------------- |
+| JOIN_RAID    | A join raid was detected    |
+| MENTION_RAID | A mention raid was detected |
+
+###### AutoMod Raid Resolution Type
+
+| Value               | Description                                                                   |
+| ------------------- | ----------------------------------------------------------------------------- |
+| LEGITIMATE_ACTIVITY | The increased activity was expected                                           |
+| LEGITIMATE_ACCOUNTS | The increased activity was caused by legitimate accounts                      |
+| LEGITIMATE_DMS      | The increased activity was caused by legitimate DMs                           |
+| DM_SPAM             | The increased activity was caused by DM spam and the spammers were removed    |
+| JOIN_RAID           | The increased activity was caused by a join raid and the raiders were removed |
+| OTHER               | The increased activity was caused by another reason                           |
+
+###### Example AutoMod Incident Notification Embed
+
+```json
+{
+  "type": "auto_moderation_notification",
+  "fields": [
+    {
+      "name": "notification_type",
+      "value": "raid",
+      "inline": false
+    },
+    {
+      "name": "raid_datetime",
+      "value": "2023-08-15 22:25:33.184657+00:00",
+      "inline": false
+    },
+    {
+      "name": "raid_type",
+      "value": "JOIN_RAID",
+      "inline": false
+    },
+    {
+      "name": "join_attempts",
+      "value": "25",
+      "inline": false
+    },
+    {
+      "name": "dms_sent",
+      "value": "0",
+      "inline": false
+    },
+    {
+      "name": "resolved_reason",
+      "value": "LEGITIMATE_ACTIVITY",
+      "inline": false
+    }
+  ]
+}
+```
 
 ### AutoMod Rule Object
 
@@ -164,12 +401,12 @@ An action which will execute whenever a rule is triggered.
 
 ###### AutoMod Action Type
 
-| Value | Name                   | Description                                                                                                                                             |
-| ----- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | BLOCK_MESSAGE          | Block a member's message and prevent it from being posted; a custom explanation can be specified and shown to members whenever their message is blocked |
-| 2     | SEND_ALERT_MESSAGE ^1^ | Log user content to a specified channel                                                                                                                 |
-| 3     | TIMEOUT_USER ^2^       | Timeout user for a specified duration                                                                                                                   |
-| 4     | QUARANTINE_USER ^3^    | Quarantine user indefinitely; quarantined users, similar to timed out users, are prevented from interacting with the guild in any way                   |
+| Value | Name                   | Description                                                                                                                                                                |
+| ----- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | BLOCK_MESSAGE          | Block a member's message and prevent it from being posted; a custom explanation can be specified and shown to members whenever their message is blocked                    |
+| 2     | SEND_ALERT_MESSAGE ^1^ | Log user content to a specified channel                                                                                                                                    |
+| 3     | TIMEOUT_USER ^2^       | Timeout user for a specified duration                                                                                                                                      |
+| 4     | QUARANTINE_USER ^3^    | Block guild join, profile update, or quarantine user indefinitely; quarantined users, similar to timed out users, are prevented from interacting with the guild in any way |
 
 ^1^ Only a `SEND_ALERT_MESSAGE` action can be set up for `GUILD_POLICY` [trigger types](#automod-trigger-type).
 
@@ -187,6 +424,28 @@ Additional data used when an action is executed. Different fields are relevant b
 | duration_seconds | integer   | Duration (in seconds) after which the timeout expires (max 2419200)                    | TIMEOUT_USER       |
 | custom_message?  | string    | Additional explanation that will be shown to members whenever their message is blocked | BLOCK_MESSAGE      |
 
+## AutoMod Incidents Data Object
+
+###### AutoMod Incidents Data Structure
+
+| Field                  | Type              | Description                                             |
+| ---------------------- | ----------------- | ------------------------------------------------------- |
+| raid_detected_at       | ISO8601 timestamp | When the last raid was detected                         |
+| dm_spam_detected_at    | ISO8601 timestamp | When the last DM spam was detected                      |
+| invites_disabled_until | ISO8601 timestamp | When invites will be re-enabled (max 24 hours from now) |
+| dms_disabled_until     | ISO8601 timestamp | When DMs will be re-enabled (max 24 hours from now)     |
+
+###### Example AutoMod Incidents Data
+
+```json
+{
+  "raid_detected_at": "2024-01-01T18:00:00.000000+00:00",
+  "dm_spam_detected_at": "2024-01-01T18:00:00.000000+00:00",
+  "invites_disabled_until": "2024-01-01T18:00:00.000000+00:00",
+  "dms_disabled_until": "2024-01-01T18:00:00.000000+00:00"
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/auto-moderation/rules">
@@ -196,16 +455,16 @@ Additional data used when an action is executed. Different fields are relevant b
 Returns a list of [automod rule](#automod-rule-object) objects for the configured rules in the guild. Requires the `MANAGE_GUILD` permission.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/auto-moderation/rules/{automod_rule.id}">
-  Get AutoMod Rule
+  Get Guild AutoMod Rule
 </RouteHeader>
 
 Returns an [automod rule](#automod-rule-object) object for the given rule ID in the guild. Requires the `MANAGE_GUILD` permission.
 
 <RouteHeader method="POST" url="/guilds/{guild.id}/auto-moderation/rules" supportsAuditReason>
-  Create AutoMod Rule
+  Create Guild AutoMod Rule
 </RouteHeader>
 
-Create a new automod rule in the guild. Returns an [automod rule](#automod-rule-object) on success. Fires an [Auto Moderation Rule Create](/topics/gateway-events#auto-moderation-rule-create) Gateway event. Requires the `MANAGE_GUILD` permission.
+Creates a new automod rule in the guild. Requires the `MANAGE_GUILD` permission. Returns an [automod rule](#automod-rule-object) on success. Fires an [Auto Moderation Rule Create](/topics/gateway-events#auto-moderation-rule-create) Gateway event.
 
 <Alert type="info">
 
@@ -231,10 +490,10 @@ See [trigger types](#automod-trigger-type) for limits on how many rules of each 
 ^2^ Only applicable to `KEYWORD`, `SPAM`, `KEYWORD_PRESET`, `MENTION_SPAM`, and `GUILD_POLICY` [trigger types](#automod-trigger-type).
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/auto-moderation/rules/{automod_rule.id}" supportsAuditReason>
-  Modify AutoMod Rule
+  Modify Guild AutoMod Rule
 </RouteHeader>
 
-Modify an existing rule in the guild. Returns an [automod rule](#automod-rule-object) on success. Fires an [Auto Moderation Rule Update](/topics/gateway-events#auto-moderation-rule-update) Gateway event. Requires the `MANAGE_GUILD` permission.
+Modifies an existing rule in the guild. Requires the `MANAGE_GUILD` permission. Returns an [automod rule](#automod-rule-object) on success. Fires an [Auto Moderation Rule Update](/topics/gateway-events#auto-moderation-rule-update) Gateway event.
 
 <Alert type="info">
 
@@ -259,7 +518,75 @@ All parameters for this endpoint are optional.
 ^2^ Only applicable to `KEYWORD`, `SPAM`, `KEYWORD_PRESET`, `MENTION_SPAM`, and `GUILD_POLICY` [trigger types](#automod-trigger-type).
 
 <RouteHeader method="DELETE" url="/guilds/{guild.id}/auto-moderation/rules/{automod_rule.id}" supportsAuditReason>
-  Delete AutoMod Rule
+  Delete Guild AutoMod Rule
 </RouteHeader>
 
-Delete a rule in the guild. Returns a 204 empty response on success. Fires an [Auto Moderation Rule Delete](/topics/gateway-events#auto-moderation-rule-delete) Gateway event. Requires the `MANAGE_GUILD` permission.
+Deletes a rule in the guild. Returns a 204 empty response on success. Requires the `MANAGE_GUILD` permission. Fires an [Auto Moderation Rule Delete](/topics/gateway-events#auto-moderation-rule-delete) Gateway event.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/auto-moderation/alert-action">
+  Execute AutoMod Alert Action
+</RouteHeader>
+
+Executes an alert action on an [AutoMod alert](#automod-alert). Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Message Update](/topics/gateway-events#message-update) Gateway event.
+
+###### JSON Params
+
+| Field             | Type      | Description                                                       |
+| ----------------- | --------- | ----------------------------------------------------------------- |
+| channel_id        | snowflake | The ID of the channel where the alert was sent                    |
+| message_id        | snowflake | The ID of the AutoMod system message                              |
+| alert_action_type | integer   | The [type of alert action](#automod-alert-action-type) to execute |
+
+<RouteHeader method="PUT" url="/guilds/{guild.id}/incident-actions">
+  Modify AutoMod Incident Actions
+</RouteHeader>
+
+Sets the incident actions for the guild. Requires the `MANAGE_GUILD` permission. Fires a [Guild Update](/topics/gateway-events#guild-update) Gateway event.
+
+###### JSON Params
+
+| Field                   | Type              | Description                                             |
+| ----------------------- | ----------------- | ------------------------------------------------------- |
+| invites_disabled_until? | ISO8601 timestamp | When invites will be re-enabled (max 24 hours from now) |
+| dms_disabled_until?     | ISO8601 timestamp | When DMs will be re-enabled (max 24 hours from now)     |
+
+###### Response Body
+
+| Field                  | Type              | Description                                             |
+| ---------------------- | ----------------- | ------------------------------------------------------- |
+| invites_disabled_until | ISO8601 timestamp | When invites will be re-enabled (max 24 hours from now) |
+| dms_disabled_until     | ISO8601 timestamp | When DMs will be re-enabled (max 24 hours from now)     |
+
+###### Example Response
+
+```json
+{
+  "invites_disabled_until": "2024-01-01T18:00:00.000000+00:00",
+  "dms_disabled_until": "2024-01-01T18:00:00.000000+00:00"
+}
+```
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/auto-moderation/false-alarm">
+  Resolve AutoMod Incident
+</RouteHeader>
+
+Resolves an [AutoMod incident](#automod-incident-notification). Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Message Update](/topics/gateway-events#message-update) Gateway event.
+
+###### JSON Params
+
+| Field            | Type      | Description                                                                  |
+| ---------------- | --------- | ---------------------------------------------------------------------------- |
+| alert_message_id | snowflake | The ID of the AutoMod system message                                         |
+| reason           | string    | The [reason for resolving the notification](#automod-raid-resolution-reason) |
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/auto-moderation/report-raid">
+  Report AutoMod Incident
+</RouteHeader>
+
+Reports an ongoing raid [AutoMod incident](#automod-incident-notification). Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Message Create](/topics/gateway-events#message-update) Gateway event.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/auto-moderation/clear-mention-raid">
+  Clear Mention Raid Incident
+</RouteHeader>
+
+Clears a mention raid [AutoMod incident](#automod-incident-notification). Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success.
