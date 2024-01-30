@@ -296,7 +296,7 @@ There are multiple message types that have a `message_reference` object. Since m
 - These messages have `message_id` and `channel_id`, and `guild_id` if it is in a guild, with data of the message that was replied to. The `channel_id` and `guild_id` will be the same as the reply.
 - Replies are created by including a `message_reference` when sending a message. When sending, only `message_id` is required.
 
-###### Thread Created messages
+###### Thread Created Messages
 
 - These are automatic messages sent when a public thread is created from an old message or without a message (type `18`).
 - These messages have the `channel_id` and `guild_id` fields, with data of the created thread channel.
@@ -320,6 +320,25 @@ Official clients sample the recording at most once per 100 milliseconds, but wil
 
 Official clients upload a 1 channel, 48000 Hz, 32 kbps Opus stream in an OGG container.
 The encoding and waveform details are an implementation detail and may change without warning.
+
+###### Clips
+
+Clips are a special type of attachment that can be sent with a message. They are created by recording a stream and then clipping a portion of the recording.
+
+Clip [attachments](#attachment-object) have the [`CLIP` flag](#attachment-flags) set, and have the additional fields `clip_created_at`, `clip_participants`, and optionally `title` and `application`.
+
+An attachment can be sent as a clip by specifying the `is_clip`, `clip_created_at`, and `clip_participant_ids` fields, and optionally the `title` and `application_id` fields.
+For an attachment to be a valid clip, it must have a UUID appended to the end of the file in binary format. An example in hexadecimal format is `75 75 69 64 A1 C8 52 99 33 46 4D B8 88 F0 83 F5 7A 75 A5 EF`.
+This can be done with the following pseudocode:
+
+```py
+import uuid
+
+with open("cat.mp4", "r+b") as file:
+    file.seek(0, 2)
+    file.write(b"uuid")
+    file.write(uuid.uuid4().bytes)
+```
 
 ### Followed Channel Object
 
@@ -481,36 +500,34 @@ For the `attachments` array when sending/editing messages, only the `id` is requ
 
 </Alert>
 
-{/* todo: document how clip file metadata works */}
-
-| Field                      | Type                                                                    | Description                                                                                                                                  |
-| -------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| id                         | snowflake                                                               | The attachment ID                                                                                                                            |
-| filename                   | string                                                                  | The name of file attached                                                                                                                    |
-| uploaded_filename? ^2^ ^5^ | string                                                                  | The name of the file pre-uploaded to Discord's GCP bucket                                                                                    |
-| description?               | string                                                                  | The description for the file (max 1024 characters)                                                                                           |
-| content_type?              | string                                                                  | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                                                      |
-| size                       | integer                                                                 | The size of file in bytes                                                                                                                    |
-| url                        | string                                                                  | Source URL of the file                                                                                                                       |
-| proxy_url                  | string                                                                  | A proxied url of the file                                                                                                                    |
-| height?                    | ?integer                                                                | Height of image                                                                                                                              |
-| width?                     | ?integer                                                                | Width of image                                                                                                                               |
-| placeholder_version?       | integer                                                                 | The attachment placeholder protocol version (currently 1)                                                                                    |
-| placeholder?               | string                                                                  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the image, to display before it is loaded                                |
-| ephemeral? ^1^             | boolean                                                                 | Whether this attachment is ephemeral                                                                                                         |
-| duration_secs?             | float                                                                   | Duration of the audio file (if [voice message](#voice-messages))                                                                             |
-| waveform?                  | string                                                                  | Base64 encoded bytearray representing a sampled waveform (if [voice message](#voice-messages))                                               |
-| flags? ^3^                 | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                  |
-| is_clip? ^3^ ^4^           | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)     |
-| is_thumbnail? ^3^          | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                               |
-| is_remix? ^3^              | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment |
-| is_spoiler? ^3^            | boolean                                                                 | Whether this attachment is a spoiler                                                                                                         |
-| clip_created_at?           | ISO8601 timestamp                                                       | When the clip was created                                                                                                                    |
-| clip_participant_ids? ^4^  | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                            |
-| clip_participants? ^4^     | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                       |
-| title?                     | string                                                                  | The title of the clip                                                                                                                        |
-| application_id? ^4^        | snowflake                                                               | The ID of the application the clip was taken in                                                                                              |
-| application? ^4^           | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                        |
+| Field                         | Type                                                                    | Description                                                                                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                            | snowflake                                                               | The attachment ID                                                                                                                            |
+| filename                      | string                                                                  | The name of file attached                                                                                                                    |
+| uploaded_filename? ^2^        | string                                                                  | The name of the file pre-uploaded to Discord's GCP bucket                                                                                    |
+| description?                  | string                                                                  | The description for the file (max 1024 characters)                                                                                           |
+| content_type?                 | string                                                                  | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                                                      |
+| size                          | integer                                                                 | The size of file in bytes                                                                                                                    |
+| url                           | string                                                                  | Source URL of the file                                                                                                                       |
+| proxy_url                     | string                                                                  | A proxied url of the file                                                                                                                    |
+| height?                       | ?integer                                                                | Height of image                                                                                                                              |
+| width?                        | ?integer                                                                | Width of image                                                                                                                               |
+| placeholder_version?          | integer                                                                 | The attachment placeholder protocol version (currently 1)                                                                                    |
+| placeholder?                  | string                                                                  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the image, to display before it is loaded                                |
+| ephemeral? ^1^                | boolean                                                                 | Whether this attachment is ephemeral                                                                                                         |
+| duration_secs?                | float                                                                   | Duration of the audio file (if [voice message](#voice-messages))                                                                             |
+| waveform?                     | string                                                                  | Base64 encoded bytearray representing a sampled waveform (if [voice message](#voice-messages))                                               |
+| flags? ^3^                    | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                  |
+| is_clip? ^3^ ^4^ ^5^          | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)     |
+| is_thumbnail? ^3^             | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                               |
+| is_remix? ^3^                 | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment |
+| is_spoiler? ^3^               | boolean                                                                 | Whether this attachment is a spoiler                                                                                                         |
+| clip_created_at? ^4^          | ISO8601 timestamp                                                       | When the clip was created                                                                                                                    |
+| clip_participant_ids? ^4^ ^5^ | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                            |
+| clip_participants? ^5^        | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                       |
+| title?                        | string                                                                  | The title of the clip                                                                                                                        |
+| application_id? ^5^           | snowflake                                                               | The ID of the application the clip was taken in                                                                                              |
+| application? ^5^              | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                        |
 
 ^1^ Ephemeral attachments will automatically be removed after a set period of time. Ephemeral attachments on messages are guaranteed to be available as long as the message itself exists.
 
@@ -518,9 +535,9 @@ For the `attachments` array when sending/editing messages, only the `id` is requ
 
 ^3^ The `flags` field is not sendable. To set flags, use the `is_clip`, `is_thumbnail`, and `is_remix` send-only fields.
 
-^4^ The `clip_participant_ids` and `application_id` fields are send-only. You will receive the `clip_participants` and `application` fields back when retrieving the [message](#message-object).
+^4^ When sending a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
 
-^5^ When sending a pre-uploaded file and setting `is_clip` to `true`, the file's clip metadata must be the same as when it was uploaded.
+^5^ The `clip_participant_ids` and `application_id` fields are send-only. You will receive the `clip_participants` and `application` fields back when retrieving the [message](#message-object).
 
 ###### Attachment Flags
 
@@ -901,18 +918,18 @@ Creates attachment URLs to upload the intended attachments directly to Discord's
 
 ###### Upload Attachment Structure
 
-{/* todo: document how clip file metadata works */}
+| Field                     | Type              | Description                                                                                                                              |
+| ------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| id?                       | ?string           | The ID of the attachment to reference in the response                                                                                    |
+| filename                  | string            | The name of the file being uploaded                                                                                                      |
+| file_size                 | integer           | The size of the file being uploaded in bytes                                                                                             |
+| is_clip? ^1^              | boolean           | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
+| clip_created_at? ^1^      | ISO8601 timestamp | When the clip was created                                                                                                                |
+| clip_participant_ids? ^1^ | array[snowflake]  | The IDs of the participants in the clip (max 100)                                                                                        |
+| title?                    | string            | The title of the clip                                                                                                                    |
+| application_id?           | snowflake         | The ID of the application the clip was taken in                                                                                          |
 
-| Field                 | Type              | Description                                                                                                                              |
-| --------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| id?                   | ?string           | The ID of the attachment to reference in the response                                                                                    |
-| filename              | string            | The name of the file being uploaded                                                                                                      |
-| file_size             | integer           | The size of the file being uploaded in bytes                                                                                             |
-| is_clip?              | boolean           | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
-| clip_created_at?      | ISO8601 timestamp | When the clip was created                                                                                                                |
-| clip_participant_ids? | array[snowflake]  | The IDs of the participants in the clip (max 100)                                                                                        |
-| title?                | string            | The title of the clip                                                                                                                    |
-| application_id?       | snowflake         | The application ID the clip was taken from                                                                                               |
+^1^ When uploading a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
 
 ###### Cloud Attachment Structure
 
