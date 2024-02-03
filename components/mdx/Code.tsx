@@ -84,7 +84,7 @@ export default function Code({ children, className, metastring, file, ...props }
   const breakWords = propList.includes(language);
 
   /* eslint-disable react/prop-types */
-  const hasCopy = props.copy || language === "copy";
+  const hasCopy = !(props.noCopy || language === "json");
   const isTerminal = props.terminal || language === "terminal";
   const hasLines = file != null || props.lines;
   /* eslint-enable react/prop-types */
@@ -92,9 +92,9 @@ export default function Code({ children, className, metastring, file, ...props }
   const lineNumberClasses = classNames("line_number inline-block w-6 text-right leading-6 select-none");
 
   return (
-    <div className="code-block relative my-6 font-mono rounded-md">
+    <div className="code-block relative my-3 font-mono rounded-md">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight code={children} language={language ?? ""}>
+      <Highlight code={children} language={language ?? ""} prism={Prism}>
         {({
           className: blockClassName,
           tokens,
@@ -112,14 +112,6 @@ export default function Code({ children, className, metastring, file, ...props }
               blockClassName,
             )}
           >
-            {/* eslint-disable-next-line react/prop-types */}
-            {(props.copy || language === "copy") && (
-              <div className="copy-button">
-                <CopyButton text={children}>
-                  <CopyIcon />
-                </CopyButton>
-              </div>
-            )}
             <code className="p-4 px-1.5 rounded-md">
               {cleanTokens(tokens).map((line: Token[], i: number) => {
                 const lineClass = {};
@@ -186,6 +178,15 @@ export default function Code({ children, className, metastring, file, ...props }
           </pre>
         )}
       </Highlight>
+      {hasCopy && (
+        <div className="group copy-button-wrapper absolute top-0 right-0 w-12 h-12">
+          <div className="copy-button absolute top-2 right-2 hidden p-3 transition group-hover:block rounded-md">
+            <CopyButton text={children}>
+              <CopyIcon className="w-5" />
+            </CopyButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

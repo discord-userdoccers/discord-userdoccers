@@ -7,7 +7,7 @@ interface CopyButtonProps {
 }
 
 export default function CopyButton({ text, children }: CopyButtonProps) {
-  const { copy, status } = useClipboard(text);
+  const { copy, status } = useClipboard(text, 250);
   let value = children;
 
   if (status === CopyStatus.SUCCESS) {
