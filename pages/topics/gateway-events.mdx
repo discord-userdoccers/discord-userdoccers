@@ -127,15 +127,10 @@ Details about identifying is in the [Gateway documentation](/topics/gateway#iden
       "since": 0,
       "afk": false
     },
-    "capabilities": 8189,
+    "capabilities": 16381,
     "client_state": {
       "api_code_version": 0,
-      "guild_versions": {},
-      "highest_last_message_id": "0",
-      "private_channels_version": "0",
-      "read_state_version": 0,
-      "user_guild_settings_version": -1,
-      "user_settings_version": -1
+      "guild_versions": {}
     }
   }
 }
@@ -334,6 +329,12 @@ Due to our privacy and infrastructural concerns with this feature, there are som
 
 Used to request a private channel's pre-existing call data, created before the Gateway connection was established. Fires a [Call Create](#call-create) Gateway event if a call is found.
 
+<Alert type="info">
+
+When using the `AUTO_CALL_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities), it is no longer necessary to explicitly request a call connect. Instead, the client will automatically receive [Call Create](#call-create) events for pre-existing calls upon connecting to the Gateway.
+
+</Alert>
+
 ###### Request Call Connect Structure
 
 | Field      | Type      | Description                      |
@@ -496,6 +497,7 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Message Delete](#message-delete)                                                 | Message was deleted                                                                                           |
 | [Message Delete Bulk](#message-delete-bulk)                                       | Multiple messages were deleted at once                                                                        |
 | [Message Reaction Add](#message-reaction-add)                                     | User reacted to a message                                                                                     |
+| [Message Reaction Add Many](#message-reaction-add-Many)                           | Many users reacted to a message                                                                               |
 | [Message Reaction Remove](#message-reaction-remove)                               | User removed a reaction from a message                                                                        |
 | [Message Reaction Remove All](#message-reaction-remove-all)                       | All reactions were explicitly removed from a message                                                          |
 | [Message Reaction Remove Emoji](#message-reaction-remove-emoji)                   | All reactions for a given emoji were explicitly removed from a message                                        |
@@ -613,8 +615,8 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | private_channels ^1^         | array[[channel](/resources/channel#channel-object) object]                | The DMs and group DMs the user is participating in                                                                                                                                                                                                            |
 | connected_accounts           | array[[connection](/resources/user#connection-object)]                    | The third-party accounts the user has linked                                                                                                                                                                                                                  |
 | notes ^1^ ^5^                | map[snowflake, string]                                                    | A mapping of user IDs to notes the user has made for them                                                                                                                                                                                                     |
-| presences ^6^                | array[[presence](/resources/presence#presence-object) object]             | The presences of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)).                                         |
-| merged_presences ^6^         | [merged presences](#merged-presences-structure) object                    | The presences of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), and any guild presences sent at startup |
+| presences ^6^                | array[[presence](/resources/presence#presence-object) object]             | The presences of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)).                                         |
+| merged_presences ^6^         | [merged presences](#merged-presences-structure) object                    | The presences of the user's non-offline [friends and implicit relationships](/resources/user#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), and any guild presences sent at startup |
 | merged_members ^6^ ^7^       | array[array[[guild member](/resources/guild#guild-member-object) object]] | The members of the user's guilds, in the same order as the `guilds` array                                                                                                                                                                                     |
 | users ^6^                    | array[partial [user](/resources/user#user-object) object]                 | The deduped users across all objects in the event                                                                                                                                                                                                             |
 | application?                 | [gateway application](#gateway-application-structure) object              | The application of the connected user, if it is a bot                                                                                                                                                                                                         |
@@ -678,9 +680,15 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 #### Ready Supplemental
 
-Sent soon after [Ready](#ready), with additional data that is not critical to begin interacting with the platform. This event requires the `PRIORITIZED_READY_PAYLOAD` [Gateway capability](/topics/gateway#gateway-capabilities).
+Sent soon after [Ready](#ready), with additional data that is not critical to begin interacting with the platform.
 
 If this event is enabled, any fields received in it that are also present in [Ready](#ready) will not be received in [Ready](#ready) (unless otherwise specified).
+
+<Alert type="info">
+
+This event requires the `PRIORITIZED_READY_PAYLOAD` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+</Alert>
 
 ###### Ready Supplemental Structure
 
@@ -1146,7 +1154,7 @@ If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS`
 
 Sent when a user is removed from a guild (leave/kick/ban).
 
-For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
+For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
 
 ###### Guild Member Remove Structure
 
@@ -1165,7 +1173,7 @@ If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS`
 
 Sent when a guild member is updated. This will also fire when the user object of a guild member changes. Optional fields will only be included if changed.
 
-For user accounts, this event is only sent for members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
+For user accounts, this event is only sent for members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/user#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
 
 ###### Guild Member Update Structure
 
@@ -1433,6 +1441,32 @@ Sent when a user adds a reaction to a message.
 | type              | integer                                               | The [type of reaction](/resources/channel#reaction-type) |
 | burst_colors?     | array[string]                                         | The hex-encoded colors to render the burst reaction with |
 
+#### Message Reaction Add Many
+
+Sent when multiple users add reactions to a message in a short period of time.
+
+<Alert type="info">
+
+This event requires the `DEBOUNCE_MESSAGE_REACTIONS` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+</Alert>
+
+###### Message Reaction Add Many Structure
+
+| Field      | Type                                                              | Description                        |
+| ---------- | ----------------------------------------------------------------- | ---------------------------------- |
+| channel_id | snowflake                                                         | The ID of the channel              |
+| message_id | snowflake                                                         | The ID of the message              |
+| guild_id?  | snowflake                                                         | The ID of the guild                |
+| reactions  | array[[debounced reaction](#debounced-reaction-structure) object] | The reactions added to the message |
+
+#### Debounced Reaction Structure
+
+| Field | Type                                                  | Description                                      |
+| ----- | ----------------------------------------------------- | ------------------------------------------------ |
+| users | array[snowflake]                                      | The IDs of the users who reacted with this emoji |
+| emoji | partial [emoji](/resources/emoji#emoji-object) object | The emoji used to react                          |
+
 #### Message Reaction Remove
 
 Sent when a user removes a reaction from a message.
@@ -1500,7 +1534,7 @@ Sent in response to [Request Last Messages](#request-last-messages).
 
 This event is sent when a user's presence or info, such as name or avatar, is updated. The inner payload is a [presence](/resources/presence#presence-object) object.
 
-For user accounts, this event is only sent for presences they are subscribed to. Users are automatically subscribed to the overall user presence and every per-guild presence of [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), as well as every per-guild presences of users they have an open DM with.
+For user accounts, this event is only sent for presences they are subscribed to. Users are automatically subscribed to the overall user presence and every per-guild presence of [friends and implicit relationships](/resources/user#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as every per-guild presences of users they have an open DM with.
 
 <Alert type="warn">
 
