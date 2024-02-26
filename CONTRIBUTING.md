@@ -8,6 +8,8 @@ This document is meant as a guide to help you get started. If you are not sure o
 
 The documentation is a community effort, and any good faith contributions are welcome. Simple things like fixing typos, adding missing fields, updating enum values, or improving the formatting of a table are all valuable contributions. However, users without a good understanding of the Discord API are discouraged from attempting to document complex features, as reviewing and correcting these contributions can be more time-consuming for a maintainer than writing the documentation from scratch.
 
+While we obviously have no guarantees that breaking changes aren't made to any given feature, brand-new, unreleased features should be given some time to mature before being documented. This is to avoid the documentation becoming outdated too quickly.
+
 ## Basics
 
 ### Markdown
