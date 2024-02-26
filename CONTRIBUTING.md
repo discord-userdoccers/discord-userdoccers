@@ -4,6 +4,10 @@ This documentation strives to not only be accurate, but ***consistent***. It has
 
 This document is meant as a guide to help you get started. If you are not sure on how to do something, _check other sections of the documentation_ to see how it is done.
 
+## What Can I Contribute?
+
+The documentation is a community effort, and any good faith contributions are welcome. Simple things like fixing typos, adding missing fields, updating enum values, or improving the formatting of a table are all valuable contributions. However, users without a good understanding of the Discord API are discouraged from attempting to document complex features, as reviewing and correcting these contributions can be more time-consuming for a maintainer than writing the documentation from scratch.
+
 ## Basics
 
 ### Markdown

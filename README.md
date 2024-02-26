@@ -4,8 +4,11 @@ This repo is an attempt at documenting the unsupported user side of the Discord 
 
 This means this documentation is focused on the API as it is used by non-bot users, namely with user and bearer authentication tokens. **Most bot-only endpoints that are not usable with user/bearer tokens are generally out of scope and will not be documented here.**
 
-### ⚠️ Note
-This documentation is not affiliated with or endorsed by Discord in any way. It is a community effort to document the API as it is used by regular user accounts, and is not an official source of information.
+> [!IMPORTANT]
+> The success of this project depends on the community's contributions. If you have any knowledge of the Discord API, please consider contributing to this project. See [CONTRIBUTING.md](/CONTRIBUTING.md) for more information.
+
+> [!NOTE]
+> This documentation is not affiliated with or endorsed by Discord in any way. It is a community effort to document the API as it is used by regular user accounts, and is not an official source of information.
 
 **This is a very early work-in-progress. [Contributions](/CONTRIBUTING.md) are welcome!**
 
