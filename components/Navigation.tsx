@@ -327,9 +327,6 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/guild#guild-object">Guild Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#unavailable-guild-object">
-                Unavailable Guild Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#user-guild-object">User Guild Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>

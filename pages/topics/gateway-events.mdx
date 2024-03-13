@@ -1017,7 +1017,8 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 | -------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | joined_at                  | ISO8601 timestamp                                                                                    | When this guild was joined                                                                     |
 | large                      | boolean                                                                                              | Whether this is considered a large guild                                                       |
-| unavailable?               | boolean                                                                                              | Whether this guild is unavailable due to an outage                                             |
+| unavailable?               | boolean                                                                                              | Whether the guild is unavailable due to an outage                                              |
+| geo_restricted? ^6^        | boolean                                                                                              | Whether the guild is not available in your current region                                      |
 | member_count               | integer                                                                                              | Total number of members in this guild                                                          |
 | voice_states ^4^           | array[[voice state](/resources/voice#voice-state-object) object]                                     | States of members currently in voice channels                                                  |
 | members ^1^                | array[[guild member](/resources/guild#guild-member-object) object]                                   | Members in the guild                                                                           |
@@ -1031,7 +1032,7 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 | stickers                   | array[[sticker](/resources/sticker#sticker-object) object]                                           | Custom guild stickers                                                                          |
 | roles                      | array[[role](/topics/permissions#role-object) object]                                                | Roles in the guild                                                                             |
 | emojis                     | array[[emoji](/resources/emoji#emoji-object) object]                                                 | Custom guild emojis                                                                            |
-| premium_subscription_count | integer                                                                                              | The number of boosts this guild currently has                                                  |
+| premium_subscription_count | integer                                                                                              | The number of premium subscriptions (boosts) the guild currently has                           |
 
 ^1^ For bots without the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), user accounts, or guilds with over 75k members, this will only include the client's member and users in voice channels. User accounts additionally receive [friends and implicit relationships](/resources/user#relationship-object) (depending on the [`NO_AFFINE_USER_IDS` Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
 
@@ -1042,6 +1043,29 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 ^4^ Omitted when using the `PRIORITIZED_READY_PAYLOAD` [Gateway capability](/topics/gateway#gateway-capabilities).
 
 ^5^ Requires the `CLIENT_STATE_V2` [Gateway capability](/topics/gateway#gateway-capabilities). Without the capability, the `properties` field will be merged into the main object, along with the rest of the extended attributes.
+
+^6^ Geo-restricted guilds will also be marked as unavailable and will not be joinable or accessable.
+
+#### Unavailable Guild Object
+
+A partial guild object. Represents an offline guild, or a guild the client is not connected to yet.
+
+###### Unavailable Guild Structure
+
+| Field           | Type      | Description                                               |
+| --------------- | --------- | --------------------------------------------------------- |
+| id              | snowflake | The ID of the guild                                       |
+| unavailable?    | boolean   | Whether the guild is unavailable due to an outage         |
+| geo_restricted? | boolean   | Whether the guild is not available in your current region |
+
+###### Example Unavailable Guild
+
+```json
+{
+  "id": "41771983423143937",
+  "unavailable": true
+}
+```
 
 ###### Data Mode
 
@@ -1055,7 +1079,7 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 
 This event can be sent in three different scenarios:
 
-1.  When a user is initially connecting, to lazily load and backfill information for all unavailable guilds sent in the [Ready](#ready) event. Guilds that are unavailable due to an outage will send a [Guild Delete](#guild-delete) event.
+1.  When a bot is initially connecting, to lazily load and backfill information for all unavailable guilds sent in the [Ready](#ready) event. Guilds that are unavailable due to an outage or geo-restricted will send a [Guild Delete](#guild-delete) event.
 2.  When a Guild becomes available again to the client.
 3.  When the current user joins a new Guild.
 
@@ -1068,7 +1092,7 @@ During an outage, the guild object in scenarios 1 and 3 may be marked as unavail
 The inner payload can be:
 
 - An available guild: a [Gateway guild](#gateway-guild-object) object.
-- An unavailable guild: an [unavailable guild](/resources/guild#unavailable-guild-object) object.
+- An unavailable guild: an [unavailable guild](#unavailable-guild-object) object.
 
 #### Guild Update
 
@@ -1076,7 +1100,7 @@ Sent when a guild is updated. The inner payload is a [guild](/resources/guild#gu
 
 #### Guild Delete
 
-Sent when a guild becomes or was already unavailable due to an outage, or when the user leaves or is removed from a guild. The inner payload is an [unavailable guild](/resources/guild#unavailable-guild-object) object. If the `unavailable` field is not set, the user was removed from the guild.
+Sent when a guild becomes or was already unavailable due to an outage, or when the user leaves or is removed from a guild. The inner payload is an [unavailable guild](#unavailable-guild-object) object. If the `unavailable` field is not set, the user was removed from the guild.
 
 #### Guild Audit Log Entry Create
 
