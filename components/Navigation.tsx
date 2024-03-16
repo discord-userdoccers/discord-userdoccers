@@ -154,6 +154,16 @@ export default function Navigation() {
         >
           Reference
         </NavigationLink>
+        <NavigationLink
+          href="/authentication"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/authentication#login">Login</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Authentication
+        </NavigationLink>
       </NavigationSection>
 
       <NavigationSection title="Resources">
@@ -542,6 +552,17 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Topics">
+      <NavigationLink
+          href="/topics/captcha-handling"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/captcha-handling#identifying-captchas">Identifying CAPTCHAs</NavigationSubLink>
+              <NavigationSubLink href="/topics/captcha-handling#solving-captchas">Solving CAPTCHAs</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          CAPTCHA Handling
+        </NavigationLink>
         <NavigationLink
           href="/topics/client-distribution"
           subLinks={
