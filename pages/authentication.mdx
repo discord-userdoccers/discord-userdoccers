@@ -1,11 +1,242 @@
-# Login
+# Authentication
 
-A major distinguishing feature of user accounts is that you retrieve authentication tokens by logging in through a classic email/password combination. However, the full login flow is quite complex, and involves several steps.
-
-## Implementation
+A major distinguishing feature of user accounts is that you retrieve authentication tokens by logging in through a classic email/password combination. However, the full login & registration flow is quite complex, and involves several steps.
 
 <Alert type="warn">
 
-Special care should be taken when handling user credentials and implementing Discord's login flow. Discord does not take kindly to spam in their authentication endpoints, and an improper implementation can lead to account termination.
+Special care should be taken when handling user credentials and implementing Discord's login & registration flow. Discord does not take kindly to spam in their authentication endpoints, and an improper implementation can lead to account termination.
 
 </Alert>
+
+## Fingerprints
+
+Discord uses fingerprints to persist experiments throughout the authentication flow. For more information about fingerprints, see the [relevant experiment documentation](/topics/experiments#fingerprints).
+
+If the client is unauthenticated, a fingerprint should be generated using [Get Experiment Assignments](/topics/experiments#get-experiment-assignments) and included in the `X-Fingerprint` header as well as any applicable `fingerprint` JSON parameters until authentication is complete.
+
+## Login
+
+The login process is the first step in authenticating a user.
+
+To log in, a client must first use the [Login Account](#login-account) endpoint with the user's email/phone number and password.
+If the user has multi-factor authentication enabled, the client must use the [Verify MFA Login](#verify-mfa-login) endpoint to complete the login process after a successful response.
+
+If a known [JSON error code](/topics/opcodes-and-status-codes#json-error-codes) is returned, the client must handle the error accordingly (e.g. prompt the user to undelete their account or verify their phone number).
+If a form body error is returned, the client should display the error message to the user.
+
+Once the user is logged in, the client should store the authentication token to avoid having to log in again in the future.
+
+### Endpoints
+
+<RouteHeader method="POST" url="/auth/login" unauthenticated>
+  Login Account
+</RouteHeader>
+
+Retrieves an authentication token for the given credentials.
+
+<Alert type="info">
+
+If this endpoint is requested with a valid authentication token, a successful response will be returned irrespective of the request body.
+
+</Alert>
+
+<Alert type="warn">
+
+When first logging into an account (without MFA enabled) from a new location, Discord may reject the login request and require the user to verify the login attempt via email or phone.
+
+If logging in via email, the user will receive a link in their email that redirects to the official Discord client, with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
+
+If logging in via phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
+A verification token should be retrieved by [verifying the phone number](/topics/verification#verify-phone).
+
+After [IP authorization](#authorize-ip-address) with this verification token, the login request should be retried. A new CAPTCHA challenge should not be required.
+
+</Alert>
+
+<Alert type="warn">
+
+If the user's account is disabled by Discord, the login request will fail with a special structure, similar to a success response:
+
+```json
+{
+  "user_id": "852892297661906993",
+  "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e"
+}
+```
+
+Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing.
+
+</Alert>
+
+###### JSON Params
+
+| Field             | Type    | Description                                                                                                                                |
+| ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| login             | string  | The user's email or E.164-formatted phone number                                                                                           |
+| password          | string  | The user's password (8-72 characters)                                                                                                      |
+| undelete? ^1^     | boolean | Whether to undelete a [self-disabled](/resources/user#disable-user) or [self-deleted](/resources/user#delete-user) account (default false) |
+| login_source?     | ?string | The [source of the login request](#login-source)                                                                                           |
+| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request                                                                               |
+
+^1^ If you get an account disabled (`20013`) or marked for deletion (`20011`) [JSON error code](/topics/opcodes-and-status-codes#json-error-codes), you can undelete the account by setting this parameter.
+
+###### Login Source
+
+Represents a login initiated from a page outside of the normal login flow.
+
+| Value                     | Description                                                        |
+| ------------------------- | ------------------------------------------------------------------ |
+| gift                      | Login request initiated from a gift code                           |
+| guild_template            | Login request initiated from a guild template                      |
+| guild_invite              | Login request initiated from a guild invite                        |
+| dm_invite                 | Login request initiated from a group DM invite                     |
+| friend_invite             | Login request initiated from a friend invite                       |
+| role_subscription         | Login request initiated from a role subscription redirect          |
+| role_subscription_setting | Login request initiated from a role subscription settings redirect |
+
+###### Response Body
+
+| Field             | Type                                               | Description                                                                                                                                                                           |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| user_id           | snowflake                                          | The ID of the user that was logged in                                                                                                                                                 |
+| token?            | string                                             | The authentication token, if the login was completed                                                                                                                                  |
+| user_settings?    | [login settings](#login-settings-structure) object | The user's partial settings, if the login was completed                                                                                                                               |
+| required_actions? | array[string]                                      | The [required actions](#login-required-action-type) that must be completed                                                                                                            |
+| ticket?           | string                                             | A ticket to be used in the [multi-factor authentication flow](#verify-mfa-login)                                                                                                      |
+| mfa?              | boolean                                            | Whether [multi-factor authentication](#verify-mfa-login) is required to login (default false)                                                                                         |
+| totp?             | boolean                                            | Whether the user has TOTP-based multi-factor authentication enabled                                                                                                                   |
+| sms?              | boolean                                            | Whether the user has SMS-based multi-factor authentication enabled                                                                                                                    |
+| backup?           | boolean                                            | Whether backup codes can be used for multi-factor authentication                                                                                                                      |
+| webauthn?         | ?string                                            | The stringified JSON config of [public key credential request options](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#web_authentication_api) for WebAuthn |
+
+###### Login Settings Structure
+
+A partial settings object to bootstrap the client with.
+
+| Field  | Type   | Description                                                           |
+| ------ | ------ | --------------------------------------------------------------------- |
+| locale | string | The [language option](/reference#locales) chosen by the user          |
+| theme  | string | The [client theme](/resources/user#client-theme) selected by the user |
+
+###### Login Required Action Type
+
+Actions the user must complete after a successful login.
+
+| Value           | Description                                                                     |
+| --------------- | ------------------------------------------------------------------------------- |
+| update_password | The user must change their password to meet Discord's new password requirements |
+
+<RouteHeader method="POST" url="/auth/authorize-ip" unauthenticated>
+  Authorize IP Address
+</RouteHeader>
+
+Authorizes the client's IP address for login.
+
+###### JSON Params
+
+| Field | Type   | Description                                                                         |
+| ----- | ------ | ----------------------------------------------------------------------------------- |
+| token | string | The verification token received from the email or phone number verification process |
+
+<RouteHeader method="POST" url="/auth/mfa/{authenticator_type}" unauthenticated>
+  Verify MFA Login
+</RouteHeader>
+
+Verifies a multi-factor login. The `authenticator_type` path parameter can be set to `totp` (which includes backup codes), `sms`, or `webauthn`.
+
+<Alert type="warn">
+
+If the user's account is disabled by Discord, the login request will fail with a special structure, similar to a success response:
+
+```json
+{
+  "user_id": "852892297661906993",
+  "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e"
+}
+```
+
+Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing.
+
+</Alert>
+
+###### JSON Params
+
+| Field             | Type    | Description                                                      |
+| ----------------- | ------- | ---------------------------------------------------------------- |
+| ticket            | string  | The MFA ticket received from the [login request](#login-account) |
+| code ^1^          | string  | The MFA code (TOTP/backup, SMS, or WebAuthn) to be verified      |
+| login_source?     | ?string | The [source of the login request](#login-source)                 |
+| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request     |
+
+^1^ For WebAuthn authentication, the `code` parameter should be a stringified JSON object of the [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON).
+
+###### Response Body
+
+| Field         | Type                                               | Description                 |
+| ------------- | -------------------------------------------------- | --------------------------- |
+| token         | string                                             | The authentication token    |
+| user_settings | [login settings](#login-settings-structure) object | The user's partial settings |
+
+## Multi-Factor Authentication
+
+<RouteHeader method="POST" url="/auth/mfa/sms/send" unauthenticated>
+  Send MFA SMS
+</RouteHeader>
+
+Sends a multi-factor authentication code to the user's phone number for verification.
+
+###### JSON Params
+
+| Field  | Type   | Description    |
+| ------ | ------ | -------------- |
+| ticket | string | The MFA ticket |
+
+###### Response Body
+
+| Field | Type   | Description |
+| ----- | ------ | ----------- |
+| phone | string | The redacted phone number the SMS was sent to |
+
+###### Example Response
+
+```json
+{"phone":"+*******0085"}
+```
+
+## Register
+
+### Endpoints
+
+<RouteHeader method="GET" url="/auth/location-metadata" unauthenticated>
+  Get Location Metadata
+</RouteHeader>
+
+Returns the location metadata for the user's IP address.
+
+###### Response Body
+
+| Field                    | Type                                                                       | Description                                                                                                                                                              |
+| ------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| country_code             | string                                                                     | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code of the user's IP address                                                         |
+| consent_required         | boolean                                                                    | Whether the user must explicitly agree to Discord's [Terms of Service](https://discord.com/terms) and [Privacy Policy](https://discord.com/privacy) in order to register |
+| promotional_email_opt_in | [promotional email metadata](#promotional-email-metadata-structure) object | Promotional email consent metadata                                                                                                                                       |
+
+###### Promotional Email Metadata Structure
+
+| Field       | Type    | Description                                                                                           |
+| ----------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| required    | boolean | Whether the user must explicitly agree to receive promotional emails from Discord                     |
+| pre_checked | boolean | Whether the promotional email consent checkbox should be pre-checked, if explicit consent is required |
+
+###### Example Response
+
+```json
+{
+  "consent_required": false,
+  "country_code": "CA",
+  "promotional_email_opt_in": {
+    "required": true,
+    "pre_checked": false
+  }
+}
+```
