@@ -142,7 +142,13 @@ Authorizes the client's IP address for login.
   Verify MFA Login
 </RouteHeader>
 
-Verifies a multi-factor login. The `authenticator_type` path parameter can be set to `totp` (which includes backup codes), `sms`, or `webauthn`.
+Verifies a multi-factor login. The `authenticator_type` path parameter can be set to [one of the following values](#authenticator-type).
+
+<Alert type="info">
+
+To verify using SMS MFA, you must first send a code to the user's phone number using the [Send MFA SMS](#send-mfa-sms) endpoint.
+
+</Alert>
 
 <Alert type="warn">
 
@@ -176,32 +182,6 @@ Suspended authentication tokens cannot be used as a regular authentication token
 | ------------- | -------------------------------------------------- | --------------------------- |
 | token         | string                                             | The authentication token    |
 | user_settings | [login settings](#login-settings-structure) object | The user's partial settings |
-
-## Multi-Factor Authentication
-
-<RouteHeader method="POST" url="/auth/mfa/sms/send" unauthenticated>
-  Send MFA SMS
-</RouteHeader>
-
-Sends a multi-factor authentication code to the user's phone number for verification.
-
-###### JSON Params
-
-| Field  | Type   | Description    |
-| ------ | ------ | -------------- |
-| ticket | string | The MFA ticket |
-
-###### Response Body
-
-| Field | Type   | Description |
-| ----- | ------ | ----------- |
-| phone | string | The redacted phone number the SMS was sent to |
-
-###### Example Response
-
-```json
-{"phone":"+*******0085"}
-```
 
 ## Register
 
@@ -239,4 +219,96 @@ Returns the location metadata for the user's IP address.
     "pre_checked": false
   }
 }
+```
+
+## MFA Verification
+
+In some cases, you may be required to verify your identify using multi-factor authentication before performing certain sensitive actions.
+When this occurs, you'll receive a 401 unauthorized with a special error response body:
+
+###### MFA Required Response Structure
+
+| Field   | Type                                                                   | Description                                                                     |
+| ------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| message | string                                                                 | A message saying that multi-factor authentication is required for the operation |
+| code    | int                                                                    | An [error code](/topics/opcodes-and-status-codes#json) (will always be `60003`) |
+| mfa     | [MFA verification request](#mfa-verification-request-structure) object | The multi-factor authentication verification request                            |
+
+###### MFA Verification Request Structure
+
+| Field   | Type   | Description                                                                                     |
+| ------- | ------ | ----------------------------------------------------------------------------------------------- |
+| ticket  | string | The MFA ticket                                                                                  |
+| methods | array  | An array of [MFA methods](#mfa-method-structure) that can be used to verify the user's identity |
+
+###### MFA Method Structure
+
+| Field                 | Type    | Description                                                                                  |
+| --------------------- | ------- | -------------------------------------------------------------------------------------------- |
+| type                  | string  | The [type of MFA method](#authenticator-type) that can be used to verify the user's identity |
+| challenge?            | string  | The challenge to be used to verify the user's identity, if applicable                        |
+| backup_codes_allowed? | boolean | Whether backup codes can be used in addition to TOTP codes                                   |
+
+###### Authenticator Type
+
+| Value    | Description                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| totp     | Verification using a [TOTP](https://en.wikipedia.org/wiki/Time-based_One-Time_Password) code or backup code     |
+| sms      | Verification using a code sent to the user's phone number via SMS                                               |
+| webauthn | Verification using a [WebAuthn](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API) device |
+
+###### Example MFA Required Response
+
+```json
+{
+  "message": "Two factor is required for this operation",
+  "code": 60003,
+  "mfa": {
+    "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.H2Rpq0.WrhGhYEhM3lHUPN61xF6JcQKwVutk8fBvcoHjo",
+    "methods": [
+      {
+        "type": "webauthn",
+        "challenge": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
+      },
+      {
+        "type": "totp",
+        "backup_codes_allowed": false
+      },
+      {
+        "type": "sms"
+      }
+    ]
+  }
+}
+```
+
+To verify, you must use the [Verify MFA](#verify-mfa) endpoint with the ticket retrieved from the error response.
+The retrieved verification token can then be inserted into the `X-Discord-MFA-Authorization` header and the original request can be retried.
+
+Upon a successfully elevated action's completion, a `__Secure-recent_mfa` cookie will be returned on the request, which will temporary bypass MFA for the next 5 minutes.
+
+### Endpoints
+
+<RouteHeader method="POST" url="/auth/mfa/sms/send" unauthenticated>
+  Send MFA SMS
+</RouteHeader>
+
+Sends a multi-factor authentication code to the user's phone number for verification.
+
+###### JSON Params
+
+| Field  | Type   | Description    |
+| ------ | ------ | -------------- |
+| ticket | string | The MFA ticket |
+
+###### Response Body
+
+| Field | Type   | Description                                   |
+| ----- | ------ | --------------------------------------------- |
+| phone | string | The redacted phone number the SMS was sent to |
+
+###### Example Response
+
+```json
+{ "phone": "+*******0085" }
 ```
