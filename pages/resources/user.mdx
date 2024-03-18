@@ -346,6 +346,18 @@ Represents a user's profile metadata.
 }
 ```
 
+### Backup Code Object
+
+Represents a user's multi-factor authentication backup code.
+
+###### Backup Code Structure
+
+| Field    | Type      | Description                           |
+| -------- | --------- | ------------------------------------- |
+| user_id  | snowflake | The ID of the user                    |
+| code     | string    | The backup code                       |
+| consumed | boolean   | Whether the backup code has been used |
+
 ### Harvest Object
 
 Represents a user's data harvest.
@@ -607,7 +619,7 @@ All parameters to this endpoint are optional.
 | avatar_decoration?        | ?[image data](/reference#cdn-data) | The user's avatar decoration (only available to Discord staff)                                                                                                            |
 | avatar_decoration_id?     | ?snowflake                         | The ID of the user's collected avatar decoration                                                                                                                          |
 | avatar_decoration_sku_id? | ?snowflake                         | The SKU ID of the user's collected avatar decoration                                                                                                                      |
-| email?                    | string                             | The user's email; if changing from a verified email `email_token` must be provided                                                                                        |
+| email?                    | string                             | The user's email; if changing from a verified email, `email_token` must be provided                                                                                       |
 | email_token? ^4^          | string                             | The user's email token from their previous email                                                                                                                          |
 | pronouns?                 | ?string                            | The user's pronouns (max 40 characters)                                                                                                                                   |
 | bio?                      | ?string                            | The user's bio (max 190 characters)                                                                                                                                       |
@@ -615,7 +627,7 @@ All parameters to this endpoint are optional.
 | accent_color?             | ?integer                           | The user's accent color as a hex integer                                                                                                                                  |
 | flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED`, `HAS_UNREAD_URGENT_MESSAGES`, and `DISABLE_PREMIUM` can be set)                                          |
 | date_of_birth? ^2^        | ISO8601 timestamp                  | The user's date of birth; can only be set once                                                                                                                            |
-| password? ^1^             | string                             | The user's current password; if the account does not have a password this sets it                                                                                         |
+| password? ^1^             | string                             | The user's current password; if the account does not have a password, this sets it                                                                                        |
 | new_password? ^3^         | string                             | The user's new password (8-72 characters)                                                                                                                                 |
 
 ^1^ Required for changing `username`, `discriminator`, `email`, `date_of_birth`, or `new_password`.
@@ -893,6 +905,76 @@ All parameters to this endpoint are optional.
 </RouteHeader>
 
 Returns a list of partial [user](#user-object) objects that are friends with the user and current user.
+
+<RouteHeader method="POST" url="/users/@me/mfa/totp/enable">
+  Enable TOTP MFA
+</RouteHeader>
+
+Enables TOTP multi-factor authentication for the current user. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<Alert type="info">
+
+The `secret` and `code` fields are optional as this endpoint is intended to be used to validate the user's password first before prompting the user to save the secret.
+If the password is valid, the request will fail with a [`60005` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), prompting the client to continue with the setup flow.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description                                       |
+| -------- | ------ | ------------------------------------------------- |
+| password | string | The user's password                               |
+| secret?  | string | The generated TOTP secret (32 characters)         |
+| code?    | string | The TOTP code to verify the secret (6 characters) |
+
+###### Response Body
+
+| Field        | Type                                             | Description                                 |
+| ------------ | ------------------------------------------------ | ------------------------------------------- |
+| token        | string                                           | The new authorization token for the session |
+| backup_codes | array[[backup code](#backup-code-object) object] | MFA backup codes                            |
+
+<RouteHeader method="POST" url="/users/@me/mfa/totp/disable" mfa>
+  Disable TOTP MFA
+</RouteHeader>
+
+Disables TOTP multi-factor authentication for the current user. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<Alert type="warn">
+
+MFA cannot be disabled for for administrators of guilds with published creator monetization listings.
+
+</Alert>
+
+###### Response Body
+
+| Field | Type   | Description                                 |
+| ----- | ------ | ------------------------------------------- |
+| token | string | The new authorization token for the session |
+
+<RouteHeader method="POST" url="/users/@me/mfa/sms/enable">
+  Enable SMS MFA
+</RouteHeader>
+
+Enables SMS multi-factor authentication for the current user. Requires that TOTP-based MFA is already enabled and the user has a verified phone number. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field   | Type   | Description       |
+| ------- | ------ | ----------------- |
+| password | string | The user's password |
+
+<RouteHeader method="POST" url="/users/@me/mfa/sms/disable">
+  Disable SMS MFA
+</RouteHeader>
+
+Disables SMS multi-factor authentication for the current user. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field   | Type   | Description       |
+| ------- | ------ | ----------------- |
+| password | string | The user's password |
 
 <RouteHeader method="POST" url="/users/@me/disable" mfa>
   Disable User
