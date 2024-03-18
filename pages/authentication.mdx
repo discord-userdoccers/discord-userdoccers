@@ -126,18 +126,6 @@ Actions the user must complete after a successful login.
 | --------------- | ------------------------------------------------------------------------------- |
 | update_password | The user must change their password to meet Discord's new password requirements |
 
-<RouteHeader method="POST" url="/auth/authorize-ip" unauthenticated>
-  Authorize IP Address
-</RouteHeader>
-
-Authorizes the client's IP address for login.
-
-###### JSON Params
-
-| Field | Type   | Description                                                                         |
-| ----- | ------ | ----------------------------------------------------------------------------------- |
-| token | string | The verification token received from the email or phone number verification process |
-
 <RouteHeader method="POST" url="/auth/mfa/{authenticator_type}" unauthenticated>
   Verify MFA Login
 </RouteHeader>
@@ -170,7 +158,7 @@ Suspended authentication tokens cannot be used as a regular authentication token
 | Field             | Type    | Description                                                      |
 | ----------------- | ------- | ---------------------------------------------------------------- |
 | ticket            | string  | The MFA ticket received from the [login request](#login-account) |
-| code ^1^          | string  | The MFA code (TOTP/backup, SMS, or WebAuthn) to be verified      |
+| code ^1^          | string  | The MFA code (TOTP, SMS, backup, or WebAuthn) to be verified     |
 | login_source?     | ?string | The [source of the login request](#login-source)                 |
 | gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request     |
 
@@ -182,6 +170,18 @@ Suspended authentication tokens cannot be used as a regular authentication token
 | ------------- | -------------------------------------------------- | --------------------------- |
 | token         | string                                             | The authentication token    |
 | user_settings | [login settings](#login-settings-structure) object | The user's partial settings |
+
+<RouteHeader method="POST" url="/auth/authorize-ip" unauthenticated>
+  Authorize IP Address
+</RouteHeader>
+
+Authorizes the client's IP address for login.
+
+###### JSON Params
+
+| Field | Type   | Description                                                                         |
+| ----- | ------ | ----------------------------------------------------------------------------------- |
+| token | string | The verification token received from the email or phone number verification process |
 
 ## Register
 
@@ -255,6 +255,7 @@ When this occurs, you'll receive a 401 unauthorized with a special error respons
 | -------- | --------------------------------------------------------------------------------------------------------------- |
 | totp     | Verification using a [TOTP](https://en.wikipedia.org/wiki/Time-based_One-Time_Password) code or backup code     |
 | sms      | Verification using a code sent to the user's phone number via SMS                                               |
+| backup   | Verification using a backup code                                                                                |
 | webauthn | Verification using a [WebAuthn](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API) device |
 
 ###### Example MFA Required Response
@@ -272,10 +273,13 @@ When this occurs, you'll receive a 401 unauthorized with a special error respons
       },
       {
         "type": "totp",
-        "backup_codes_allowed": false
+        "backup_codes_allowed": true
       },
       {
         "type": "sms"
+      },
+      {
+        "type": "backup"
       }
     ]
   }
@@ -288,6 +292,22 @@ The retrieved verification token can then be inserted into the `X-Discord-MFA-Au
 Upon a successfully elevated action's completion, the verification token will be returned in a `__Secure-recent_mfa` cookie, which will temporary bypass MFA until expiration (5 minutes after creation).
 
 ### Endpoints
+
+<RouteHeader method="POST" url="/mfa/finish">
+  Verify MFA
+</RouteHeader>
+
+Verifies a user's identity using multi-factor authentication.
+
+###### JSON Params
+
+| Field    | Type   | Description                                                                                |
+| -------- | ------ | ------------------------------------------------------------------------------------------ |
+| ticket   | string | The MFA ticket received from the [MFA required response](#mfa-required-response-structure) |
+| mfa_type | string | The [authenticator type](#authenticator-type) used to verify the user's identity           |
+| data ^1^ | string | The MFA code (TOTP, SMS, backup, or WebAuthn) to be verified                               |
+
+^1^ For WebAuthn authentication, the `data` parameter should be a stringified JSON object of the [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON).
 
 <RouteHeader method="POST" url="/auth/mfa/sms/send" unauthenticated>
   Send MFA SMS
