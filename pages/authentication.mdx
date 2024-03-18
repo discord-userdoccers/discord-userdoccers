@@ -126,6 +126,35 @@ Actions the user must complete after a successful login.
 | --------------- | ------------------------------------------------------------------------------- |
 | update_password | The user must change their password to meet Discord's new password requirements |
 
+###### Example Response (Completed)
+
+```json
+{
+    "user_id": "852892297661906993",
+    "token": "ODUyODkyMjk3NjYxOTA2OTkz.GX5Xdp.22jsdSqEiHLUYEJSsjeq_vJKLpOofd5QMksqw32e",
+    "user_settings": {
+        "locale": "en-US",
+        "theme": "dark"
+    },
+    "required_actions": ["update_password"]
+}
+```
+
+###### Example Response (MFA Required)
+
+```json
+{
+    "user_id": "852892297661906993",
+    "mfa": true,
+    "sms": true,
+    "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.H2Rpq0.WrhGhYEhM3lHUPN61xF6JcQKwVutk8fBvcoHjo",
+    "backup": true,
+    "totp": true,
+    "webauthn": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}",
+    "required_actions": ["update_password"]
+}
+```
+
 <RouteHeader method="POST" url="/auth/mfa/{authenticator_type}" unauthenticated>
   Verify MFA Login
 </RouteHeader>
@@ -170,6 +199,18 @@ Suspended authentication tokens cannot be used as a regular authentication token
 | ------------- | -------------------------------------------------- | --------------------------- |
 | token         | string                                             | The authentication token    |
 | user_settings | [login settings](#login-settings-structure) object | The user's partial settings |
+
+###### Example Response (Completed)
+
+```json
+{
+    "token": "ODUyODkyMjk3NjYxOTA2OTkz.GX5Xdp.22jsdSqEiHLUYEJSsjeq_vJKLpOofd5QMksqw32e",
+    "user_settings": {
+        "locale": "en-US",
+        "theme": "dark"
+    }
+}
+```
 
 <RouteHeader method="POST" url="/auth/authorize-ip" unauthenticated>
   Authorize IP Address
@@ -354,7 +395,7 @@ Upon a successfully elevated action's completion, the verification token will be
   Verify MFA
 </RouteHeader>
 
-Verifies a user's identity using multi-factor authentication.
+Verifies a user's identity using multi-factor authentication. On success, returns a cookie that can be used to bypass MFA for the next 5 minutes.
 
 ###### JSON Params
 
@@ -365,6 +406,12 @@ Verifies a user's identity using multi-factor authentication.
 | data ^1^ | string | The MFA data (TOTP, SMS, backup, WebAuthn, or password) to be verified                     |
 
 ^1^ For WebAuthn authentication, the `data` parameter should be a stringified JSON object of the [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON).
+
+###### Response Body
+
+| Field | Type   | Description                                                |
+| ----- | ------ | ---------------------------------------------------------- |
+| token | string | The multi-factor authentication JWT (expires in 5 minutes) |
 
 <RouteHeader method="POST" url="/auth/mfa/sms/send" unauthenticated>
   Send MFA SMS
