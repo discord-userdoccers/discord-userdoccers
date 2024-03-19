@@ -512,6 +512,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#profile-metadata-object">
                 Profile Metadata Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/user#authenticator-object">Authenticator Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#backup-code-object">Backup Code Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#harvest-object">Harvest Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#connection-object">Connection Object</NavigationSubLink>

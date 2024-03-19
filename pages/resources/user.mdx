@@ -90,7 +90,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | desktop? ^1^ ^4^         | boolean                                                      | Whether the user has used the desktop client before                                                             |
 | mobile? ^1^ ^4^          | boolean                                                      | Whether the user has used the mobile client before                                                              |
 | has_bounced_email? ^1^   | boolean                                                      | Whether the user's email has failed to deliver and is no longer valid                                           |
-| authenticator_types? ^3^ | array[integer]                                               | The [types of multi-factor authentication](#authenticator-type) the user has enabled                            |
+| authenticator_types? ^3^ | array[integer]                                               | The [types of multi-factor authenticators](#authenticator-type) the user has enabled                            |
 
 ^1^ Not included when fetching a user via OAuth2.
 
@@ -257,16 +257,6 @@ Premium types denote the level of premium a user has. Visit the [Nitro](https://
 | 2     | TIER_2                | Nitro         |
 | 3     | TIER_3                | Nitro Basic   |
 
-###### Authenticator Type
-
-Authenticator types represent enabled multi-factor authentication methods. See the [MFA verification documentation](/authentication#mfa-verification) for more information.
-
-| Value | Name     | Description                       |
-| ----- | -------- | --------------------------------- |
-| 1     | WEBAUTHN | WebAuthn credentials              |
-| 2     | TOTP     | Time-based One-Time Password code |
-| 3     | SMS      | SMS code                          |
-
 ###### Required Action Type
 
 Required action types denote an action Discord requires the user to take before they can continue using the platform.
@@ -346,6 +336,36 @@ Represents a user's profile metadata.
 }
 ```
 
+### Authenticator Object
+
+###### Authenticator Structure
+
+| Field | Type   | Description                                      |
+| ----- | ------ | ------------------------------------------------ |
+| id    | string | The ID of the authenticator                      |
+| type  | string | The [type of authenticator](#authenticator-type) |
+| name  | string | The name of the authenticator                    |
+
+###### Authenticator Type
+
+Authenticator types represent enabled multi-factor authentication methods. See the [MFA verification documentation](/authentication#mfa-verification) for more information.
+
+| Value | Name     | Description                       |
+| ----- | -------- | --------------------------------- |
+| 1     | WEBAUTHN | WebAuthn credentials              |
+| 2     | TOTP     | Time-based One-Time Password code |
+| 3     | SMS      | SMS code                          |
+
+###### Example Authenticator
+
+```json
+{
+  "id": "1219430671865610261",
+  "type": 1,
+  "name": "AlienKey"
+}
+```
+
 ### Backup Code Object
 
 Represents a user's multi-factor authentication backup code.
@@ -357,6 +377,16 @@ Represents a user's multi-factor authentication backup code.
 | user_id  | snowflake | The ID of the user                    |
 | code     | string    | The backup code                       |
 | consumed | boolean   | Whether the backup code has been used |
+
+###### Example Backup Code
+
+```json
+{
+  "user_id": "852892297661906993",
+  "code": "zqs8oqxk",
+  "consumed": false
+}
+```
 
 ### Harvest Object
 
@@ -422,6 +452,16 @@ The connection object that the user has attached.
 
 ^2^ These integrations can be used to [join your own sub-enabled guild or the guild of a creator you are supporting](/resources/integration#join-integration-guild).
 
+###### Partial Connection Structure
+
+| Field     | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| id        | string  | ID of the connection account                   |
+| type      | string  | The [type](#connection-type) of the connection |
+| name      | string  | The username of the connection account         |
+| verified  | boolean | Whether the connection is verified             |
+| metadata? | object  | Service-specific metadata about the connection |
+
 ###### Example Connection
 
 ```json
@@ -445,16 +485,6 @@ The connection object that the user has attached.
   "integrations": []
 }
 ```
-
-###### Partial Connection Structure
-
-| Field     | Type    | Description                                    |
-| --------- | ------- | ---------------------------------------------- |
-| id        | string  | ID of the connection account                   |
-| type      | string  | The [type](#connection-type) of the connection |
-| name      | string  | The username of the connection account         |
-| verified  | boolean | Whether the connection is verified             |
-| metadata? | object  | Service-specific metadata about the connection |
 
 ###### Example Partial Connection
 
@@ -596,7 +626,7 @@ A relationship between the current user and another user.
 
 Returns the [user](#user-object) object of the requester's account.
 
-<RouteHeader method="PATCH" url="/users/@me">
+<RouteHeader method="PATCH" url="/users/@me" mfa>
   Modify Current User
 </RouteHeader>
 
@@ -960,8 +990,8 @@ Enables SMS multi-factor authentication for the current user. Requires that TOTP
 
 ###### JSON Params
 
-| Field   | Type   | Description       |
-| ------- | ------ | ----------------- |
+| Field    | Type   | Description         |
+| -------- | ------ | ------------------- |
 | password | string | The user's password |
 
 <RouteHeader method="POST" url="/users/@me/mfa/sms/disable">
@@ -972,9 +1002,100 @@ Disables SMS multi-factor authentication for the current user. Returns a 204 emp
 
 ###### JSON Params
 
-| Field   | Type   | Description       |
-| ------- | ------ | ----------------- |
+| Field    | Type   | Description         |
+| -------- | ------ | ------------------- |
 | password | string | The user's password |
+
+<RouteHeader method="GET" url="/users/@me/mfa/webauthn/credentials">
+  Get WebAuthn Authenticators
+</RouteHeader>
+
+Returns a list of [WebAuthn authenticator](#authenticator-object) objects for the current user.
+
+<RouteHeader method="POST" url="/users/@me/mfa/webauthn/credentials" mfa>
+  Create WebAuthn Authenticator
+</RouteHeader>
+
+Creates a WebAuthn authenticator for the current user. Fires [User Update](/topics/gateway-events#user-update) and [Authenticator Create](/topics/gateway-events#authenticator-create) Gateway events once the authenticator is created.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional as the intended flow is to first use it to generate a `ticket` and `challenge` that can then be used to create the authenticator.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type   | Description                                                                                                                                    |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| name?       | string | The name of the authenticator (1-32 characters)                                                                                                |
+| ticket?     | string | The MFA ticket returned from the same endpoint                                                                                                 |
+| credential? | string | A stringified JSON object of the [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON) |
+
+###### Response Body
+
+| Field            | Type                                             | Description                                                                                                                                                              |
+| ---------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ticket ^1^       | string                                           | The MFA ticket                                                                                                                                                           |
+| challenge ^1^    | string                                           | The stringified JSON [public key credential request options](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#web_authentication_api) challenge |
+| id ^2^           | string                                           | The ID of the authenticator                                                                                                                                              |
+| type ^2^         | string                                           | The [type of authenticator](#authenticator-type) (always `WEBAUTHN`)                                                                                                     |
+| name ^2^         | string                                           | The name of the authenticator                                                                                                                                            |
+| backup_codes ^2^ | array[[backup code](#backup-code-object) object] | MFA backup codes                                                                                                                                                         |
+
+^1^ Only returned when no parameters are provided.
+
+^2^ Only returned when parameters are provided.
+
+###### Example Response (Ticket)
+
+```json
+{
+  "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.H2Rpq0.WrhGhYEhM3lHUPN61xF6JcQKwVutk8fBvcoHjo",
+  "challenge": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
+}
+```
+
+###### Example Response (Authenticator)
+
+```json
+{
+  "id": "1219430671865610261",
+  "type": 1,
+  "name": "AlienKey",
+  "backup_codes": [
+    {
+      "user_id": "852892297661906993",
+      "code": "zqs8oqxk",
+      "consumed": false
+    }
+  ]
+}
+```
+
+<RouteHeader method="PATCH" url="/users/@me/mfa/webauthn/credentials/{authenticator.id}" mfa>
+  Modify WebAuthn Authenticator
+</RouteHeader>
+
+Modifies the given WebAuthn authenticator. Returns the updated [authenticator](#authenticator-object) object on success. Fires an [Authenticator Update](/topics/gateway-events#authenticator-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field | Type   | Description                                     |
+| ----- | ------ | ----------------------------------------------- |
+| name? | string | The name of the authenticator (1-32 characters) |
+
+<RouteHeader method="DELETE" url="/users/@me/mfa/webauthn/credentials/{authenticator.id}" mfa>
+  Delete WebAuthn Authenticator
+</RouteHeader>
+
+Deletes the given WebAuthn authenticator. Returns a 204 empty response on success. Fires [User Update](/topics/gateway-events#user-update) and [Authenticator Delete](/topics/gateway-events#authenticator-delete) Gateway events.
 
 <RouteHeader method="POST" url="/users/@me/disable" mfa>
   Disable User
@@ -1152,7 +1273,7 @@ Creates a personal data harvest request for the current user. Returns a [harvest
   Get User Notes
 </RouteHeader>
 
-Returns a mapping of [user](#user-object) IDs to notes for the current user.
+Returns a mapping of user IDs to notes for the current user.
 
 ###### Example Response
 
@@ -1167,7 +1288,7 @@ Returns a mapping of [user](#user-object) IDs to notes for the current user.
   Get User Note
 </RouteHeader>
 
-Returns the note for the given [user](#user-object).
+Returns the note for the given user.
 
 ###### Response Body
 
@@ -1191,7 +1312,7 @@ Returns the note for the given [user](#user-object).
   Modify User Note
 </RouteHeader>
 
-Sets the note for the given [user](#user-object). Returns a 204 empty response on success. Fires a [User Note Update](/topics/gateway-events#user-note-update) Gateway event.
+Sets the note for the given user. Returns a 204 empty response on success. Fires a [User Note Update](/topics/gateway-events#user-note-update) Gateway event.
 
 ###### JSON Params
 
