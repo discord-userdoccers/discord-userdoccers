@@ -36,7 +36,7 @@ Retrieves an authentication token for the given credentials.
 
 <Alert type="info">
 
-If this endpoint is requested with a valid authentication token, a successful response will be returned irrespective of the request body.
+If this endpoint is requested with a valid authentication token, a success response will be returned irrespective of the request body.
 
 </Alert>
 
@@ -44,7 +44,7 @@ If this endpoint is requested with a valid authentication token, a successful re
 
 When first logging into an account (without MFA enabled) from a new location, Discord may reject the login request and require the user to verify the login attempt via email or phone.
 
-If logging in via email, the user will receive a link in their email that redirects to the official Discord client, with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
+If logging in via email, the user will receive a link in their email that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
 
 If logging in via phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
 A verification token should be retrieved by [verifying the phone number](/topics/verification#verify-phone).
@@ -55,7 +55,7 @@ After [IP authorization](#authorize-ip-address) with this verification token, th
 
 <Alert type="warn">
 
-If the user's account is disabled by Discord, the login request will fail with a special structure, similar to a success response:
+If the user's account is disabled by Discord, the login request will fail with a special error response body, similar to a success response:
 
 ```json
 {
@@ -64,7 +64,7 @@ If the user's account is disabled by Discord, the login request will fail with a
 }
 ```
 
-Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing.
+Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing and appeal the account's suspension.
 
 </Alert>
 
@@ -169,16 +169,13 @@ To verify using SMS MFA, you must first send a code to the user's phone number u
 
 <Alert type="warn">
 
-If the user's account is disabled by Discord, the login request will fail with a special structure, similar to a success response:
+If the user's account is disabled by Discord, the login request will fail with a special error response body, similar to a success response:
 
 ```json
-{
-  "user_id": "852892297661906993",
-  "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e"
-}
+{ "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e" }
 ```
 
-Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing.
+Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing and appeal the account's suspension.
 
 </Alert>
 
@@ -385,9 +382,9 @@ When this occurs, you'll receive a 401 unauthorized with a special error respons
 ```
 
 To verify, you must use the [Verify MFA](#verify-mfa) endpoint with the ticket retrieved from the error response.
-The retrieved verification token can then be inserted into the `X-Discord-MFA-Authorization` header and the original request can be retried.
+The retrieved verification JWT can then be inserted into the `X-Discord-MFA-Authorization` header and the original request can be retried.
 
-Upon a successfully elevated action's completion, the verification token will be returned in a `__Secure-recent_mfa` cookie, which will temporary bypass MFA until expiration (5 minutes after creation).
+Upon successful elevation, the verification JWT will be returned in a `__Secure-recent_mfa` cookie that temporary bypasses MFA for the next 5 minutes.
 
 ### Endpoints
 
@@ -409,9 +406,9 @@ Verifies a user's identity using multi-factor authentication. On success, return
 
 ###### Response Body
 
-| Field | Type   | Description                                                |
-| ----- | ------ | ---------------------------------------------------------- |
-| token | string | The multi-factor authentication JWT (expires in 5 minutes) |
+| Field | Type   | Description                                     |
+| ----- | ------ | ----------------------------------------------- |
+| token | string | The MFA verification JWT (expires in 5 minutes) |
 
 ###### Example Response
 
@@ -429,9 +426,9 @@ Sends a multi-factor authentication code to the user's phone number for verifica
 
 ###### JSON Params
 
-| Field  | Type   | Description    |
-| ------ | ------ | -------------- |
-| ticket | string | The MFA ticket |
+| Field  | Type   | Description                                                                                                                   |
+| ------ | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| ticket | string | The MFA ticket received from the [login request](#login-account) or [MFA required response](#mfa-required-response-structure) |
 
 ###### Response Body
 
