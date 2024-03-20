@@ -1,0 +1,95 @@
+# Push Notifications
+
+Push notifications are used to notify users of events that occur in the background, such as incoming messages or calls.
+
+After [authenticating](/authentication), a mobile client can register a device push notification token with the server using the [Register Device](#register-device) endpoint. This token is then used to send push notifications to the client's device.
+
+###### Push Notification Provider
+
+| Value                  | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| gcm                    | Google Cloud Messaging (Android)                    |
+| apns                   | Apple Push Notification Service (iOS)               |
+| apns_internal          | Apple Push Notification Service (iOS internal)      |
+| apns_voip ^1^          | VOIP Apple Push Notification Service (iOS)          |
+| apns_internal_voip ^1^ | VOIP Apple Push Notification Service (iOS internal) |
+
+^1^ VOIP-specific push notification providers are used to provide rich notifications for VOIP calls on iOS.
+
+## Endpoints
+
+<RouteHeader method="POST" url="/users/@me/devices">
+  Register Device
+</RouteHeader>
+
+Registers a GCM/APNs push notification token for the client's device. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field              | Type   | Description                                                                      |
+| ------------------ | ------ | -------------------------------------------------------------------------------- |
+| provider           | string | The [push notification provider](#push-notification-provider) of the device      |
+| token              | string | The push notification token to register                                          |
+| voip_provider? ^1^ | string | The VOIP [push notification provider](#push-notification-provider) of the device |
+| voip_token? ^1^    | string | The VOIP push notification token to register                                     |
+
+^1^ VOIP-specific push notification tokens are only used with PushKit on iOS.
+
+<RouteHeader method="DELETE" url="/users/@me/devices">
+  Unregister Device
+</RouteHeader>
+
+Unregisters a GCM/APNs push notification token for the client's device. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field    | Type   | Description                                                                 |
+| -------- | ------ | --------------------------------------------------------------------------- |
+| provider | string | The [push notification provider](#push-notification-provider) of the device |
+| token    | string | The push notification token to unregister                                   |
+
+<RouteHeader method="GET" url="/users/@me/devices/sync-token">
+  Get Device Sync Token
+</RouteHeader>
+
+Returns a push notification sync token for the current user. This token can be used to synchronize push notification tokens across multiple accounts.
+
+###### Response Body
+
+| Field | Type   | Description                      |
+| ----- | ------ | -------------------------------- |
+| token | string | The push notification sync token |
+
+###### Example Response
+
+```json
+{ "token": "ODUyODkyMjk3NjYxOTA2OTkz.ZfoufA.rHvCtpfHjr9kdRab1ZTl83PRhhZ" }
+```
+
+<RouteHeader method="PUT" url="/users/@me/devices/sync">
+  Sync Devices
+</RouteHeader>
+
+Synchronizes the client's GCM/APNs push notification token across multiple accounts.
+
+###### JSON Params
+
+| Field                | Type          | Description                                                                 |
+| -------------------- | ------------- | --------------------------------------------------------------------------- |
+| provider             | string        | The [push notification provider](#push-notification-provider) of the device |
+| token                | string        | The device push notification token                                          |
+| push_sync_tokens ^1^ | array[string] | The device sync tokens for each account                                     |
+
+^1^ A device sync token can be obtained for each account using the [Get Device Sync Token](#get-device-sync-token) endpoint.
+
+###### Response Body
+
+| Field                    | Type          | Description                             |
+| ------------------------ | ------------- | --------------------------------------- |
+| invalid_push_sync_tokens | array[string] | The device sync tokens that are invalid |
+
+###### Example Response
+
+```json
+{ "invalid_push_sync_tokens": ["ODUyODkyMjk3NjYxOTA2OTkz.ZfoufA.rHvCtpfHjr9kdRab1ZTl83PRhhZ"] }
+```
