@@ -687,6 +687,16 @@ export default function Navigation() {
           Permissions
         </NavigationLink>
         <NavigationLink
+          href="/topics/push-notifications"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/push-notifications#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Push Notifications
+        </NavigationLink>
+        <NavigationLink
           href="/topics/rate-limits"
           subLinks={
             <Fragment>
