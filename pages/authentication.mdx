@@ -26,6 +26,14 @@ If a form body error is returned, the client should display the error message to
 
 Once the user is logged in, the client should store the authentication token to avoid having to log in again in the future.
 
+### WebAuthn Conditional UI (Passwordless) Login
+
+An alternative to the traditional email/password login flow is the WebAuthn conditional UI flow.
+This [allows users to log in using an WebAuthn device](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/isConditionalMediationAvailable) (e.g. a security key) instead of a password.
+
+To use this flow, the client must first generate a challenge using the [Start Passwordless Login](#start-passwordless-login) endpoint. After the user completes the WebAuthn challenge, the client must use the [Finish Passwordless Login](#finish-passwordless-login) endpoint to complete the login process.
+Using this flow, you must still take care to handle any errors as outlined above.
+
 ### Endpoints
 
 <RouteHeader method="POST" url="/auth/login" unauthenticated>
@@ -159,7 +167,7 @@ Actions the user must complete after a successful login.
   Verify MFA Login
 </RouteHeader>
 
-Verifies a multi-factor login using the specified [authenticator type](#authenticator-type).
+Verifies a multi-factor login and retrieves an authentication token using the specified [authenticator type](#authenticator-type).
 
 <Alert type="info">
 
@@ -201,6 +209,89 @@ Suspended authentication tokens cannot be used as a regular authentication token
 
 ```json
 {
+  "token": "ODUyODkyMjk3NjYxOTA2OTkz.GX5Xdp.22jsdSqEiHLUYEJSsjeq_vJKLpOofd5QMksqw32e",
+  "user_settings": {
+    "locale": "en-US",
+    "theme": "dark"
+  }
+}
+```
+
+<RouteHeader method="POST" url="/auth/conditional/start" unauthenticated>
+  Start Passwordless Login
+</RouteHeader>
+
+Generates a challenge to start the conditional UI flow for WebAuthn login.
+
+<Alert type="info">
+
+If this endpoint is requested with a valid authentication token, an [authentication token](#example-response-completed) will be returned irrespective of the request body.
+
+</Alert>
+
+###### Response Body
+
+| Field     | Type   | Description                                                                                                                                                                           |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ticket    | string | The WebAuthn login ticket                                                                                                                                                             |
+| challenge | string | The stringified JSON [public key credential request options](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#web_authentication_api) challenge for WebAuthn |
+
+###### Example Response
+
+```json
+{
+  "challenge": "{\"publicKey\":{\"challenge\":\"sLPruFUWBzowZjYy5d2caF2067pw44butrN0iHm_8k4\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[],\"userVerification\":\"required\",\"extensions\":{\"uvm\":true}},\"mediation\":\"conditional\"}",
+  "ticket": "b9f98b82-c3a7-49b6-b881-f83418fa2dbe"
+}
+```
+
+<RouteHeader method="POST" url="/auth/conditional/finish" unauthenticated>
+  Finish Passwordless Login
+</RouteHeader>
+
+Retrieves an authentication token for the given WebAuthn credentials.
+
+<Alert type="info">
+
+If this endpoint is requested with a valid authentication token, a success response will be returned irrespective of the request body.
+
+</Alert>
+
+<Alert type="warn">
+
+If the user's account is disabled by Discord, the login request will fail with a special error response body, similar to a success response:
+
+```json
+{ "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e" }
+```
+
+Suspended authentication tokens cannot be used as a regular authentication token. They can only be used to view account standing and appeal the account's suspension.
+
+</Alert>
+
+###### JSON Params
+
+| Field             | Type    | Description                                                                                                                                     |
+| ----------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| ticket            | string  | The WebAuthn login ticket received from the [Start Passwordless Login](#start-passwordless-login) endpoint                                      |
+| credential        | string  | The stringified JSON [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON) for WebAuthn |
+| login_source?     | ?string | The [source of the login request](#login-source)                                                                                                |
+| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request                                                                                    |
+
+###### Response Body
+
+| Field         | Type                                               | Description                           |
+| ------------- | -------------------------------------------------- | ------------------------------------- |
+| user_id       | snowflake                                          | The ID of the user that was logged in |
+| token         | string                                             | The authentication token              |
+| user_settings | [login settings](#login-settings-structure) object | The user's partial settings           |
+
+###### Example Response
+
+```json
+// TODO: is required_actions present here?
+{
+  "user_id": "852892297661906993",
   "token": "ODUyODkyMjk3NjYxOTA2OTkz.GX5Xdp.22jsdSqEiHLUYEJSsjeq_vJKLpOofd5QMksqw32e",
   "user_settings": {
     "locale": "en-US",
