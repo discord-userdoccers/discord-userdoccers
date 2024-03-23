@@ -52,7 +52,7 @@ If this endpoint is requested with a valid authentication token, a success respo
 
 When first logging into an account (without MFA enabled) from a new location, Discord may reject the login request and require the user to verify the login attempt via email or phone.
 
-If logging in via email, the user will receive a link in their email that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
+If logging in via email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
 
 If logging in via phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
 A verification token should be retrieved by [verifying the phone number](/topics/verification#verify-phone).
@@ -314,6 +314,8 @@ Authorizes the client's IP address for login. Returns a 204 empty response on su
 
 ## Register
 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
 ### Endpoints
 
 <RouteHeader method="GET" url="/auth/location-metadata" unauthenticated>
@@ -433,6 +435,96 @@ All parameters to this endpoint are optional.
 | voip_token? ^1^    | string | The VOIP push notification token to unregister                                              |
 
 ^1^ VOIP-specific push notification tokens are only used with PushKit on iOS.
+
+## Account Recovery
+
+If a user has forgotten their password, they can reset it using either their email address or phone number. To initiate a password reset, the client should use the [Forgot Password](#forgot-password) endpoint.
+
+To complete the password reset, the user must either retrieve the password reset token from their email or by verifying their phone number. Then, the client can use the [Reset Password](#reset-password) endpoint to set a new password.
+
+### Endpoints
+
+<RouteHeader method="POST" url="/auth/forgot" unauthenticated>
+  Forgot Password
+</RouteHeader>
+
+Initiates the password reset process for the given email or phone number. Returns a 204 empty response on success.
+
+<Alert type="info">
+
+If providing an email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/reset#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
+
+If providing a phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
+A verification token should be retrieved by [verifying the phone number](/topics/verification#verify-phone).
+
+If the user is ineligible to reset their password via phone number, the phone number verification request will fail with a [`70009` JSON error code](/topics/opcodes-and-status-codes#json-error-codes) and the user will receive a link to reset their password via email.
+
+</Alert>
+
+###### JSON Params
+
+| Field | Type   | Description                                      |
+| ----- | ------ | ------------------------------------------------ |
+| login | string | The user's email or E.164-formatted phone number |
+
+<RouteHeader method="POST" url="/auth/reset" unauthenticated>
+  Reset Password
+</RouteHeader>
+
+Resets the user's password and retrieves an authentication token.
+
+<Alert type="info">
+
+When attempting to reset the password of a user with multi-factor authentication enabled, the request will return a response similar to the [MFA Required response](#mfa-verification).
+
+To complete the password reset, the client must retry the request with the `ticket` and `code` parameters specified.
+
+</Alert>
+
+###### JSON Params
+
+| Field     | Type   | Description                                                                   |
+| --------- | ------ | ----------------------------------------------------------------------------- |
+| token     | string | The password reset token received from the email or phone number verification |
+| password  | string | The user's new password (8-72 characters)                                     |
+| source?   | string | The source path the password reset was initiated from (e.g. `/reset`)         |
+| ticket?   | string | The MFA ticket received from the previous request                             |
+| code? ^1^ | string | The MFA code (TOTP, SMS, backup, or WebAuthn) to be verified                  |
+
+^1^ For WebAuthn authentication, the `code` parameter should be a stringified JSON object of the [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON).
+
+###### Response Body
+
+| Field     | Type      | Description                                                                                                                                                                           |
+| --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| token?    | string    | The authentication token, if the password reset was completed                                                                                                                         |
+| user_id?  | snowflake | The ID of the user whose password was reset, if MFA verification is required                                                                                                          |
+| ticket?   | string    | A ticket to be used when retrying the request with multi-factor authentication                                                                                                        |
+| mfa?      | boolean   | Whether multi-factor authentication is required to reset the password (default false)                                                                                                 |
+| totp?     | boolean   | Whether the user has TOTP-based multi-factor authentication enabled                                                                                                                   |
+| sms?      | boolean   | Whether the user has SMS-based multi-factor authentication enabled                                                                                                                    |
+| backup?   | boolean   | Whether backup codes can be used for multi-factor authentication                                                                                                                      |
+| webauthn? | ?string   | The stringified JSON [public key credential request options](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#web_authentication_api) challenge for WebAuthn |
+
+###### Example Response (Completed)
+
+```json
+{ "token": "ODUyODkyMjk3NjYxOTA2OTkz.GX5Xdp.22jsdSqEiHLUYEJSsjeq_vJKLpOofd5QMksqw32e" }
+```
+
+###### Example Response (MFA Required)
+
+```json
+{
+  "user_id": "852892297661906993",
+  "mfa": true,
+  "sms": true,
+  "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.H2Rpq0.WrhGhYEhM3lHUPN61xF6JcQKwVutk8fBvcoHjo",
+  "backup": true,
+  "totp": true,
+  "webauthn": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
+}
+```
 
 ## MFA Verification
 
