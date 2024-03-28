@@ -559,11 +559,13 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Topics">
-      <NavigationLink
+        <NavigationLink
           href="/topics/captcha-handling"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/topics/captcha-handling#identifying-captchas">Identifying CAPTCHAs</NavigationSubLink>
+              <NavigationSubLink href="/topics/captcha-handling#identifying-captchas">
+                Identifying CAPTCHAs
+              </NavigationSubLink>
               <NavigationSubLink href="/topics/captcha-handling#solving-captchas">Solving CAPTCHAs</NavigationSubLink>
             </Fragment>
           }
@@ -788,9 +790,7 @@ export default function Navigation() {
           href="/remote-authentication/intro"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/remote-authentication/intro#how-it-works">
-                How it Works
-              </NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/intro#how-it-works">How it Works</NavigationSubLink>
               <NavigationSubLink href="/remote-authentication/intro#how-to-use">How to Use</NavigationSubLink>
             </Fragment>
           }
