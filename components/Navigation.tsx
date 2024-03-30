@@ -159,6 +159,7 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/authentication#fingerprints">Fingerprints</NavigationSubLink>
+              <NavigationSubLink href="/authentication#sessions">Sessions</NavigationSubLink>
               <NavigationSubLink href="/authentication#login">Login</NavigationSubLink>
               <NavigationSubLink href="/authentication#register">Register</NavigationSubLink>
               <NavigationSubLink href="/authentication#logout">Logout</NavigationSubLink>

@@ -14,6 +14,73 @@ Discord uses fingerprints to persist experiments throughout the authentication f
 
 If the client is unauthenticated, a fingerprint should be generated using [Get Experiment Assignments](/topics/experiments#get-experiment-assignments) and included in the `X-Fingerprint` header as well as any applicable `fingerprint` JSON parameters until authentication is complete.
 
+## Sessions
+
+Discord uses sessions to track the user's authentication state. A session is created when the user logs in and is invalidated when the user logs out or the session expires.
+Sessions are unique to a single authentication token and keep track of the last location they were used from. Suspicious sessions may be flagged by Discord and lead to the account being locked, requiring the user to reset their password.
+
+The authentication session ID corresponding to the current Gateway session is given in the [`auth_session_id_hash` field in the Ready event](/topics/gateway-events#ready).
+If the current Gateway session's authentication session ever changes (e.g. due to a password reset), the client will receive an [Auth Session Change](/topics/gateway-events#auth-session-change) Gateway event.
+
+### Auth Session Object
+
+###### Auth Session Structure
+
+| Field                 | Type                                                                   | Description                                 |
+| --------------------- | ---------------------------------------------------------------------- | ------------------------------------------- |
+| id_hash               | string                                                                 | The session ID hash                         |
+| approx_last_used_time | ISO8601 timestamp                                                      | When the session was last used              |
+| client_info           | [auth session client info](#auth-session-client-info-structure) object | The client last associated with the session |
+
+###### Auth Session Client Info Structure
+
+| Field    | Type    | Description                                                           |
+| -------- | ------- | --------------------------------------------------------------------- |
+| os       | ?string | The operating system of the client                                    |
+| platform | ?string | The name of the client or browser platform                            |
+| location | ?string | The approximate location of the client                                |
+| ip?      | string  | The IP address of the client, if the location could not be determined |
+
+###### Example Auth Session
+
+```json
+{
+  "id_hash": "y3vq9yYww3Y1yAhc4ChuRtCOHADRu0gTPoIU5y3DcS4=",
+  "approx_last_used_time": "2024-03-30T21:30:58.100231+00:00",
+  "client_info": {
+    "os": "Windows",
+    "platform": "Discord Client",
+    "location": "San Francisco, California, United States"
+  }
+}
+```
+
+### Endpoints
+
+<RouteHeader method="GET" url="/auth/sessions">
+  Get Auth Sessions
+</RouteHeader>
+
+Returns up to 50 of the user's active authentication sessions.
+
+###### Response Body
+
+| Field         | Type                                               | Description                                 |
+| ------------- | -------------------------------------------------- | ------------------------------------------- |
+| user_sessions | array[[auth session](#auth-session-object) object] | Active authentication sessions for the user |
+
+<RouteHeader method="POST" url="/auth/sessions/logout" mfa>
+  Logout Auth Sessions
+</RouteHeader>
+
+Invalidates a list of authentication sessions. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field             | Type          | Description                                |
+| ----------------- | ------------- | ------------------------------------------ |
+| session_id_hashes | array[string] | The session ID hashes to invalidate (1-64) |
+
 ## Login
 
 The login process is the first step in authenticating a user.
