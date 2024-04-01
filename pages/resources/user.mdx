@@ -39,11 +39,12 @@ A user's legacy `username#discriminator` tag will still be usable to [send frien
 
 #### Identifying Migrated Users
 
-Pomelo will rollout to users over time rather than all at once. The value of a single zero (`0`) in the [`discriminator` field on the user object](#user-object) indicates that the user has ~~been pommeled~~ migrated to the new username system. Note that the discriminator for migrated users will _not_ be 4-digits like a standard discriminator (it is `0`, not `0000`). The value of the `username` field will become the migrated user's unique username.
+The value of a single zero (`0`) in the [`discriminator` field on the user object](#user-object) indicates that the user has ~~been pommeled~~ migrated to the new username system. Note that the discriminator for migrated users will _not_ be 4-digits like a standard discriminator (it is `0`, not `0000`). The value of the `username` field will become the migrated user's unique username.
 
 #### Migrating
 
-Users can only migrate their account to pomelo if they are in the rollout. A user is in the rollout if they have `pomelo` in the [`disclose` field on the Ready Supplemental event](/topics/gateway-events#ready-supplemental) and are [in the `2023-03_pomelo` user experiment](/topics/experiments#user-experiments).
+~~Users can only migrate their account to pomelo if they are in the rollout. A user is in the rollout if they have `pomelo` in the [`disclose` field on the Ready Supplemental event](/topics/gateway-events#ready-supplemental) and are [in the `2023-03_pomelo` user experiment](/topics/experiments#user-experiments).~~
+Migration is now complete and all non-migrated users have been automatically assigned a unique username.
 
 To migrate, users should first [check if the username they want is available](#get-pomelo-eligibility), and then [migrate their account to that username](#create-pomelo-migration). If the username they want is not available, they can [get a list of suggested usernames](#get-pomelo-suggestions) to choose from.
 
@@ -733,6 +734,7 @@ All parameters to this endpoint are optional.
 
 | Field                         | Type                                                                                                   | Description                                                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| application?                  | [profile application](#profile-application-structure) object                                           | The bot's application profile                                                                                          |
 | user                          | partial [user](#user-object) object                                                                    | The user object with an extra `bio` key denoting the user's bio                                                        |
 | user_profile ^1^              | [profile metadata](#profile-metadata-object) object                                                    | The user's profile metadata                                                                                            |
 | badges ^1^                    | array[[profile badge](#profile-badge-structure) object]                                                | The user's profile badges                                                                                              |
@@ -751,6 +753,19 @@ All parameters to this endpoint are optional.
 ^1^ These fields are unexpectedly missing or `null` if the user has blocked the current user.
 
 ^2^ See the [section on Discord's new username system](#unique-usernames) for more information.
+
+###### Profile Application Structure
+
+| Field                            | Type                                                                                                                  | Description                                                                                               |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| id                               | snowflake                                                                                                             | The ID of the application                                                                                 |
+| flags                            | integer                                                                                                               | The [application's flags](/resources/application#application-flags)                                       |
+| verified                         | boolean                                                                                                               | Whether the application is verified                                                                       |
+| popular_application_command_ids? | array[snowflake]                                                                                                      | The IDs of the application's most popular application commands (max 5)                                    |
+| primary_sku_id?                  | snowflake                                                                                                             | The ID of the application's primary SKU (game, application subscription, etc.)                            |
+| install_params?                  | [application install params](#application-install-params-object) object                                               | The default in-app authorization link for the integration                                                 |
+| custom_install_url?              | string                                                                                                                | The default custom authorization link for the integration                                                 |
+| integration_types_config?        | map[int, ?[application integration type configuration](#application-integration-type-configuration-structure) object] | The configuration for each [integration type](#application-integration-type) supported by the application |
 
 ###### Profile Badge Structure
 
@@ -1232,7 +1247,7 @@ Verifies a verification code sent to the current user's email address to initiat
 | ----- | ------ | -------------------------------------------------------------------------------------------------------- |
 | token | string | The email token; can be used with [Modify Current User](#modify-current-user) to change the user's email |
 
-<RouteHeader method="GET" url="/users/@me/pomelo-suggestions">
+<RouteHeader method="GET" url="/users/@me/pomelo-suggestions" deprecated>
   Get Pomelo Suggestions
 </RouteHeader>
 
@@ -1262,12 +1277,6 @@ This endpoint is used during the pomelo migration flow. The user must be in the 
 
 Checks whether a unique username is available for the user to claim.
 
-<Alert type="warn">
-
-This endpoint is used during the pomelo migration flow. The user must be in the rollout to use this endpoint. See the [section on Discord's new username system](#unique-usernames) for more information.
-
-</Alert>
-
 <Alert type="info">
 
 See the [Usernames and Nicknames section](/resources/user#usernames-and-nicknames) for more information on username restrictions.
@@ -1292,7 +1301,7 @@ See the [Usernames and Nicknames section](/resources/user#usernames-and-nickname
 { "taken": true }
 ```
 
-<RouteHeader method="POST" url="/users/@me/pomelo">
+<RouteHeader method="POST" url="/users/@me/pomelo" deprecated>
   Create Pomelo Migration
 </RouteHeader>
 
