@@ -154,6 +154,22 @@ export default function Navigation() {
         >
           Reference
         </NavigationLink>
+        <NavigationLink
+          href="/authentication"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/authentication#fingerprints">Fingerprints</NavigationSubLink>
+              <NavigationSubLink href="/authentication#sessions">Sessions</NavigationSubLink>
+              <NavigationSubLink href="/authentication#login">Login</NavigationSubLink>
+              <NavigationSubLink href="/authentication#register">Register</NavigationSubLink>
+              <NavigationSubLink href="/authentication#logout">Logout</NavigationSubLink>
+              <NavigationSubLink href="/authentication#account-recovery">Account Recovery</NavigationSubLink>
+              <NavigationSubLink href="/authentication#mfa-verification">MFA Verification</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Authentication
+        </NavigationLink>
       </NavigationSection>
 
       <NavigationSection title="Resources">
@@ -499,6 +515,8 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#profile-metadata-object">
                 Profile Metadata Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/user#authenticator-object">Authenticator Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/user#backup-code-object">Backup Code Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#harvest-object">Harvest Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#connection-object">Connection Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#relationship-object">Relationship Object</NavigationSubLink>
@@ -542,6 +560,19 @@ export default function Navigation() {
       </NavigationSection>
 
       <NavigationSection title="Topics">
+        <NavigationLink
+          href="/topics/captcha-handling"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/captcha-handling#identifying-captchas">
+                Identifying CAPTCHAs
+              </NavigationSubLink>
+              <NavigationSubLink href="/topics/captcha-handling#solving-captchas">Solving CAPTCHAs</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          CAPTCHA Handling
+        </NavigationLink>
         <NavigationLink
           href="/topics/client-distribution"
           subLinks={
@@ -661,6 +692,16 @@ export default function Navigation() {
           Permissions
         </NavigationLink>
         <NavigationLink
+          href="/topics/push-notifications"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/topics/push-notifications#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Push Notifications
+        </NavigationLink>
+        <NavigationLink
           href="/topics/rate-limits"
           subLinks={
             <Fragment>
@@ -747,17 +788,15 @@ export default function Navigation() {
 
       <NavigationSection title="Remote Authentication">
         <NavigationLink
-          href="/remote-authentication/introduction"
+          href="/remote-authentication/intro"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/remote-authentication/introduction#how-it-works">
-                How it Works
-              </NavigationSubLink>
-              <NavigationSubLink href="/remote-authentication/introduction#how-to-use">How to Use</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/intro#how-it-works">How it Works</NavigationSubLink>
+              <NavigationSubLink href="/remote-authentication/intro#how-to-use">How to Use</NavigationSubLink>
             </Fragment>
           }
         >
-          Introduction
+          Intro
         </NavigationLink>
         <NavigationLink
           href="/remote-authentication/desktop"

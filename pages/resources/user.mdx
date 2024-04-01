@@ -72,15 +72,15 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | avatar_decoration_data   | ?[avatar decoration data](#avatar-decoration-data-structure) | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
 | bot?                     | boolean                                                      | Whether the user belongs to an OAuth2 application                                                               |
 | system?                  | boolean                                                      | Whether the user is an official Discord System user (part of the urgent message system)                         |
-| mfa_enabled              | boolean                                                      | Whether the user has two-factor authentication enabled on their account                                         |
+| mfa_enabled              | boolean                                                      | Whether the user has multi-factor authentication enabled on their account                                       |
 | nsfw_allowed? ^1^        | ?boolean                                                     | Whether the user is allowed to see NSFW content, `null` if not yet known                                        |
 | pronouns? ^1^ ^4^        | string                                                       | The user's pronouns (max 40 characters)                                                                         |
 | bio ^1^                  | string                                                       | The user's bio (max 190 characters)                                                                             |
 | banner                   | ?string                                                      | The user's [banner hash](/reference#cdn-formatting)                                                             |
 | accent_color             | ?integer                                                     | The user's banner color encoded as an integer representation of hexadecimal color code                          |
-| locale? ^3^              | string                                                       | The user's chosen [language option](/reference#locales)                                                         |
+| locale? ^3^              | string                                                       | The [language option](/reference#locales) chosen by the user                                                    |
 | verified ^2^             | boolean                                                      | Whether the email on this account has been verified                                                             |
-| email ^2^                | ?string                                                      | The user's email                                                                                                |
+| email ^2^                | ?string                                                      | The user's email address                                                                                        |
 | phone? ^1^               | ?string                                                      | The user's E.164-formatted phone number                                                                         |
 | premium_type             | integer                                                      | The [type of premium (Nitro) subscription](#premium-type) on a user's account                                   |
 | personal_connection_id?  | snowflake                                                    | The ID of the user's personal, non-employee user account                                                        |
@@ -91,6 +91,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | desktop? ^1^ ^4^         | boolean                                                      | Whether the user has used the desktop client before                                                             |
 | mobile? ^1^ ^4^          | boolean                                                      | Whether the user has used the mobile client before                                                              |
 | has_bounced_email? ^1^   | boolean                                                      | Whether the user's email has failed to deliver and is no longer valid                                           |
+| authenticator_types? ^3^ | array[integer]                                               | The [types of multi-factor authenticators](#authenticator-type) the user has enabled                            |
 
 ^1^ Not included when fetching a user via OAuth2.
 
@@ -158,7 +159,8 @@ For users with migrated accounts, default avatar URLs will be based on the user 
   },
   "email": "nelly@discord.com",
   "verified": true,
-  "phone": "+18885940085"
+  "phone": "+18885940085",
+  "authenticator_types": [1, 2, 3]
 }
 ```
 
@@ -189,7 +191,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 1  | PARTNER                      | Partnered Server Owner                                                                      | Yes    |
 | 1 << 2  | HYPESQUAD                    | HypeSquad Events                                                                            | Yes    |
 | 1 << 3  | BUG_HUNTER_LEVEL_1           | Level 1 Discord Bug Hunter                                                                  | Yes    |
-| 1 << 4  | MFA_SMS                      | SMS enabled as a two-factor authentication backup                                           | No     |
+| 1 << 4  | MFA_SMS                      | SMS enabled as a multi-factor authentication backup                                         | No     |
 | 1 << 5  | PREMIUM_PROMO_DISMISSED      | User has dismissed the current premium (Nitro) promotion                                    | No     |
 | 1 << 6  | HYPESQUAD_ONLINE_HOUSE_1     | HypeSquad Bravery                                                                           | Yes    |
 | 1 << 7  | HYPESQUAD_ONLINE_HOUSE_2     | HypeSquad Brilliance                                                                        | Yes    |
@@ -222,7 +224,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 50 | COLLABORATOR                 | User is a collaborator and is considered staff                                              | No     |
 | 1 << 51 | RESTRICTED_COLLABORATOR      | User is a restricted collaborator and is considered staff                                   | No     |
 
-^1^ Not exposed to the API, can only be found in [user data harvests](/resources/user#harvest-object).
+^1^ Not exposed to the API, can only be found in [user data harvests](#harvest-object).
 
 ###### Purchased Flags
 
@@ -276,6 +278,15 @@ Required action types denote an action Discord requires the user to take before 
 
 ^1^ This is now represented by first receiving a `VERIFY_PHONE` action, and then receiving a `VERIFY_EMAIL` action after the phone number has been verified.
 
+###### Client Theme
+
+The client theme denotes the theme the user has set in their client.
+
+| Value | Description |
+| ----- | ----------- |
+| dark  | Dark theme  |
+| light | Light theme |
+
 ### Profile Metadata Object
 
 Represents a user's profile metadata.
@@ -323,6 +334,58 @@ Represents a user's profile metadata.
   "profile_effect": {
     "id": "1139323097930027068"
   }
+}
+```
+
+### Authenticator Object
+
+###### Authenticator Structure
+
+| Field | Type   | Description                                      |
+| ----- | ------ | ------------------------------------------------ |
+| id    | string | The ID of the authenticator                      |
+| type  | string | The [type of authenticator](#authenticator-type) |
+| name  | string | The name of the authenticator                    |
+
+###### Authenticator Type
+
+Authenticator types represent enabled multi-factor authentication methods. See the [MFA verification documentation](/authentication#mfa-verification) for more information.
+
+| Value | Name     | Description                       |
+| ----- | -------- | --------------------------------- |
+| 1     | WEBAUTHN | WebAuthn credentials              |
+| 2     | TOTP     | Time-based One-Time Password code |
+| 3     | SMS      | SMS code                          |
+
+###### Example Authenticator
+
+```json
+{
+  "id": "1219430671865610261",
+  "type": 1,
+  "name": "AlienKey"
+}
+```
+
+### Backup Code Object
+
+Represents a user's multi-factor authentication backup code.
+
+###### Backup Code Structure
+
+| Field    | Type      | Description                           |
+| -------- | --------- | ------------------------------------- |
+| user_id  | snowflake | The ID of the user                    |
+| code     | string    | The backup code                       |
+| consumed | boolean   | Whether the backup code has been used |
+
+###### Example Backup Code
+
+```json
+{
+  "user_id": "852892297661906993",
+  "code": "zqs8oqxk",
+  "consumed": false
 }
 ```
 
@@ -390,6 +453,16 @@ The connection object that the user has attached.
 
 ^2^ These integrations can be used to [join your own sub-enabled guild or the guild of a creator you are supporting](/resources/integration#join-integration-guild).
 
+###### Partial Connection Structure
+
+| Field     | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| id        | string  | ID of the connection account                   |
+| type      | string  | The [type](#connection-type) of the connection |
+| name      | string  | The username of the connection account         |
+| verified  | boolean | Whether the connection is verified             |
+| metadata? | object  | Service-specific metadata about the connection |
+
 ###### Example Connection
 
 ```json
@@ -413,16 +486,6 @@ The connection object that the user has attached.
   "integrations": []
 }
 ```
-
-###### Partial Connection Structure
-
-| Field     | Type    | Description                                    |
-| --------- | ------- | ---------------------------------------------- |
-| id        | string  | ID of the connection account                   |
-| type      | string  | The [type](#connection-type) of the connection |
-| name      | string  | The username of the connection account         |
-| verified  | boolean | Whether the connection is verified             |
-| metadata? | object  | Service-specific metadata about the connection |
 
 ###### Example Partial Connection
 
@@ -564,7 +627,7 @@ A relationship between the current user and another user.
 
 Returns the [user](#user-object) object of the requester's account.
 
-<RouteHeader method="PATCH" url="/users/@me">
+<RouteHeader method="PATCH" url="/users/@me" mfa>
   Modify Current User
 </RouteHeader>
 
@@ -587,7 +650,7 @@ All parameters to this endpoint are optional.
 | avatar_decoration?        | ?[image data](/reference#cdn-data) | The user's avatar decoration (only available to Discord staff)                                                                                                            |
 | avatar_decoration_id?     | ?snowflake                         | The ID of the user's collected avatar decoration                                                                                                                          |
 | avatar_decoration_sku_id? | ?snowflake                         | The SKU ID of the user's collected avatar decoration                                                                                                                      |
-| email?                    | string                             | The user's email; if changing from a verified email `email_token` must be provided                                                                                        |
+| email?                    | string                             | The user's email address; if changing from a verified email, `email_token` must be provided                                                                               |
 | email_token? ^4^          | string                             | The user's email token from their previous email                                                                                                                          |
 | pronouns?                 | ?string                            | The user's pronouns (max 40 characters)                                                                                                                                   |
 | bio?                      | ?string                            | The user's bio (max 190 characters)                                                                                                                                       |
@@ -595,18 +658,18 @@ All parameters to this endpoint are optional.
 | accent_color?             | ?integer                           | The user's accent color as a hex integer                                                                                                                                  |
 | flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED`, `HAS_UNREAD_URGENT_MESSAGES`, and `DISABLE_PREMIUM` can be set)                                          |
 | date_of_birth? ^2^        | ISO8601 timestamp                  | The user's date of birth; can only be set once                                                                                                                            |
-| password? ^1^             | string                             | The user's current password; if the account does not have a password this sets it                                                                                         |
-| new_password? ^3^         | string                             | The user's new password                                                                                                                                                   |
+| password? ^1^             | string                             | The user's current password; if the account does not have a password, this sets it                                                                                        |
+| new_password? ^3^         | string                             | The user's new password (8-72 characters)                                                                                                                                 |
 
 ^1^ Required for changing `username`, `discriminator`, `email`, `date_of_birth`, or `new_password`.
 
-^2^ Setting this defines the `nsfw_allowed` field of the user (based on whether they are over 18).
+^2^ Setting this defines the `nsfw_allowed` field of the user based on whether they are over 18.
 
 ^3^ Changing the account password invalidates all active tokens. Don't fret though, as the `token` key in the response will be valid.
 
 ^4^ This value can be obtained by requesting a verification code with the [Modify User Email](#modify-user-email) endpoint, and then using the [Verify User Email Change](#verify-user-email-change) endpoint.
 
-^5^ If using pomelo, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username changed may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information.
+^5^ If using pomelo, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username changed may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information. See the [Usernames and Nicknames section](#usernames-and-nicknames) for more information on username restrictions.
 
 <RouteHeader method="GET" url="/users/{user.id}">
   Get User
@@ -888,6 +951,236 @@ All parameters to this endpoint are optional.
 
 Returns a list of partial [user](#user-object) objects that are friends with the user and current user.
 
+<RouteHeader method="POST" url="/users/@me/mfa/totp/enable">
+  Enable TOTP MFA
+</RouteHeader>
+
+Enables TOTP multi-factor authentication for the current user. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<Alert type="info">
+
+The `secret` and `code` fields are optional as this endpoint is intended to be used to validate the user's password first before prompting the user to save the secret.
+If the password is valid, the request will fail with a [`60005` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), prompting the client to continue with the setup flow.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description                                       |
+| -------- | ------ | ------------------------------------------------- |
+| password | string | The user's password                               |
+| secret?  | string | The generated TOTP secret (32 characters)         |
+| code?    | string | The TOTP code to verify the secret (6 characters) |
+
+###### Response Body
+
+| Field        | Type                                             | Description                                 |
+| ------------ | ------------------------------------------------ | ------------------------------------------- |
+| token        | string                                           | The new authorization token for the session |
+| backup_codes | array[[backup code](#backup-code-object) object] | MFA backup codes                            |
+
+<RouteHeader method="POST" url="/users/@me/mfa/totp/disable" mfa>
+  Disable TOTP MFA
+</RouteHeader>
+
+Disables TOTP multi-factor authentication for the current user. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<Alert type="warn">
+
+MFA cannot be disabled for administrators of guilds with published creator monetization listings.
+
+</Alert>
+
+###### Response Body
+
+| Field | Type   | Description                                 |
+| ----- | ------ | ------------------------------------------- |
+| token | string | The new authorization token for the session |
+
+<RouteHeader method="POST" url="/users/@me/mfa/sms/enable" mfa>
+  Enable SMS MFA
+</RouteHeader>
+
+Enables SMS multi-factor authentication for the current user. Requires that TOTP-based MFA is already enabled and the user has a verified phone number. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field    | Type   | Description         |
+| -------- | ------ | ------------------- |
+| password | string | The user's password |
+
+<RouteHeader method="POST" url="/users/@me/mfa/sms/disable" mfa>
+  Disable SMS MFA
+</RouteHeader>
+
+Disables SMS multi-factor authentication for the current user. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field    | Type   | Description         |
+| -------- | ------ | ------------------- |
+| password | string | The user's password |
+
+<RouteHeader method="GET" url="/users/@me/mfa/webauthn/credentials">
+  Get WebAuthn Authenticators
+</RouteHeader>
+
+Returns a list of [WebAuthn authenticator](#authenticator-object) objects for the current user.
+
+<RouteHeader method="POST" url="/users/@me/mfa/webauthn/credentials" mfa>
+  Create WebAuthn Authenticator
+</RouteHeader>
+
+Creates a WebAuthn authenticator for the current user. Fires [User Update](/topics/gateway-events#user-update) and [Authenticator Create](/topics/gateway-events#authenticator-create) Gateway events once the authenticator is created.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional as the intended flow is to first use it to generate a `ticket` and `challenge` that is then used to create the authenticator.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type   | Description                                                                                                                                    |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| name?       | string | The name of the authenticator (1-32 characters)                                                                                                |
+| ticket?     | string | The MFA ticket returned from the same endpoint                                                                                                 |
+| credential? | string | A stringified JSON object of the [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON) |
+
+###### Response Body
+
+| Field            | Type                                             | Description                                                                                                                                                              |
+| ---------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ticket ^1^       | string                                           | The MFA ticket                                                                                                                                                           |
+| challenge ^1^    | string                                           | The stringified JSON [public key credential request options](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#web_authentication_api) challenge |
+| id ^2^           | string                                           | The ID of the authenticator                                                                                                                                              |
+| type ^2^         | string                                           | The [type of authenticator](#authenticator-type) (always `WEBAUTHN`)                                                                                                     |
+| name ^2^         | string                                           | The name of the authenticator                                                                                                                                            |
+| backup_codes ^2^ | array[[backup code](#backup-code-object) object] | MFA backup codes                                                                                                                                                         |
+
+^1^ Only returned when no parameters are provided.
+
+^2^ Only returned when parameters are provided.
+
+###### Example Response (Ticket)
+
+```json
+{
+  "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.H2Rpq0.WrhGhYEhM3lHUPN61xF6JcQKwVutk8fBvcoHjo",
+  "challenge": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
+}
+```
+
+###### Example Response (Authenticator)
+
+```json
+{
+  "id": "1219430671865610261",
+  "type": 1,
+  "name": "AlienKey",
+  "backup_codes": [
+    {
+      "user_id": "852892297661906993",
+      "code": "zqs8oqxk",
+      "consumed": false
+    }
+  ]
+}
+```
+
+<RouteHeader method="PATCH" url="/users/@me/mfa/webauthn/credentials/{authenticator.id}" mfa>
+  Modify WebAuthn Authenticator
+</RouteHeader>
+
+Modifies the given WebAuthn authenticator. Returns the updated [authenticator](#authenticator-object) object on success. Fires an [Authenticator Update](/topics/gateway-events#authenticator-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional.
+
+</Alert>
+
+###### JSON Params
+
+| Field | Type   | Description                                     |
+| ----- | ------ | ----------------------------------------------- |
+| name? | string | The name of the authenticator (1-32 characters) |
+
+<RouteHeader method="DELETE" url="/users/@me/mfa/webauthn/credentials/{authenticator.id}" mfa>
+  Delete WebAuthn Authenticator
+</RouteHeader>
+
+Deletes the given WebAuthn authenticator. Returns a 204 empty response on success. Fires [User Update](/topics/gateway-events#user-update) and [Authenticator Delete](/topics/gateway-events#authenticator-delete) Gateway events.
+
+<Alert type="warn">
+
+If this is the last remaining authenticator, this disables MFA for the current user. MFA cannot be disabled for administrators of guilds with published creator monetization listings.
+
+</Alert>
+
+<RouteHeader method="POST" url="/auth/verify/view-backup-codes-challenge">
+  Send Backup Codes Challenge
+</RouteHeader>
+
+Sends an email to the current user with a verification code that allows them to view their backup codes. Returns a 204 empty response on success.
+
+<Alert type="info">
+
+Each generated nonce can only be used once and expires after 30 minutes.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description         |
+| -------- | ------ | ------------------- |
+| password | string | The user's password |
+
+###### Response Body
+
+| Field            | Type   | Description                                                         |
+| ---------------- | ------ | ------------------------------------------------------------------- |
+| nonce            | string | The one-time verification nonce used to view the backup codes       |
+| regenerate_nonce | string | The one-time verification nonce used to regenerate the backup codes |
+
+<RouteHeader method="POST" url="/users/@me/mfa/codes-verification">
+  Get Backup Codes
+</RouteHeader>
+
+Returns the user's MFA backup codes.
+
+###### JSON Params
+
+| Field          | Type    | Description                                                              |
+| -------------- | ------- | ------------------------------------------------------------------------ |
+| key ^1^        | string  | The backup code verification key received in the email                   |
+| nonce ^1^ ^2^  | string  | The one-time verification nonce used to view/regenerate the backup codes |
+| regenerate ^2^ | boolean | Whether to regenerate the backup codes                                   |
+
+^1^ This value can be obtained by requesting a verification code with the [Send Backup Codes Challenge](#send-backup-codes-challenge) endpoint.
+
+^2^ The nonce used must correspond to the action being performed. Each action can only be performed once.
+
+###### Response Body
+
+| Field        | Type                                             | Description      |
+| ------------ | ------------------------------------------------ | ---------------- |
+| backup_codes | array[[backup code](#backup-code-object) object] | MFA backup codes |
+
+###### Example Response
+
+```json
+{
+  "backup_codes": [
+    {
+      "user_id": "852892297661906993",
+      "code": "zqs8oqxk",
+      "consumed": false
+    }
+  ]
+}
+```
+
 <RouteHeader method="POST" url="/users/@me/disable" mfa>
   Disable User
 </RouteHeader>
@@ -901,7 +1194,7 @@ Disables the current user's account. Invalidates all active tokens. Returns a 20
 | password | string | The user's password |
 
 <RouteHeader method="POST" url="/users/@me/delete" mfa>
-  Disable User
+  Delete User
 </RouteHeader>
 
 Marks the current user's account for deletion. Invalidates all active tokens. Returns a 204 empty response on success.
@@ -984,6 +1277,12 @@ This endpoint is used during the pomelo migration flow. The user must be in the 
 
 Checks whether a unique username is available for the user to claim.
 
+<Alert type="info">
+
+See the [Usernames and Nicknames section](/resources/user#usernames-and-nicknames) for more information on username restrictions.
+
+</Alert>
+
 ###### JSON Params
 
 | Field    | Type   | Description           |
@@ -1058,7 +1357,7 @@ Creates a personal data harvest request for the current user. Returns a [harvest
   Get User Notes
 </RouteHeader>
 
-Returns a mapping of [user](#user-object) IDs to notes for the current user.
+Returns a mapping of user IDs to notes for the current user.
 
 ###### Example Response
 
@@ -1073,7 +1372,7 @@ Returns a mapping of [user](#user-object) IDs to notes for the current user.
   Get User Note
 </RouteHeader>
 
-Returns the note for the given [user](#user-object).
+Returns the note for the given user.
 
 ###### Response Body
 
@@ -1097,7 +1396,7 @@ Returns the note for the given [user](#user-object).
   Modify User Note
 </RouteHeader>
 
-Sets the note for the given [user](#user-object). Returns a 204 empty response on success. Fires a [User Note Update](/topics/gateway-events#user-note-update) Gateway event.
+Sets the note for the given user. Returns a 204 empty response on success. Fires a [User Note Update](/topics/gateway-events#user-note-update) Gateway event.
 
 ###### JSON Params
 

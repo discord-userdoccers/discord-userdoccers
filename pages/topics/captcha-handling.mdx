@@ -1,0 +1,82 @@
+# CAPTCHA Handling
+
+Discord employs CAPTCHAs to prevent abuse when performing high-risk actions such as [logging in](/authentication#login), [accepting invites](/resources/invite#accept-invite), and [sending friend requests](/resources/user#send-friend-request).
+Some endpoints will always return a CAPTCHA, while others will only return one if the user is sending suspicious requests or has performed a large number of high-risk actions in a short period of time.
+
+<Alert type="warn">
+
+Users should not assume that a CAPTCHA will only be returned from a subset of endpoints. Always be prepared to handle CAPTCHAs when making requests to the Discord API using a user account.
+
+</Alert>
+
+## Identifying CAPTCHAs
+
+When a request is challenged, the endpoint will return a 400 bad request with a response body looking similar to a legacy error response:
+
+###### CAPTCHA Response Structure
+
+| Field               | Type          | Description                                                                |
+| ------------------- | ------------- | -------------------------------------------------------------------------- |
+| captcha_key         | array[string] | The CAPTCHA service errors                                                 |
+| captcha_service     | string        | The [CAPTCHA service](#captcha-service) to use                             |
+| captcha_sitekey ^1^ | ?string       | The CAPTCHA site key                                                       |
+| captcha_rqdata? ^2^ | string        | Custom data to be sent on challenge requests (used by hCaptcha Enterprise) |
+| captcha_rqtoken?    | string        | The CAPTCHA challenge request token (used by hCaptcha Enterprise)          |
+
+^1^ For reCAPTCHA, this field is `null` as the site key is always `6Lef5iQTAAAAAKeIvIY-DeexoO3gj7ryl9rLMEnn`. For hCaptcha, the site key is now dynamic and should no longer be hard-coded.
+
+^2^ If this field is present, it _must_ be used in the challenge request or the challenge will fail.
+
+###### CAPTCHA Service
+
+| Value         | Description |
+| ------------- | ----------- |
+| hcaptcha      | hCaptcha    |
+| recaptcha ^1^ | reCAPTCHA   |
+
+^1^ reCAPTCHA is not currently used by Discord, but may be used again in the future.
+
+###### Example CAPTCHA Response
+
+```json
+{
+  "captcha_key": ["invalid-input-response", "response-already-used-error"],
+  "captcha_sitekey": "f5561ba9-8f1e-40ca-9b5b-a0b3f719ef34",
+  "captcha_service": "hcaptcha"
+}
+```
+
+<Alert type="info">
+
+On certain endpoints that have not previously returned CAPTCHAs, the `captcha_key` array may contain an error message to display to older clients that made incorrect assumptions about CAPTCHA availability. For example:
+
+```json
+{
+  "captcha_key": ["You need to update your app to join this server."],
+  "captcha_sitekey": "b2b02ab5-7dae-4d6f-830e-7b55634c888b",
+  "captcha_service": "hcaptcha",
+  "captcha_rqdata": "32ODySYSI08RDvfcOKNA25zs8hGNVeD75qXuvAiuXnhgGV1tEqL/M6jHj9NJhuN3843/3Xb0y4qL9X85UhNWMLmXgvqDdUEJSKv1NlqrGqmBhi8qC2W4nKMzYeEFpGPMTqqC12Gp8BCZ+SPn9Dw0g3c=SMTWOoJOQKEpSoHZ",
+  "captcha_rqtoken": "Im4rRTZXUWRTNFhyWTFpZUpEbVM3YVl1bFd6dU0zNUt0VkhzMEVoTHJNcC9wSmVqT29kS1FJVFpYYVgrT0RNd254YjFVQUE9PXVnalltRDZtNEFKOW85VXMi.ZfYH3g.beZ-lIsxWGcY5J0VUzE_odCbh24"
+}
+```
+
+To correctly identify CAPTCHAs, clients should check for a 400 bad request status code and the presence of the `captcha_key` field and not rely on the specific errors within the array.
+
+</Alert>
+
+## Solving CAPTCHAs
+
+When a CAPTCHA is returned, the client must display a CAPTCHA challenge to the user. How this is done depends on the [CAPTCHA service](#captcha-service) used.
+See the [hCaptcha](https://docs.hcaptcha.com/) and [reCAPTCHA](https://developers.google.com/recaptcha/docs/display) documentation for more information.
+
+After the user has solved the CAPTCHA, the request should be retried with the CAPTCHA solution inserted into the `X-Captcha-Key` header.
+**Additionally, if the [`captcha_rqtoken` field](#captcha-response-structure) is present, it _must_ be inserted into the `X-Captcha-Rqtoken` header.**
+
+If the solution is not accepted, the endpoint will return a 400 bad request with a response body similar to the original CAPTCHA response.
+Note that an otherwise valid solution may be rejected if the solution's bot score is too high or the `captcha_rqdata`/`captcha_rqtoken` fields are not properly handled.
+
+<Alert type="info">
+
+Previously, CAPTCHA solutions were sent in the JSON body of the request using the `captcha_key` and `captcha_rqtoken` fields. This behavior is now deprecated and should not be relied on.
+
+</Alert>
