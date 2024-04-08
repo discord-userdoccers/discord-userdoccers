@@ -274,6 +274,7 @@ export default function Navigation() {
         >
           Channel
         </NavigationLink>
+
         <NavigationLink
           href="/resources/message"
           subLinks={
@@ -460,6 +461,23 @@ export default function Navigation() {
           }
         >
           Presence
+        </NavigationLink>
+        <NavigationLink
+          href="/resources/quests"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/quests#quest-object">Quest Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-config-object">Quest Config Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-messages-object">
+                Quest Messages Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-user-status">Quest User Status Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-assets-object">Quest Assets Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Quests
         </NavigationLink>
         <NavigationLink
           href="/resources/stage-instance"
