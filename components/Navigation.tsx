@@ -471,17 +471,19 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/quests#quest-messages-object">
                 Quest Messages Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-user-status">Quest User Status Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-user-status-object">
+                Quest User Status Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/quests#quest-assets-object">Quest Assets Object</NavigationSubLink>
               <NavigationSubLink href="/resources/quests#quest-reward-object">Quest Reward Object</NavigationSubLink>
               <NavigationSubLink href="/resources/quests#quest-reward-config-object">
                 Quest Reward Config Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-discord-reward-object">
-                Quest Discord Reward Config Object
+              <NavigationSubLink href="/resources/quests#discord-reward-object">
+                Discord Reward Config Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-discord-reward-messages-object">
-                Quest Reward Messages Object
+              <NavigationSubLink href="/resources/quests#discord-reward-messages-object">
+                Discord Reward Messages Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/quests#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
