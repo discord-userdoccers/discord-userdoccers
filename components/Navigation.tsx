@@ -274,7 +274,6 @@ export default function Navigation() {
         >
           Channel
         </NavigationLink>
-
         <NavigationLink
           href="/resources/message"
           subLinks={
