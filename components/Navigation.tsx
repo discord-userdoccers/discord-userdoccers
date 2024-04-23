@@ -462,6 +462,26 @@ export default function Navigation() {
           Presence
         </NavigationLink>
         <NavigationLink
+          href="/resources/quests"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/quests#quest-object">Quest Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-user-status-object">
+                Quest User Status Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-reward-code-object">
+                Quest Reward Code Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#quest-claimed-reward-object">
+                Quest Claimed Reward Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/quests#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Quests
+        </NavigationLink>
+        <NavigationLink
           href="/resources/stage-instance"
           subLinks={
             <Fragment>

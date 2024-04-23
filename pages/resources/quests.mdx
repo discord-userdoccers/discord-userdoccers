@@ -1,0 +1,354 @@
+# Quests Resource
+
+### Quest Object
+
+Represents a sponsored quest.
+
+###### Quest Structure
+
+| Field            | Type                                                   | Description                                                                    |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| id               | snowflake                                              | The ID of the quest                                                            |
+| config           | [quest config](#quest-config-structure) object         | The configuration / metadata for the quest                                     |
+| user_status      | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                             |
+| targeted_content | ?array[integer]                                        | The [targeted content areas where the quest can be shown](#quest-content-type) |
+| preview          | boolean                                                | Whether the quest is unreleased and in preview                                 |
+
+###### Quest Config Structure
+
+| Field                               | Type                                                           | Description                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| quest_id                            | snowflake                                                      | The ID of the quest                                                                                         |
+| config_version                      | integer                                                        | Quest object version, self-explanatory                                                                      |
+| expires_at                          | ISO8601 timestamp                                              | The expiry date of the quest                                                                                |
+| stream_duration_requirement_minutes | integer                                                        | Duration (in minutes) the game must be streamed to redeem the quest's reward                                |
+| messages                            | [quest messages](#quest-messages-structure) object             | Defines quest metadata (e.g, human-readable name, game title, publisher and reward redemption instructions) |
+| application_id                      | snowflake                                                      | The application ID of the game the quest is for                                                             |
+| application_name                    | string                                                         | The name of the quest's application                                                                         |
+| get_game_link                       | string                                                         | The download link for the game                                                                              |
+| rewards_config                      | [quest rewards config](#quest-rewards-config-structure) object | Specifies rewards for the quest (e.g. collectibles)                                                         |
+| reward_code_platforms               | array[integer]                                                 | The [platforms that the reward code can be redeemed on](#quest-platform-type)                               |
+| reward_code_expires_at              | ISO8601 timestamp                                              | The expiration date for the received redeem codes                                                           |
+| colors                              | [quest gradient](#quest-gradient-structure) object             | The accent colors for the quest                                                                             |
+| in_game_quest_config                | unknown                                                        | An object that could hold configuration data for the game                                                   |
+| assets                              | [quest assets](#quest-assets-structure) object                 | Object that holds the quest's assets                                                                        |
+
+###### Quest Messages Structure
+
+| Field                                      | Type          | Description                                                            |
+| ------------------------------------------ | ------------- | ---------------------------------------------------------------------- |
+| quest_name                                 | string        | The name of the quest                                                  |
+| reward_name                                | string        | The name of the quest's reward                                         |
+| reward_name_with_article                   | string        | The article variant of the reward name (e.g. "the Alien Cybernetics")  |
+| reward_redemption_instructions_by_platform | array[string] | An array of instructions for redeeming the quest's reward per-platform |
+| game_title                                 | string        | The title of the game the quest is for                                 |
+| game_publisher                             | string        | The publisher of the game the quest is for                             |
+
+###### Quest Rewards Config Structure
+
+Represents an object that holds rewards for the quest (e.g collectibles)
+
+| Field             | Type                                                  | Description                                                          |
+| ----------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| assignment_method | integer                                               | Unknown integer that controls something related to reward assignment |
+| rewards           | array[[quest reward](#quest-reward-structure) object] | Which rewards the user receives upon completing the quest            |
+
+###### Quest Reward Structure
+
+| Field    | Type                                                             | Description                                                                   |
+| -------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| sku_id   | snowflake                                                        | Snowflake that specifies the collectible to award upon the quest's completion |
+| tag      | integer                                                          | The [reward type](#quest-reward-type)                                         |
+| messages | [quest reward messages](#quest-reward-messages-structure) object | Defines human-readable quest metadata                                         |
+
+###### Quest Reward Messages Structure
+
+| Field             | Type   | Description                                                            |
+| ----------------- | ------ | ---------------------------------------------------------------------- |
+| name              | string | The reward's name                                                      |
+| name_with_article | string | The article variant of the name (ex. a Cybernetic Headgear Decoration) |
+
+###### Quest Gradient Structure
+
+Represents a 2-point gradient with a `primary` and `secondary` color.
+
+| Field     | Type   | Description                                     |
+| --------- | ------ | ----------------------------------------------- |
+| primary   | string | The hex-encoded primary color of the gradient   |
+| secondary | string | The hex-encoded secondary color of the gradient |
+
+###### Quest Assets Structure
+
+Represents an object holding [CDN asset names](/reference#cdn-formatting).
+
+| Field          | Type   | Description                                                                                                                                         |
+| -------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reward_tile    | string | An image showing a preview of the reward                                                                                                            |
+| hero           | string | The quest's [hero image](https://en.wiktionary.org/wiki/hero_image)                                                                                 |
+| quest_bar_hero | string | The [hero image](https://en.wiktionary.org/wiki/hero_image) used in the quest popup that appears when launching the game before accepting the quest |
+| game_tile      | string | The game's icon                                                                                                                                     |
+| logotype       | string | The game's [logo](https://en.wikipedia.org/wiki/Logo)                                                                                               |
+
+###### Quest Platform Type
+
+| Value | Name           | Description                                     |
+| ----- | -------------- | ----------------------------------------------- |
+| 0     | CROSS_PLATFORM | The code can be redeemed on all platforms       |
+| 1     | XBOX           | The code can be redeemed on Xbox                |
+| 2     | PLAYSTATION    | The code can be redeemed on PlayStation         |
+| 3     | SWITCH         | The code can be redeemed on the Nintendo Switch |
+| 4     | PC             | The code can be redeemed on PC                  |
+
+###### Quest Content Type
+
+| Value | Name                          | Description                                                    |
+| ----- | ----------------------------- | -------------------------------------------------------------- |
+| 0     | GIFT_INVENTORY_SETTINGS_BADGE | The quest can be shown as a badge in User Settings             |
+| 1     | QUEST_BAR                     | The quest can be shown as a bar?                               |
+| 2     | QUEST_INVENTORY_CARD          | The quest can be shown as a card in the user's gift inventory? |
+| 3     | QUESTS_EMBED                  | The quest can be shown as an embed?                            |
+| 4     | ACTIVITY_PANEL                | The quest can be shown on the Home page's activity panel?      |
+| 5     | QUEST_LIVE_STREAM             | The quest can be shown while watcing another user's stream?    |
+| 6     | MEMBERS_LIST                  | The quest can be shown in the members list?                    |
+| 7     | QUEST_BADGE                   | :menherabuffer: (placeholder)                                  |
+| 8     | GIFT_INVENTORY_FOR_ME         | for me??? (placeholder)                                        |
+
+###### Quest Reward Assignment Method
+
+Represents the method used to assign the reward to a user
+
+| Value | Name   | Description                                   |
+| ----- | ------ | --------------------------------------------- |
+| 0     | ALL    | The reward can be assigned regardless of tier |
+| 1     | TIERED | The reward is assigned in tiers               |
+
+###### Quest Reward Type
+
+Represents the type of reward that the user will receive
+
+| Value | Name        | Description                                                        |
+| ----- | ----------- | ------------------------------------------------------------------ |
+| 1     | REWARD_CODE | The reward is a redeemable code                                    |
+| 1     | IN_GAME     | The reward is automatically given to the user in the promoted game |
+| 2     | COLLECTIBLE | The reward is a Discord collectible (e.g. an avatar decoration)    |
+
+##### Example Quest
+
+```json
+{
+  "id": "8206816794116096000",
+  "config": {
+    "quest_id": "8206816794116096000",
+    "expires_at": "2077-01-01T11:59:59+00:00",
+    "stream_duration_requirement_minutes": 30,
+    "messages": {
+      "quest_name": "👽",
+      "reward_name": "Alien Cybernetics",
+      "reward_name_with_article": "the Alien Cybernetics",
+      "reward_redemption_instructions_by_platform": {
+        "0": "To redeem, visit https://alien.studios/cyberalien/redeem"
+      },
+      "game_title": "Cyberalien 2077",
+      "game_publisher": "Alien Studios"
+    },
+    "application_id": "1242265603276800000",
+    "application_name": "Cyberalien 2077",
+    "get_game_link": "https://alien.studios/cyberalien/redeem",
+    "rewards_config": {
+      "assignment_method": 1,
+      "rewards": [
+        {
+          "sku_id": "12210381551199193606",
+          "tag": 3,
+          "messages": {
+            "name": "Cybernetic Headgear",
+            "name_with_article": "a Cybernetic Headgear Decoration"
+          }
+        }
+      ]
+    },
+    "reward_code_platforms": [0],
+    "reward_code_expires_at": "2077-01-01T11:59:59+00:00",
+    "colors": {
+      "primary": "#E944D4",
+      "secondary": "#5318A7"
+    },
+    "assets": {
+      "reward_tile": "reward.webm",
+      "hero": "hero.png",
+      "quest_bar_hero": "quests_bar_hero.png",
+      "game_tile": "game_tile.png",
+      "logotype": "game_logotype.svg"
+    }
+  },
+  "user_status": {
+    "user_id": "222069018507345921",
+    "quest_id": "8206816794116096000",
+    "enrolled_at": "2077-01-01T11:59:59+00:00",
+    "completed_at": "2077-01-01T11:59:59+00:00",
+    "claimed_at": "2077-01-01T11:59:59+00:00",
+    "claimed_tier": null,
+    "last_stream_heartbeat_at": "2077-01-01T11:59:59+00:00",
+    "stream_progress_seconds": 1800,
+    "dismissed_quest_content": 0,
+    "progress": {}
+  }
+}
+```
+
+### Quest User Status Object
+
+Represents the user's quest progression.
+
+###### Quest User Status Structure
+
+| Field                     | Type              | Description                                                                                                                     |
+| ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| user_id                   | snowflake         | The user's ID                                                                                                                   |
+| quest_id                  | snowflake         | The quest's ID                                                                                                                  |
+| enrolled_at               | ISO8601 timestamp | When the user accepted the quest                                                                                                |
+| completed_at              | ISO8601 timestamp | When the user completed the quest                                                                                               |
+| claimed_at                | ISO8601 timestamp | When the user claimed the quest's reward                                                                                        |
+| claimed_tier              | unknown           | Unused                                                                                                                          |
+| last_stream_heartbeat_ack | ISO8601 timestamp | Timestamp of the latest stream heartbeat request                                                                                |
+| stream_progress_seconds   | ISO8601 timestamp | The total amount of seconds the user has been streaming the game for since the quest started and before the quest was completed |
+| dismissed_quest_content   | ISO8601 timestamp | Whenever the user has dismissed the quest                                                                                       |
+| progress                  | object            | Unused object that could have been an early iteration of the user status object                                                 |
+
+###### Example Quest User Status
+
+```json
+{
+  "user_id": "222069018507345921",
+  "quest_id": "8206816794116096000",
+  "enrolled_at": "2077-01-01T11:59:59+00:00",
+  "completed_at": "2077-01-01T11:59:59+00:00",
+  "claimed_at": "2077-01-01T11:59:59+00:00",
+  "claimed_tier": null,
+  "last_stream_heartbeat_at": "2077-01-01T11:59:59+00:00",
+  "stream_progress_seconds": 1800,
+  "dismissed_quest_content": 0,
+  "progress": {}
+}
+```
+
+### Quest Reward Code Object
+
+Represents an object that holds the reward code.
+
+###### Quest Reward Code Structure
+
+| Field      | Type              | Description                                                                                                   |
+| ---------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| quest_id   | snowflake         | The ID of the quest                                                                                           |
+| code       | string            | The redeem code                                                                                               |
+| platform   | string            | The [platform this redeem code applies to](#quest-platform-type)                                              |
+| user_id    | snowflake         | The ID of the user who this code belongs to                                                                   |
+| claimed_at | ISO8601 timestamp | When the user claimed the quest's reward                                                                      |
+| tier       | unknown           | Unused - possibly the same as the `claimed_tier` field in the [user status object](#quest-user-status-object) |
+
+###### Example Quest Reward Code
+
+```json
+{
+  "quest_id": "8206816794116096000",
+  "code": "111-1111111",
+  "platform": 0,
+  "user_id": "222069018507345921",
+  "claimed_at": "2077-01-01T18:41:29.706194+00:00",
+  "tier": null
+}
+```
+
+### Quest Claimed Reward Object
+
+Represents the claimed rewards.
+
+##### Quest Claimed Reward Structure
+
+| Field        | Type                                                       | Description                                                    |
+| ------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| claimed_at   | ISO8601 timestamp                                          | When the reward was claimed                                    |
+| entitlements | array[entitlement object]                                  | The entitlements the user received                             |
+| errors       | array[[JSON error](/topics/opcodes-and-status-codes#json)] | An array of errors that have occured while claiming the reward |
+
+##### Example Quest Claimed Reward
+
+```json
+{
+  "claimed_at": "2024-04-17T23:30:41.000321+00:00",
+  "entitlements": [
+    {
+      "id": "1230299425620885624",
+      "sku_id": "1226939756617793606",
+      "application_id": "1242265603276800000",
+      "user_id": "222069018507345921",
+      "deleted": false,
+      "type": 10,
+      "tenant_metadata": {},
+      "gift_code_flags": 0,
+      "promotion_id": null
+    }
+  ],
+  "errors": []
+}
+```
+
+### Quest Platform Type
+
+Represents the platforms that the reward code can be redeemed on.
+
+| Value | Name           | Description                                     |
+| ----- | -------------- | ----------------------------------------------- |
+| 0     | CROSS_PLATFORM | The code can be redeemed on all platforms       |
+| 1     | XBOX           | The code can be redeemed on Xbox                |
+| 2     | PLAYSTATION    | The code can be redeemed on PlayStation         |
+| 3     | SWITCH         | The code can be redeemed on the Nintendo Switch |
+| 4     | PC             | The code can be redeemed on PC                  |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/quests/@me">
+  Get Available Quests
+</RouteHeader>
+
+Returns a list of all available [quests](#quest-object).
+
+<RouteHeader method="POST" url="/quests/{quest.id}/enroll">
+  Accept Quest
+</RouteHeader>
+
+Accepts a quest and returns a [quest user status](#quest-user-status-object) object.
+
+<RouteHeader method="POST" url="/quests/{quest.id}/claim-reward">
+  Claim Quest Reward
+</RouteHeader>
+
+Claims the quest's rewards, setting the `completed_at` and `claimed_at` fields of the [user status](#quest-user-status-object) to the current timestamp, and returns the [claimed rewards](#quest-claimed-reward-object).
+
+<RouteHeader method="POST" url="/quests/{quest.id}/reward-code">
+  Get Quest Reward Code
+</RouteHeader>
+
+Retrieves the reward code for the specified platform and returns a [quest reward code](#quest-reward-code-object) object.
+
+###### JSON Params
+
+| Field    | Type    | Description                                                   |
+| -------- | ------- | ------------------------------------------------------------- |
+| location | integer | Used for analytics (probably)                                 |
+| platform | string  | The [platform to retrieve the code for](#quest-platform-type) |
+
+<RouteHeader method="POST" url="/quests/{quest.id}/heartbeat">
+  Send Quest Heartbeat
+</RouteHeader>
+
+Tells the server to update the `last_stream_heartbeat` and `stream_progress_seconds` fields, used for keeping track of how long the stream has been running for and for checking if the user has met the stream duration requirement.
+
+Returns a [quest user status](#quest-user-status-object) object.
+
+###### JSON Params
+
+| Field      | Type   | Description                                                                                           |
+| ---------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| stream_key | string | The encoded key of the stream (e.g `guild:169256939211980800:1050497861969793164:222069018507345921`) |
