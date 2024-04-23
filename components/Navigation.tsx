@@ -466,22 +466,14 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/quests#quest-object">Quest Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-config-object">Quest Config Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-messages-object">
-                Quest Messages Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/quests#quest-user-status-object">
                 Quest User Status Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-assets-object">Quest Assets Object</NavigationSubLink>
               <NavigationSubLink href="/resources/quests#quest-reward-code-object">
                 Quest Reward Code Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-reward-object">
-                Quest Reward Config Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/quests#quest-reward-messages-object">
-                Quest Reward Messages Object
+              <NavigationSubLink href="/resources/quests#quest-claimed-reward-object">
+                Quest Claimed Reward Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/quests#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
