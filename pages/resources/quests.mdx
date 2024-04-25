@@ -9,7 +9,7 @@ Represents a sponsored quest.
 | Field            | Type                                                   | Description                                                           |
 | ---------------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
 | id               | snowflake                                              | The ID of the quest                                                   |
-| config           | [quest config](#quest-config-structure) object         | The configuration / metadata for the quest                            |
+| config           | [quest config](#quest-config-structure) object         | The configuration and metadata for the quest                          |
 | user_status      | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                    |
 | targeted_content | ?array[integer]                                        | The [content areas where the quest can be shown](#quest-content-type) |
 | preview          | boolean                                                | Whether the quest is unreleased and in preview                        |
@@ -30,7 +30,7 @@ Represents a sponsored quest.
 | reward_code_platforms               | array[integer]                                                 | The [platforms that the reward code can be redeemed on](#quest-platform-type)                               |
 | reward_code_expires_at              | ISO8601 timestamp                                              | The expiration date for the received redeem codes                                                           |
 | colors                              | [quest gradient](#quest-gradient-structure) object             | The accent colors for the quest                                                                             |
-| in_game_quest_config                | unknown                                                        | An object that could hold configuration data for the game                                                   |
+| in_game_quest_config                | ?unknown                                                       | An object that could hold configuration data for the game                                                   |
 | assets                              | [quest assets](#quest-assets-structure) object                 | Object that holds the quest's assets                                                                        |
 
 ###### Quest Messages Structure
@@ -48,25 +48,32 @@ Represents a sponsored quest.
 
 Represents an object that holds rewards for the quest (e.g collectibles)
 
-| Field             | Type                                                  | Description                                                          |
-| ----------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| assignment_method | integer                                               | Unknown integer that controls something related to reward assignment |
-| rewards           | array[[quest reward](#quest-reward-structure) object] | Which rewards the user receives upon completing the quest            |
+| Field             | Type                                                  | Description                                                     |
+| ----------------- | ----------------------------------------------------- | --------------------------------------------------------------- |
+| assignment_method | integer                                               | [How the rewards are assigned](#quest-reward-assignment-method) |
+| rewards           | array[[quest reward](#quest-reward-structure) object] | Which rewards the user receives upon completing the quest       |
 
 ###### Quest Reward Structure
 
-| Field    | Type                                                             | Description                                                                   |
-| -------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| sku_id   | snowflake                                                        | Snowflake that specifies the collectible to award upon the quest's completion |
-| tag      | integer                                                          | The [reward type](#quest-reward-type)                                         |
-| messages | [quest reward messages](#quest-reward-messages-structure) object | Defines human-readable quest metadata                                         |
+| Field                  | Type                                                             | Description                                                 |
+| ---------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| sku_id                 | snowflake                                                        | The ID of the SKU awarded                                   |
+| tag                    | integer                                                          | The [reward's type](#quest-reward-type)                     |
+| messages               | [quest reward messages](#quest-reward-messages-structure) object | Human-readable metadata for the reward                      |
+| asset?                 | string                                                           | The reward's [media asset](/reference#cdn-formatting)       |
+| approximate_count? ^1^ | integer                                                          | An approximate count of how many users can claim the reward |
+
+^1^ If the amount of users who claimed the awards exceeds this count, then all future claimers will be assigned the tier 1 reward, aka, the reward that is usually located below the reward with a specified `approximate_count`.
 
 ###### Quest Reward Messages Structure
 
-| Field             | Type   | Description                                                            |
-| ----------------- | ------ | ---------------------------------------------------------------------- |
-| name              | string | The reward's name                                                      |
-| name_with_article | string | The article variant of the name (ex. a Cybernetic Headgear Decoration) |
+Specifies human-readable metadata for a [quest's reward](#quest-object).
+
+| Field                                       | Type          | Description                                                            |
+| ------------------------------------------- | ------------- | ---------------------------------------------------------------------- |
+| name                                        | string        | The reward's name                                                      |
+| name_with_article                           | string        | The article variant of the name (ex. a Cybernetic Headgear Decoration) |
+| reward_redemption_instructions_by_platform? | array[string] | The instrutions on redeeming the reward per-platform                   |
 
 ###### Quest Gradient Structure
 
@@ -90,6 +97,8 @@ Represents an object holding [CDN asset names](/reference#cdn-formatting).
 | logotype       | string | The game's [logo](https://en.wikipedia.org/wiki/Logo)                                                                                               |
 
 ###### Quest Platform Type
+
+Specifies the platforms that the code can be redeemed on.
 
 | Value | Name           | Description                                     |
 | ----- | -------------- | ----------------------------------------------- |
@@ -129,8 +138,8 @@ Represents the type of reward that the user will receive
 | Value | Name        | Description                                                        |
 | ----- | ----------- | ------------------------------------------------------------------ |
 | 1     | REWARD_CODE | The reward is a redeemable code                                    |
-| 1     | IN_GAME     | The reward is automatically given to the user in the promoted game |
-| 2     | COLLECTIBLE | The reward is a Discord collectible (e.g. an avatar decoration)    |
+| 2     | IN_GAME     | The reward is automatically given to the user in the promoted game |
+| 3     | COLLECTIBLE | The reward is a Discord collectible (e.g. an avatar decoration)    |
 
 ##### Example Quest
 
@@ -202,18 +211,18 @@ Represents the user's quest progression.
 
 ###### Quest User Status Structure
 
-| Field                     | Type              | Description                                                                                                                     |
-| ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| user_id                   | snowflake         | The user's ID                                                                                                                   |
-| quest_id                  | snowflake         | The quest's ID                                                                                                                  |
-| enrolled_at               | ISO8601 timestamp | When the user accepted the quest                                                                                                |
-| completed_at              | ISO8601 timestamp | When the user completed the quest                                                                                               |
-| claimed_at                | ISO8601 timestamp | When the user claimed the quest's reward                                                                                        |
-| claimed_tier              | unknown           | Unused                                                                                                                          |
-| last_stream_heartbeat_ack | ISO8601 timestamp | Timestamp of the latest stream heartbeat request                                                                                |
-| stream_progress_seconds   | ISO8601 timestamp | The total amount of seconds the user has been streaming the game for since the quest started and before the quest was completed |
-| dismissed_quest_content   | ISO8601 timestamp | Whenever the user has dismissed the quest                                                                                       |
-| progress                  | object            | Unused object that could have been an early iteration of the user status object                                                 |
+| Field                     | Type               | Description                                                                                                                                                         |
+| ------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| user_id                   | snowflake          | The user's ID                                                                                                                                                       |
+| quest_id                  | snowflake          | The ID of the quest                                                                                                                                                 |
+| enrolled_at               | ISO8601 timestamp  | When the user accepted the quest                                                                                                                                    |
+| completed_at              | ?ISO8601 timestamp | When the user completed the quest                                                                                                                                   |
+| claimed_at                | ?ISO8601 timestamp | When the user claimed the quest's reward                                                                                                                            |
+| claimed_tier              | ?integer           | Which reward tier the user has claimed, if the quest's [`assignment_method`](#quest-rewards-config-structure) is set to [`TIERED`](#quest-reward-assignment-method) |
+| last_stream_heartbeat_ack | ?ISO8601 timestamp | Timestamp of the latest stream heartbeat request                                                                                                                    |
+| stream_progress_seconds   | ISO8601 timestamp  | The total amount of seconds the user has been streaming the game for since the quest started and before the quest was completed                                     |
+| dismissed_quest_content   | ISO8601 timestamp  | Whenever the user has dismissed the quest                                                                                                                           |
+| progress                  | object             | Unused object that could have been an early iteration of the user status object                                                                                     |
 
 ###### Example Quest User Status
 
@@ -238,14 +247,14 @@ Represents an object that holds the reward code.
 
 ###### Quest Reward Code Structure
 
-| Field      | Type              | Description                                                                                                   |
-| ---------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
-| quest_id   | snowflake         | The ID of the quest                                                                                           |
-| code       | string            | The redeem code                                                                                               |
-| platform   | string            | The [platform this redeem code applies to](#quest-platform-type)                                              |
-| user_id    | snowflake         | The ID of the user who this code belongs to                                                                   |
-| claimed_at | ISO8601 timestamp | When the user claimed the quest's reward                                                                      |
-| tier       | unknown           | Unused - possibly the same as the `claimed_tier` field in the [user status object](#quest-user-status-object) |
+| Field      | Type              | Description                                                                                                                                                        |
+| ---------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| quest_id   | snowflake         | The ID of the quest                                                                                                                                                |
+| code       | string            | The redeem code                                                                                                                                                    |
+| platform   | string            | The [platform this redeem code applies to](#quest-platform-type)                                                                                                   |
+| user_id    | snowflake         | The ID of the user who this code belongs to                                                                                                                        |
+| claimed_at | ISO8601 timestamp | When the user claimed the quest's reward                                                                                                                           |
+| tier       | integer           | Which reward tier the code belongs to, if the quest's [`assignment_method`](#quest-rewards-config-structure) is set to [`TIERED`](#quest-reward-assignment-method) |
 
 ###### Example Quest Reward Code
 
@@ -343,7 +352,7 @@ Retrieves the reward code for the specified platform and returns a [quest reward
   Send Quest Heartbeat
 </RouteHeader>
 
-Tells the server to update the `last_stream_heartbeat` and `stream_progress_seconds` fields, used for keeping track of how long the stream has been running for and for checking if the user has met the stream duration requirement.
+Tells the server to update the `last_stream_heartbeat` and `stream_progress_seconds` fields. Used for keeping track of how long the stream has been running for, and for checking if the user has met the [stream duration requirement](#quest-config-structure).
 
 Returns a [quest user status](#quest-user-status-object) object.
 
