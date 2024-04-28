@@ -6,20 +6,22 @@ Represents a sponsored quest.
 
 ###### Quest Structure
 
-| Field            | Type                                                   | Description                                                           |
-| ---------------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
-| id               | snowflake                                              | The ID of the quest                                                   |
-| config           | [quest config](#quest-config-structure) object         | The configuration and metadata for the quest                          |
-| user_status      | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                    |
-| targeted_content | ?array[integer]                                        | The [content areas where the quest can be shown](#quest-content-type) |
-| preview          | boolean                                                | Whether the quest is unreleased and in preview                        |
+| Field                | Type                                                   | Description                                                           |
+| -------------------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
+| id                   | snowflake                                              | The ID of the quest                                                   |
+| config               | [quest config](#quest-config-structure) object         | The configuration and metadata for the quest                          |
+| user_status          | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                    |
+| targeted_content ^1^ | ?array[integer]                                        | The [content areas where the quest can be shown](#quest-content-type) |
+| preview              | boolean                                                | Whether the quest is unreleased and in preview for Discord employees  |
+
+^1^ Some quest content areas may be dismissed using the [Dismiss Quest Content](#dismiss-quest-content) endpoint.
 
 ###### Quest Config Structure
 
 | Field                               | Type                                                           | Description                                                                                                 |
 | ----------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | quest_id                            | snowflake                                                      | The ID of the quest                                                                                         |
-| config_version                      | integer                                                        | Quest object version, self-explanatory                                                                      |
+| config_version                      | integer                                                        | [Quest configuration version](#quest-config-version)                                                        |
 | expires_at                          | ISO8601 timestamp                                              | The expiry date of the quest                                                                                |
 | stream_duration_requirement_minutes | integer                                                        | Duration (in minutes) the game must be streamed to redeem the quest's reward                                |
 | messages                            | [quest messages](#quest-messages-structure) object             | Defines quest metadata (e.g, human-readable name, game title, publisher and reward redemption instructions) |
@@ -32,6 +34,7 @@ Represents a sponsored quest.
 | colors                              | [quest gradient](#quest-gradient-structure) object             | The accent colors for the quest                                                                             |
 | in_game_quest_config                | ?unknown                                                       | An object that could hold configuration data for the game                                                   |
 | assets                              | [quest assets](#quest-assets-structure) object                 | Object that holds the quest's assets                                                                        |
+| variants                            | array[integer]                                                 | The [quest behavior variants](#quest-variant) enabled for the quest                                         |
 
 ###### Quest Messages Structure
 
@@ -46,12 +49,10 @@ Represents a sponsored quest.
 
 ###### Quest Rewards Config Structure
 
-Represents an object that holds rewards for the quest (e.g collectibles)
-
-| Field             | Type                                                  | Description                                                     |
-| ----------------- | ----------------------------------------------------- | --------------------------------------------------------------- |
-| assignment_method | integer                                               | [How the rewards are assigned](#quest-reward-assignment-method) |
-| rewards           | array[[quest reward](#quest-reward-structure) object] | Which rewards the user receives upon completing the quest       |
+| Field             | Type                                                  | Description                                                         |
+| ----------------- | ----------------------------------------------------- | ------------------------------------------------------------------- |
+| assignment_method | integer                                               | [How the rewards are assigned](#quest-reward-assignment-method)     |
+| rewards           | array[[quest reward](#quest-reward-structure) object] | The possible rewards for the quest, ordered by tier (if applicable) |
 
 ###### Quest Reward Structure
 
@@ -61,19 +62,17 @@ Represents an object that holds rewards for the quest (e.g collectibles)
 | tag                    | integer                                                          | The [reward's type](#quest-reward-type)                     |
 | messages               | [quest reward messages](#quest-reward-messages-structure) object | Human-readable metadata for the reward                      |
 | asset?                 | string                                                           | The reward's [media asset](/reference#cdn-formatting)       |
-| approximate_count? ^1^ | integer                                                          | An approximate count of how many users can claim the reward |
+| approximate_count? ^1^ | ?integer                                                         | An approximate count of how many users can claim the reward |
 
-^1^ If the amount of users who claimed the awards exceeds this count, then all future claimers will be assigned the tier 1 reward, aka, the reward that is usually located below the reward with a specified `approximate_count`.
+^1^ If the amount of users who claimed the awards exceeds this count, then all future claimers will be assigned the next reward tier in the list.
 
 ###### Quest Reward Messages Structure
 
-Specifies human-readable metadata for a [quest's reward](#quest-object).
-
-| Field                                       | Type          | Description                                                            |
-| ------------------------------------------- | ------------- | ---------------------------------------------------------------------- |
-| name                                        | string        | The reward's name                                                      |
-| name_with_article                           | string        | The article variant of the name (ex. a Cybernetic Headgear Decoration) |
-| reward_redemption_instructions_by_platform? | array[string] | The instrutions on redeeming the reward per-platform                   |
+| Field                                       | Type             | Description                                                                  |
+| ------------------------------------------- | ---------------- | ---------------------------------------------------------------------------- |
+| name                                        | string           | The reward's name                                                            |
+| name_with_article                           | string           | The article variant of the name (e.g. a Cybernetic Headgear Decoration)      |
+| reward_redemption_instructions_by_platform? | map[int, string] | The instrutions on redeeming the reward [per-platform](#quest-platform-type) |
 
 ###### Quest Gradient Structure
 
@@ -96,44 +95,55 @@ Represents an object holding [CDN asset names](/reference#cdn-formatting).
 | game_tile      | string | The game's icon                                                                                                                                     |
 | logotype       | string | The game's [logo](https://en.wikipedia.org/wiki/Logo)                                                                                               |
 
-###### Quest Platform Type
+###### Quest Config Version
 
-Specifies the platforms that the code can be redeemed on.
+Represents the version of the quest configuration.
 
-| Value | Name           | Description                                     |
-| ----- | -------------- | ----------------------------------------------- |
-| 0     | CROSS_PLATFORM | The code can be redeemed on all platforms       |
-| 1     | XBOX           | The code can be redeemed on Xbox                |
-| 2     | PLAYSTATION    | The code can be redeemed on PlayStation         |
-| 3     | SWITCH         | The code can be redeemed on the Nintendo Switch |
-| 4     | PC             | The code can be redeemed on PC                  |
+| Value | Description |
+| ----- | ----------- |
+| 1     | Version 1   |
+| 2     | Version 2   |
 
 ###### Quest Content Type
 
-| Value | Name                          | Description                                                                               |
-| ----- | ----------------------------- | ----------------------------------------------------------------------------------------- |
-| 0     | GIFT_INVENTORY_SETTINGS_BADGE | The quest can be shown as a badge in User Settings                                        |
-| 1     | QUEST_BAR                     | The quest can be shown as a bar above the user popout                                     |
-| 2     | QUEST_INVENTORY_CARD          | The quest can be shown as a card in the user's gift inventory                             |
-| 3     | QUESTS_EMBED                  | The quest can be shown as an embed in chat                                                |
-| 4     | ACTIVITY_PANEL                | The quest can be shown in the Active Now page                                             |
-| 5     | QUEST_LIVE_STREAM             | The quest can be shown while watching a stream                                            |
-| 6     | MEMBERS_LIST                  | The quest can be shown in the member list                                                 |
-| 7     | QUEST_BADGE                   | The quest grants a [profile badge](/resources/user#profile-badge-structure) on completion |
-| 8     | GIFT_INVENTORY_FOR_YOU        | Unused                                                                                    |
+Represents areas where the quest can be shown in the Discord client.
+
+| Value | Name                          | Description                                                                                | Dismissable |
+| ----- | ----------------------------- | ------------------------------------------------------------------------------------------ | ----------- |
+| 0     | GIFT_INVENTORY_SETTINGS_BADGE | This quest is shown as a badge in User Settings                                            | Yes         |
+| 1     | QUEST_BAR                     | This quest is shown as a bar above the user popout                                         | Yes         |
+| 2     | QUEST_INVENTORY_CARD          | This quest is shown as a card in the user's gift inventory                                 | No          |
+| 3     | QUESTS_EMBED                  | This quest is shown as an embed in chat                                                    | No          |
+| 4     | ACTIVITY_PANEL                | This quest is shown in the Active Now page                                                 | Yes         |
+| 5     | QUEST_LIVE_STREAM             | This quest is shown while watching a stream                                                | Yes         |
+| 6     | MEMBERS_LIST                  | This quest is shown in the member list                                                     | No          |
+| 7     | QUEST_BADGE                   | This quest grants a [profile badge](/resources/user#profile-badge-structure) on completion | No          |
+| 8     | GIFT_INVENTORY_FOR_YOU        | This quest is featured in the user's gift inventory                                        | No          |
+
+###### Quest Platform Type
+
+Specifies the platforms that the quest reward can be redeemed on.
+
+| Value | Name           | Description                                    |
+| ----- | -------------- | ---------------------------------------------- |
+| 0     | CROSS_PLATFORM | This reward can be redeemed on all platforms   |
+| 1     | XBOX           | This reward can be redeemed on Xbox            |
+| 2     | PLAYSTATION    | This reward can be redeemed on PlayStation     |
+| 3     | SWITCH         | This reward can be redeemed on Nintendo Switch |
+| 4     | PC             | This reward can be redeemed on PC              |
 
 ###### Quest Reward Assignment Method
 
-Represents the method used to assign the reward to a user
+Represents the method used to assign the reward to a user.
 
-| Value | Name   | Description                                   |
-| ----- | ------ | --------------------------------------------- |
-| 0     | ALL    | The reward can be assigned regardless of tier |
-| 1     | TIERED | The reward is assigned in tiers               |
+| Value | Name   | Description                                          |
+| ----- | ------ | ---------------------------------------------------- |
+| 0     | ALL    | All rewards are assigned to the user upon completion |
+| 1     | TIERED | The rewards are assigned in tiers                    |
 
 ###### Quest Reward Type
 
-Represents the type of reward that the user will receive
+Represents the type of reward that the user will receive.
 
 | Value | Name        | Description                                                        |
 | ----- | ----------- | ------------------------------------------------------------------ |
@@ -141,13 +151,24 @@ Represents the type of reward that the user will receive
 | 2     | IN_GAME     | The reward is automatically given to the user in the promoted game |
 | 3     | COLLECTIBLE | The reward is a Discord collectible (e.g. an avatar decoration)    |
 
-##### Example Quest
+###### Quest Variant
+
+Represents a behavioral variant for a quest.
+
+| Value | Name                | Description                                    |
+| ----- | ------------------- | ---------------------------------------------- |
+| 1     | POST_ENROLLMENT_CTA | The quest has a post-enrollment call-to-action |
+| 2     | PLAYTIME_CRITERIA   | The quest has a playtime criteria              |
+| 3     | QUEST_BAR_V2        | The quest uses the new quest bar design        |
+
+###### Example Quest
 
 ```json
 {
   "id": "8206816794116096000",
   "config": {
     "quest_id": "8206816794116096000",
+    "config_version": 1,
     "expires_at": "2077-01-01T11:59:59+00:00",
     "stream_duration_requirement_minutes": 30,
     "messages": {
@@ -188,7 +209,9 @@ Represents the type of reward that the user will receive
       "quest_bar_hero": "quests_bar_hero.png",
       "game_tile": "game_tile.png",
       "logotype": "game_logotype.svg"
-    }
+    },
+    "in_game_quest_config": null,
+    "variants": []
   },
   "user_status": {
     "user_id": "222069018507345921",
@@ -201,7 +224,9 @@ Represents the type of reward that the user will receive
     "stream_progress_seconds": 1800,
     "dismissed_quest_content": 0,
     "progress": {}
-  }
+  },
+  "targeted_content": [],
+  "preview": false
 }
 ```
 
@@ -211,18 +236,28 @@ Represents the user's quest progression.
 
 ###### Quest User Status Structure
 
-| Field                     | Type               | Description                                                                                                                                                         |
-| ------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| user_id                   | snowflake          | The user's ID                                                                                                                                                       |
-| quest_id                  | snowflake          | The ID of the quest                                                                                                                                                 |
-| enrolled_at               | ISO8601 timestamp  | When the user accepted the quest                                                                                                                                    |
-| completed_at              | ?ISO8601 timestamp | When the user completed the quest                                                                                                                                   |
-| claimed_at                | ?ISO8601 timestamp | When the user claimed the quest's reward                                                                                                                            |
-| claimed_tier              | ?integer           | Which reward tier the user has claimed, if the quest's [`assignment_method`](#quest-rewards-config-structure) is set to [`TIERED`](#quest-reward-assignment-method) |
-| last_stream_heartbeat_ack | ?ISO8601 timestamp | Timestamp of the latest stream heartbeat request                                                                                                                    |
-| stream_progress_seconds   | ISO8601 timestamp  | The total amount of seconds the user has been streaming the game for since the quest started and before the quest was completed                                     |
-| dismissed_quest_content   | ISO8601 timestamp  | Whenever the user has dismissed the quest                                                                                                                           |
-| progress                  | object             | Unused object that could have been an early iteration of the user status object                                                                                     |
+| Field                    | Type               | Description                                                                                                                                                         |
+| ------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| user_id                  | snowflake          | The ID of the user                                                                                                                                                  |
+| quest_id                 | snowflake          | The ID of the quest                                                                                                                                                 |
+| enrolled_at              | ISO8601 timestamp  | When the user accepted the quest                                                                                                                                    |
+| completed_at             | ?ISO8601 timestamp | When the user completed the quest                                                                                                                                   |
+| claimed_at               | ?ISO8601 timestamp | When the user claimed the quest's reward                                                                                                                            |
+| claimed_tier             | ?integer           | Which reward tier the user has claimed, if the quest's [`assignment_method`](#quest-rewards-config-structure) is set to [`TIERED`](#quest-reward-assignment-method) |
+| last_stream_heartbeat_at | ?ISO8601 timestamp | Timestamp of the latest stream heartbeat request                                                                                                                    |
+| stream_progress_seconds  | ISO8601 timestamp  | Duration (in seconds) the user has streamed the game for since the quest was accepted                                                                               |
+| dismissed_quest_content  | integer            | The [content areas the user has dismissed](#dismissible-quest-content-flags) for the quest                                                                          |
+
+###### Dismissible Quest Content Flags
+
+Represents dismissed [quest content areas](#quest-content-type).
+
+| Value  | Name                          | Description                                               |
+| ------ | ----------------------------- | --------------------------------------------------------- |
+| 1 << 0 | GIFT_INVENTORY_SETTINGS_BADGE | The user has dismissed the quest from User Settings       |
+| 1 << 1 | QUEST_BAR                     | The user has dismissed the quest from the Quest Bar       |
+| 1 << 2 | ACTIVITY_PANEL                | The user has dismissed the quest from the Active Now page |
+| 1 << 3 | QUEST_LIVE_STREAM             | The user has dismissed the quest from the stream overlay  |
 
 ###### Example Quest User Status
 
@@ -243,7 +278,7 @@ Represents the user's quest progression.
 
 ### Quest Reward Code Object
 
-Represents an object that holds the reward code.
+Represents an object that holds the quest's reward code.
 
 ###### Quest Reward Code Structure
 
@@ -365,7 +400,7 @@ Retrieves the reward code for the specified platform and returns a [quest reward
   Send Quest Heartbeat
 </RouteHeader>
 
-Tells the server to update the `last_stream_heartbeat` and `stream_progress_seconds` fields. Used for keeping track of how long the stream has been running for, and for checking if the user has met the [stream duration requirement](#quest-config-structure).
+Tells the server to update the `last_stream_heartbeat` and `stream_progress_seconds` fields. Used for keeping track of how long the stream has been running for, and for checking if the user has met the [stream duration requirement](#quest-config-structure). Returns a [quest user status](#quest-user-status-object) object.
 
 <Alert type="info">
 
@@ -373,11 +408,63 @@ The `stream_progress_seconds` field is incremented by the amount of seconds sinc
 
 </Alert>
 
-Returns a [quest user status](#quest-user-status-object) object.
+<Alert type="info">
+
+The voice channel that hosts the stream must have at least one other participant to be eligible for quest progress.
+
+</Alert>
+
+<Alert type="warn">
+
+Quests may only be completed from desktop clients. If the requesting user-agent does not include electron version info (e.g. `Electron/28.2.10`), the request will fail with a 401 unauthorized error.
+
+</Alert>
 
 ###### JSON Params
 
 | Field      | Type    | Description                                                                                           |
 | ---------- | ------- | ----------------------------------------------------------------------------------------------------- |
 | stream_key | string  | The encoded key of the stream (e.g `guild:169256939211980800:1050497861969793164:222069018507345921`) |
-| terminal?  | boolean | Whether this is the last heartbeat in the current sequence                                            |
+| terminal?  | boolean | Whether this is the last heartbeat in the current stream's sequence                                   |
+
+<RouteHeader method="POST" url="/quests/{quest.id}/preview/complete">
+  Complete Quest
+</RouteHeader>
+
+Forcefully completes the quest for the current user. Returns a [quest user status](#quest-user-status-object) object.
+
+<Alert type="info">
+
+This endpoint is only available to Discord employees for quests in preview.
+
+</Alert>
+
+<RouteHeader method="DELETE" url="/quests/{quest.id}/preview/status">
+  Reset Quest
+</RouteHeader>
+
+Resets the quest's status for the current user. Returns a [quest user status](#quest-user-status-object) object.
+
+<Alert type="info">
+
+This endpoint is only available to Discord employees for quests in preview.
+
+</Alert>
+
+<RouteHeader method="POST" url="/quests/{quest.id}/dismissible-content/{quest_content_type}/dismiss">
+  Dismiss Quest Content
+</RouteHeader>
+
+Dismisses the specified [quest content area](#quest-content-type) for the current user. Not all content areas can be dismissed. Returns a [quest user status](#quest-user-status-object) object.
+
+<RouteHeader method="DELETE" url="/quests/{quest.id}/preview/dismissibility">
+  Reset Quest Dismissibility
+</RouteHeader>
+
+Resets the dismissibility of the quest's content areas for the current user (sets the [`dismissed_quest_content` field](#quest-user-status-object) to 0). Returns a [quest user status](#quest-user-status-object) object.
+
+<Alert type="info">
+
+This endpoint is only available to Discord employees for quests in preview.
+
+</Alert>
