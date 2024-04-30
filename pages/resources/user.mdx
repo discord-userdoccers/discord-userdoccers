@@ -589,6 +589,18 @@ A relationship between the current user and another user.
 | nickname | ?string                      | The nickname of the user in this relationship (1-32 characters) |
 | since?   | ISO8601 timestamp            | When the user requested a relationship                          |
 
+###### Relationship Type
+
+| Value | Name             | Description                                              |
+| ----- | ---------------- | -------------------------------------------------------- |
+| ~~0~~ | ~~NONE~~         | ~~No relationship exists~~                               |
+| 1     | FRIEND           | The user is a friend                                     |
+| 2     | BLOCKED          | The user is blocked                                      |
+| 3     | INCOMING_REQUEST | The user has sent a friend request to the current user   |
+| 4     | OUTGOING_REQUEST | The current user has sent a friend request to the user   |
+| 5     | IMPLICIT         | The user is an affinity of the current user              |
+| ~~6~~ | ~~SUGGESTION~~   | ~~The user is a friend suggestion for the current user~~ |
+
 ###### Example Relationship
 
 ```json
@@ -609,17 +621,54 @@ A relationship between the current user and another user.
 }
 ```
 
-###### Relationship Type
+### Friend Suggestion Object
 
-| Value | Name             | Description                                               |
-| ----- | ---------------- | --------------------------------------------------------- |
-| 0     | NONE             | No relationship exists (shouldn't usually be encountered) |
-| 1     | FRIEND           | The user is a friend                                      |
-| 2     | BLOCKED          | The user is blocked                                       |
-| 3     | INCOMING_REQUEST | The user has sent a friend request to the current user    |
-| 4     | OUTGOING_REQUEST | The current user has sent a friend request to the user    |
-| 5     | IMPLICIT         | The user is an affinity of the current user               |
-| ~~6~~ | ~~SUGGESTION~~   | ~~The user is a friend suggestion for the current user~~  |
+A friend suggestion for the current user.
+
+###### Friend Suggestion Structure
+
+| Field                         | Type                                                                          | Description                                                       |
+| ----------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| suggested_user                | partial [user](#user-object) object                                           | The suggested user                                                |
+| reasons                       | array[[friend suggestion reason](#friend-suggestion-reason-structure) object] | The sources of the suggestion                                     |
+| from_suggested_user_contacts? | boolean                                                                       | Whether the suggested user has the current user in their contacts |
+
+###### Friend Suggestion Reason Structure
+
+| Field    | Type    | Description                                                          |
+| -------- | ------- | -------------------------------------------------------------------- |
+| type     | integer | The [type of reason](#friend-suggestion-reason-type)                 |
+| platform | string  | The [platform that the suggestion originated from](#connection-type) |
+| name     | string  | The user's name on the platform                                      |
+
+###### Friend Suggestion Reason Type
+
+| Value | Name            | Description                              |
+| ----- | --------------- | ---------------------------------------- |
+| 1     | EXTERNAL_FRIEND | The user is a friend on another platform |
+
+###### Example Friend Suggestion
+
+```json
+{
+  "suggested_user": {
+    "id": "852892297661906993",
+    "username": "alien",
+    "global_name": "Alien",
+    "avatar": "14733482e560d9267c0a414b21b2fb8d",
+    "discriminator": "0",
+    "public_flags": 64,
+    "avatar_decoration_data": null
+  },
+  "reasons": [
+    {
+      "type": 1,
+      "platform_type": "contacts",
+      "name": "Gnarpy"
+    }
+  ]
+}
+```
 
 ## Endpoints
 
@@ -1737,6 +1786,18 @@ All parameters to this endpoint are optional.
 </RouteHeader>
 
 Removes a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway event.
+
+<RouteHeader method="GET" url="/friend-suggestions">
+  Get Friend Suggestions
+</RouteHeader>
+
+Returns a list of [friend suggestion](#friend-suggestion-object) objects for the current user.
+
+<RouteHeader method="DELETE" url="/friend-suggestions/{user.id}">
+  Remove Friend Suggestion
+</RouteHeader>
+
+Removes a friend suggestion for the current user. Returns a 204 empty response on success. Fires a [Friend Suggestion Delete](/topics/gateway-events#friend-suggestion-remove) Gateway event.
 
 <RouteHeader method="GET" url="/users/@me/affinities/users">
   Get User Affinities
