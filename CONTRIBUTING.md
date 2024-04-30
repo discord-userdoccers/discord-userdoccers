@@ -71,11 +71,11 @@ If enums are used in multiple places, they should be defined by the most relevan
 
 ###### Platform Type
 
-| Value   | Description                   |
-| ------- | ----------------------------- |
-| web     | Represents the web platform   |
-| mobile  | Represents a mobile platform  |
-| desktop | Represents a desktop platform |
+| Value   | Description        |
+| ------- | ------------------ |
+| web     | The web platform   |
+| mobile  | A mobile platform  |
+| desktop | A desktop platform |
 
 Note that **Type** is used, *not* **Types** like in the official documentation.
 
