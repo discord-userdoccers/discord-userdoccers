@@ -299,16 +299,6 @@ export default function Navigation() {
                 Allowed Mentions Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-create-request-object">
-                Poll Create Request Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-layout-type">Poll Layout Type</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-media-object">Poll Media Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-answer-object">Poll Answer Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-results-object">Poll Results Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-answer-count-object-structure">
-                Poll Answer Count Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
