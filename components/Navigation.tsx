@@ -298,6 +298,17 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#allowed-mentions-object">
                 Allowed Mentions Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-create-request-object">
+                Poll Create Request Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-layout-type">Poll Layout Type</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-media-object">Poll Media Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-answer-object">Poll Answer Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-results-object">Poll Results Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-answer-count-object-structure">
+                Poll Answer Count Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
@@ -426,27 +437,6 @@ export default function Navigation() {
           }
         >
           Invite
-        </NavigationLink>
-        <NavigationLink
-          href="/resources/poll"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/resources/poll#poll-object">Poll Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#poll-create-request-object">
-                Poll Create Request Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#layout-type">Layout Type</NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#poll-media-object">Poll Media Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#poll-answer-object">Poll Answer Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#poll-results-object">Poll Results Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#poll-answer-count-object-structure">
-                Poll Answer Count Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/poll#endpoints">Endpoints</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Poll
         </NavigationLink>
         <NavigationLink
           href="/resources/premium-referral"
