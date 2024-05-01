@@ -442,7 +442,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/poll#poll-answer-count-object-structure">
                 Poll Answer Count Object
               </NavigationSubLink>
-
               <NavigationSubLink href="/resources/poll#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
