@@ -428,6 +428,28 @@ export default function Navigation() {
           Invite
         </NavigationLink>
         <NavigationLink
+          href="/resources/poll"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/poll#poll-object">Poll Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/poll#poll-create-request-object">
+                Poll Create Request Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/poll#layout-type">Layout Type</NavigationSubLink>
+              <NavigationSubLink href="/resources/poll#poll-media-object">Poll Media Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/poll#poll-answer-object">Poll Answer Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/poll#poll-results-object">Poll Results Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/poll#poll-answer-count-object-structure">
+                Poll Answer Count Object
+              </NavigationSubLink>
+
+              <NavigationSubLink href="/resources/poll#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Poll
+        </NavigationLink>
+        <NavigationLink
           href="/resources/premium-referral"
           subLinks={
             <Fragment>
@@ -540,7 +562,9 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#harvest-object">Harvest Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#connection-object">Connection Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#relationship-object">Relationship Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/user#friend-suggestion-object">Friend Suggestion Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/user#friend-suggestion-object">
+                Friend Suggestion Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/user#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
