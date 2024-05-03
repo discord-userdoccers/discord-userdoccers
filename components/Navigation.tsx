@@ -541,9 +541,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#harvest-object">Harvest Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#connection-object">Connection Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#relationship-object">Relationship Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/user#friend-suggestion-object">
-                Friend Suggestion Object
-              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user#friend-suggestion-object">Friend Suggestion Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
