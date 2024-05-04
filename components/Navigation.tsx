@@ -298,6 +298,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#allowed-mentions-object">
                 Allowed Mentions Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
