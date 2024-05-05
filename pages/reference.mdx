@@ -311,7 +311,7 @@ Discord's Gateway API is used for maintaining persistent, stateful WebSocket con
 
 ## Client Properties
 
-Client properties contain tracking information about the client that is used for analytics and A/B testing purposes. These properties are sent in the Gateway [Identify](/topics/gateway-events#identify) payload and included with every HTTP request using the `X-Super-Properties` header as a base-64 encoded JSON object.
+Client properties, or "super properties", contain tracking information about the client that is used for analytics and A/B testing purposes. These properties are sent in the Gateway [Identify](/topics/gateway-events#identify) payload and included with every HTTP request using the `X-Super-Properties` header as a base-64 encoded JSON object.
 
 <Alert type="warn">
 
@@ -324,46 +324,49 @@ While including this header is not required, it is highly recommended due to its
 Due to the nature of client properties, the structure of this object is not well-defined, and no field is truly required.
 Additionally, types of fields are not verified, and all documented enums are merely conventions. Fields are marked as required if it's observed that they are sent in all official client properties.
 
-| Field                                           | Type     | Description                                                                                                                                                  |
-| ----------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| os                                              | string   | The [operating system of the client](#operating-system-type)                                                                                                 |
-| os_version                                      | string   | The operating system version (or SDK version for Android)                                                                                                    |
-| os_sdk_version? **(deprecated)**                | string   | The Android operating system SDK version                                                                                                                     |
-| os_arch?                                        | string   | The [architecture of the operating system](#operating-system-architecture)                                                                                   |
-| app_arch?                                       | string   | The [architecture of the desktop application](/topics/client-distribution#desktop-architecture-type)                                                         |
-| browser ^1^                                     | string   | The [browser the client is using](#browser-type)                                                                                                             |
-| browser_user_agent ^2^                          | string   | The user-agent of the client's browser, may be blank on mobile clients                                                                                       |
-| browser_version                                 | string   | The version of the client's browser, may be blank on mobile clients                                                                                          |
-| client_build_number ^1^                         | integer  | The build number of the client                                                                                                                               |
-| native_build_number?                            | ?integer | The [native metadata version](/topics/client-distribution#get-latest-distributed-application-manifest) of the desktop client, if using the new update system |
-| client_version?                                 | string   | The mobile client version                                                                                                                                    |
-| client_event_source?                            | ?string  | The [alternate event source](#client-event-source) this request originated from                                                                              |
-| release_channel ^1^                             | string   | The [release channel of the client](#release-channel)                                                                                                        |
-| system_locale                                   | string   | The primary system locale                                                                                                                                    |
-| device?                                         | string   | The model of the mobile device the client is running on                                                                                                      |
-| device_vendor_id?                               | string   | A unique identifier for the mobile device                                                                                                                    |
-| device_advertiser_id? **(deprecated)**          | string   | The advertiser ID of the mobile device                                                                                                                       |
-| design_id                                       | integer  | The [design ID of the client](#design-id)                                                                                                                    |
-| accessibility_support_enabled? **(deprecated)** | boolean  | Whether accessibility support is enabled                                                                                                                     |
-| accessibility_features? **(deprecated)**        | integer  | The [accessibility features enabled on the client](#accessibility-feature-flags)                                                                             |
-| window_manager?                                 | string   | The Linux window manager (output of `lsb_release -ds`)                                                                                                       |
-| distro?                                         | string   | The Linux distribution (`env.XDG_CURRENT_DESKTOP \|\| "unknown" + "," + env.GDMSESSION \|\| "unknown"`)                                                      |
-| referrer?                                       | string   | The URL that originally referred the user to Discord                                                                                                         |
-| referrer_current?                               | string   | Same as `referrer` but for the current session                                                                                                               |
-| referring_domain?                               | string   | The domain of the URL that originally referred the user to Discord                                                                                           |
-| referring_domain_current?                       | string   | Same as `referring_domain` but for the current session                                                                                                       |
-| search_engine?                                  | string   | The [search engine that originally referred the user to Discord](#search-engine), parsed from the referrer URL                                               |
-| search_engine_current?                          | string   | Same as `search_engine` but for the current session                                                                                                          |
-| mp_keyword?                                     | string   | The search engine query that originally referred the user to Discord, parsed from the `q` or `p` (for Yahoo) parameter of the referrer URL                   |
-| mp_keyword_current?                             | string   | Same as `mp_keyword` but for the current session                                                                                                             |
-| utm_campaign?                                   | string   | The UTM campaign that originally referred the user to Discord, parsed from the `utm_campaign` parameter of the referrer URL                                  |
-| utm_campaign_current?                           | string   | Same as `utm_campaign` but for the current session                                                                                                           |
-| utm_content?                                    | string   | The UTM content that originally referred the user to Discord, parsed from the `utm_content` parameter of the referrer URL                                    |
-| utm_content_current?                            | string   | Same as `utm_content` but for the current session                                                                                                            |
-| utm_medium?                                     | string   | The UTM medium that originally referred the user to Discord, parsed from the `utm_medium` parameter of the referrer URL                                      |
-| utm_medium_current?                             | string   | Same as `utm_medium` but for the current session                                                                                                             |
-| utm_source?                                     | string   | The UTM source that originally referred the user to Discord, parsed from the `utm_source` parameter of the referrer URL                                      |
-| utm_source_current?                             | string   | Same as `utm_source` but for the current session                                                                                                             |
+| Field                                           | Type     | Description                                                                                                                                                                            |
+| ----------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| os                                              | string   | The [operating system of the client](#operating-system-type)                                                                                                                           |
+| os_version                                      | string   | The operating system version (kernel version for Linux, SDK version for Android)                                                                                                       |
+| os_sdk_version? **(deprecated)**                | string   | The Android operating system SDK version                                                                                                                                               |
+| os_arch?                                        | string   | The architecture of the operating system                                                                                                                                               |
+| app_arch?                                       | string   | The architecture of the desktop application                                                                                                                                            |
+| browser ^1^                                     | string   | The [browser the client is using](#browser-type)                                                                                                                                       |
+| browser_user_agent ^2^                          | string   | The user-agent of the client's browser, may be blank on mobile clients                                                                                                                 |
+| browser_version                                 | string   | The version of the client's browser, may be blank on mobile clients                                                                                                                    |
+| client_build_number ^1^                         | integer  | The build number of the client                                                                                                                                                         |
+| native_build_number?                            | ?integer | The [native metadata version](/topics/client-distribution#get-latest-distributed-application-manifest) of the desktop client, if using the new update system                           |
+| client_version?                                 | string   | The mobile client version                                                                                                                                                              |
+| client_event_source?                            | ?string  | The [alternate event source](#client-event-source) this request originated from                                                                                                        |
+| client_performance_cpu? **(deprecated)**        | integer  | The total CPU utilization of the mobile device (in percent)                                                                                                                            |
+| client_performance_memory? **(deprecated)**     | integer  | The total memory utilization of the mobile device (in kilobytes)                                                                                                                       |
+| cpu_core_count? **(deprecated)**                | integer  | The number of CPU cores available to the mobile device                                                                                                                                 |
+| release_channel ^1^                             | string   | The [release channel of the client](#release-channel)                                                                                                                                  |
+| system_locale                                   | string   | The primary system locale                                                                                                                                                              |
+| device?                                         | string   | The model of the mobile device the client is running on                                                                                                                                |
+| device_vendor_id?                               | string   | A unique identifier for the mobile device (random UUID on Android, [IdentifierForVendor](https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor) on iOS) |
+| device_advertiser_id? **(deprecated)**          | string   | The advertiser ID of the mobile device                                                                                                                                                 |
+| design_id                                       | integer  | The [design ID of the client](#design-id)                                                                                                                                              |
+| accessibility_support_enabled? **(deprecated)** | boolean  | Whether accessibility support is enabled                                                                                                                                               |
+| accessibility_features? **(deprecated)**        | integer  | The [accessibility features enabled on the client](#accessibility-feature-flags)                                                                                                       |
+| window_manager?                                 | string   | The Linux window manager (output of `lsb_release -ds`)                                                                                                                                 |
+| distro?                                         | string   | The Linux distribution (`env.XDG_CURRENT_DESKTOP \|\| "unknown" + "," + env.GDMSESSION \|\| "unknown"`)                                                                                |
+| referrer?                                       | string   | The URL that originally referred the user to Discord                                                                                                                                   |
+| referrer_current?                               | string   | Same as `referrer` but for the current session                                                                                                                                         |
+| referring_domain?                               | string   | The domain of the URL that originally referred the user to Discord                                                                                                                     |
+| referring_domain_current?                       | string   | Same as `referring_domain` but for the current session                                                                                                                                 |
+| search_engine?                                  | string   | The [search engine that originally referred the user to Discord](#search-engine), parsed from the referrer URL                                                                         |
+| search_engine_current?                          | string   | Same as `search_engine` but for the current session                                                                                                                                    |
+| mp_keyword?                                     | string   | The search engine query that originally referred the user to Discord, parsed from the `q` or `p` (for Yahoo) parameter of the referrer URL                                             |
+| mp_keyword_current?                             | string   | Same as `mp_keyword` but for the current session                                                                                                                                       |
+| utm_campaign?                                   | string   | The UTM campaign that originally referred the user to Discord, parsed from the `utm_campaign` parameter of the referrer URL                                                            |
+| utm_campaign_current?                           | string   | Same as `utm_campaign` but for the current session                                                                                                                                     |
+| utm_content?                                    | string   | The UTM content that originally referred the user to Discord, parsed from the `utm_content` parameter of the referrer URL                                                              |
+| utm_content_current?                            | string   | Same as `utm_content` but for the current session                                                                                                                                      |
+| utm_medium?                                     | string   | The UTM medium that originally referred the user to Discord, parsed from the `utm_medium` parameter of the referrer URL                                                                |
+| utm_medium_current?                             | string   | Same as `utm_medium` but for the current session                                                                                                                                       |
+| utm_source?                                     | string   | The UTM source that originally referred the user to Discord, parsed from the `utm_source` parameter of the referrer URL                                                                |
+| utm_source_current?                             | string   | Same as `utm_source` but for the current session                                                                                                                                       |
 
 ^1^ These properties are used to gate experimental features and may be required for certain endpoints. See the [experiments documentation](/topics/experiments) for more information.
 
@@ -413,16 +416,21 @@ Additionally, types of fields are not verified, and all documented enums are mer
 
 ###### Release Channel
 
-| Value         | Description             |
-| ------------- | ----------------------- |
-| stable        | Stable                  |
-| ptb           | PTB                     |
-| canary        | Canary                  |
-| staging       | Staging                 |
-| googleRelease | Android Stable          |
-| betaRelease   | Android Beta            |
-| canaryRelease | Android Alpha           |
-| unknown       | Unknown release channel |
+| Value              | Description                     |
+| ------------------ | ------------------------------- |
+| stable             | Stable                          |
+| ptb                | PTB                             |
+| canary             | Canary                          |
+| pax                | Special PAX East release        |
+| staging            | Staging                         |
+| googleRelease      | Google Play Store stable        |
+| ~~samsungRelease~~ | ~~Samsung Galaxy Store stable~~ |
+| billingRelease     | Android billing (unknown)       |
+| betaRelease        | Android beta                    |
+| canaryRelease      | Android alpha                   |
+| internalRelease    | Internal employee-only release  |
+| developerRelease   | Internal developer release      |
+| unknown            | Unknown release                 |
 
 ###### Design ID
 
@@ -493,6 +501,111 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "client_build_number": 290453,
   "client_event_source": null,
   "design_id": 0
+}
+```
+
+###### Example Client Properties (Windows)
+
+```json
+{
+  "os": "Windows",
+  "browser": "Discord Client",
+  "release_channel": "canary",
+  "client_version": "1.0.341",
+  "os_version": "10.0.26090",
+  "os_arch": "x64",
+  "app_arch": "x64",
+  "system_locale": "en-US",
+  "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.341 Chrome/120.0.6099.291 Electron/28.2.10 Safari/537.36",
+  "browser_version": "28.2.10",
+  "client_build_number": 290668,
+  "native_build_number": 47493,
+  "client_event_source": null,
+  "design_id": 0
+}
+```
+
+###### Example Client Properties (macOS)
+
+```json
+{
+  "os": "Mac OS X",
+  "browser": "Discord Client",
+  "release_channel": "ptb",
+  "client_version": "0.0.113",
+  "os_version": "23.4.0",
+  "os_arch": "arm64",
+  "app_arch": "arm64",
+  "system_locale": "en-US",
+  "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.113 Chrome/120.0.6099.291 Electron/28.2.10 Safari/537.36",
+  "browser_version": "28.2.10",
+  "client_build_number": 290668,
+  "native_build_number": null,
+  "client_event_source": null,
+  "design_id": 0
+}
+```
+
+###### Example Client Properties (Linux)
+
+```json
+{
+  "os": "Linux",
+  "browser": "Discord Client",
+  "release_channel": "canary",
+  "client_version": "0.0.381",
+  "os_version": "5.15.153.1-microsoft-standard-WSL2",
+  "os_arch": "x64",
+  "app_arch": "x64",
+  "system_locale": "en-US",
+  "browser_user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.381 Chrome/120.0.6099.291 Electron/28.2.10 Safari/537.36",
+  "browser_version": "28.2.10",
+  "window_manager": "Hyprland,unknown",
+  "distro": "Ubuntu 22.04.4 LTS",
+  "client_build_number": 290668,
+  "native_build_number": null,
+  "client_event_source": null,
+  "design_id": 0
+}
+```
+
+###### Example Client Properties (Android)
+
+```json
+{
+  "os": "Android",
+  "browser": "Discord Android",
+  "device": "a20e", // Samsung Galaxy A20e
+  "system_locale": "en-US",
+  "client_version": "227.6 - rn",
+  "release_channel": "canaryRelease",
+  "device_vendor_id": "17503929-a4b8-4490-87bf-0222adfdadc8",
+  "browser_user_agent": "", // While it is not provided here, the User-Agent header is Discord-Android/227206;RNA
+  "browser_version": "",
+  "os_version": "34", // Android 14
+  "client_build_number": 227206,
+  "client_event_source": null,
+  "design_id": 2
+}
+```
+
+###### Example Client Properties (iOS)
+
+```json
+{
+  "os": "iOS",
+  "browser": "Discord iOS",
+  "device": "iPhone14,5", // iPhone 13
+  "system_locale": "en-US",
+  "client_version": "227.0",
+  "release_channel": "stable",
+  "device_vendor_id": "AFF0710F-CEC0-4671-B2CF-0A03D72B5FD0",
+  "browser_user_agent": "",
+  "browser_version": "",
+  "os_version": "17.4.1",
+  "client_build_number": 58755,
+  "client_event_source": null,
+  "design_id": 2
 }
 ```
 
