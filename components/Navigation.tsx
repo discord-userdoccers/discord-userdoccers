@@ -143,6 +143,7 @@ export default function Navigation() {
               <NavigationSubLink href="/reference#consistency">Consistency</NavigationSubLink>
               <NavigationSubLink href="/reference#http-api">HTTP API</NavigationSubLink>
               <NavigationSubLink href="/reference#gateway-api">Gateway API</NavigationSubLink>
+              <NavigationSubLink href="/reference#client-properties">Client Properties</NavigationSubLink>
               <NavigationSubLink href="/reference#message-formatting">Message Formatting</NavigationSubLink>
               <NavigationSubLink href="/reference#cdn-formatting">CDN Formatting</NavigationSubLink>
               <NavigationSubLink href="/reference#cdn-data">CDN Data</NavigationSubLink>
