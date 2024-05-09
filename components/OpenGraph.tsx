@@ -8,7 +8,7 @@ interface OpenGraphProps {
 }
 
 export default function OpenGraph({
-  name = "Discord Userdoccers – Unofficial API Documentation",
+  name = "Discord Userdoccers - Unofficial API Documentation",
   title = "Discord Userdoccers",
   description = "👽 ALIEN ALIEN ALIEN 👽",
 }: OpenGraphProps) {

@@ -43,7 +43,7 @@ export default function App({ Component, pageProps, router }: AppProps) {
           .replaceAll(/<[^>]*>?/gm, " ")
           .replace(/\s+/gm, " ")
           .trim()
-          .slice(0, 250)
+          .slice(0, 200)
           .trim()
           .replace(/&\w+$/, "") + "..."
       );
