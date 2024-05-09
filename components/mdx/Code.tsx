@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import classNames from "classnames";
-import { Highlight, Prism } from "prism-react-renderer";
+import Highlight, { defaultProps, Prism } from "prism-react-renderer";
 import { DetailedHTMLProps, ReactNode } from "react";
 
 import CopyButton from "../Copy";
@@ -10,12 +10,6 @@ import CopyIcon from "../icons/Copy";
 
 // Extend base classes
 globalThis.Prism = Prism;
-import("prismjs/components/prism-csharp");
-import("prismjs/components/prism-docker");
-import("prismjs/components/prism-javascript");
-import("prismjs/components/prism-json");
-import("prismjs/components/prism-python");
-import("prismjs/components/prism-typescript");
 
 const diffBgColorMap = {
   "+": "var(--prism-highlight-add)",
@@ -94,7 +88,7 @@ export default function Code({ children, className, metastring, file, ...props }
   return (
     <div className="code-block relative my-3 font-mono rounded-md">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight code={children} language={language ?? ""} prism={Prism}>
+      <Highlight {...defaultProps} code={children} language={language}>
         {({
           className: blockClassName,
           tokens,
