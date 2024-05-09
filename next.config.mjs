@@ -7,6 +7,13 @@ const config = {
   basePath: "",
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
   swcMinify: true,
+  async redirects() {
+    return [{
+      source:'/',
+      destination:'/intro',
+      permanent: true,
+    }]
+  }
 };
 
 const withMDX = createMDX({

@@ -1,8 +1,8 @@
 import classNames from "classnames";
 import type { AppProps } from "next/app";
-import Router from "next/router";
 import { ThemeProvider } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
 import MDX from "../components/MDX";
 import Menu from "../components/Menu";
@@ -18,7 +18,7 @@ import "../stylesheets/prism.css";
 import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps, router }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
@@ -31,18 +31,36 @@ export default function App({ Component, pageProps }: AppProps) {
     },
   );
 
-  useEffect(() => {
-    if (Router.pathname === "/") {
-      void Router.push("/intro");
+  const component = <Component {...pageProps} />;
+
+  const getText = () => {
+    if (router.pathname !== "/404") {
+      const str = ReactDOMServer.renderToString(component);
+
+      return (
+        str
+          .replace(/^(<h\d>(.*?)<\/h\d>)+/, "")
+          .replaceAll(/<[^>]*>?/gm, " ")
+          .replace(/\s+/gm, " ")
+          .trim()
+          .slice(0, 250)
+          .trim()
+          .replace(/&\w+$/, "") + "..."
+      );
+    } else {
+      return "Page not found";
     }
-  });
+  };
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
+  const description = router.query.is_bot == "true" ? getText() : useMemo(() => getText(), []);
 
   return (
     <ThemeProvider defaultTheme="system" attribute="data-theme">
       <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
         {/* eslint-disable-next-line react/jsx-pascal-case */}
         <MDX>
-          <OpenGraph />
+          <OpenGraph description={description} />
           <div className="flex h-screen dark:bg-background-dark bg-white overflow-hidden">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
