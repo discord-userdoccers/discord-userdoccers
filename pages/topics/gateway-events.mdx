@@ -62,6 +62,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Ping Voice Server](#ping-voice-server)                   | Ping the Discord voice servers                                         |
 | [Request Guild Members](#request-guild-members)           | Request members for one or more guilds                                 |
 | [Request Call Connect](#request-call-connect)             | Request a private channels's pre-existing call information             |
+| [Request Soundboard Sounds](#request-soundboard-sounds)   | Request soundboard sounds for one or more guilds                       |
 | [Update Guild Subscriptions](#update-guild-subscriptions) | Update subscriptions for a guild                                       |
 | [Connect Lobby](#connect-lobby)                           | Join a lobby                                                           |
 | [Disconnect Lobby](#disconnect-lobby)                     | Leave a lobby                                                          |
@@ -352,6 +353,27 @@ When using the `AUTO_CALL_CONNECT` [Gateway capability](/topics/gateway#gateway-
 }
 ```
 
+#### Request Soundboard Sounds
+
+Used to request soundboard sounds for a list of guilds. Fires a [Soundboard Sounds](#soundboard-sounds) Gateway event for every guild in response.
+
+###### Request Soundboard Sounds Structure
+
+| Field     | Type             | Description                                        |
+| --------- | ---------------- | -------------------------------------------------- |
+| guild_ids | array[snowflake] | The IDs of the guilds to get soundboard sounds for |
+
+###### Example Request Soundboard Sounds
+
+```json
+{
+  "op": 31,
+  "d": {
+    "guild_ids": ["41771983444115456", "1015060230222131221", "811255666990907402"]
+  }
+}
+```
+
 #### Request Last Messages
 
 Used to request the last messages (indicated by the [`last_message_id` field](/resources/channel#channel-object)) from channels. Fires a [Last Messages](#last-messages) Gateway event with up to 100 messages that match the request.
@@ -490,6 +512,10 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Guild Scheduled Event Delete](#guild-scheduled-event-delete)                     | Guild scheduled event was deleted                                                                             |
 | [Guild Scheduled Event User Add](#guild-scheduled-event-user-add)                 | User subscribed to a guild scheduled event                                                                    |
 | [Guild Scheduled Event User Remove](#guild-scheduled-event-user-remove)           | User unsubscribed from a guild scheduled event                                                                |
+| [Guild Soundboard Sound Create](#guild-soundboard-sound-create)                   | Guild soundboard sound was created                                                                            |
+| [Guild Soundboard Sound Update](#guild-soundboard-sound-update)                   | Guild soundboard sound was updated                                                                            |
+| [Guild Soundboard Sound Delete](#guild-soundboard-sound-delete)                   | Guild soundboard sound was deleted                                                                            |
+| [Soundboard Sounds](#soundboard-sounds)                                           | Response to [Request Soundboard Sounds](#request-soundboard-sounds)                                           |
 | [Guild Integrations Update](#guild-integrations-update)                           | Guild integration was updated                                                                                 |
 | [Integration Create](#integration-create)                                         | Guild integration was created                                                                                 |
 | [Integration Update](#integration-update)                                         | Guild integration was updated                                                                                 |
@@ -523,6 +549,7 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [User Required Action Update](#user-required-action-update)                       | User's required action was updated                                                                            |
 | [Voice State Update](#voice-state-update)                                         | User joined, left, or moved a voice channel                                                                   |
 | [Voice Server Update](#voice-server-update)                                       | Voice connection server was updated                                                                           |
+| [Voice Channel Effect Send](#voice-channel-effect-send)                           | User sent an effect in a voice channel the current user is connected to                                       |
 | [Webhooks Update](#webhooks-update)                                               | Channel webhook was created, update, or deleted                                                               |
 
 #### Hello
@@ -1353,6 +1380,38 @@ Sent when a user has unsubscribed from a guild scheduled event.
 | user_id                  | snowflake | The ID of the subscribed user       |
 | guild_id                 | snowflake | The ID of the guild                 |
 
+### Guild Soundboard
+
+#### Guild Soundboard Sound Create
+
+Sent when a guild soundboard sound is created. The inner payload is a [soundboard sound](/resources/soundboard#soundboard-sound-object) object.
+
+#### Guild Soundboard Sound Update
+
+Sent when a guild soundboard sound is updated. The inner payload is a [soundboard sound](/resources/soundboard#soundboard-sound-object) object.
+
+#### Guild Soundboard Sound Delete
+
+Sent when a guild soundboard sound is deleted.
+
+###### Guild Soundboard Sound Delete Structure
+
+| Field    | Type      | Description                    |
+| -------- | --------- | ------------------------------ |
+| guild_id | snowflake | The ID of the guild            |
+| sound_id | snowflake | The ID of the soundboard sound |
+
+#### Soundboard Sounds
+
+Sent in response to [Request Soundboard Sounds](#request-soundboard-sounds).
+
+###### Soundboard Sounds Event Fields
+
+| Field             | Type                                                                            | Description                    |
+| ----------------- | ------------------------------------------------------------------------------- | ------------------------------ |
+| guild_id          | snowflake                                                                       | The ID of the source guild     |
+| soundboard_sounds | array[[soundboard sound](/resources/soundboard#soundboard-sound-object) object] | Custom guild soundboard sounds |
+
 ### Integrations
 
 #### Guild Integrations Update
@@ -1697,15 +1756,15 @@ Sent when a relationship is removed, relevant to the current user.
 
 #### Stage Instance Create
 
-Sent when a [Stage instance](/resources/stage-instance) is created (i.e. the stage is now "live"). inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
+Sent when a [stage instance](/resources/stage-instance) is created (i.e. the stage is now "live"). The inner payload is a [stage instance](/resources/stage-instance#stage-instance-object) object.
 
 #### Stage Instance Update
 
-Sent when a [Stage instance](/resources/stage-instance) has been updated. inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
+Sent when a [stage instance](/resources/stage-instance) is updated. The inner payload is a [stage instance](/resources/stage-instance#stage-instance-object) object.
 
 #### Stage Instance Delete
 
-Sent when a [Stage instance](/resources/stage-instance) has been deleted (i.e. the stage has been closed). inner payload is a [stage instance](/resources/stage-instance#stage-instance-object)
+Sent when a [stage instance](/resources/stage-instance) is deleted (i.e. the stage has been closed). The inner payload is a [stage instance](/resources/stage-instance#stage-instance-object) object.
 
 ### Typing
 
@@ -1782,6 +1841,42 @@ A `null` endpoint means that the voice server allocated has gone away and is try
   "token": "my_token",
   "guild_id": "41771983423143937",
   "endpoint": "smart.loyal.discord.media:443"
+}
+```
+
+#### Voice Channel Effect Send
+
+Sent when someone sends an effect, such as an emoji reaction or a soundboard sound, in a voice channel the current user is connected to.
+
+###### Voice Channel Effect Send Structure
+
+| Field          | Type                                                   | Description                                                                         |
+| -------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| channel_id     | snowflake                                              | The ID of the channel the effect was sent in                                        |
+| guild_id       | snowflake                                              | The ID of the guild the effect was sent in                                          |
+| user_id        | snowflake                                              | The ID of the user who sent the effect                                              |
+| animation_type | ?integer                                               | The [type of emoji animation](/resources/voice#voice-channel-effect-animation-type) |
+| animation_id   | integer                                                | The ID of the emoji animation (0-20)                                                |
+| emoji          | ?partial [emoji](/resources/emoji#emoji-object) object | The emoji sent, if applicable                                                       |
+| sound_id?      | snowflake                                              | The ID of the soundboard sound                                                      |
+| sound_volume?  | float                                                  | The volume of the soundboard sound (represented as a float from 0 to 1)             |
+
+###### Example Voice Channel Effect Send Payload
+
+```json
+{
+  "guild_id": "839502008108580904",
+  "animation_id": 0,
+  "animation_type": 1,
+  "channel_id": "850360749460553769",
+  "emoji": {
+    "animated": false,
+    "id": null,
+    "name": "🦆"
+  },
+  "sound_id": 1,
+  "sound_volume": 1,
+  "user_id": "852892297661906993"
 }
 ```
 

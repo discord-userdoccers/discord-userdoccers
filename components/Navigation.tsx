@@ -484,6 +484,19 @@ export default function Navigation() {
           Quests
         </NavigationLink>
         <NavigationLink
+          href="/resources/soundboard"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/soundboard#soundboard-sound-object">
+                Soundboard Sound Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/soundboard#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Quests
+        </NavigationLink>
+        <NavigationLink
           href="/resources/stage-instance"
           subLinks={
             <Fragment>
