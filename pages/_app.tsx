@@ -18,6 +18,8 @@ import "../stylesheets/prism.css";
 import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
 
+const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
+
 export default function App({ Component, pageProps, router }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
@@ -47,20 +49,30 @@ export default function App({ Component, pageProps, router }: AppProps) {
           .trim()
           .replace(/&\w+$/, "") + "..."
       );
-    } else {
-      return "Page not found";
     }
+    return "Page not found";
+  };
+
+  const getTitle = () => {
+    if (router.pathname !== "/404") {
+      const str = ReactDOMServer.renderToString(component);
+
+      return TITLE_REGEX.exec(str)?.[1] ?? "Unofficial API Documentation";
+    }
+    return "Page not found";
   };
 
   // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
   const description = router.query.is_bot == "true" ? getText() : useMemo(() => getText(), []);
+  // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
+  const title = router.query.is_bot == "true" ? getTitle() : useMemo(() => getTitle(), []);
 
   return (
     <ThemeProvider defaultTheme="system" attribute="data-theme">
       <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
         {/* eslint-disable-next-line react/jsx-pascal-case */}
         <MDX>
-          <OpenGraph description={description} />
+          <OpenGraph description={description} section={title} />
           <div className="flex h-screen dark:bg-background-dark bg-white overflow-hidden">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />

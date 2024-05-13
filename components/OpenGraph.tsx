@@ -3,9 +3,13 @@ import { useRouter } from "next/router";
 
 interface OpenGraphProps {
   description?: string;
+  section?: string;
 }
 
-export default function OpenGraph({ description = "👽 ALIEN ALIEN ALIEN 👽" }: OpenGraphProps) {
+export default function OpenGraph({
+  description = "👽 ALIEN ALIEN ALIEN 👽",
+  section = "Unofficial API Documentation",
+}: OpenGraphProps) {
   const router = useRouter();
   const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}${router.asPath}`;
   const isBase = router.asPath === "/" || router.asPath === "/intro";
@@ -22,7 +26,7 @@ export default function OpenGraph({ description = "👽 ALIEN ALIEN ALIEN 👽" 
       {/* Open Graph */}
       <meta property="og:url" content={url} key="og-url" />
       <meta property="og:site_name" content="Discord Userdoccers" key="og-site-name" />
-      <meta property="og:title" content="Discord Userdoccers - Unofficial API Documentation" key="og-title" />
+      <meta property="og:title" content={`Discord Userdoccers - ${section}`} key="og-title" />
       <meta property="og:description" content={description} key="og-desc" />
 
       {/* Hide image on other routes */}
