@@ -2,23 +2,18 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 interface OpenGraphProps {
-  name?: string;
-  title?: string;
   description?: string;
 }
 
-export default function OpenGraph({
-  name = "Discord Userdoccers - Unofficial API Documentation",
-  title = "Discord Userdoccers",
-  description = "👽 ALIEN ALIEN ALIEN 👽",
-}: OpenGraphProps) {
+export default function OpenGraph({ description = "👽 ALIEN ALIEN ALIEN 👽" }: OpenGraphProps) {
   const router = useRouter();
   const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}${router.asPath}`;
+  const isBase = router.asPath === "/" || router.asPath === "/intro";
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
   return (
     <Head>
-      <title>{name}</title>
+      <title>Discord Userdoccers - Unofficial API Documentation</title>
       <meta key="description" name="description" content={description} />
 
       {/* Twitter */}
@@ -26,10 +21,12 @@ export default function OpenGraph({
 
       {/* Open Graph */}
       <meta property="og:url" content={url} key="og-url" />
-      <meta property="og:image" content="/banner.webp" key="og-image" />
-      <meta property="og:site_name" content={title} key="og-site-name" />
-      <meta property="og:title" content={name} key="og-title" />
+      <meta property="og:site_name" content="Discord Userdoccers" key="og-site-name" />
+      <meta property="og:title" content="Discord Userdoccers - Unofficial API Documentation" key="og-title" />
       <meta property="og:description" content={description} key="og-desc" />
+
+      {/* Hide image on other routes */}
+      {isBase && <meta property="og:image" content="/banner.webp" key="og-image" />}
 
       {/* FIXME: theme color contrasts with page body in safari */}
       <meta name="theme-color" content="#5864F2" />
