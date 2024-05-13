@@ -6,7 +6,7 @@ import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
 import MDX from "../components/MDX";
 import Menu from "../components/Menu";
-import OpenGraph from "../components/OpenGraph";
+import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
 
 import "@docsearch/css";
@@ -57,7 +57,7 @@ export default function App({ Component, pageProps, router }: AppProps) {
     if (router.pathname !== "/404") {
       const str = ReactDOMServer.renderToString(component);
 
-      return TITLE_REGEX.exec(str)?.[1] ?? "Unofficial API Documentation";
+      return TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
     }
     return "Page not found";
   };
@@ -65,7 +65,12 @@ export default function App({ Component, pageProps, router }: AppProps) {
   // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
   const description = router.query.is_bot == "true" ? getText() : useMemo(() => getText(), []);
   // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
-  const title = router.query.is_bot == "true" ? getTitle() : useMemo(() => getTitle(), []);
+  const title =
+    router.asPath === "/" || router.asPath === "/intro"
+      ? DEFAULT_SECTION
+      : router.query.is_bot == "true"
+      ? getTitle()
+      : useMemo(() => getTitle(), []);
 
   return (
     <ThemeProvider defaultTheme="system" attribute="data-theme">

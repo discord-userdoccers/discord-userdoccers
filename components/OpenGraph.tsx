@@ -1,6 +1,8 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 
+export const DEFAULT_SECTION = "Unofficial API Documentation";
+
 interface OpenGraphProps {
   description?: string;
   section?: string;
@@ -8,7 +10,7 @@ interface OpenGraphProps {
 
 export default function OpenGraph({
   description = "👽 ALIEN ALIEN ALIEN 👽",
-  section = "Unofficial API Documentation",
+  section = DEFAULT_SECTION,
 }: OpenGraphProps) {
   const router = useRouter();
   const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}${router.asPath}`;
