@@ -64,13 +64,14 @@ export default function App({ Component, pageProps, router }: AppProps) {
 
   // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
   const description = router.query.is_bot == "true" ? getText() : useMemo(() => getText(), []);
-  // eslint-disable-next-line react-hooks/rules-of-hooks, eqeqeq
   const title =
     router.asPath === "/" || router.asPath === "/intro"
       ? DEFAULT_SECTION
-      : router.query.is_bot == "true"
+      : // eslint-disable-next-line eqeqeq
+      router.query.is_bot == "true"
       ? getTitle()
-      : useMemo(() => getTitle(), []);
+      : // eslint-disable-next-line react-hooks/rules-of-hooks
+        useMemo(() => getTitle(), []);
 
   return (
     <ThemeProvider defaultTheme="system" attribute="data-theme">
