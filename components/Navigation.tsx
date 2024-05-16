@@ -494,7 +494,7 @@ export default function Navigation() {
             </Fragment>
           }
         >
-          Quests
+          Soundboard
         </NavigationLink>
         <NavigationLink
           href="/resources/stage-instance"
