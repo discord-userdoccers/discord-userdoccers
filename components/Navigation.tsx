@@ -394,6 +394,17 @@ export default function Navigation() {
           Guild Template
         </NavigationLink>
         <NavigationLink
+          href="/resources/clan"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/clan#clan-object">Clan Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/clan#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Clan
+        </NavigationLink>
+        <NavigationLink
           href="/resources/integration"
           subLinks={
             <Fragment>
