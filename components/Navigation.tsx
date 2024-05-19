@@ -354,6 +354,9 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild#membership-screening-object">
                 Membership Screening Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild#guild-join-request-object">
+                Guild Join Request Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#onboarding-object">Onboarding Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
