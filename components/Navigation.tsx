@@ -351,8 +351,8 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#ban-object">Ban Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#welcome-screen-object">Welcome Screen Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#membership-screening-object">
-                Membership Screening Object
+              <NavigationSubLink href="/resources/guild#member-verification-object">
+                Member Verification Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-join-request-object">
                 Guild Join Request Object
