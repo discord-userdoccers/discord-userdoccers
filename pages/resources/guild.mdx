@@ -611,7 +611,7 @@ A participating user in a [guild](/resources/guild#guild-object).
 | 1 << 7 | AUTOMOD_QUARANTINED_NAME  | This guild member has been indefinitely quarantined by [an AutoMod Rule](/resources/auto-moderation#automod-rule-object) for their username, display name, or nickname; quarantined users, similar to timed out users, are prevented from interacting with the guild in any way |
 | 1 << 8 | AUTOMOD_QUARANTINED_BIO   | This guild member has been indefinitely quarantined by [an AutoMod Rule](/resources/auto-moderation#automod-rule-object) for their bio; quarantined users, similar to timed out users, are prevented from interacting with the guild in any way                                 |
 
-^1^ Allows a member who does not meet verification requirements to participate in the guild, and forces the [member's `pending` status](#guild-member-object) to be `false`. Removing this flag does not make the member [`pending`]#guild-member-flags again.
+^1^ Allows a member who does not meet verification requirements to participate in the guild, and forces the [member's `pending` status](#guild-member-object) to be `false`. Removing this flag does not make the member pending again.
 
 ###### Example Guild Member
 
@@ -634,7 +634,7 @@ A participating user in a [guild](/resources/guild#guild-object).
   ],
   "user": {
     "id": "828387742575624222",
-    "username": "jup",
+    "username": "jupppper",
     "avatar": "e14a7c62b0b38068be88be194b23910f",
     "discriminator": "0",
     "public_flags": 16384,
@@ -776,17 +776,17 @@ When only using a `TERMS` [form field type](#member-verification-form-field-type
 
 ###### Member Verification Form Field Structure
 
-| Field         | Type               | Description                                                  |
-| ------------- | ------------------ | ------------------------------------------------------------ |
-| field_type    | string             | The [type of question](#member-verification-form-field-type) |
-| label         | string             | The label for the form field (max 300 characters)            |
-| choices       | ?array[string]     | Multiple choice answers (1-8, max 150 characters)            |
-| response? ^1^ | ?string \| integer | Response for this field                                      |
-| required      | boolean            | Whether this field is required for a successful application  |
-| description   | ?string            | The subtext of the form field                                |
-| placeholder   | ?string            | Placeholder text for the field's response area               |
+| Field         | Type                          | Description                                                  |
+| ------------- | ----------------------------- | ------------------------------------------------------------ |
+| field_type    | string                        | The [type of question](#member-verification-form-field-type) |
+| label         | string                        | The label for the form field (max 300 characters)            |
+| choices       | ?array[string]                | Multiple choice answers (1-8, max 150 characters)            |
+| response? ^1^ | ?string \| integer \| boolean | Response for this field                                      |
+| required      | boolean                       | Whether this field is required for a successful application  |
+| description   | ?string                       | The subtext of the form field                                |
+| placeholder   | ?string                       | Placeholder text for the field's response area               |
 
-^1^ Not present when fetched from the [Get Guild Member Verification](#get-guild-member-verification) endpoint. For `MULTIPLE_CHOICE` questions, the response is the index of the selected choice.
+^1^ Not present when fetched from the [Get Guild Member Verification](#get-guild-member-verification) endpoint. For `TERMS` questions, the response should be `true`. For `MULTIPLE_CHOICE` questions, the response is the index of the selected choice.
 
 ###### Member Verification Form Field Type
 
@@ -871,22 +871,27 @@ When only using a `TERMS` [form field type](#member-verification-form-field-type
 ### Guild Join Request Object
 
 Guild join requests are an extension of [member verification](#member-verification-object) that represent a user's request to join a guild.
+A join request is created when a user attempts to join a guild with member verification enabled, and the user must complete the verification process to join the guild.
+
 Most join request features require the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` guild feature](#guild-features), as join request are automatically actioned when only using the `TERMS` [form field type](#member-verification-form-field-type).
 
 ###### Guild Join Request Structure
 
-| Field                | Type                                               | Description                                                                         |
-| -------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| id                   | snowflake                                          | The ID of the join request                                                          |
-| join_request_id      | snowflake                                          | The ID of the join request                                                          |
-| created_at           | ISO8601 timestamp                                  | When the join request was created                                                   |
-| rejection_reason     | ?string                                            | Why the join request was rejected                                                   |
-| application_status   | string                                             | The [status of the join request](#guild-join-request-status)                        |
-| last_seen            | ?ISO8601 timestamp                                 | When the request was last seen by a moderator                                       |
-| guild_id             | snowflake                                          | The ID of the guild this join request is for                                        |
-| user_id              | snowflake                                          | The ID of the user who created this join request                                    |
-| user?                | partial [user](/resources/user#user-object) object | The user who created this join request                                              |
-| interview_channel_id | ?snowflake                                         | The ID of a channel where an interview regarding this join request may be conducted |
+| Field                | Type                                                                     | Description                                                                         |
+| -------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| id                   | snowflake                                                                | The ID of the join request                                                          |
+| join_request_id      | snowflake                                                                | The ID of the join request                                                          |
+| created_at           | ISO8601 timestamp                                                        | When the join request was created                                                   |
+| application_status   | string                                                                   | The [status of the join request](#guild-join-request-status)                        |
+| guild_id             | snowflake                                                                | The ID of the guild this join request is for                                        |
+| form_responses?      | array[[member verification form field](#verification-form-field) object] | The responses to the guild's member verification questions                          |
+| last_seen            | ?ISO8601 timestamp                                                       | When the request was last seen by a moderator                                       |
+| actioned_at?         | ?ISO8601 timestamp                                                       | When the join request was actioned                                                  |
+| actioned_by_user?    | partial [user](/resources/user#user-object) object                       | The moderator who actioned the join request                                         |
+| rejection_reason     | ?string                                                                  | Why the join request was rejected                                                   |
+| user_id              | snowflake                                                                | The ID of the user who created this join request                                    |
+| user?                | partial [user](/resources/user#user-object) object                       | The user who created this join request                                              |
+| interview_channel_id | ?snowflake                                                               | The ID of a channel where an interview regarding this join request may be conducted |
 
 ###### Guild Join Request Status
 
@@ -896,6 +901,76 @@ Most join request features require the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` gu
 | SUBMITTED | The request has been submitted           |
 | REJECTED  | The request has been rejected            |
 | APPROVED  | The request has been approved            |
+
+###### Example Guild Join Request
+
+```json
+{
+  "created_at": "2024-05-20T03:45:28.965000+00:00",
+  "join_request_id": "1241959960003477524",
+  "id": "1241959960003477524",
+  "rejection_reason": null,
+  "application_status": "APPROVED",
+  "actioned_at": "2024-05-20T03:45:44.547975+00:00",
+  "actioned_by_user": {
+    "id": "828387742575624222",
+    "username": "jupppper",
+    "avatar": "e14a7c62b0b38068be88be194b23910f",
+    "discriminator": "0",
+    "public_flags": 16384,
+    "banner": "e45c9b5799fcb46b82bd5f1afc1b30c4",
+    "global_name": "Jup",
+    "accent_color": 1,
+    "avatar_decoration_data": null
+  },
+  "form_responses": [
+    {
+      "field_type": "TERMS",
+      "label": "Read and agree to the server rules",
+      "description": null,
+      "automations": null,
+      "required": true,
+      "values": [
+        "No spam or self-promotion (server invites, advertisements, etc) without permission from a staff member. This includes DMing fellow members.",
+        "No age-restricted or obscene content. This includes text, images, or links featuring nudity, sex, hard violence, or other graphically disturbing content.",
+        "If you see something against the rules or something that makes you feel unsafe, let staff know. We want this server to be a welcoming space!"
+      ],
+      "response": true
+    },
+    {
+      "field_type": "TEXT_INPUT",
+      "label": "Why do you like aliens?",
+      "description": null,
+      "automations": null,
+      "required": true,
+      "placeholder": null,
+      "response": "I like aliens because they're cool!"
+    },
+    {
+      "field_type": "MULTIPLE_CHOICE",
+      "label": "What is your favorite alien movie?",
+      "description": null,
+      "automations": null,
+      "required": true,
+      "values": ["Alien", "E.T."],
+      "response": 0
+    }
+  ],
+  "last_seen": "2024-05-20T03:45:44.547975+00:00",
+  "guild_id": "1046920999469330512",
+  "user_id": "852892297661906993",
+  "user": {
+    "id": "852892297661906993",
+    "username": "alien",
+    "global_name": "Alien",
+    "avatar": "14733482e560d9267c0a414b21b2fb8d",
+    "discriminator": "0",
+    "public_flags": 64,
+    "avatar_decoration_data": null
+  },
+  "interview_channel_id": null
+}
+```
 
 ### Onboarding Object
 
