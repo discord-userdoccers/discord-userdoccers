@@ -561,6 +561,9 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/resources/user#unique-usernames">Unique Usernames</NavigationSubLink>
               <NavigationSubLink href="/resources/user#user-object">User Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/user#avatar-decoration-data-object">
+                Avatar Decoration Data Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/user#profile-metadata-object">
                 Profile Metadata Object
               </NavigationSubLink>
