@@ -877,24 +877,33 @@ Guild join requests are an extension of [member verification](#member-verificati
 A join request is created when a user attempts to join a guild with member verification enabled, and the user must complete the verification process to join the guild.
 
 Most join request features require the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` guild feature](#guild-features), as join request are automatically actioned when only using the `TERMS` [form field type](#member-verification-form-field-type).
+This includes most of the join request endpoints, such as [Get Guild Join Request](#get-guild-join-request) and [Action Guild Join Request](#modify-guild-join-request).
+
+<Alert type="info">
+
+Guild join requests are not returned to moderators until they are submitted by the user.
+
+</Alert>
 
 ###### Guild Join Request Structure
 
-| Field                | Type                                                                     | Description                                                                         |
-| -------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| id                   | snowflake                                                                | The ID of the join request                                                          |
-| join_request_id      | snowflake                                                                | The ID of the join request                                                          |
-| created_at           | ISO8601 timestamp                                                        | When the join request was created                                                   |
-| application_status   | string                                                                   | The [status of the join request](#guild-join-request-status)                        |
-| guild_id             | snowflake                                                                | The ID of the guild this join request is for                                        |
-| form_responses?      | array[[member verification form field](#verification-form-field) object] | The responses to the guild's member verification questions                          |
-| last_seen            | ?ISO8601 timestamp                                                       | When the request was last seen by a moderator                                       |
-| actioned_at?         | ?ISO8601 timestamp                                                       | When the join request was actioned                                                  |
-| actioned_by_user?    | partial [user](/resources/user#user-object) object                       | The moderator who actioned the join request                                         |
-| rejection_reason     | ?string                                                                  | Why the join request was rejected                                                   |
-| user_id              | snowflake                                                                | The ID of the user who created this join request                                    |
-| user?                | partial [user](/resources/user#user-object) object                       | The user who created this join request                                              |
-| interview_channel_id | ?snowflake                                                               | The ID of a channel where an interview regarding this join request may be conducted |
+| Field                 | Type                                                                      | Description                                                                         |
+| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| id                    | snowflake                                                                 | The ID of the join request                                                          |
+| join_request_id       | snowflake                                                                 | The ID of the join request                                                          |
+| created_at            | ISO8601 timestamp                                                         | When the join request was created                                                   |
+| application_status    | string                                                                    | The [status of the join request](#guild-join-request-status)                        |
+| guild_id              | snowflake                                                                 | The ID of the guild this join request is for                                        |
+| form_responses? ^1^   | ?array[[member verification form field](#verification-form-field) object] | Responses to the guild's member verification questions                              |
+| last_seen             | ?ISO8601 timestamp                                                        | When the request was last seen by a moderator                                       |
+| actioned_at? ^1^      | snowflake                                                        | A snowflake representing when the join request was actioned                                                  |
+| actioned_by_user? ^1^ | partial [user](/resources/user#user-object) object                        | The moderator who actioned the join request                                         |
+| rejection_reason      | ?string                                                                   | Why the join request was rejected                                                   |
+| user_id               | snowflake                                                                 | The ID of the user who created this join request                                    |
+| user? ^1^             | partial [user](/resources/user#user-object) object                        | The user who created this join request                                              |
+| interview_channel_id  | ?snowflake                                                                | The ID of a channel where an interview regarding this join request may be conducted |
+
+^1^ Only included when fetched from the [Get Guild Join Request](#get-guild-join-request) or [Get Guild Join Requests](#get-guild-join-requests) endpoints, or when receiving a [Guild Join Request Create](/topics/gateway-events#guild-join-request-create)/[Guild Join Request Update](/topics/gateway-events#guild-join-request-update) Gateway event as a moderator.
 
 ###### Guild Join Request Status
 
@@ -1884,7 +1893,7 @@ Modifies the member verification for the guild. Requires the `MANAGE_GUILD` perm
   Get Guild Join Requests
 </RouteHeader>
 
-Returns a list of join requests for the guild. Requires the `KICK_MEMBERS` permission.
+Returns a list of join requests for the guild for manual approval. Requires the `KICK_MEMBERS` permission.
 
 ###### Query String Params
 
@@ -1912,7 +1921,7 @@ Returns a [guild join request](#guild-join-request-object) object for the given 
   Create Guild Join Request
 </RouteHeader>
 
-Submits a request to join a guild. Returns a [guild join request](#guild-join-request-object) object on success. Fires a [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) or [Guild Join Request Update](/topics/gateway-events#guild-join-request-update) Gateway event.
+Submits a request to join a guild. Returns a partial [guild join request](#guild-join-request-object) object on success. Fires a [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) or [Guild Join Request Update](/topics/gateway-events#guild-join-request-update) Gateway event.
 
 ###### JSON Params
 
@@ -1927,19 +1936,19 @@ Submits a request to join a guild. Returns a [guild join request](#guild-join-re
   Reset Guild Join Request
 </RouteHeader>
 
-Resets the current user's join request for the guild. Returns a [guild join request](#guild-join-request-object) object on success. Fires a [Guild Join Request Delete](/topics/gateway-events#guild-join-request-delete) and [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event.
+Resets the current user's join request for the guild. Returns a partial [guild join request](#guild-join-request-object) object on success. Fires a [Guild Join Request Delete](/topics/gateway-events#guild-join-request-delete) and [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event.
 
 <RouteHeader method="DELETE" url="/guilds/{guild.id}/requests/@me">
   Delete Guild Join Request
 </RouteHeader>
 
-If the guild has [previewing disabled](#guild-previewing), deletes the current user's join request. Else, functions the same as [Reset Guild Join Request](#reset-guild-join-request). Returns a 204 empty response on success. Fires a [Guild Join Request Delete](/topics/gateway-events#guild-join-request-delete) Gateway event.
+If the guild has [previewing disabled](#guild-previewing), deletes the current user's join request. Else, functions the same as [Reset Guild Join Request](#reset-guild-join-request). Returns a 204 empty response if deletion is successful or a partial [guild join request](#guild-join-request-object) object if the join request is reset. Fires a [Guild Join Request Delete](/topics/gateway-events#guild-join-request-delete) and optionally [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event.
 
 <RouteHeader method="POST" url="/join-request/{guild_join_request.id}/interview">
   Create Guild Join Request Interview
 </RouteHeader>
 
-Creates or returns an existing private interview channel for the join request. Requires the `KICK_MEMBERS` permission. Returns a [DM channel](/resources/channel#channel-object) object on success. Fires a [Guild Join Request Update](/topics/gateway-events#guild-join-request-update) and [Channel Create](/topics/gateway-events#channel-create) Gateway event.
+Creates or returns an existing private interview channel for the join request. Requires the `KICK_MEMBERS` permission. Returns a [group DM channel](/resources/channel#channel-object) object on success. Fires a [Guild Join Request Update](/topics/gateway-events#guild-join-request-update) and [Channel Create](/topics/gateway-events#channel-create) Gateway event.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/{guild_join_request.id}">
   Action Guild Join Request
@@ -1954,7 +1963,7 @@ Accepts or denies a join request for the guild. Requires the `KICK_MEMBERS` perm
 | action            | string  | The [action to take](#guild-join-request-status) on the join requests (only `APPROVED` and `REJECTED` can be used) |
 | rejection_reason? | ?string | The reason for rejecting the join request (max 4000 characters)                                                    |
 
-<RouteHeader method="PATCH" url="/guil#ds/{guild.id}/requests">
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests">
   Bulk Action Guild Join Requests
 </RouteHeader>
 
