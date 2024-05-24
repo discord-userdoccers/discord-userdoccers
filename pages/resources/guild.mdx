@@ -740,20 +740,22 @@ A ban for a [guild](#guild-object). Banned users can't rejoin a guild unless [un
 ### Member Verification Object
 
 In guilds with [member verification](https://support.discord.com/hc/en-us/articles/1500000466882) enabled, when a member joins,
-a [Guild Member Add](/topics/gateway-events#guild-member-add) Gateway event will be dispatched but they will initially be restricted from doing any actions in the guild, and `pending` will be true in the [member object](#guild-member-object).
+a [Guild Member Add](/topics/gateway-events#guild-member-add) Gateway event will be dispatched but they will initially be restricted from doing any actions in the guild, and `pending` will be true in the [guild member](#guild-member-object) object.
 When the member completes the verification, a [Guild Member Update](/topics/gateway-events#guild-member-update) Gateway event will be dispatched and `pending` will be false.
 
-When joining a guild with member verification enabled, a [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event will be dispatched, and the member will be restricted from doing any actions in the guild until they pass the verification gate.
+To represent a member's progress towards becoming a full member of the guild, a [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event will be dispatched. Once the join request is approved, the member's `pending` status will be false and they will be able to interact with the guild.
+Unless using [manual approval](#manual-approval), the join request will be automatically approved when the user [submits their join request](#create-guild-join-request).
 
-Assigning a member the [`BYPASSES_VERIFICATION` flag](#guild-member-flags) will force their `pending` status to be false.
+Assigning a member the [`BYPASSES_VERIFICATION` flag](#guild-member-flags) will force their `pending` status to be false, regardless of the join request's status.
 
 #### Guild Previewing
 
 Discoverable guilds and guilds with member verification enabled have the [`PREVIEW_ENABLED`](#guild-features) feature by default.
-This allows the guild to be lurkable by users who are not members, if discoverable, and allows members who have not passed the verification gate to view the guild without interacting with it as described above.
+This allows the guild to be lurkable by users who are not members, if discoverable, and allows members who have not passed the verification gate to view the guild without interacting with it.
 
 If a guild has member verification enabled and is not previewable, new joiners will not be able to view the guild until they pass the verification gate, and are therefore not considered members until they do.
-This means that a [Guild Member Add](/topics/gateway-events#guild-member-add) Gateway event will not be dispatched until the member has passed the verification gate, and `pending` will immediately be true in the [member object](#guild-member-object) once it is.
+This means that a [Guild Member Add](/topics/gateway-events#guild-member-add) Gateway event will not be dispatched until the member has passed the verification gate, and `pending` will immediately be true in the [guild member](#guild-member-object) object once it is.
+Join requests will continue to be dispatched as normal, but there will not be an associated guild member until the join request is approved.
 
 From the joiner's perspective, they will also not receive a [Guild Create](/topics/gateway-events#guild-create) Gateway event or any other events dispatched from the guild until they pass member verification.
 Non-previewable pending guilds can be retrieved with the [Get Join Request Guilds](#get-join-request-guilds) endpoint. Their join requests are also sent in the [`guild_join_requests` field of the Ready event](/topics/gateway-events#ready).
@@ -761,7 +763,7 @@ Non-previewable pending guilds can be retrieved with the [Get Join Request Guild
 #### Manual Approval
 
 To use [form field types](#member-verification-form-field-type) other than `TERMS`, the guild must have the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` guild feature](#guild-features) enabled.
-When using these form field types, join requests must be manually approved before the user can complete member verification.
+When using these form field types, join requests must be [manually approved](#action-guild-join-request) after they are [submitted](#create-guild-join-request) before the user can complete member verification.
 
 When only using a [`TERMS` form field type](#member-verification-form-field-type), the join request will be automatically approved when the user [submits the request](#create-guild-join-request).
 
@@ -876,7 +878,7 @@ When only using a [`TERMS` form field type](#member-verification-form-field-type
 Guild join requests are an extension of [member verification](#member-verification-object) that represent a user's request to join a guild.
 A join request is created when a user attempts to join a guild with member verification enabled, and the user must complete the verification process to join the guild.
 
-Most join request features require the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` guild feature](#guild-features), as join request are automatically actioned when only using the `TERMS` [form field type](#member-verification-form-field-type).
+Most join request features require the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` guild feature](#guild-features), as join request are automatically actioned when only using the `TERMS` [form field type](#member-verification-form-field-type) and do not require manual approval.
 This includes most of the join request endpoints, such as [Get Guild Join Request](#get-guild-join-request) and [Action Guild Join Request](#modify-guild-join-request).
 
 <Alert type="info">
@@ -896,14 +898,16 @@ Guild join requests are not returned to moderators until they are submitted by t
 | guild_id              | snowflake                                                                 | The ID of the guild this join request is for                                        |
 | form_responses? ^1^   | ?array[[member verification form field](#verification-form-field) object] | Responses to the guild's member verification questions                              |
 | last_seen             | ?ISO8601 timestamp                                                        | When the request was last seen by a moderator                                       |
-| actioned_at? ^1^      | snowflake                                                        | A snowflake representing when the join request was actioned                                                  |
+| actioned_at? ^1^      | snowflake                                                                 | A snowflake representing when the join request was actioned                         |
 | actioned_by_user? ^1^ | partial [user](/resources/user#user-object) object                        | The moderator who actioned the join request                                         |
 | rejection_reason      | ?string                                                                   | Why the join request was rejected                                                   |
 | user_id               | snowflake                                                                 | The ID of the user who created this join request                                    |
-| user? ^1^             | partial [user](/resources/user#user-object) object                        | The user who created this join request                                              |
+| user? ^1^ ^2^         | partial [user](/resources/user#user-object) object                        | The user who created this join request                                              |
 | interview_channel_id  | ?snowflake                                                                | The ID of a channel where an interview regarding this join request may be conducted |
 
-^1^ Only included when fetched from the [Get Guild Join Request](#get-guild-join-request) or [Get Guild Join Requests](#get-guild-join-requests) endpoints, or when receiving a [Guild Join Request Create](/topics/gateway-events#guild-join-request-create)/[Guild Join Request Update](/topics/gateway-events#guild-join-request-update) Gateway event as a moderator.
+^1^ Only included when fetched from the [Get Guild Join Request](#get-guild-join-request) or [Get Guild Join Requests](#get-guild-join-requests) endpoints, or when receiving a [related Gateway event](/topics/gateway-events#guild-join-request-create) as a moderator.
+
+^2^ Only guaranteed for users other than the current user.
 
 ###### Guild Join Request Status
 
@@ -1864,7 +1868,7 @@ Modifies the vanity invite for the guild. The guild must have the `VANITY_URL` o
   Get Guild Member Verification
 </RouteHeader>
 
-Returns the [member verification](#member-verification-object) object for the guild if one is set.
+Returns the [member verification](#member-verification-object) object for the guild if one is set. If the user is not a member of the guild, the guild must be discoverable or 
 
 ###### Query String Params
 
@@ -1873,7 +1877,7 @@ Returns the [member verification](#member-verification-object) object for the gu
 | with_guild? ^1^ | boolean | Whether to include the guild object in the response (default false) |
 | invite_code?    | string  | The invite code the verification is fetched from                    |
 
-^1^ Requires that the user is not a member of the guild.
+^1^ Requires that the user is not a member of the guild. If fetching the member verification for a guild the user is not a member of, this must be set to `true`.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/member-verification" supportsAuditReason>
   Modify Guild Member Verification
