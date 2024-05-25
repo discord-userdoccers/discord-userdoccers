@@ -789,6 +789,7 @@ When only using a [`TERMS` form field type](#member-verification-form-field-type
 | response? ^1^ | ?string \| integer \| boolean | Response for this field                                          |
 | required      | boolean                       | Whether this field is required for a successful application      |
 | description   | ?string                       | The subtext of the form field                                    |
+| automations   | ?array[string]                | Unknown (max 300 characters, max 10)                             |
 | placeholder?  | ?string                       | Placeholder text for the field's response area                   |
 
 ^1^ Not present when fetched from the [Get Guild Member Verification](#get-guild-member-verification) endpoint. For [`TERMS` form fields](#member-verification-form-field-type), the response should be `true`. For [`MULTIPLE_CHOICE` form field types](#member-verification-form-field-type), the response is the index of the selected choice.
@@ -877,6 +878,7 @@ When only using a [`TERMS` form field type](#member-verification-form-field-type
 
 Guild join requests are an extension of [member verification](#member-verification-object) that represent a user's request to join a guild.
 A join request is created when a user attempts to join a guild with member verification enabled, and the user must complete the verification process to join the guild.
+All join requests are stored for 180 days.
 
 Most join request features require the [`MEMBER_VERIFICATION_MANUAL_APPROVAL` guild feature](#guild-features), as join request are automatically actioned when only using the `TERMS` [form field type](#member-verification-form-field-type) and do not require manual approval.
 This includes most of the join request endpoints, such as [Get Guild Join Request](#get-guild-join-request) and [Action Guild Join Request](#modify-guild-join-request).
@@ -1868,7 +1870,7 @@ Modifies the vanity invite for the guild. The guild must have the `VANITY_URL` o
   Get Guild Member Verification
 </RouteHeader>
 
-Returns the [member verification](#member-verification-object) object for the guild if one is set. If the user is not a member of the guild, the guild must be discoverable or 
+Returns the [member verification](#member-verification-object) object for the guild if one is set. If the user is not a member of the guild, the guild must be discoverable or
 
 ###### Query String Params
 
@@ -1903,17 +1905,20 @@ Returns a list of join requests for the guild for manual approval. Requires the 
 
 | Field   | Type      | Description                                                                |
 | ------- | --------- | -------------------------------------------------------------------------- |
-| status? | string    | The [status of the join requests](#guild-join-request-status) to filter by |
+| status  | string    | The [status of the join requests](#guild-join-request-status) to filter by |
 | limit?  | integer   | Max number of join requests to return (1-100, default 100)                 |
 | before? | snowflake | Get join requests before this request ID                                   |
 | after?  | snowflake | Get join requests after this request ID                                    |
 
 ###### Response Body
 
-| Field               | Type                                                    | Description                                            |
-| ------------------- | ------------------------------------------------------- | ------------------------------------------------------ |
-| guild_join_requests | array[[guild join request](#guild-join-request-object)] | The join requests for the guild                        |
-| total               | integer                                                 | The total number of join requests that match the query |
+| Field                    | Type                                                    | Description                                            |
+| ------------------------ | ------------------------------------------------------- | ------------------------------------------------------ |
+| guild_join_requests? ^1^ | array[[guild join request](#guild-join-request-object)] | The join requests for the guild                        |
+| total?                   | integer                                                 | The total number of join requests that match the query |
+| limit                    | integer                                                 | The maximum number of join requests returned           |
+
+^1^ Join requests are omitted when retrieving requests with the [`STARTED` status](#guild-join-request-status).
 
 <RouteHeader method="GET" url="/join-requests/{guild_join_request.id}">
   Get Guild Join Request
@@ -1965,7 +1970,7 @@ Accepts or denies a join request for the guild. Requires the `KICK_MEMBERS` perm
 | Field             | Type    | Description                                                                                                        |
 | ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
 | action            | string  | The [action to take](#guild-join-request-status) on the join requests (only `APPROVED` and `REJECTED` can be used) |
-| rejection_reason? | ?string | The reason for rejecting the join request (max 4000 characters)                                                    |
+| rejection_reason? | ?string | The reason for rejecting the join request (max 160 characters)                                                     |
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/requests">
   Bulk Action Guild Join Requests
