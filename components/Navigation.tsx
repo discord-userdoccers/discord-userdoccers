@@ -276,35 +276,15 @@ export default function Navigation() {
           Channel
         </NavigationLink>
         <NavigationLink
-          href="/resources/message"
+          href="/resources/clan"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/resources/message#message-object">Message Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#message-activity-object">
-                Message Activity Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#message-call-object">Message Call Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#message-role-subscription-object">
-                Message Role Subscription Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#message-reference-object">
-                Message Reference Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#followed-channel-object">
-                Followed Channel Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#reaction-object">Reaction Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#embed-object">Embed Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#attachment-object">Attachment Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#allowed-mentions-object">
-                Allowed Mentions Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
+              <NavigationSubLink href="/resources/clan#clan-object">Clan Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/clan#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
-          Message
+          Clan
         </NavigationLink>
         <NavigationLink
           href="/resources/discovery"
@@ -351,8 +331,11 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#ban-object">Ban Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#welcome-screen-object">Welcome Screen Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#membership-screening-object">
-                Membership Screening Object
+              <NavigationSubLink href="/resources/guild#member-verification-object">
+                Member Verification Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/guild#guild-join-request-object">
+                Guild Join Request Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/guild#onboarding-object">Onboarding Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#endpoints">Endpoints</NavigationSubLink>
@@ -428,6 +411,37 @@ export default function Navigation() {
           }
         >
           Invite
+        </NavigationLink>
+        <NavigationLink
+          href="/resources/message"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/message#message-object">Message Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-activity-object">
+                Message Activity Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-call-object">Message Call Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-role-subscription-object">
+                Message Role Subscription Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-reference-object">
+                Message Reference Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#followed-channel-object">
+                Followed Channel Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#reaction-object">Reaction Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#embed-object">Embed Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#attachment-object">Attachment Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#allowed-mentions-object">
+                Allowed Mentions Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Message
         </NavigationLink>
         <NavigationLink
           href="/resources/premium-referral"
