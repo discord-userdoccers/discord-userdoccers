@@ -50,11 +50,11 @@ A partial guild object returned from discovery, [Get Emoji Guild](/resources/emo
 | auto_removed               | boolean                                                       | Whether the guild has automatically been removed from discovery for not hitting required targets |
 | primary_category_id        | integer                                                       | The ID of the primary [discovery category](#discovery-category-object) set for the guild         |
 | primary_category? ^3^      | [discovery category](#discovery-category-object)              | The primary [discovery category](#discovery-category-object) set for the guild                   |
-| keywords                   | ?array[string]                                                | The discovery search keywords for the guild (max 10)                                             |
+| keywords                   | ?array[string]                                                | The discovery search keywords for the guild (max 30 characters, max 10)                          |
 | is_published               | boolean                                                       | Whether the guild's landing web page is currently published                                      |
 | reasons_to_join? ^2^       | array[[discovery reason object](#discovery-reason-structure)] | The reasons to join the guild shown in the discovery web page (max 4)                            |
-| social_links? ^2^          | ?array[string]                                                | The guild's social media links shown in the discovery web page (max 9)                           |
-| about? ^2^                 | ?string                                                       | The guild's long description shown in the discovery web page (max 120 characters)                |
+| social_links? ^2^          | ?array[string]                                                | The guild's social media links shown in the discovery web page (max 256 characters, max 9)       |
+| about? ^2^                 | ?string                                                       | The guild's long description shown in the discovery web page (max 2400 characters)               |
 | category_ids? ^2^          | array[snowflake]                                              | The IDs of [discovery subcategories](#discovery-category-object) set for the guild (max 5)       |
 | categories? ^3^            | array[[discovery category](#discovery-category-object)]       | The [discovery categories](#discovery-category-object) set for the guild (max 5)                 |
 | created_at? ^2^            | ISO8601 timestamp                                             | When the guild was created                                                                       |
@@ -145,14 +145,14 @@ A guild's progress on meeting the requirements of joining discovery.
 | minimum_size?                       | ?integer                                                                 | The minimum guild member count requirement                                                             |
 | grace_period_end_date?              | ISO8601 timestamp                                                        | When the guild's grace period ends                                                                     |
 
-^1^ Certain guilds, such as those that are [verified](https://discord.com/verification), are exempt from discovery requirements. These guilds will not have a fully populated discovery requirements object (guaranteed to receive only `sufficient` and `sufficient_without_grace_period`).
+^1^ Certain guilds, such as those that are [verified](https://discord.com/verification), are exempt from discovery requirements. These guilds will not have a fully populated discovery requirements object, and are guaranteed to receive only `sufficient` and `sufficient_without_grace_period`.
 
 ###### Discovery NSFW Properties Structure
 
 | Field                        | Type                          | Description                                                    |
 | ---------------------------- | ----------------------------- | -------------------------------------------------------------- |
 | channels?                    | array[snowflake]              | The IDs of the channels with names containing disallowed terms |
-| channel_banned_keywords?     | map[snowflake, array[string]] | The disallowed terms found in the channel names                |
+| channel_banned_keywords?     | map[snowflake, array[string]] | The disallowed terms found in the given channel names          |
 | name?                        | string                        | The guild name, if it contains disallowed terms                |
 | name_banned_keywords?        | array[string]                 | The disallowed terms found in the guild name                   |
 | description?                 | string                        | The guild description, if it contains disallowed terms         |
@@ -221,14 +221,14 @@ A guild's discovery settings.
 | ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | guild_id                      | snowflake                                                     | The ID of the guild                                                                        |
 | primary_category_id           | integer                                                       | The ID of the primary [discovery category](#discovery-category-object) set for the guild   |
-| keywords                      | ?array[string]                                                | The discovery search keywords for the guild (max 10)                                       |
+| keywords                      | ?array[string]                                                | The discovery search keywords for the guild (max 30 characters, max 10)                    |
 | emoji_discoverability_enabled | boolean                                                       | Whether the guild is shown as a source through custom emojis and stickers                  |
 | partner_actioned_timestamp    | ?ISO8601 timestamp                                            | When the guild's partner application was actioned by an employee                           |
 | partner_application_timestamp | ?ISO8601 timestamp                                            | When the guild applied for partnership                                                     |
 | is_published                  | boolean                                                       | Whether the guild's landing web page is currently published                                |
 | reasons_to_join               | array[[discovery reason object](#discovery-reason-structure)] | The reasons to join the guild shown in the discovery web page (max 4)                      |
-| social_links                  | ?array[string]                                                | The guild's social media links shown in the discovery web page (max 9)                     |
-| about                         | ?string                                                       | The guild's long description shown in the discovery web page (max 120 characters)          |
+| social_links                  | ?array[string]                                                | The guild's social media links shown in the discovery web page (max 256 characters, max 9) |
+| about                         | ?string                                                       | The guild's long description shown in the discovery web page (max 2400 characters)         |
 | category_ids                  | array[snowflake]                                              | The IDs of [discovery subcategories](#discovery-category-object) set for the guild (max 5) |
 
 ###### Discovery Reason Structure
@@ -288,7 +288,13 @@ A guild's discovery settings.
   Get Discoverable Guilds
 </RouteHeader>
 
-Returns an array of [discoverable guild](#discoverable-guild-object) objects representing the guilds that are available for the current user to discover.
+Returns a list of [discoverable guild](#discoverable-guild-object) objects representing the guilds that are available for the current user to discover.
+
+<Alert type="info">
+
+When this endpoint is paginated normally, only discoverable guilds that are verified or partnered are returned. To get other discoverable guilds, you must either use the `guild_ids` query parameter or [search discovery](#searching-discovery).
+
+</Alert>
 
 ###### Query String Params
 
@@ -317,13 +323,13 @@ Returns an array of [discoverable guild](#discoverable-guild-object) objects rep
   Search Discoverable Guilds
 </RouteHeader>
 
-Returns an array of [discoverable guild](#discoverable-guild-object) objects representing the guilds that match the query. This endpoint is a proxy for [searching using the Algolia API](#searching-discovery). See the [Algolia Search documentation](https://www.algolia.com/doc/rest-api/search/) for more information.
+Returns a list of [discoverable guild](#discoverable-guild-object) objects representing the guilds that match the query. This endpoint is a proxy for [searching using the Algolia API](#searching-discovery). See the [Algolia Search documentation](https://www.algolia.com/doc/rest-api/search/) for more information.
 
 <Alert type="danger">
 
 This endpoint has the following immutable filters set:
 
-- `approximate_member_count > 0`
+- `approximate_member_count > 200`
 - `approximate_presence_count > 0`
 - `auto_removed: false`
 - `is_published: true`
@@ -342,7 +348,8 @@ This endpoint has the following immutable filters set:
   Get Discovery Slug
 </RouteHeader>
 
-Returns information about a guild's landing web page or monetization store page for the given guild ID. This endpoint requires the guild to be indexable (be discoverable and [published](#discovery-metadata-object) OR have the `CREATOR_STORE_PAGE` [guild feature](/resources/guild#guild-features)).
+Returns information about a guild's landing web page or monetization store page.
+This endpoint requires the guild to either be discoverable and [published](#discovery-metadata-object) or have the [`CREATOR_STORE_PAGE` guild feature](/resources/guild#guild-features).
 
 <Alert type="info">
 
@@ -393,7 +400,7 @@ If a guild has both a landing web page and a monetization store page, the store 
   Get Discovery Categories
 </RouteHeader>
 
-Returns an array of [discovery category](#discovery-category-object) objects representing the available discovery categories.
+Returns a list of [discovery category](#discovery-category-object) objects representing the available discovery categories.
 
 ###### Query String Params
 
@@ -425,3 +432,51 @@ Checks if a discovery search term is allowed.
 ```json
 { "valid": true }
 ```
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/discovery-requirements">
+  Get Guild Discovery Requirements
+</RouteHeader>
+
+Returns the [discovery requirements](#discovery-requirements-object) object for the guild. Requires the `MANAGE_GUILD` permission.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/discovery-metadata">
+  Get Guild Discovery Metadata
+</RouteHeader>
+
+Returns the [discovery metadata](#discovery-metadata-object) object for the guild. Requires the `MANAGE_GUILD` permission.
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/discovery-metadata">
+  Modify Guild Discovery Metadata
+</RouteHeader>
+
+Replaces the discovery metadata for the guild. Requires the `MANAGE_GUILD` permission. Returns the updated [discovery metadata](#discovery-metadata-object) object on success.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional and nullable. Omitting or setting a `null` value will set it to default.
+
+</Alert>
+
+###### JSON Params
+
+| Field                          | Type                                                                               | Description                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| primary_category_id?           | ?integer                                                                           | The ID of the primary [discovery category](#discovery-category-object) set for the guild (default 0) |
+| keywords?                      | ?array[string]                                                                     | The discovery search keywords for the guild (max 10)                                                 |
+| emoji_discoverability_enabled? | ?boolean                                                                           | Whether the guild is shown as a source through custom emojis and stickers (default true)             |
+| is_published?                  | ?boolean                                                                           | Whether the guild's landing web page is currently published (default false)                          |
+| reasons_to_join?               | ?array[[discovery reason](/resources/discovery#discovery-reason-structure) object] | The reasons to join the guild shown in the discovery web page (max 4)                                |
+| social_links?                  | ?array[string]                                                                     | The guild's social media links shown in the discovery web page (max 256 characters, max 9)           |
+| about?                         | ?string                                                                            | The guild's long description shown in the discovery web page (max 2400 characters)                   |
+
+<RouteHeader method="PUT" url="/guilds/{guild.id}/discovery-categories/{category.id}">
+  Add Guild Discovery Subcategory
+</RouteHeader>
+
+Adds a [discovery subcategory](#discovery-category-object) to the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success.
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/discovery-categories/{category.id}">
+  Remove Guild Discovery Subcategory
+</RouteHeader>
+
+Removes a [discovery subcategory](#discovery-category-object) from the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success.
