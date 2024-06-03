@@ -33,9 +33,10 @@ A message sent in a channel within Discord.
 | activity?                     | [message activity](#message-activity-object) object                                                | The rich presence activity the author is inviting users to                                                                                |
 | application?                  | [integration application](/resources/integration#integration-application-object) object            | The application of the message's rich presence activity                                                                                   |
 | application_id?               | snowflake                                                                                          | The ID of the application; only send for interaction responses                                                                            |
-| message_reference?            | [message reference](#message-reference-structure) object                                           | The source of a crosspost, channel follow add, pin, or reply message                                                                      |
 | flags?                        | integer                                                                                            | The [message's flags](#message-flags)                                                                                                     |
-| referenced_message? ^4^       | ?[message object](#message-object)                                                                 | The message associated with the `message_reference`                                                                                       |
+| message_reference? ^4^        | [message reference](#message-reference-object) object                                              | The source of a crosspost, snapshot, channel follow add, pin, or reply message                                                            |
+| referenced_message? ^5^ ^4^   | ?[message object](#message-object)                                                                 | The message associated with the `message_reference`                                                                                       |
+| message_snapshots? ^4^        | array[[message snapshot](#message-snapshot-object) object]                                         | The partial message snapshot associated with the `message_reference`                                                                      |
 | call?                         | [message call](#message-call-object) object                                                        | The private channel call that prompted this message                                                                                       |
 | interaction? **(deprecated)** | [message interaction](/interactions/receiving-and-responding#message-interaction-structure) object | The interaction the message is responding to                                                                                              |
 | interaction_metadata?         | [message interaction metadata](#message-interaction-metadata-object) object                        | The interaction the message originated from                                                                                               |
@@ -52,7 +53,9 @@ A message sent in a channel within Discord.
 
 ^3^ Not all channel mentions in a message will appear in `mention_channels`. Only textual channels that are visible to everyone in a lurkable guild will ever be included. Only crossposted messages (via Channel Following) currently include `mention_channels` at all. If no mentions in the message meet these requirements, this field will not be sent.
 
-^4^ Only returned for messages with a `type` of `REPLY` or `THREAD_STARTER_MESSAGE`. If the message is a reply but the `referenced_message` field is not present, the backend did not attempt to fetch the message that was being replied to, so its state is unknown. If the field exists but is `null`, the referenced message was deleted.
+^4^ See the [message reference types](#message-reference-type) for more information on which message references have which fields.
+
+^5^ Only returned for messages with a `type` of `REPLY` or `THREAD_STARTER_MESSAGE`. If the message is a reply but the `referenced_message` field is not present, the backend did not attempt to fetch the message that was being replied to, so its state is unknown. If the field exists but is `null`, the referenced message was deleted.
 
 ###### Message Type
 
@@ -147,6 +150,7 @@ The type of rendered message is determined via converting the message's `timesta
 | 1 << 10 | SHOULD_SHOW_LINK_NOT_DISCORD_WARNING   | This message contains a link that impersonates Discord                            |
 | 1 << 12 | SUPPRESS_NOTIFICATIONS                 | This message will not trigger push and desktop notifications                      |
 | 1 << 13 | VOICE_MESSAGE                          | This message's audio attachments are rendered as voice messages                   |
+| 1 << 14 | HAS_SNAPSHOT                           | This message has a forwarded message snapshot attached                            |
 
 ###### Example Message
 
@@ -217,6 +221,7 @@ The type of rendered message is determined via converting the message's `timesta
   "components": [],
   "webhook_id": "999498190359371866",
   "message_reference": {
+    "type": 0,
     "channel_id": "901900332408381450",
     "guild_id": "901900332408381449",
     "message_id": "1076589456297054320"
@@ -283,16 +288,85 @@ A role subscription purchase or renewal.
 
 A reference to an originating (replied to) message.
 
+Message references are generic attribution on a message.
+There are multiple message types that have a `message_reference` object.
+
 ###### Message Reference Structure
 
-| Field               | Type      | Description                                                                                                                           |
-| ------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| message_id?         | snowflake | The ID of the originating message                                                                                                     |
-| channel_id ^1^      | snowflake | The ID of the originating channel                                                                                                     |
-| guild_id?           | snowflake | The ID of the originating channel's guild                                                                                             |
-| fail_if_not_exists? | boolean   | Whether to error if the referenced message doesn't exist instead of sending as a normal (non-reply) message (send-only, default true) |
+| Field                   | Type      | Description                                                                                                                |
+| ----------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| type? ^1^               | integer   | The [type of message reference](#message-reference-type)                                                                   |
+| message_id?             | snowflake | The ID of the originating message                                                                                          |
+| channel_id ^1^          | snowflake | The ID of the originating channel                                                                                          |
+| guild_id?               | snowflake | The ID of the originating channel's guild                                                                                  |
+| fail_if_not_exists? ^2^ | boolean   | Whether to error if the referenced message doesn't exist instead of sending as a normal (non-reply) message (default true) |
 
-^1^ Optional when creating a reply, but will always be present when receiving an event/response that includes this object.
+^1^ Optional when creating a reply, but will always be present when receiving this object.
+
+^2^ This field is send-only.
+
+###### Message Reference Type
+
+Determines how associated data is populated.
+
+| Value | Name        | Description                                               | Coupled Message Field |
+| ----- | ----------- | --------------------------------------------------------- | --------------------- |
+| 0     | DEFAULT     | A standard reference used by replies and system messages  | `referenced_message`? |
+| 1     | FORWARD ^1^ | A reference used to point to a message at a point in time | `message_snapshot`    |
+
+^1^ This can only be used for basic messages, i.e., messages which do not have strong bindings to a non-global entity. Thus it only supports messages with `DEFAULT` or `REPLY` types, without any polls, calls, or components. This is subject to change in the future.
+
+### Message Snapshot Object
+
+A snapshot of a partial message at a point in time.
+
+<Alert type="info">
+
+While message snapshots are able to be nested, the depth of nesting is currently limited to 1.
+
+</Alert>
+
+###### Message Snapshot Structure
+
+| Field     | Type                                                   | Description                                            |
+| --------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| message   | [snapshot message](#snapshot-message-structure) object | A snapshot of the message when the forward was created |
+| guild_id? | snowflake                                              | The ID of the guild the message originated from        |
+
+###### Snapshot Message Structure
+
+| Field            | Type                                                                                 | Description                                           |
+| ---------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| channel_id       | snowflake                                                                            | The ID of the channel the message was sent in         |
+| content ^1^      | string                                                                               | Contents of the message                               |
+| timestamp        | ISO8601 timestamp                                                                    | When this message was sent                            |
+| edited_timestamp | ?ISO8601 timestamp                                                                   | when this message was last edited                     |
+| attachments ^1^  | array[[attachment](#attachment-object) object]                                       | The attached files                                    |
+| embeds ^1^       | array[[embed](#embed-object) object]                                                 | Content embedded in the message                       |
+| type             | integer                                                                              | The [type of message](#message-type)                  |
+| flags?           | integer                                                                              | The [message's flags](#message-flags)                 |
+| components? ^1^  | array[[message component](/interactions/message-components#component-object) object] | The message's components (e.g. buttons, select menus) |
+
+^1^ Users must configure (or, in the case of bots, be approved for) the [`MESSAGE_CONTENT` intent](/topics/gateway#message-content-intent) to receive non-empty values for these fields in most situations.
+
+###### Example Message Snapshot
+
+```json
+{
+  "message": {
+    "channel_id": "1029316811088478299",
+    "content": "guh",
+    "timestamp": "2023-02-17T19:52:19.184000+00:00",
+    "edited_timestamp": null,
+    "attachments": [],
+    "embeds": [],
+    "type": 0,
+    "flags": 0,
+    "components": []
+  },
+  "guild_id": "901900332408381449"
+}
+```
 
 #### Message Types
 
@@ -302,6 +376,15 @@ There are multiple message types that have a `message_reference` object. Since m
 
 - These are messages that originated from another channel (`IS_CROSSPOST` flag).
 - These messages have all three fields, with data of the original message that was crossposted.
+
+###### Forwarded Messages
+
+- These are messages which capture a snapshot of a message, preventing spoofing or tampering.
+- These messages have an array of [`message_snapshots`](#message-object) field containing a copy of the original message. This copy follows the same structure as a message, but has only the minimal set of fields returned required for context/rendering.
+- A forwarded message can be identified by looking at it's `message_reference.type` field.
+  - Message snapshots will be the message data associated with the forward. Currently only 1 snapshot is supported.
+  - Message snapshots are taken at moment the forward message is created, and are **immutable**; any mutations to the orignal message will not be propagated.
+- Forwards are created by including a `message_reference` with `FORWARD` type when sending a message. When sending, `type`, `message_id`, and `channel_id` are required, and the requester must have `VIEW_CHANNEL` permissions.
 
 ###### Channel Follow Add Messages
 
@@ -1035,7 +1118,7 @@ Note that when sending a message, you must provide a value for **at least one of
 | embed? ^2^ **(deprecated)** | [embed](#embed-object) object                                                        | Embedded `rich` content (max 6000 characters), deprecated in favor of `embeds`                                                                                              |
 | nonce? ^3^                  | integer \| string                                                                    | The message's nonce, used for message deduplication (will be present in the returned object and accompanying [Message Create](/topics/gateway-events#message-create) event) |
 | allowed_mentions?           | [allowed mention](#allowed-mentions-object) object                                   | Allowed mentions for the message                                                                                                                                            |
-| message_reference?          | [message reference](#message-reference-structure) object                             | The message being replied to                                                                                                                                                |
+| message_reference?          | [message reference](#message-reference-structure) object                             | The message being replied to or forwarded                                                                                                                                               |
 | components? ^2^             | array[[message component](/interactions/message-components#component-object) object] | The components to include with the message                                                                                                                                  |
 | sticker_ids?                | array[snowflake]                                                                     | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                                                                                         |
 | activity?                   | [message activity](#message-activity-object) object                                  | The rich presence activity to invite users to                                                                                                                               |
