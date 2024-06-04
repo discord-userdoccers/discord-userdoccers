@@ -387,6 +387,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/integration#integration-guild-object">
                 Integration Guild Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/integration#gif-object">GIF Object</NavigationSubLink>
               <NavigationSubLink href="/resources/integration#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }

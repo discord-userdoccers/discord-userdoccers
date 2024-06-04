@@ -90,6 +90,52 @@ Integrations represent a connection between a service and a guild. This may incl
 | name  | string    | TThe name of the guild (2-100 characters)          |
 | icon  | ?string   | The guild's [icon hash](/reference#cdn-formatting) |
 
+### GIF Object
+
+###### GIF Structure
+
+| Field                  | Type    | Description                                      |
+| ---------------------- | ------- | ------------------------------------------------ |
+| id                     | string  | The ID of the GIF                                |
+| title **(deprecated)** | string  | The title of the GIF                             |
+| url                    | string  | The provider source URL of the GIF               |
+| src                    | string  | The media URL of the GIF in the requested format |
+| gif_src                | string  | The media URL of the GIF in GIF format           |
+| preview                | string  | A preview image of the GIF                       |
+| width                  | integer | Width of image                                   |
+| height                 | integer | Height of image                                  |
+
+###### GIF Media Format
+
+| Value     | Description                          |
+| --------- | ------------------------------------ |
+| mp4       | MP4 video                            |
+| tinymp4   | MP4 video in a smaller size          |
+| nanomp4   | MP4 video in a very small size       |
+| loopedmp4 | MP4 video that loops (same as `mp4`) |
+| webm      | WebM video                           |
+| tinywebm  | WebM video in a smaller size         |
+| nanowebm  | WebM video in a very small size      |
+| gif       | GIF image                            |
+| mediumgif | GIF image in a medium size           |
+| tinygif   | GIF image in a smaller size          |
+| nanogif   | GIF image in a very small size       |
+
+###### Example GIF
+
+```json
+{
+  "id": "12409989992265318124",
+  "title": "",
+  "url": "https://tenor.com/view/tasha-steelz-gif-25509948",
+  "src": "https://media.tenor.com/rDkkJaMgfuwAAAP4/tasha-steelz.webm",
+  "gif_src": "https://media.tenor.com/rDkkJaMgfuwAAAAC/tasha-steelz.gif",
+  "width": 150,
+  "height": 84,
+  "preview": "https://media.tenor.com/rDkkJaMgfuwAAAAD/tasha-steelz.png"
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/integrations">
@@ -164,6 +210,27 @@ Migrates all Discord application integrations in the guild to the [`applications
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
 | integration_ids_with_app_commands | array[snowflake] | The IDs of migrated integrations that now have application commands registered |
 
+<RouteHeader method="GET" url="/users/@me/guilds/integration-application-ids">
+  Get Guild Integration Application IDs
+</RouteHeader>
+
+Returns a mapping of guild IDs to lists of application IDs attached to the integrations in the current user's guilds.
+
+###### Example Response
+
+```json
+{
+  "81384788765712384": [
+    "157858575924985856",
+    "157889000391180288",
+    "157873248346832897",
+    "157947794294833152",
+    "173805066229252096"
+  ],
+  "1046920999469330512": []
+}
+```
+
 <RouteHeader method="GET" url="/channels/{channel.id}/integrations">
   Get Channel Integrations
 </RouteHeader>
@@ -194,23 +261,170 @@ This endpoint is only usable with [integrations found on the user's connections]
 
 </Alert>
 
-<RouteHeader method="GET" url="/users/@me/guilds/integration-application-ids">
-  Get Guild Integration Application IDs
+<RouteHeader method="GET" url="/integrations/tenor/search">
+  Search Tenor GIFs
 </RouteHeader>
 
-Returns a mapping of guild IDs to lists of application IDs attached to the integrations in the current user's guilds.
+Returns a list of up to 10 [GIFs sourced from Tenor](#tenor-gif-structure) based on the provided query.
+
+###### Query String Parameters
+
+| Field | Type   | Description             |
+| ----- | ------ | ----------------------- |
+| q     | string | The search query to use |
+
+###### Tenor GIF Structure
+
+| Field  | Type    | Description                        |
+| ------ | ------- | ---------------------------------- |
+| type   | string  | The type of the GIF (always `gif`) |
+| url    | string  | The provider source URL of the GIF |
+| src    | string  | The media URL of the GIF           |
+| width  | integer | Width of image                     |
+| height | integer | Height of image                    |
+
+###### Example Response
+
+```json
+[
+  {
+    "type": "gif",
+    "url": "https://tenor.com/bQ3Du.gif",
+    "src": "https://media.tenor.com/RbG_9Eh9KLoAAAAS/alien-alien-reveal.gif",
+    "width": 100,
+    "height": 90
+  }
+]
+```
+
+            GIFS_TRENDING_SEARCH: "/gifs/trending-search",
+            GIFS_SELECT: "/gifs/select",
+
+<RouteHeader method="GET" url="/gifs/trending-search">
+  Get Trending GIF Search Terms
+</RouteHeader>
+
+Returns a list of the top trending search terms.
+
+###### Query String Parameters
+
+| Field      | Type    | Description                                                    |
+| ---------- | ------- | -------------------------------------------------------------- |
+| limit? ^1^ | integer | The maximum number of search terms to return (1-50, default 5) |
+| locale?    | string  | The locale to use in search results (default `en-US`)          |
+
+^1^ The limit is only a suggestion; the API may return fewer GIFs.
+
+<RouteHeader method="GET" url="/gifs/suggest" unauthenticated>
+  Get Suggested GIF Search Terms
+</RouteHeader>
+
+Returns a list of recommended search terms based on the provided query.
+
+###### Query String Parameters
+
+| Field      | Type    | Description                                                     |
+| ---------- | ------- | --------------------------------------------------------------- |
+| q          | string  | The search query to use                                         |
+| limit? ^1^ | integer | The maximum number of search terms to return (1-50, default 20) |
+| locale?    | string  | The locale to use in search results (default `en-US`)           |
+
+^1^ The limit is only a suggestion; the API may return fewer GIFs.
+
+<RouteHeader method="GET" url="/gifs/search" unauthenticated>
+  Search GIFs
+</RouteHeader>
+
+Returns a list of [GIF](#gif-structure) objects based on the provided query.
+
+###### Query String Parameters
+
+| Field         | Type    | Description                                           |
+| ------------- | ------- | ----------------------------------------------------- |
+| q             | string  | The search query to use                               |
+| limit? ^1^    | integer | The maximum number of GIFs to return (20-500)         |
+| media_format? | string  | The media format to use (default `mediumgif`)         |
+| locale?       | string  | The locale to use in search results (default `en-US`) |
+
+^1^ The limit is only a suggestion; the API may return fewer GIFs.
+
+<RouteHeader method="GET" url="/gifs/trending" unauthenticated>
+  Get Trending GIF Categories
+</RouteHeader>
+
+Returns trending GIF categories and their associated preview GIFs.
+
+###### Query String Parameters
+
+| Field         | Type   | Description                                           |
+| ------------- | ------ | ----------------------------------------------------- |
+| media_format? | string | The media format to use (default `mediumgif`)         |
+| locale?       | string | The locale to use in search results (default `en-US`) |
+
+###### Response Body
+
+| Field      | Type                                                  | Description                            |
+| ---------- | ----------------------------------------------------- | -------------------------------------- |
+| categories | array[[GIF category](#gif-category-structure) object] | The trending GIF categories            |
+| gifs       | array[[GIF](#gif-structure) object]                   | A trending GIF to use as a placeholder |
+
+###### GIF Category Structure
+
+| Field | Type   | Description                    |
+| ----- | ------ | ------------------------------ |
+| name  | string | The name of the category       |
+| src   | string | The media URL of a preview GIF |
 
 ###### Example Response
 
 ```json
 {
-  "81384788765712384": [
-    "157858575924985856",
-    "157889000391180288",
-    "157873248346832897",
-    "157947794294833152",
-    "173805066229252096"
+  "categories": [
+    {
+      "name": "whatever",
+      "src": "https://media.tenor.com/97c0UK_cAHMAAAAd/whatever-sassy.gif"
+    }
   ],
-  "1046920999469330512": []
+  "gifs": [
+    {
+      "id": "16750982996130936929",
+      "title": "",
+      "url": "https://tenor.com/view/peace-out-peace-sign-peace-ice-age-eddie-gif-16750982996130936929",
+      "src": "https://media.tenor.com/6HdySNL-OGEAAAAC/peace-out-peace-sign.gif",
+      "gif_src": "https://media.tenor.com/6HdySNL-OGEAAAAC/peace-out-peace-sign.gif",
+      "width": 498,
+      "height": 498,
+      "preview": "https://media.tenor.com/6HdySNL-OGEAAAAD/peace-out-peace-sign.png"
+    }
+  ]
 }
 ```
+
+<RouteHeader method="GET" url="/gifs/trending-gifs" unauthenticated>
+  Get Trending GIFs
+</RouteHeader>
+
+Returns a list of [GIF](#gif-structure) objects that are currently trending.
+
+###### Query String Parameters
+
+| Field         | Type    | Description                                           |
+| ------------- | ------- | ----------------------------------------------------- |
+| limit? ^1^    | integer | The maximum number of GIFs to return (20-500)         |
+| media_format? | string  | The media format to use (default `mediumgif`)         |
+| locale?       | string  | The locale to use in search results (default `en-US`) |
+
+^1^ The limit is only a suggestion; the API may return fewer GIFs.
+
+<RouteHeader method="POST" url="/gifs/select">
+  Track Selected GIF
+</RouteHeader>
+
+Tracks the selection of a GIF by the user. Returns a 204 empty response on success.
+
+###### JSON Parameters
+
+| Field | Type   | Description                           |
+| ----- | ------ | ------------------------------------- |
+| id    | string | The ID of the selected GIF            |
+| q     | string | The search query used to find the GIF |
