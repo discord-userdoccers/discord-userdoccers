@@ -427,6 +427,9 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#message-reference-object">
                 Message Reference Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-snapshot-object">
+                Message Snapshot Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#followed-channel-object">
                 Followed Channel Object
               </NavigationSubLink>
