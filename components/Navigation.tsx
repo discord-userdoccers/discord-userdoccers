@@ -425,6 +425,12 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#message-role-subscription-object">
                 Message Role Subscription Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-purchase-notification-object">
+                Message Purchase Notification Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#message-gift-info-object">
+                Message Gift Info Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#message-reference-object">
                 Message Reference Object
               </NavigationSubLink>
