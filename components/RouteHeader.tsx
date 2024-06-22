@@ -29,6 +29,7 @@ interface RouteHeaderProps {
   children: React.ReactNode;
   supportsAuditReason?: boolean;
   unauthenticated?: boolean;
+  risky?: boolean;
   mfa?: boolean;
   supportsOAuth2?: string | boolean;
   deprecated?: boolean;
@@ -40,6 +41,7 @@ export default function RouteHeader({
   children,
   supportsAuditReason,
   unauthenticated,
+  risky,
   mfa,
   supportsOAuth2,
   deprecated,
@@ -71,6 +73,13 @@ export default function RouteHeader({
             href="/reference#unauthenticated-request"
             name="Unauthenticated"
             tooltip="Does not require authentication"
+          />
+        ) : null}
+        {risky ? (
+          <Badge
+            href="/reference#risky-request"
+            name="Risky"
+            tooltip="This endpoint is considered risky and should be used with caution"
           />
         ) : null}
         {supportsOAuth2 ? (
