@@ -150,6 +150,7 @@ export default function Navigation() {
               <NavigationSubLink href="/reference#uploading-files">Uploading Files</NavigationSubLink>
               <NavigationSubLink href="/reference#locales">Locales</NavigationSubLink>
               <NavigationSubLink href="/reference#documentation-reference">Documentation Reference</NavigationSubLink>
+              <NavigationSubLink href="/reference#risky-request">Risky Request</NavigationSubLink>
             </Fragment>
           }
         >
