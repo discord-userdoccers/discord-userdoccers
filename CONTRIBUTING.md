@@ -19,7 +19,7 @@ The documentation is written in a superset of Markdown called MDX. This allows f
 Endpoints are defined like so:
 
 ```jsx
-<RouteHeader method="GET" path="/users/@me" supportsAuditReason unauthenticated supportsOAuth2="scope">
+<RouteHeader method="GET" url="/users/@me" supportsAuditReason unauthenticated supportsOAuth2="scope">
   Get Current User
 </RouteHeader>
 ```
