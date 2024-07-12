@@ -450,6 +450,9 @@ export default function Navigation() {
                 Allowed Mentions Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/message#poll-result-notifications">
+                Poll Result Notifications
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }

@@ -115,7 +115,7 @@ Type `19` and `20` are only available in API v8 and above. In v7 and below, they
 | ~~43~~ | ~~POLL~~                                     | ~~A message sent when a user posts a poll~~                                       |                                                                                                                                                                                             | ~~true~~  |
 | 44     | PURCHASE_NOTIFICATION                        | A message sent when a user purchases a guild product                              | "{author} has purchased {purchase_notification.guild_product_purchase.product_name}!"                                                                                                       | true      |
 | ~~45~~ | ~~VOICE_HANGOUT_INVITE~~                     | ~~A message sent when a user invites another user to hangout in a voice channel~~ | ~~Special embed rendered from `embeds[0]`~~                                                                                                                                                 | ~~true~~  |
-| 46     | POLL_RESULT                                  |                                                                                   | Special embed rendered from `embeds[0]`                                                                                                                                                     | true      |
+| 46     | POLL_RESULT                                  | A message sent when a poll is finalized                                           | [Special embed rendered from `embeds[0]`](#poll-result-notifications)                                                                                                                                                     | true      |
 | 47     | CHANGELOG                                    | A message sent by the Discord Updates account when a new changelog is posted      | "{content}"                                                                                                                                                                                 | true      |
 | 48     | NITRO_NOTIFICATION                           | A message sent when a Nitro promotion is triggered                                | Special embed rendered from `content`                                                                                                                                                       | true      |
 
@@ -874,9 +874,9 @@ For now, `question` only supports `text`, while answers can have an optional `em
 | text? ^1^  | string                                         | The text of the field (max 300 characters for question, 55 characters for answer) |
 | emoji? ^2^ | partial [emoji](/resources/emoji#emoji-object) | The emoji of the field                                                            |
 
-^1^ `text` should always be non-null for both questions and answers, but please do not depend on that in the future.
+^1^ `text` should always be non-`null` for both questions and answers, but do not depend on that in the future.
 
-^2^ When creating a poll answer with an emoji, one only needs to send either the `id` (custom emoji) or `name` (default emoji) as the only field.
+^2^ When creating a poll answer with an emoji, clients only needs to send either the `id` (custom emoji) or `name` (default emoji) as the only field.
 
 ###### Poll Answer Structure
 
@@ -965,6 +965,85 @@ If `answer_counts` does not contain an entry for a particular answer, then there
     ],
     "is_finalized": false
   }
+}
+```
+
+### Poll Result Notifications
+
+Poll result notifications are sent as standard [messages](#message-object) in the channel with the `POLL_RESULT` [message type](#message-type).
+The author of the message is the user who created the poll.
+
+These messages have a special [embed](/resources/channel#embed-object) structure which contains information about the poll results.
+The custom embed fields below are collapsed as a list of key-value pairs into the `fields` array on the [embed object](#embed-object).
+
+<Alert type="warn">
+
+As [embed field values](#embed-field-structure) are strings, all below fields are serialized as strings, even if the type is specified as otherwise.
+
+</Alert>
+
+###### Poll Result Embed Structure
+
+| Field                         | Type      | Description                                         |
+| ----------------------------- | --------- | --------------------------------------------------- |
+| poll_question_text            | string    | The text of the poll question                       |
+| total_votes                   | integer   | The total number of votes on the poll               |
+| victor_answer_id? ^1^         | integer   | The ID of the winning answer                        |
+| victor_answer_text? ^1^       | string    | The text of the winning answer                      |
+| victor_answer_emoji_id? ^1^   | snowflake | The ID of the emoji of the winning answer           |
+| victor_answer_emoji_name? ^1^ | string    | The name of the emoji of the winning answer         |
+| victor_answer_emoji_animated? | boolean   | Whether the emoji of the winning answer is animated |
+| victor_answer_votes           | integer   | The number of votes on the winning answer           |
+
+^1^ If these fields are omitted, the poll did not have a decisive winner.
+
+###### Example Poll Result Embed
+
+```json
+{
+  "type": "poll_result",
+  "fields": [
+    {
+      "name": "poll_question_text",
+      "value": "aliens?",
+      "inline": false
+    },
+    {
+      "name": "victor_answer_votes",
+      "value": "100",
+      "inline": false
+    },
+    {
+      "name": "total_votes",
+      "value": "101",
+      "inline": false
+    },
+    {
+      "name": "victor_answer_id",
+      "value": "1",
+      "inline": false
+    },
+    {
+      "name": "victor_answer_text",
+      "value": "ofc",
+      "inline": false
+    },
+    {
+      "name": "victor_answer_emoji_id",
+      "value": "1243729917288386560",
+      "inline": false
+    },
+    {
+      "name": "victor_answer_emoji_name",
+      "value": "cheeks",
+      "inline": false
+    },
+    {
+      "name": "victor_answer_emoji_animated",
+      "value": "true",
+      "inline": false
+    }
+  ]
 }
 ```
 
