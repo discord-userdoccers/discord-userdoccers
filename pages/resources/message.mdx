@@ -115,7 +115,7 @@ Type `19` and `20` are only available in API v8 and above. In v7 and below, they
 | ~~43~~ | ~~POLL~~                                     | ~~A message sent when a user posts a poll~~                                       |                                                                                                                                                                                             | ~~true~~  |
 | 44     | PURCHASE_NOTIFICATION                        | A message sent when a user purchases a guild product                              | "{author} has purchased {purchase_notification.guild_product_purchase.product_name}!"                                                                                                       | true      |
 | ~~45~~ | ~~VOICE_HANGOUT_INVITE~~                     | ~~A message sent when a user invites another user to hangout in a voice channel~~ | ~~Special embed rendered from `embeds[0]`~~                                                                                                                                                 | ~~true~~  |
-| 46     | POLL_RESULT                                  | A message sent when a poll is finalized                                           | [Special embed rendered from `embeds[0]`](#poll-result-notifications)                                                                                                                                                     | true      |
+| 46     | POLL_RESULT                                  | A message sent when a poll is finalized                                           | [Special embed rendered from `embeds[0]`](#poll-result-notifications)                                                                                                                       | true      |
 | 47     | CHANGELOG                                    | A message sent by the Discord Updates account when a new changelog is posted      | "{content}"                                                                                                                                                                                 | true      |
 | 48     | NITRO_NOTIFICATION                           | A message sent when a Nitro promotion is triggered                                | Special embed rendered from `content`                                                                                                                                                       | true      |
 
@@ -393,17 +393,18 @@ A snapshot of a partial message at a point in time.
 
 ###### Snapshot Message Structure
 
-| Field            | Type                                                                                 | Description                                           |
-| ---------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| channel_id       | snowflake                                                                            | The ID of the channel the message was sent in         |
-| content ^1^      | string                                                                               | Contents of the message                               |
-| timestamp        | ISO8601 timestamp                                                                    | When this message was sent                            |
-| edited_timestamp | ?ISO8601 timestamp                                                                   | when this message was last edited                     |
-| attachments ^1^  | array[[attachment](#attachment-object) object]                                       | The attached files                                    |
-| embeds ^1^       | array[[embed](#embed-object) object]                                                 | Content embedded in the message                       |
-| type             | integer                                                                              | The [type of message](#message-type)                  |
-| flags?           | integer                                                                              | The [message's flags](#message-flags)                 |
-| components? ^1^  | array[[message component](/interactions/message-components#component-object) object] | The message's components (e.g. buttons, select menus) |
+| Field            | Type                                                                                 | Description                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| content ^1^      | string                                                                               | Contents of the message                                                        |
+| timestamp        | ISO8601 timestamp                                                                    | When this message was sent                                                     |
+| edited_timestamp | ?ISO8601 timestamp                                                                   | when this message was last edited                                              |
+| mentions         | array[[user](/resources/user#user-object) object]                                    | Users specifically mentioned in the message                                    |
+| mention_roles    | array[snowflake]                                                                     | Roles specifically mentioned in this message                                   |
+| attachments ^1^  | array[[attachment](#attachment-object) object]                                       | The attached files                                                             |
+| embeds ^1^       | array[[embed](#embed-object) object]                                                 | Content embedded in the message                                                |
+| type             | integer                                                                              | The [type of message](#message-type)                                           |
+| flags            | integer                                                                              | The [message's flags](#message-flags)                                          |
+| components? ^1^  | array[[message component](/interactions/message-components#component-object) object] | The message's components (e.g. buttons, select menus), not currently supported |
 
 ^1^ Users must configure (or, in the case of bots, be approved for) the [`MESSAGE_CONTENT` intent](/topics/gateway#message-content-intent) to receive non-empty values for these fields in most situations.
 
@@ -412,13 +413,14 @@ A snapshot of a partial message at a point in time.
 ```json
 {
   "message": {
-    "channel_id": "1029316811088478299",
+    "type": 0,
     "content": "guh",
-    "timestamp": "2023-02-17T19:52:19.184000+00:00",
-    "edited_timestamp": null,
+    "mentions": [],
+    "mention_roles": [],
     "attachments": [],
     "embeds": [],
-    "type": 0,
+    "timestamp": "2023-02-17T19:52:19.184000+00:00",
+    "edited_timestamp": null,
     "flags": 0,
     "components": []
   }
@@ -443,6 +445,9 @@ There are multiple message types that have a `message_reference` object. Since m
   - Message snapshots are taken at moment the forward message is created, and are **immutable**; any mutations to the orignal message will not be propagated.
 - Forwards are created by including a [`message_reference`](#message-reference-object) of a [`FORWARD`](#message-reference-type) type when sending a message. When sending, `type`, `message_id`, and `channel_id` are required, and the requester must have `VIEW_CHANNEL` permissions.
 - You can opt to only include specific attachments and embed in the forward by including the [`forward_only` field in the `message_reference`](#message-reference-object).
+- Stricter rate limits for this feature have been applied based on:
+  - Number of forwards sent
+  - Total attachment size
 
 ###### Channel Follow Add Messages
 
