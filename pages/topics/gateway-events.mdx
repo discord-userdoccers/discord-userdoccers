@@ -452,7 +452,7 @@ Used to request the voice channel statuses for a guild. Fires a [Channel Statuse
 
 ## Receive Events
 
-Received events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by Discord to a client through a Gateway connection. Received events correspond to events that happen relevant to the current user and the guilds it is a member of.
+Received events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by Discord to a client through a Gateway connection. Most received events correspond to dispatch events that happen relevant to the current user and the guilds it is a member of.
 
 | Name                                                                              | Description                                                                                                   |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -460,6 +460,92 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Heartbeat ACK](#heartbeat-ack)                                                   | Acknowledges a received client heartbeat                                                                      |
 | [Reconnect](#reconnect)                                                           | Indicates the server is going away, client should reconnect to Gateway and [resume](/topics/gateway#resuming) |
 | [Invalid Session](#invalid-session)                                               | Failure response to [Identify](#identify) or [Resume](#resume), or indicates an invalid active session        |
+| [Dispatch](#dispatch-events)                                                      | Dispatches an event to the client                                                                             |
+
+#### Hello
+
+Sent on connection to the WebSocket. Defines the heartbeat interval that the client should heartbeat to.
+
+###### Hello Structure
+
+| Field              | Type          | Description                                                                               |
+| ------------------ | ------------- | ----------------------------------------------------------------------------------------- |
+| \_trace            | array[string] | An array of stringified JSON values representing the connection trace, used for debugging |
+| heartbeat_interval | integer       | The interval (in milliseconds) the client should heartbeat at                             |
+
+###### Example Hello
+
+```json
+{
+  "op": 10,
+  "d": {
+    "heartbeat_interval": 41250,
+    "_trace": ["[\"gateway-prd-us-east1-c-6w69\",{\"micros\":0.0}]"]
+  },
+  "s": null,
+  "t": null
+}
+```
+
+#### Heartbeat ACK
+
+Sent in response to receiving a heartbeat to acknowledge that it has been received.
+
+Details about heartbeats are in the [Gateway documentation](/topics/gateway#sending-heartbeats).
+
+###### Example Heartbeat ACK
+
+```json
+{
+  "op": 11,
+  "d": null,
+  "s": null,
+  "t": null
+}
+```
+
+#### Reconnect
+
+The reconnect event is dispatched when a client should reconnect to the Gateway (and resume their existing session, if they have one). This event usually occurs during deploys to migrate sessions gracefully off old hosts.
+
+###### Example Reconnect
+
+```json
+{
+  "op": 7,
+  "d": null,
+  "s": null,
+  "t": null
+}
+```
+
+#### Invalid Session
+
+Sent to indicate one of at least three different situations:
+
+- The Gateway could not initialize a session after receiving an [Opcode 2 Identify](#identify)
+- The Gateway could not resume a previous session after receiving an [Opcode 6 Resume](#resume)
+- The Gateway has invalidated an active session and is requesting client action
+
+The inner `d` key is a boolean that indicates whether the session may be resumable. See [Connecting](/topics/gateway#connecting) and [Resuming](/topics/gateway#resuming) for more information.
+
+###### Example Invalid Session
+
+```json
+{
+  "op": 9,
+  "d": false,
+  "s": null,
+  "t": null
+}
+```
+
+## Dispatch Events
+
+These events directly correspond with a specific action or state change that has occurred in the platform.
+
+| Name                                                                              | Description                                                                                                   |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | [Ready](#ready)                                                                   | Initial state information                                                                                     |
 | [Ready Supplemental](#ready-supplemental)                                         | Supplemental information for the initial state, not critical to beginning use of the platform                 |
 | [Resumed](#resumed)                                                               | Acknowledges a successful [Resume](#resume)                                                                   |
@@ -554,84 +640,6 @@ Received events are Gateway events encapsulated in an [event payload](#gateway-p
 | [Voice Server Update](#voice-server-update)                                       | Voice connection server was updated                                                                           |
 | [Voice Channel Effect Send](#voice-channel-effect-send)                           | User sent an effect in a voice channel the current user is connected to                                       |
 | [Webhooks Update](#webhooks-update)                                               | Channel webhook was created, update, or deleted                                                               |
-
-#### Hello
-
-Sent on connection to the WebSocket. Defines the heartbeat interval that the client should heartbeat to.
-
-###### Hello Structure
-
-| Field              | Type          | Description                                                                               |
-| ------------------ | ------------- | ----------------------------------------------------------------------------------------- |
-| \_trace            | array[string] | An array of stringified JSON values representing the connection trace, used for debugging |
-| heartbeat_interval | integer       | The interval (in milliseconds) the client should heartbeat at                             |
-
-###### Example Hello
-
-```json
-{
-  "op": 10,
-  "d": {
-    "heartbeat_interval": 41250,
-    "_trace": ["[\"gateway-prd-us-east1-c-6w69\",{\"micros\":0.0}]"]
-  },
-  "s": null,
-  "t": null
-}
-```
-
-#### Heartbeat ACK
-
-Sent in response to receiving a heartbeat to acknowledge that it has been received.
-
-Details about heartbeats are in the [Gateway documentation](/topics/gateway#sending-heartbeats).
-
-###### Example Heartbeat ACK
-
-```json
-{
-  "op": 11,
-  "d": null,
-  "s": null,
-  "t": null
-}
-```
-
-#### Reconnect
-
-The reconnect event is dispatched when a client should reconnect to the Gateway (and resume their existing session, if they have one). This event usually occurs during deploys to migrate sessions gracefully off old hosts.
-
-###### Example Reconnect
-
-```json
-{
-  "op": 7,
-  "d": null,
-  "s": null,
-  "t": null
-}
-```
-
-#### Invalid Session
-
-Sent to indicate one of at least three different situations:
-
-- The Gateway could not initialize a session after receiving an [Opcode 2 Identify](#identify)
-- The Gateway could not resume a previous session after receiving an [Opcode 6 Resume](#resume)
-- The Gateway has invalidated an active session and is requesting client action
-
-The inner `d` key is a boolean that indicates whether the session may be resumable. See [Connecting](/topics/gateway#connecting) and [Resuming](/topics/gateway#resuming) for more information.
-
-###### Example Invalid Session
-
-```json
-{
-  "op": 9,
-  "d": false,
-  "s": null,
-  "t": null
-}
-```
 
 #### Ready
 
