@@ -6,14 +6,16 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
 
 ###### Premium Referral Structure
 
-| Field              | Type                             | Description                                         |
-| ------------------ | -------------------------------- | --------------------------------------------------- |
-| id                 | snowflake                        | The ID of the referral                              |
-| user_id            | snowflake                        | The user who the referral was sent to               |
-| trial_id           | snowflake                        | The trial ID associated with the referral           |
-| subscription_trial | subscription trial object (todo) | The subscription trial associated with the referral |
-| expires_at         | ISO8601 timestamp                | The expiry date of the referral link                |
-| referrer_id        | snowflake                        | The ID of the user who created the referral         |
+| Field              | Type                                               | Description                                         |
+| ------------------ | -------------------------------------------------- | --------------------------------------------------- |
+| id                 | snowflake                                          | The ID of the referral                              |
+| user_id            | snowflake                                          | The user who the referral was sent to               |
+| trial_id           | snowflake                                          | The trial ID associated with the referral           |
+| subscription_trial | subscription trial object (todo)                   | The subscription trial associated with the referral |
+| expires_at         | ISO8601 timestamp                                  | The expiry date of the referral link                |
+| referrer_id        | snowflake                                          | The ID of the user who created the referral         |
+| referrer           | partial [user](/resources/user#user-object) object | The user who created the referral                   |
+| redeemed_at?       | ISO8601 timestamp                                  | When the referral was redeemed                      |
 
 ###### Example Premium Referral
 
@@ -29,7 +31,18 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
     "sku_id": "521847234246082599"
   },
   "expires_at": "2023-05-17T22:42:46.690847+00:00",
-  "referrer_id": "1044657759066525777"
+  "referrer_id": "1044657759066525777",
+  "referer": {
+    "id": "1044657759066525777",
+    "username": "hackermon",
+    "global_name": "daniel",
+    "avatar": null,
+    "avatar_decoration_data": null,
+    "discriminator": "0",
+    "public_flags": 16384,
+    "clan": null
+  },
+  "redeemed_at": "2023-05-16T18:22:21.777456+00:00"
 }
 ```
 
@@ -37,17 +50,34 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
 
 ###### Premium Referral Eligibility Structure
 
-| Field               | Type             | Description                          |
-| ------------------- | ---------------- | ------------------------------------ |
-| referrals_remaining | number           | The amount of referrals remaining    |
-| sent_user_ids       | array[snowflake] | The user IDs that have been referred |
+| Field                | Type                    | Description                                                                          |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| referrals_remaining  | integer                 | The amount of referrals remaining                                                    |
+| sent_user_ids        | array[snowflake]        | The IDs of users that have been referred                                             |
+| refresh_at           | ?ISO8601 timestamp      | When the referral count will refresh                                                 |
+| has_eligible_friends | boolean                 | Whether the user has friends that are eligible for a referral                        |
+| recipient_status     | map[snowflake, integer] | The [redemption status](#premium-referral-recipient-status) of each referred user ID |
+
+###### Premium Referral Recipient Status
+
+| Value | Name     | Description                                  |
+| ----- | -------- | -------------------------------------------- |
+| 1     | REDEEMED | The recipient has redeemed the referral      |
+| 2     | PENDING  | The recipient has yet to redeem the referral |
 
 ###### Example Premium Referral Eligibility
 
 ```json
 {
   "referrals_remaining": 0,
-  "sent_user_ids": ["159985870458322944", "563434444321587202", "296776625432035328"]
+  "sent_user_ids": ["159985870458322944", "563434444321587202", "296776625432035328"],
+  "refresh_at": null,
+  "has_eligible_friends": true,
+  "recipient_status": {
+    "159985870458322944": 2,
+    "563434444321587202": 2,
+    "296776625432035328": 2
+  }
 }
 ```
 
@@ -59,11 +89,44 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
 
 Returns a [premium referral](#premium-referral-object) object for the given referral ID.
 
+<Alert type="info">
+
+Only the referrer and referred user can retrieve a premium referral.
+
+</Alert>
+
 <RouteHeader method="GET" url="/users/@me/referrals/eligibility">
   Get Premium Referral Eligibility
 </RouteHeader>
 
 Returns a [premium referral eligibility](#premium-referral-eligibility-object) object for the user.
+
+<Alert type="info">
+
+Only users with an applicable premium (Nitro) plan can create referrals.
+
+</Alert>
+
+<RouteHeader method="POST" url="/users/@me/referrals/eligible-users">
+  Get Premium Referral Eligible Users
+</RouteHeader>
+
+Returns an object containing a list of users who are eligible to receive a referral from the user.
+
+###### JSON Params
+
+| Field         | Type    | Description                                            |
+| ------------- | ------- | ------------------------------------------------------ |
+| index         | integer | The current search index (0-1000)                      |
+| limit?        | integer | Max number of users to return (max 50, default 30)     |
+| search_query? | string  | Query to match usernames against (max 1024 characters) |
+
+###### Response Body
+
+| Field       | Type                                                      | Description                     |
+| ----------- | --------------------------------------------------------- | ------------------------------- |
+| users       | array[partial [user](/resources/user#user-object) object] | The eligible users              |
+| next_index? | integer                                                   | The next index to paginate from |
 
 <RouteHeader method="POST" url="/users/@me/referrals/{user.id}/preview">
   Preview Premium Referral
