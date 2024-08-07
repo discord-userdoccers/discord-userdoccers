@@ -13,13 +13,15 @@ export default function OpenGraph({
   section = DEFAULT_SECTION,
 }: OpenGraphProps) {
   const router = useRouter();
-  const url = `https://${process.env.VERCEL_URL ?? "localhost:3000"}${router.asPath}`;
+  const url = `https://${process.env.BASE_DOMAIN}${router.asPath}`;
   const isBase = router.asPath === "/" || router.asPath === "/intro";
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
   return (
     <Head>
       <title>Discord Userdoccers - Unofficial API Documentation</title>
+      <link rel="canonical" href={url} />
+
       <meta key="description" name="description" content={description} />
 
       {/* Twitter */}

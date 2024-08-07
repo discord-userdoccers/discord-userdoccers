@@ -41,15 +41,14 @@ export default function App({ Component, pageProps, router }: AppProps) {
       const title = TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
 
       return {
-        description:
-          str
-            .replace(/^(<h\d>(.*?)<\/h\d>)+/, "")
-            .replaceAll(/<[^>]*>?/gm, " ")
-            .replace(/\s+/gm, " ")
-            .trim()
-            .slice(0, 200)
-            .trim()
-            .replace(/&\w+$/, "") + "...",
+        description: `${str
+          .replace(/^(<h\d>(.*?)<\/h\d>)+/, "")
+          .replaceAll(/<[^>]*>?/gm, " ")
+          .replace(/\s+/gm, " ")
+          .trim()
+          .slice(0, 200)
+          .trim()
+          .replace(/&\w+$/, "")}...`,
         title,
       };
     }
