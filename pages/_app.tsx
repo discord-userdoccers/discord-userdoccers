@@ -42,14 +42,14 @@ export default function App({ Component, pageProps, router }: AppProps) {
 
       return {
         description:
-          str
+          `${str
             .replace(/^(<h\d>(.*?)<\/h\d>)+/, "")
             .replaceAll(/<[^>]*>?/gm, " ")
             .replace(/\s+/gm, " ")
             .trim()
             .slice(0, 200)
             .trim()
-            .replace(/&\w+$/, "") + "...",
+            .replace(/&\w+$/, "")  }...`,
         title,
       };
     }
