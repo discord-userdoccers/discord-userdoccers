@@ -8,14 +8,17 @@ interface OpenGraphProps {
   section?: string;
 }
 
+const BASE_DOMAIN =
+  process.env.NODE_ENV === "production"
+    ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+    : process.env.VERCEL_URL ?? "localhost:3000";
+
 export default function OpenGraph({
   description = "👽 ALIEN ALIEN ALIEN 👽",
   section = DEFAULT_SECTION,
 }: OpenGraphProps) {
   const router = useRouter();
-  const url = `https://${
-    process.env.NODE_ENV === "production" ? "docs.discord.sex" : process.env.VERCEL_URL ?? "localhost:3000"
-  }${router.asPath}`;
+  const url = `https://${BASE_DOMAIN}${router.asPath}`;
   const isBase = router.asPath === "/" || router.asPath === "/intro";
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
