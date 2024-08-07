@@ -26,7 +26,7 @@ async function walk(path, filter) {
   return files;
 }
 
-const BASE_DOMAIN = "docs.discord.sex";
+const BASE_DOMAIN = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "docs.discord.sex";
 // add domain
 const createLink = (url) => `https://${BASE_DOMAIN}/${url}`;
 
