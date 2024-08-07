@@ -8,7 +8,8 @@ interface OpenGraphProps {
   section?: string;
 }
 
-const BASE_DOMAIN = process.env.NODE_ENV === 'production' ? 'docs.discord.sex' : process.env.VERCEL_URL ?? "localhost:3000";
+const BASE_DOMAIN =
+  process.env.NODE_ENV === "production" ? "docs.discord.sex" : (process.env.VERCEL_URL ?? "localhost:3000");
 
 export default function OpenGraph({
   description = "👽 ALIEN ALIEN ALIEN 👽",
