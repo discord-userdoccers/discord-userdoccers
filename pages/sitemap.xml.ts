@@ -1,6 +1,6 @@
 import { opendir } from 'fs/promises';
-import { GetServerSidePropsContext } from 'next';
 import { join } from 'path';
+import { GetServerSidePropsContext } from 'next';
 
 async function walk(path: string, filter: (file: string) => boolean) {
   let files: string[] = []
