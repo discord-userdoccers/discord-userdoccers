@@ -684,13 +684,18 @@ Additional information about a participating user's join source in a [guild](/re
 
 ###### Supplemental Guild Member Structure
 
-| Field              | Type       | Description                                                             |
-| ------------------ | ---------- | ----------------------------------------------------------------------- |
-| user_id            | snowflake  | The ID of the user this guild member represents                         |
-| join_source_type   | integer    | [How the user joined the guild](#join-source-type)                      |
-| source_invite_code | ?string    | The invite code or vanity used to join the guild, if applicable         |
-| inviter_id         | ?snowflake | The ID of the user who invited the user to the guild, if applicable     |
-| integration_type   | ?integer   | The type of integration that added the user to the guild, if applicable |
+| Field              | Type                                        | Description                                                             |
+| ------------------ | ------------------------------------------- | ----------------------------------------------------------------------- |
+| user_id? ^1^       | snowflake                                   | The ID of the user this guild member represents                         |
+| member? ^2^        | [guild member](#guild-member-object) object | The associated guild member                                             |
+| join_source_type   | integer                                     | [How the user joined the guild](#join-source-type)                      |
+| source_invite_code | ?string                                     | The invite code or vanity used to join the guild, if applicable         |
+| inviter_id         | ?snowflake                                  | The ID of the user who invited the user to the guild, if applicable     |
+| integration_type   | ?integer                                    | The type of integration that added the user to the guild, if applicable |
+
+^1^ `user_id` is only included when fetched from the [Get Guild Members Supplemental](#get-guild-members-supplemental) endpoint.
+
+^2^ `member` is only included when fetched from the [Search Guild Members](#search-guild-members) endpoint.
 
 ###### Join Source Type
 
@@ -1383,13 +1388,14 @@ This endpoint is not usable by user accounts and is restricted according to whet
 | Field  | Type      | Description                                         |
 | ------ | --------- | --------------------------------------------------- |
 | limit? | integer   | Max number of members to return (1-1000, default 1) |
-| after? | snowflake | Return members after this member ID                 |
+| after? | snowflake | Get members after this member ID                    |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/members/search">
-  Search Guild Members
+  Query Guild Members
 </RouteHeader>
 
 Returns a list of [guild member](#guild-member-object) objects whose username or nickname contains a provided string.
+Functionally identical to the [Request Guild Members](/topics/gateway-events#request-guild-members) Gateway Opcode.
 
 <Alert type="warn">
 
@@ -1403,6 +1409,106 @@ This endpoint is not usable by user accounts.
 | ------ | ------- | --------------------------------------------------- |
 | query  | string  | Query to match username(s) and nickname(s) against  |
 | limit? | integer | Max number of members to return (1-1000, default 1) |
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/members-search">
+  Search Guild Members
+</RouteHeader>
+
+Returns [supplemental guild member](#supplemental-guild-member-object) objects containing [guild member](#guild-member-object) objects that match a specified query. Requires the `MANAGE_GUILD` permission.
+
+This endpoint utilizes Elasticsearch to power results. This means that while it is very powerful, it's also tricky to use and reliant on the index, meaning results may not be immediately available for a recently-joined member.
+
+<Alert type="warn">
+
+If the guild you are searching is not yet indexed, the endpoint will return a 202 accepted response. The response body will not contain any search results, and will look similar to an error response:
+
+```json
+{
+  "message": "Index not yet available. Try again later",
+  "code": 110000,
+  "documents_indexed": 0,
+  "retry_after": 15
+}
+```
+
+You should retry the request after the timeframe specified in the `retry_after` field. If the `retry_after` field is `0`, you should retry the request after a short delay.
+See [the unavailable resources section](/topics/rate-limits#unavailable-resources) for more information.
+
+</Alert>
+
+###### JSON Params
+
+| Field      | Type                                                                   | Description                                                                  |
+| ---------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| limit?     | integer                                                                | Max number of members to return (1-1000, default 25)                         |
+| sort?      | integer                                                                | The [sorting algorithm](#member-sort-type) to use (default `JOINED_AT_DESC`) |
+| or_query?  | [member filter](#member-filter-structure) object                       | The filter criteria to match against members using OR logic                  |
+| and_query? | [member filter](#member-filter-structure) object                       | The filter criteria to match against members using AND logic                 |
+| before?    | [member pagination filter](#member-pagination-filter-structure) object | Get members before this member                                               |
+| after?     | [member pagination filter](#member-pagination-filter-structure) object | Get members after this member                                                |
+
+###### Member Sort Type
+
+| Value | Name           | Description                                                 |
+| ----- | -------------- | ----------------------------------------------------------- |
+| 1     | JOINED_AT_DESC | Sort by when the user joined the guild descending (default) |
+| 2     | JOINED_AT_ASC  | Sort by when the user joined the guild ascending            |
+| 3     | USER_ID_DESC   | Sort by when the user joined Discord descending             |
+| 4     | USER_ID_ASC    | Sort by when the user joined Discord ascending              |
+
+###### Member Filter Structure
+
+| Field               | Type                                               | Description                                                                                                       | Queries                 |
+| ------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| user_id?            | [query](#query-structure) object (snowflake)       | Query to match member IDs against                                                                                 | `or_query`, `range`     |
+| usernames?          | [query](#query-structure) object (string)          | Query to match display name(s), username(s), and nickname(s) against                                              | `or_query`              |
+| role_ids?           | [query](#query-structure) object (snowflake)       | IDs of roles to match members against                                                                             | `or_query`, `and_query` |
+| guild_joined_at?    | [query](#query-structure) object (integer)         | When the user joined the guild                                                                                    | `range`                 |
+| safety_signals?     | [safety signals](#safety-signals-structure) object | Safety signals to match members against                                                                           |
+| is_pending?         | boolean                                            | Whether the member has not yet passed the guild's [member verification](#member-verification-object) requirements | `true`, `false`         |
+| did_rejoin?         | boolean                                            | Whether the member left and rejoined the guild                                                                    | `true`, `false`         |
+| join_source_type?   | [query](#query-structure) object (integer)         | [How the user joined the guild](#join-source-type)                                                                | `or_query`              |
+| source_invite_code? | [query](#query-structure) object (string)          | The invite code or vanity used to join the guild                                                                  | `or_query`              |
+
+###### Safety Signals Structure
+
+| Field                         | Type                                       | Description                                                                                                                                                             | Queries         |
+| ----------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| unusual_dm_activity_until?    | [query](#query-structure) object (integer) | When the member's unusual DM activity flag will expire                                                                                                                  | `range`         |
+| communication_disabled_until? | [query](#query-structure) object (integer) | When the member's [timeout](https://support.discord.com/hc/en-us/articles/4413305239191-Time-Out-FAQ) will expire                                                       | `range`         |
+| unusual_account_activity?     | boolean                                    | Whether unusual account activity is detected                                                                                                                            | `true`, `false` |
+| automod_quarantined_username? | boolean                                    | Whether the member has been indefinitely quarantined by [an AutoMod Rule](/resources/auto-moderation#automod-rule-object) for their username, display name, or nickname | `true`, `false` |
+
+###### Query Structure
+
+| Field      | Type                                         | Description                                                            |
+| ---------- | -------------------------------------------- | ---------------------------------------------------------------------- |
+| or_query?  | array[snowflake \| string \| integer]        | The values to match against using OR logic (1-100 characters, max 10)  |
+| and_query? | array[snowflake \| string \| integer]        | The values to match against using AND logic (1-100 characters, max 10) |
+| range?     | [range query](#range-query-structure) object | The range of values to match against                                   |
+
+###### Range Query Structure
+
+| Field      | Type                  | Description                          |
+| ---------- | --------------------- | ------------------------------------ |
+| gte?       | snowflake \| integer  | Inclusive lower bound value to match |
+| lte?       | snowflake \| integer  | Inclusive upper bound value to match |
+
+###### Member Pagination Filter Structure
+
+| Field           | Type       | Description                                     |
+| --------------- | ---------- | ----------------------------------------------- |
+| user_id         | snowflake  | The ID of the user to paginate past             |
+| guild_joined_at | integer    | When the user to paginate past joined the guild |
+
+###### Response Body
+
+| Field              | Type                                                                         | Description                       |
+| ------------------ | ---------------------------------------------------------------------------- | --------------------------------- |
+| guild_id           | snowflake                                                                    | The ID of the guild searched      |
+| members            | array[[supplemental guild member](#supplemental-guild-member-object) object] | The resulting members             |
+| page_result_count  | integer                                                                      | The number of results returned    |
+| total_result_count | integer                                                                      | The total number of results found |
 
 <RouteHeader method="POST" url="/guilds/{guild.id}/members/supplemental">
   Get Guild Members Supplemental
