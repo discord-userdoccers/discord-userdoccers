@@ -1,0 +1,27 @@
+---
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import Layout from "../layouts/Layout.astro";
+import mdxComponents from "@components/mdx/components";
+
+export const getStaticPaths = (async () => {
+	const docs = await getCollection("docs");
+	const mapped = docs.map((e) => ({ params: { mdxslug: e.slug }, props: { entry: e } }));
+	const intro = mapped.find((e) => e.params.mdxslug === "intro");
+	if (intro) mapped.push({ params: { mdxslug: undefined as any }, props: { entry: intro.props.entry } });
+
+	return mapped;
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+
+const title = entry.slug
+	.split("/")
+	.map((s) => s.charAt(0).toLocaleUpperCase() + s.slice(1))
+	.join(" - ");
+---
+
+<Layout title={title}>
+	<Content components={mdxComponents} />
+</Layout>
