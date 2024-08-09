@@ -1,0 +1,64 @@
+---
+import { getEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import CollapsibleLink from "./CollapsibleLink.astro";
+
+function sort<T extends { slug: string }>(a: T, b: T): number {
+	return a.slug.localeCompare(b.slug);
+}
+
+const intro = await getEntry("docs", "intro");
+const reference = await getEntry("docs", "reference");
+const authentication = await getEntry("docs", "authentication");
+
+const resources = (await getCollection("docs", (e) => e.slug.startsWith("resources/"))).sort(sort);
+const topics = (await getCollection("docs", (e) => e.slug.startsWith("topics/"))).sort(sort);
+const remote_authentication = (await getCollection("docs", (e) => e.slug.startsWith("remote-authentication/"))).sort(sort);
+const interactions = (await getCollection("docs", (e) => e.slug.startsWith("interactions/"))).sort(sort);
+---
+
+<header-links transition:persist class="h-screen overflow-y-scroll">
+	<section class="mb-6">
+		<CollapsibleLink entry={intro} noSub />
+		<CollapsibleLink entry={reference} />
+		<CollapsibleLink entry={authentication} />
+	</section>
+	{
+		[resources, topics, remote_authentication, interactions].map((collection) => (
+			<section class="mb-6">
+				<h3 class="mb-2 ml-2 text-black dark:text-white font-whitney-bold text-xs uppercase">{collection[0].slug.split("/")[0]}</h3>
+				{collection.map((e) => (
+					<CollapsibleLink entry={e} />
+				))}
+			</section>
+		))
+	}
+</header-links>
+
+<script>
+	class HeaderLinks extends HTMLElement {
+		scrollPos = 0;
+		beforeSwapListener = () => {
+			this.scrollPos = this.scrollTop;
+		};
+		afterSwapListener = () => {
+			this.scrollTo({ top: this.scrollPos, behavior: "instant" });
+		};
+
+		constructor() {
+			super();
+		}
+
+		connectedCallback() {
+			document.addEventListener("astro:before-swap", this.beforeSwapListener);
+			document.addEventListener("astro:after-swap", this.afterSwapListener);
+		}
+
+		disconnectedCallback() {
+			document.removeEventListener("astro:before-swap", this.beforeSwapListener);
+			document.removeEventListener("astro:after-swap", this.afterSwapListener);
+		}
+	}
+
+	customElements.define("header-links", HeaderLinks);
+</script>

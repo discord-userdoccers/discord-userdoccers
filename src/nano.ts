@@ -9,3 +9,6 @@ export const theme = batched([browserTheme, userTheme], (browser, user) => {
 	}
 	return user;
 });
+
+export const path = atom<string>("/");
+export const hash = atom<string>("");

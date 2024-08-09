@@ -1,0 +1,110 @@
+---
+import CaretFill from "@components/icons/CaretFill.astro";
+import type { CollectionEntry } from "astro:content";
+import Sublink from "./Sublink.astro";
+
+interface Props {
+	entry: CollectionEntry<"docs">;
+	noSub?: boolean;
+}
+
+const {
+	entry: { slug, render },
+	noSub = false,
+} = Astro.props;
+const title = slug
+	.split("/")
+	.pop()!
+	.split("-")
+	.map((s) => s[0].toLocaleUpperCase() + s.slice(1))
+	.join(" ");
+
+const { headings } = await render();
+
+const currentPath = Astro.url.pathname;
+---
+
+<collapsible-link data-slug={"/" + slug} selected={currentPath === "/" + slug} open={currentPath === "/" + slug}>
+	<div class="link-button flex items-center font-whiteney rounded-md">
+		<div class="w-6 h-6 p-1">
+			{!noSub && headings.length && <CaretFill class="caretfill w-4 h-4 hover:cursor-pointer" />}
+		</div>
+		<a href={"/" + slug} class="group flex items-center px-2 py-1 w-full font-medium">
+			{title}
+		</a>
+	</div>
+	{
+		!noSub && (
+			<div class="sublinks flex-col">
+				{headings.map((h, i) => (
+					<Sublink parentSlug={slug} slug={h.slug} text={h.text} first={i === 0} depth={h.depth} />
+				))}
+			</div>
+		)
+	}
+</collapsible-link>
+
+<script>
+	import { path } from "../../nano";
+
+	class CollapsibleLink extends HTMLElement {
+		slug = "";
+		chevronListener = () => {
+			this.toggleAttribute("open");
+		};
+		anchorListener = () => {
+			this.toggleAttribute("open", true);
+		};
+		pathListener = (p: string) => {
+			this.toggleAttribute("selected", p === this.slug);
+		};
+		unsubscribePath?: () => void;
+
+		constructor() {
+			super();
+			this.slug = this.dataset.slug!;
+		}
+
+		connectedCallback() {
+			this.querySelector(".caretfill")?.addEventListener("click", this.chevronListener);
+			this.querySelector("a")?.addEventListener("click", this.anchorListener);
+			this.unsubscribePath?.();
+			this.unsubscribePath = path.listen(this.pathListener);
+			if (path.get() === this.slug) this.toggleAttribute("selected", true);
+		}
+
+		disconnectedCallback() {
+			this.querySelector(".caretfill")?.removeEventListener("click", this.chevronListener);
+			this.querySelector("a")?.removeEventListener("click", this.anchorListener);
+			this.unsubscribePath?.();
+		}
+	}
+
+	customElements.define("collapsible-link", CollapsibleLink);
+</script>
+
+<style>
+	.sublinks {
+		display: none;
+	}
+
+	collapsible-link[open] .sublinks {
+		display: flex;
+	}
+
+	collapsible-link[open] .caretfill {
+		transform: rotate(90deg);
+	}
+
+	collapsible-link[selected] .link-button {
+		background-color: rgb(88 101 242);
+		color: white;
+	}
+	
+	collapsible-link[not-selected] .link-button
+
+	.link-button {
+		display: flex;
+		align-items: center;
+	}
+</style>

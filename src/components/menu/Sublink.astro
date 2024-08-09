@@ -1,0 +1,68 @@
+---
+import Caret from "@components/icons/Caret.astro";
+
+interface Props {
+	parentSlug: string;
+	slug: string;
+	text: string;
+	depth?: number;
+	first?: boolean;
+}
+
+const { parentSlug, slug, text, first, depth = 1 } = Astro.props;
+---
+
+<a href={`/${parentSlug}#${slug}`} style={`margin-left: ${10 + 5 * depth}px;`}>
+	<sub-link data-first={first} data-slug={"#" + slug} class="flex flex-row items-center">
+		<div class="w-4 h-4">
+			<Caret class="caret w-4 h-4" />
+		</div>
+		{text}
+	</sub-link>
+</a>
+
+<script>
+	import { hash } from "src/nano";
+
+	class Sublink extends HTMLElement {
+		slug = "";
+		first = false;
+		hashSubscription?: () => void;
+
+		constructor() {
+			super();
+			this.slug = this.dataset.slug!;
+			this.first = this.dataset.first !== undefined;
+		}
+
+		connectedCallback() {
+			this.hashSubscription?.();
+			this.toggleAttribute("selected", hash.value === this.slug || (!hash.value && this.first));
+			this.hashSubscription = hash.listen((h) => {
+				this.toggleAttribute("selected", h === this.slug || (!h && this.first));
+			});
+		}
+
+		disconnectedCallback() {
+			this.hashSubscription?.();
+		}
+	}
+
+	customElements.define("sub-link", Sublink);
+</script>
+
+<style>
+	sub-link .caret {
+		display: none;
+	}
+</style>
+
+<style is:global>
+	collapsible-link[selected] sub-link[selected] {
+		color: green;
+	}
+
+	collapsible-link[selected] sub-link[selected] .caret {
+		display: block;
+	}
+</style>
