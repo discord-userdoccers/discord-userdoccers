@@ -48,9 +48,9 @@ A guild or private channel within Discord.
 | default_forum_layout?               | integer                                                            | The default [layout](#forum-layout-type) of a thread-only channel                                                                                                                            |
 | default_sort_order?                 | ?integer                                                           | The default [sort order](#sort-order-type) of a thread-only channel's threads (default `LATEST_ACTIVITY`)                                                                                    |
 | icon_emoji?                         | ?[icon emoji](#icon-emoji-object) object                           | The emoji to show next to the channel name in channels list                                                                                                                                  |
-| is_message_request?                 | boolean                                                            | Whether the channel is a message request                                                                                                                                                     |
-| is_message_request_timestamp?       | ?ISO8601 timestamp                                                 | The message request creation timestamp                                                                                                                                                       |
-| is_spam?                            | boolean                                                            | Whether the channel is a spam message request                                                                                                                                                |
+| is_message_request?                 | boolean                                                            | Whether the DM is a message request                                                                                                                                                          |
+| is_message_request_timestamp?       | ?ISO8601 timestamp                                                 | When the message request was created                                                                                                                                                         |
+| is_spam?                            | boolean                                                            | Whether the DM is a spam message request                                                                                                                                                     |
 | theme_color?                        | ?integer                                                           | The background color of the channel icon emoji encoded as an integer representation of hexadecimal color code                                                                                |
 | status? ^4^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
 
@@ -775,7 +775,7 @@ Deletes a channel permission overwrite for a user or role in a channel. Only usa
   Follow Channel
 </RouteHeader>
 
-Follows a News Channel to send messages to a target channel. Requires the `MANAGE_WEBHOOKS` permission in the target channel. Returns a [followed channel](/resources/message#followed-channel-object) object. Fires a [Webhooks Update](/topics/gateway-events#webhooks-update) Gateway event for the target channel.
+Follows a News Channel to send messages to a target channel. Requires the `MANAGE_WEBHOOKS` permission in the target channel. Returns a [followed channel](/resources/message#followed-channel-object) object on success. Fires a [Webhooks Update](/topics/gateway-events#webhooks-update) Gateway event for the target channel.
 
 ###### JSON Params
 
@@ -898,11 +898,11 @@ Removes a recipient from a group DM. Requires ownership of the target channel. R
   Update Message Request
 </RouteHeader>
 
-Returns a [DM channel](#channel-object) on success. Fires a [Channel Update](/topics/gateway-event#channel-update) Gateway event.
+Modifies a message request's status. Returns a [DM channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway-event#channel-update) Gateway event.
 
 <Alert type="warn">
 
-All consent statuses other than `ACCEPTED` are only usable by [Discord staff](/resources/user#user-flags).
+Consent statuses other than `ACCEPTED` are only usable by Discord employees.
 
 </Alert>
 
@@ -925,7 +925,38 @@ All consent statuses other than `ACCEPTED` are only usable by [Discord staff](/r
   Reject Message Request
 </RouteHeader>
 
-Returns a [DM channel](#channel-object) on success. Fires [Channel Update](/topics/gateway-events#channel-update), [Message ACK](/topics/gateway-events#message-ack), [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
+Rejects and deletes a pending message request. Returns a [DM channel](#channel-object) object on success. Fires [Channel Update](/topics/gateway-events#channel-update), [Message ACK](/topics/gateway-events#message-ack), [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
+
+<RouteHeader method="PUT" url="/channels/recipients/@me/batch-reject">
+  Batch Reject Message Requests
+</RouteHeader>
+
+Rejects and deletes multiple pending message requests. Returns a list of [DM channel](#channel-object) objects on success. Fires multiple [Channel Update](/topics/gateway-events#channel-update), [Message ACK](/topics/gateway-events#message-ack), [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
+
+###### JSON Params
+
+| Field       | Type             | Description                                         |
+| ----------- | ---------------- | --------------------------------------------------- |
+| channel_ids | array[snowflake] | The IDs of the message requests to reject (max 100) |
+
+<RouteHeader method="GET" url="/users/@me/message-requests/supplemental-data">
+  Get Supplemental Message Request Data
+</RouteHeader>
+
+Returns a list of [supplemental message request](#supplemental-message-request-structure) objects with the message that triggered each message request.
+
+###### Query String Params
+
+| Field       | Type             | Description                                     |
+| ----------- | ---------------- | ----------------------------------------------- |
+| channel_ids | array[snowflake] | The IDs of the message requests to fetch (1-25) |
+
+###### Supplemental Message Request Structure
+
+| Field           | Type                                                | Description                   |
+| --------------- | --------------------------------------------------- | ----------------------------- |
+| channel_id      | snowflake                                           | The ID of the message request |
+| message_preview | [message](/resources/message#message-object) object | The trigger message           |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/threads/active">
   Get Guild Active Threads
