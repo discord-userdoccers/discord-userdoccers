@@ -17,7 +17,7 @@ Emoji are small images that can be used to convey an idea or emotion. Discord al
 | animated?       | boolean                                            | Whether this emoji is animated                                                             |
 | available?      | boolean                                            | Whether this emoji can be used; may be false due to loss of premium subscriptions (boosts) |
 
-^1^ Only included for emoji when fetched through the [Get Guild Emojis](#get-guild-emojis) or [Get Guild Emoji](#get-guild-emoji) endpoints by a user with the `MANAGE_EMOJIS_AND_STICKERS` permission. Always included when fetched from [Get Application Emojis](#get-application-emojis) or [Get Application Emoji](#get-application-emoji).
+^1^ Only included for emoji when fetched through the [Get Guild Emojis](#get-guild-emojis) or [Get Guild Emoji](#get-guild-emoji) endpoints by a user with the `MANAGE_EXPRESSIONS` permission. Always included when fetched from [Get Application Emojis](#get-application-emojis) or [Get Application Emoji](#get-application-emoji).
 
 ^2^ This may be `null` in the case of a custom emoji that has been deleted.
 
@@ -98,17 +98,108 @@ In [Message Reaction Add](/topics/gateway-events#message-reaction-add) events `a
 
 Returns a [discoverable guild](/resources/discovery#discoverable-guild-object) object for the guild that owns the given emoji. This endpoint requires the guild to be discoverable and have [emoji/sticker discoverability](/resources/discovery#discovery-metadata-object) enabled.
 
+<RouteHeader method="GET" url="/emojis/{emoji.id}/source">
+  Get Emoji Source
+</RouteHeader>
+
+Returns an object containing information on the guild or application that owns the given emoji. If the source is a guild, this endpoint requires the guild to be discoverable and have [emoji/sticker discoverability](/resources/discovery#discovery-metadata-object) enabled.
+
+###### Response Body
+
+| Field       | Type                                                      | Description                                    |
+| ----------- | --------------------------------------------------------- | ---------------------------------------------- |
+| type        | string                                                    | The [type of emoji source](#emoji-source-type) |
+| guild       | ?[emoji guild](#emoji-guild-structure) object             | The guild that owns the given emoji            |
+| application | ?[emoji application](#emoji-application-structure) object | The application that owns the given emoji      |
+
+###### Emoji Source Type
+
+| Value       | Description                             |
+| ----------- | --------------------------------------- |
+| GUILD       | The emoji is uploaded to a guild        |
+| APPLICATION | The emoji is uploaded to an application |
+
+###### Emoji Guild Structure
+
+| Field                      | Type                                                 | Description                                                                          |
+| -------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| id                         | snowflake                                            | The ID of the guild                                                                  |
+| name                       | string                                               | The name of the guild (2-100 characters)                                             |
+| icon                       | ?string                                              | The guild's [icon hash](/reference#cdn-formatting)                                   |
+| description                | ?string                                              | The description for the guild                                                        |
+| features                   | array[string]                                        | Enabled [guild features](/resources/guild#guild-features)                            |
+| emojis                     | array[[emoji](/resources/emoji#emoji-object) object] | Custom guild emojis                                                                  |
+| premium_tier               | integer                                              | The guild's [premium tier](/resources/guild#premium-tier) (boost level)              |
+| premium_subscription_count | integer                                              | The number of premium subscriptions (boosts) the guild currently has                 |
+| approximate_member_count   | integer                                              | Approximate number of total members in the guild                                     |
+| approximate_presence_count | integer                                              | Approximate number of non-offline members in the guild                               |
+
+###### Emoji Application Structure
+
+| Field | Type      | Description                 |
+| ----- | --------- | --------------------------- |
+| id    | snowflake | The ID of the application   |
+| name  | string    | The name of the application |
+
+###### Example Response
+
+```json
+{
+  "guild": {
+    "id": "322850917248663552",
+    "name": "Official Fortnite",
+    "icon": "39e9f70c87a3d20dfe02e5f013b417f4",
+    "emojis": [],
+    "approximate_member_count": 1068003,
+    "approximate_presence_count": 163598,
+    "description": "The Official Fortnite Discord Server! Join to follow news & updates, LFG, and chat about Fortnite Battle Royale.",
+    "features": [
+      "ANIMATED_BANNER",
+      "ANIMATED_ICON",
+      "AUTO_MODERATION",
+      "BANNER",
+      "CHANNEL_ICON_EMOJIS_GENERATED",
+      "COMMUNITY",
+      "COMMUNITY_EXP_LARGE_UNGATED",
+      "DISCOVERABLE",
+      "FEATURABLE",
+      "GUILD_MEMBER_VERIFICATION_EXPERIMENT",
+      "GUILD_WEB_PAGE_VANITY_URL",
+      "INVITE_SPLASH",
+      "MEMBER_PROFILES",
+      "MEMBER_VERIFICATION_GATE_ENABLED",
+      "NEWS",
+      "NEW_THREAD_PERMISSIONS",
+      "PREVIEW_ENABLED",
+      "PRIVATE_THREADS",
+      "ROLE_ICONS",
+      "SEVEN_DAY_THREAD_ARCHIVE",
+      "SOUNDBOARD",
+      "THREADS_ENABLED",
+      "THREE_DAY_THREAD_ARCHIVE",
+      "VANITY_URL",
+      "VERIFIED",
+      "VIP_REGIONS"
+    ],
+    "premium_subscription_count": 378,
+    "premium_tier": 3
+  },
+  "application": null,
+  "type": "GUILD"
+}
+```
+
 <RouteHeader method="GET" url="/guilds/{guild.id}/emojis">
   Get Guild Emojis
 </RouteHeader>
 
-Returns a list of [emoji](#emoji-object) objects for the given guild. Includes the `user` field if the user has the `MANAGE_EMOJIS_AND_STICKERS` permission.
+Returns a list of [emoji](#emoji-object) objects for the given guild. Includes the `user` field if the user has the `MANAGE_EXPRESSIONS` permission.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/emojis/{emoji.id}">
   Get Guild Emoji
 </RouteHeader>
 
-Returns an [emoji](#emoji-object) object for the given guild and emoji IDs. Includes the `user` field if the user has the `MANAGE_EMOJIS_AND_STICKERS` permission.
+Returns an [emoji](#emoji-object) object for the given guild and emoji IDs. Includes the `user` field if the user has the `MANAGE_EXPRESSIONS` permission.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/top-emojis">
   Get Guild Top Emojis
@@ -162,7 +253,7 @@ Returns the most-used emojis for the given guild.
   Create Guild Emoji
 </RouteHeader>
 
-Creates a new emoji for the guild. Requires the `MANAGE_EMOJIS_AND_STICKERS` permission. Returns the new [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
+Creates a new emoji for the guild. Requires the `MANAGE_EXPRESSIONS` permission. Returns the new [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
 
 <Alert type="warn">
 
@@ -182,7 +273,7 @@ Emojis have a maximum file size of 256 KiB. Attempting to upload an emoji larger
   Modify Guild Emoji
 </RouteHeader>
 
-Modifies the given emoji. Requires the `MANAGE_EMOJIS_AND_STICKERS` permission. Returns the updated [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
+Modifies the given emoji. Requires the `MANAGE_EXPRESSIONS` permission. Returns the updated [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
 
 ###### JSON Params
 
@@ -195,7 +286,7 @@ Modifies the given emoji. Requires the `MANAGE_EMOJIS_AND_STICKERS` permission. 
   Delete Guild Emoji
 </RouteHeader>
 
-Deletes the given emoji. Requires the `MANAGE_EMOJIS_AND_STICKERS` permission. Returns a 204 empty response on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
+Deletes the given emoji. Requires the `MANAGE_EXPRESSIONS` permission. Returns a 204 empty response on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
 
 <RouteHeader method="GET" url="/applications/{application.id}/emojis">
   Get Application Emojis
