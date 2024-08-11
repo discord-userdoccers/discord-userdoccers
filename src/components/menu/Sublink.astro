@@ -12,39 +12,28 @@ interface Props {
 const { parentSlug, slug, text, first, depth = 1 } = Astro.props;
 ---
 
-<a href={`/${parentSlug}#${slug}`} style={`margin-left: ${10 + 5 * depth}px;`}>
+<a href={`/${parentSlug}/#${slug}`} style={`margin-left: ${10 + 5 * depth}px;`}>
 	<sub-link data-first={first} data-slug={"#" + slug} class="flex flex-row items-center">
-		<div class="w-4 h-4">
-			<Caret class="caret w-4 h-4" />
-		</div>
+		<Caret class="caret w-4 h-4" />
 		{text}
 	</sub-link>
 </a>
 
 <script>
-	import { hash } from "src/nano";
+	import { createSelector, hash } from "src/nano";
+	let firstRun = true;
+	requestAnimationFrame(() => (firstRun = false));
+	const hashSelector = createSelector(hash);
 
 	class Sublink extends HTMLElement {
-		slug = "";
-		first = false;
-		hashSubscription?: () => void;
-
 		constructor() {
 			super();
-			this.slug = this.dataset.slug!;
-			this.first = this.dataset.first !== undefined;
-		}
-
-		connectedCallback() {
-			this.hashSubscription?.();
-			this.toggleAttribute("selected", hash.value === this.slug || (!hash.value && this.first));
-			this.hashSubscription = hash.listen((h) => {
-				this.toggleAttribute("selected", h === this.slug || (!h && this.first));
-			});
-		}
-
-		disconnectedCallback() {
-			this.hashSubscription?.();
+			if (!firstRun) return; // second run => navigate, but since we persist navigation element we dont want to run setup just for the component ot be replaced
+			const l = (v: boolean) => {
+				this.toggleAttribute("selected", v);
+			};
+			hashSelector(this.dataset.slug!, l);
+			if (typeof this.dataset.first === "string") hashSelector("", l);
 		}
 	}
 
@@ -53,7 +42,7 @@ const { parentSlug, slug, text, first, depth = 1 } = Astro.props;
 
 <style>
 	sub-link .caret {
-		display: none;
+		opacity: 0;
 	}
 </style>
 
@@ -63,6 +52,6 @@ const { parentSlug, slug, text, first, depth = 1 } = Astro.props;
 	}
 
 	collapsible-link[selected] sub-link[selected] .caret {
-		display: block;
+		opacity: 1;
 	}
 </style>
