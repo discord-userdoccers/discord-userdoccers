@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import React, { isValidElement, ReactNode } from "react";
 import HyperlinkIcon from "../icons/Hyperlink";
+import TickIcon from "../icons/Tick";
 
 function getText(node: React.ReactNode): string {
   if (typeof node === "string") {
@@ -30,14 +31,45 @@ export interface HeadingProps {
 function Heading({ as: As, className, children }: HeadingProps) {
   const anchor = getText(children);
   const classes = classNames("flex items-center text-black dark:text-white", className);
+  const [showingCopied, setShowingCopied] = React.useState(false);
+
+  // return to normal icon after 1 second
+  React.useEffect(() => {
+    if (showingCopied) {
+      const timeout = setTimeout(() => {
+        setShowingCopied(false);
+      }, 1000);
+
+      return () => {
+        clearTimeout(timeout);
+      };
+    }
+  }, [showingCopied]);
 
   return (
-    <a className="group" href={`#${anchor}`}>
-      <As id={anchor} className={classes}>
-        {children}
-        <HyperlinkIcon className="min-w-4 min-h-4 md:group-hover:inline-flex ml-2 w-4 h-4 motion-safe:animate-fade-in-out md:hidden" />
-      </As>
-    </a>
+    <As className={"group " + classes} id={anchor}>
+      <a href={`#${anchor}`}>{children}</a>
+      <button
+        type="button"
+        // href={`#${anchor}`}
+        onClick={() => {
+          navigator.clipboard
+            .writeText(`${window.location.href.split("#")[0]}#${anchor}`)
+            .then(() => {
+              setShowingCopied(true);
+            })
+            .catch(() => {
+              // noop to avoid unhandled promise rejection
+            });
+        }}
+      >
+        {React.createElement(showingCopied ? TickIcon : HyperlinkIcon, {
+          className: `-m-1 ${
+            As === "h1" ? "mb-0.25" : "mb-0.5"
+          } min-w-4 min-h-4 md:group-hover:inline-flex ml-2 w-5 h-5 motion-safe:animate-fade-in-out md:hidden`,
+        })}
+      </button>
+    </As>
   );
 }
 
