@@ -4,19 +4,26 @@ Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#
 
 ## Voice Gateway
 
-To ensure that you have the most up-to-date information, please use [version 7](#gateway-versions). Otherwise, we cannot guarantee that the events and commands documented here will reflect what you receive over the socket. Video is only fully supported on gateway v5 and above.
+To ensure that you have the most up-to-date information, please use [version 8](#gateway-versions). Otherwise, we cannot guarantee that the events and commands documented here will reflect what you receive over the socket. Video is only fully supported on Gateway v5 and above.
 
 ###### Gateway Versions
 
-| Version | Status    | Default  |
-| ------- | --------- | -------- |
-| 7       | Available | ✓ Client |
-| 6       | Available |          |
-| 5       | Available |          |
-| 4       | Available |          |
-| 3       | Available |          |
-| 2       | Available |          |
-| 1       | Available | ✓ API    |
+<Alert type="info">
+
+The Voice Gateway does not provide a default version. You must explicitly pass a version with the `?v=` query parameter.
+
+</Alert>
+
+| Version | Status      | Change                                                                            |
+| ------- | ----------- | --------------------------------------------------------------------------------- |
+| 8       | Recommended | Added buffered resuming                                                           |
+| 7       | Available   | Added [Opcode 17 Channel Options Update](#gateway-events)                         |
+| 6       | Available   | Added [Opcode 16 Voice Backend Version](#gateway-events)                          |
+| 5       | Available   | Added [Opcode 15 Media Sink Wants](#gateway-events)                               |
+| 4       | Available   | Changed [speaking status](#speaking-flags) from boolean to bitmask                |
+| 3       | Deprecated  | Added video functionality, consolidated [Opcode 1 Hello](#gateway-events) payload |
+| 2       | Deprecated  | Changed Gateway heartbeat reply to [Opcode 6 Heartbeak ACK](#gateway-events)      |
+| 1       | Deprecated  | Initial version                                                                   |
 
 ###### Gateway Commands
 
@@ -24,7 +31,7 @@ To ensure that you have the most up-to-date information, please use [version 7](
 | --------------------------------------------------------- | ----------------------------------------- |
 | [Identify](#identify-structure)                           | Start a new voice connection              |
 | [Resume](#resume-structure)                               | Resume a dropped connection               |
-| [Heartbeat](#example-heartbeat)                           | Maintain an active WebSocket connection   |
+| [Heartbeat](#example-heartbeat-since-v8)                  | Maintain an active WebSocket connection   |
 | [Select Protocol](#select-protocol-structure)             | Select the voice protocol and mode        |
 | [Speaking](#speaking-structure)                           | Indicate the user's speaking state        |
 | [Voice Backend Version](#voice-backend-version-structure) | Request the current voice backend version |
@@ -34,7 +41,7 @@ To ensure that you have the most up-to-date information, please use [version 7](
 | Name                                                                | Description                                                                                              |
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | [Hello](#hello-structure)                                           | Defines the heartbeat interval                                                                           |
-| [Heartbeat ACK](#example-heartbeat-ack)                             | Acknowledges a received client heartbeat                                                                 |
+| [Heartbeat ACK](#example-heartbeat-ack-since-v8)                    | Acknowledges a received client heartbeat                                                                 |
 | [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                      |
 | [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                              |
 | [Session Description](#session-description-structure)               | Acknowledges a successful Select Protocol and contains the information needed to send/receive voice data |
@@ -47,11 +54,13 @@ To ensure that you have the most up-to-date information, please use [version 7](
 
 ### Retrieving Voice Server Information
 
-The first step in connecting to a voice server (and in turn, a guild's voice channel or private channel) is formulating a request that can be sent to the [Gateway](/topics/gateway), which will return information about the voice server we will connect to. Because Discord's voice platform is widely distributed, users **should never** cache or save the results of this call. To inform the gateway of our intent to establish voice connectivity, we first send an [Update Voice State](/topics/gateway-events#update-voice-state) payload.
+The first step in connecting to a voice server (and in turn, a guild's voice channel or private channel) is formulating a request that can be sent to the [Gateway](/topics/gateway), which will return information about the voice server we will connect to. Because Discord's voice platform is widely distributed, users **should never** cache or save the results of this call. To inform the Gateway of our intent to establish voice connectivity, we first send an [Update Voice State](/topics/gateway-events#update-voice-state) payload.
 
-If our request succeeded, the gateway will respond with _two_ events—a [Voice State Update](/topics/gateway-events#voice-state-update) event and a [Voice Server Update](/topics/gateway-events#voice-server-update) event—meaning you must properly wait for both events before continuing. The first will contain a new key, `session_id`, and the second will provide voice server information we can use to establish a new voice connection.
+If our request succeeded, the Gateway will respond with _two_ events—a [Voice State Update](/topics/gateway-events#voice-state-update) event and a [Voice Server Update](/topics/gateway-events#voice-server-update) event—meaning you must properly wait for both events before continuing. The first will contain a new key, `session_id`, and the second will provide voice server information we can use to establish a new voice connection.
 
 With this information, we can move on to establishing a voice WebSocket connection.
+
+When changing channels within the same guild, it is possible to receive a [Voice Server Update](/topics/gateway-events#voice-server-update) with the same `endpoint` as the existing session. However, the `token` will be changed and you cannot re-use the previous session during a channel change, even if the endpoint remains the same.
 
 <Alert type="info">
 
@@ -62,7 +71,7 @@ Having the `MANAGE_CHANNELS` permission bypasses this limit and allows you to jo
 
 ## Establishing a Voice WebSocket Connection
 
-Once we retrieve a `session_id`, `token`, and `endpoint` information, we can connect and handshake with the voice server over another secure WebSocket. Unlike the gateway endpoint we receive in an HTTP [Get Gateway](/topics/gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/topics/gateway-events#voice-server-update) payload does not contain a URL protocol, so some libraries may require manually prepending it with "wss://" before connecting. Once connected to the voice WebSocket endpoint, we can send an [Opcode 0 Identify](#gateway-commands) payload with our `server_id`, `user_id`, `session_id`, and `token`:
+Once we retrieve a `session_id`, `token`, and `endpoint` information, we can connect and handshake with the voice server over another secure WebSocket. Unlike the Gateway endpoint we receive in a [Get Gateway](/topics/gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/topics/gateway-events#voice-server-update) payload does not contain a URL protocol, so some libraries may require manually prepending it with `wss://` before connecting. Once connected to the voice WebSocket endpoint, we can send an [Opcode 0 Identify](#gateway-commands) payload with our `server_id`, `user_id`, `session_id`, and `token`:
 
 ###### Identify Structure
 
@@ -130,44 +139,38 @@ The voice server should respond with an [Opcode 2 Ready](#gateway-events) payloa
 
 ## Heartbeating
 
-In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode 8 Hello](#gateway-events):
+In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode 8 Hello](#gateway-events).
+
+This is sent at the start of the connection. Be warned that the [Opcode 8 Hello](#gateway-events) structure differs by Gateway version.
+Versions below v3 follow a flat structure without `op` or `d` fields, including only a single `heartbeat_interval` field. Be sure to expect this different format based on your version.
+
+This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish.
+For example, the web client uses a heartbeat interval of `min(heartbeat_interval, 5000)` if the Gateway version is v4 or above, and `heartbeat_interval * 0.1` otherwise. The desktop client uses the provided heartbeat interval if the Gateway version is v4 or above, and `heartbeat_interval * 0.25` otherwise.
 
 ###### Hello Structure
 
 | Field              | Type    | Description                                                           |
 | ------------------ | ------- | --------------------------------------------------------------------- |
-| v?                 | integer | The [voice gateway version](#gateway-versions)                        |
+| v                  | integer | The [Voice Gateway version](#gateway-versions)                        |
 | heartbeat_interval | integer | The minimum interval (in milliseconds) the client should heartbeat at |
 
-###### Example Hello Before v3
-
-```json
-{
-  "heartbeat_interval": 41250
-}
-```
-
-###### Example Hello Since v3
+###### Example Hello
 
 ```json
 {
   "op": 8,
   "d": {
-    "v": 7,
+    "v": 8,
     "heartbeat_interval": 41250
   }
 }
 ```
 
-This is sent at the start of the connection. Be warned that the [Opcode 8 Hello](#gateway-events) structure differs by gateway version as shown in the above examples. Versions below v3 do not have `op` or `d` fields. v3 and above was updated to be structured like other payloads. Be sure to expect this different format based on your version.
-
-This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish. For example, the web client uses a heartbeat interval of `min(heartbeat_interval, 5000)` if the gateway version is v4 or above, and `heartbeat_interval * 0.1` otherwise. The desktop client uses the provided heartbeat interval if the gateway version is v4 or above, and `heartbeat_interval * 0.25` otherwise.
+The Gateway may request a heartbeat from the client in some situations by sending an [Opcode 3 Heartbeat](#gateway-events). When this occurs, the client should immediately send an [Opcode 3 Heartbeat](#gateway-events) without waiting the remainder of the current interval.
 
 After receiving [Opcode 8 Hello](#gateway-events), you should send [Opcode 3 Heartbeat](#gateway-events)—which contains an integer nonce—every elapsed interval:
 
-The gateway may request a heartbeat from the client in some situations by sending an [Opcode 3 Heartbeat](#gateway-events). When this occurs, the client should immediately send an [Opcode 3 Heartbeat](#gateway-events) without waiting the remainder of the current interval.
-
-###### Example Heartbeat
+###### Example Heartbeat Before v8
 
 ```json
 {
@@ -176,9 +179,23 @@ The gateway may request a heartbeat from the client in some situations by sendin
 }
 ```
 
+###### Example Heartbeat Since v8
+
+```json
+{
+  "op": 3,
+  "d": {
+    "t": 1501184119561,
+    "seq_ack": 10
+  }
+}
+```
+
+Since Gateway v8, heartbeat messages must include `seq_ack` which contains the sequence number of the last numbered message received from the gateway. See [Buffered Resume](#buffered-resume) for more information.
+
 In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) that contains the previously sent nonce:
 
-###### Example Heartbeat ACK
+###### Example Heartbeat ACK Before v8
 
 ```json
 {
@@ -187,9 +204,21 @@ In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) th
 }
 ```
 
+###### Example Heartbeat ACK Since v8
+
+```json
+{
+  "op": 6,
+  "d": {
+    "t": 1501184119561
+  }
+}
+```
+
 ## Establishing a Voice Connection
 
-Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for voice data. First, we connect to the IP and port provided in the Ready payload. We then send an [Opcode 1 Select Protocol](#gateway-events) with details about our connection:
+Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for voice data.
+First, we connect to the IP and port provided in the Ready payload. We then send an [Opcode 1 Select Protocol](#gateway-events) with details about our connection:
 
 ###### Select Protocol Structure
 
@@ -221,7 +250,7 @@ Once we receive the properties of a voice server from our [Ready](#ready-structu
     "data": {
       "address": "127.0.0.1",
       "port": 1337,
-      "mode": "xsalsa20_poly1305_lite"
+      "mode": "aead_aes256_gcm_rtpsize"
     },
     "experiments": ["fixed_keyframe_interval"]
   }
@@ -230,15 +259,21 @@ Once we receive the properties of a voice server from our [Ready](#ready-structu
 
 ###### Encryption Mode
 
-| Value                           | Name                               | Nonce Bytes                                                            | Generating Nonce                      |
-| ------------------------------- | ---------------------------------- | ---------------------------------------------------------------------- | ------------------------------------- |
-| xsalsa20_poly1305               | XSalsa20 Poly1305                  | The nonce bytes are the RTP header                                     | Copy the RTP header                   |
-| xsalsa20_poly1305_suffix        | XSalsa20 Poly1305 (Suffix)         | The nonce bytes are 24 bytes appended to the payload of the RTP packet | 24 random bytes                       |
-| xsalsa20_poly1305_lite          | XSalsa20 Poly1305 (Lite)           | The nonce bytes are 4 bytes appended to the payload of the RTP packet  | Incremental 4 bytes (32bit) int value |
-| xsalsa20_poly1305_lite_rtpsize  | XSalsa20 Poly1305 (Lite, RTP Size) | The nonce bytes are 4 bytes appended to the payload of the RTP packet  | Incremental 4 bytes (32bit) int value |
-| aead_aes256_gcm                 | AEAD AES256 GCM                    | The nonce bytes are 4 bytes appended to the payload of the RTP packet  | Incremental 4 bytes (32bit) int value |
-| aead_aes256_gcm_rtpsize         | AEAD AES256 GCM (RTP Size)         | The nonce bytes are 4 bytes appended to the payload of the RTP packet  | Incremental 4 bytes (32bit) int value |
-| aead_xchacha20_poly1305_rtpsize | AEAD XChaCha20 Poly1305 (RTP Size) | The nonce bytes are 4 bytes appended to the payload of the RTP packet  | Incremental 4 bytes (32bit) int value |
+The RTP size variants determine the unencrypted size of the RTP header in [the same way as SRTP](https://tools.ietf.org/html/rfc3711#section-3.1), which considers CSRCs and (optionally) the extension preamble to be part of the unencrypted header.
+The deprecated variants use a fixed size unencrypted header for RTP.
+
+The Gateway will report what encryption modes are available in [Opcode 2 Ready](#gateway-events).
+Compatible modes will always include `aead_xchacha20_poly1305_rtpsize` but may not include `aead_aes256_gcm_rtpsize` depending on the underlying hardware. You must support `aead_xchacha20_poly1305_rtpsize`. You should prefer to use `aead_aes256_gcm_rtpsize` when it is available.
+
+| Value                           | Name                               | Nonce                                                 | Status                |
+| ------------------------------- | ---------------------------------- | ----------------------------------------------------- | --------------------- |
+| aead_aes256_gcm_rtpsize         | AEAD AES256 GCM (RTP Size)         | 32-bit incremental integer value appended to payload  | Preferred             |
+| aead_xchacha20_poly1305_rtpsize | AEAD XChaCha20 Poly1305 (RTP Size) | 32-bit incremental integer value appended to payload  | Required              |
+| xsalsa20_poly1305_lite_rtpsize  | XSalsa20 Poly1305 Lite (RTP Size)  | 32-bit incremental integer value appended to payload  | Deprecated            |
+| aead_aes256_gcm                 | AEAD AES256-GCM                    | 32-bit incremental integer value appended to payload  | Deprecated            |
+| xsalsa20_poly1305               | XSalsa20 Poly1305                  | Copy of RTP header                                    | Deprecated            |
+| xsalsa20_poly1305_suffix        | XSalsa20 Poly1305 (Suffix)         | 24 random bytes                                       | Deprecated            |
+| xsalsa20_poly1305_lite          | XSalsa20 Poly1305 (Lite)           | 32-bit incremental integer value, appended to payload | Deprecated            |
 
 Finally, the voice server will respond with an [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [sending and receiving](#sending-and-receiving-voice) voice data:
 
@@ -258,14 +293,14 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
 
 ```json
 {
-    "op": 4,
-    "d": {
-        "audio_codec": "opus",
-        "media_session_id": "89f1d62f166b948746f7646713d39dbb",
-        "mode": "xsalsa20_poly1305_lite",
-        "secret_key": [ ...251, 100, 11...],
-        "video_codec": "H264"
-    }
+  "op": 4,
+  "d": {
+    "audio_codec": "opus",
+    "media_session_id": "89f1d62f166b948746f7646713d39dbb",
+    "mode": "fixed_keyframe_interval",
+    "secret_key": [ ... ],
+    "video_codec": "H264"
+  }
 }
 ```
 
@@ -289,7 +324,8 @@ The nonce has to be stripped from the payload before encrypting or decrypting au
 
 ### UDP Connections
 
-UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection. Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-structure) to begin sending/receiving voice data.
+UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection.
+Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-structure) to begin sending/receiving voice data.
 
 ##### IP Discovery
 
@@ -343,7 +379,7 @@ You must send at least one Speaking payload before sending or receiving voice da
 | user_id ^2^  | snowflake | The user ID of the speaking user      |
 | delay? ^3^   | integer   | The speaking packet delay             |
 
-^1^ For gateway v4 and below, this field is a boolean.
+^1^ For Gateway v3 and below, this field is a boolean.
 
 ^2^ Only sent by the voice server.
 
@@ -399,11 +435,14 @@ When your client detects that its connection has been severed, it should open a 
 
 ###### Resume Structure
 
-| Field      | Type      | Description                                                |
-| ---------- | --------- | ---------------------------------------------------------- |
-| server_id  | snowflake | The ID of the guild or private channel being connecting to |
-| session_id | string    | The session ID of the current session                      |
-| token      | string    | The voice token for the current session                    |
+| Field        | Type      | Description                                                |
+| ------------ | --------- | ---------------------------------------------------------- |
+| server_id    | snowflake | The ID of the guild or private channel being connecting to |
+| session_id   | string    | The session ID of the current session                      |
+| token        | string    | The voice token for the current session                    |
+| seq_ack? ^1^ | integer   | The last received sequence number                          |
+
+^1^ Only available on Gateway v8 and above.
 
 ###### Example Resume
 
@@ -431,6 +470,33 @@ If successful, the voice server will respond with an [Opcode 9 Resumed](#gateway
 
 If the resume is unsuccessful—for example, due to an invalid session—the WebSocket connection will close with the appropriate [close code](/topics/opcodes-and-status-codes#voice-close-event-codes). You should then follow the [Connecting](#connecting-to-voice) flow to reconnect.
 
+### Buffered Resume
+
+Since version 8, the Gateway can resend buffered messages that have been lost upon resume. To support this, the Gateway includes a sequence number with all messages that may need to be re-sent.
+
+###### Example Message With Sequence Number
+
+```json
+{
+  "op": 5,
+  "d": {
+    "speaking": 0,
+    "delay": 0,
+    "ssrc": 110
+  },
+  "seq": 10
+}
+```
+
+A client using Gateway v8 must include the last sequence number they received under the data `d` key as `seq_ack` in both the [Opcode 3 Heartbeat](#gateway-commands) and [Opcode 7 Resume](#gateway-commands) payloads.
+If no sequence numbered messages have been received, `seq_ack` can be omitted or included with a value of -1.
+
+The Gateway uses a fixed bit length sequence number and handles wrapping the sequence number around. Since Gateway messages will always arrive in order, a client only needs to retain the last sequence number they have seen.
+
+If the session is successfully resumed, the Gateway will respond with an [Opcode 9 Resumed](#gateway-events) and will re-send any messages that the client did not receive.
+
+The resume may be unsuccessful if the buffer for the session no longer contains a message that has been missed. In this case the session will be closed and you should then follow the [Connecting](#connecting-to-voice) flow to reconnect.
+
 ## Other Client Disconnection
 
 When a user disconnects from voice, the voice server will send an [Opcode 13 Client Disconnect](#gateway-commands) payload:
@@ -456,7 +522,7 @@ When received, the SSRC of the user should be discarded.
 
 ## Voice Backend Version
 
-For analytics, the client may want to receive information about the voice backend's current version. This is only available on gateway v6 and above. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload:
+For analytics, the client may want to receive information about the voice backend's current version. This is only available on Gateway v6 and above. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload:
 
 ###### Voice Backend Version Structure
 
