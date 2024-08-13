@@ -17,7 +17,7 @@ function getText(node: React.ReactNode): string {
   }
 
   if (Array.isArray(node)) {
-    return node.map((element) => getText(element as ReactNode)).join("");
+    return node.map(element => getText(element as ReactNode)).join("");
   }
   return "";
 }
@@ -64,7 +64,9 @@ function Heading({ as: As, className, children }: HeadingProps) {
         }}
       >
         {React.createElement(showingCopied ? TickIcon : HyperlinkIcon, {
-          className: `-m-1 ${As === 'h1' ? 'mb-0.25' : 'mb-0.5'} min-w-4 min-h-4 md:group-hover:inline-flex ml-2 w-5 h-5 motion-safe:animate-fade-in-out md:hidden`,
+          className: `-m-1 ${
+            As === "h1" ? "mb-0.25" : "mb-0.5"
+          } min-w-4 min-h-4 md:group-hover:inline-flex ml-2 w-5 h-5 motion-safe:animate-fade-in-out md:hidden`
         })}
       </button>
     </As>
@@ -74,7 +76,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
 export function H1({ className, ...props }: JSX.IntrinsicElements["h1"]) {
   const classes = classNames(
     "not:first-of-type:mt-2 mb-2 mt-3 text-4xl font-bold leading-tight sm:leading-loose",
-    className,
+    className
   );
   return <Heading as="h1" className={classes} {...props} />;
 }
