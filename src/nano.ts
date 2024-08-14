@@ -29,6 +29,10 @@ export const theme = batched([browserTheme, userTheme], (browser, user) => {
 	return user;
 });
 
+theme.subscribe((value) => {
+	localStorage.setItem("calculatedTheme", value);
+})
+
 export const path = atom<string>("/");
 export const hash = atom<string>("");
 
