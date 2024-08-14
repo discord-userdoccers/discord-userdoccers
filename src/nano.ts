@@ -17,7 +17,10 @@ export function createSelector<T>(source: ReadableAtom<T>): (key: T, listener: (
 }
 
 export const browserTheme = atom<"light" | "dark">("dark");
-export const userTheme = atom<"light" | "dark" | "system">("system");
+export const userTheme = atom<"light" | "dark" | "system">(localStorage.getItem("theme") as any || "system");
+userTheme.listen((value) => {
+	localStorage.setItem("theme", value);
+});
 
 export const theme = batched([browserTheme, userTheme], (browser, user) => {
 	if (user === "system") {
@@ -28,3 +31,5 @@ export const theme = batched([browserTheme, userTheme], (browser, user) => {
 
 export const path = atom<string>("/");
 export const hash = atom<string>("");
+
+export const menuOpen = atom(false);

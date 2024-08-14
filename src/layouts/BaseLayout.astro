@@ -1,5 +1,6 @@
 ---
 import { ViewTransitions } from "astro:transitions";
+import "../../shiki/style.css";
 ---
 
 <!doctype html>
@@ -12,10 +13,14 @@ import { ViewTransitions } from "astro:transitions";
 		<slot name="head" />
 		<ViewTransitions />
 		<script>
-			import { browserTheme, theme, userTheme, hash, path } from "../nano";
+			import { browserTheme, theme, hash, path } from "../nano";
 
-			theme.subscribe((value) => {
+			document.documentElement.dataset.theme = theme.get();
+			theme.listen((value) => {
 				document.documentElement.dataset.theme = value;
+			});
+			document.addEventListener("astro:before-swap", (e) => {
+				e.newDocument.documentElement.dataset.theme = theme.get();
 			});
 
 			const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
@@ -23,8 +28,6 @@ import { ViewTransitions } from "astro:transitions";
 			prefersDarkScheme.addEventListener("change", (e) => {
 				browserTheme.set(e.matches ? "dark" : "light");
 			});
-
-			userTheme.set((localStorage.getItem("theme") as any) ?? "system");
 
 			document.addEventListener("astro:after-swap", () => {
 				path.set(window.location.pathname);
