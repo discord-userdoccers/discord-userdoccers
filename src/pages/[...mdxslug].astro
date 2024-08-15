@@ -11,15 +11,22 @@ export const getStaticPaths = (async () => {
 	return mapped;
 }) satisfies GetStaticPaths;
 
-const { entry } = Astro.props;
-const { Content } = await entry.render();
+const {
+	entry: { render, body, slug },
+} = Astro.props;
+const { Content } = await render();
 
-const title = entry.slug
-	.split("/")
-	.map((s) => s.charAt(0).toLocaleUpperCase() + s.slice(1))
-	.join(" - ");
+const spl = body.split("\n");
+const title = spl.shift()!.replace(/#+\s+/, "");
+const description = spl.join(" ").replaceAll(/#+\s+/gm, "").replaceAll(/\s+/gm, " ").trim().slice(0, 200).trim() + "...";
 ---
 
-<Layout title={title}>
+<Layout title={title} description={description}>
+	<Fragment slot="head">
+		<link rel="canonical" href={`${import.meta.env.SITE}/${slug}`} />
+		<meta property="og:url" content={`${import.meta.env.SITE}/${slug}`} />
+
+		{slug === "intro" && <meta property="og:image" content="/banner.webp" />}
+	</Fragment>
 	<Content components={mdxComponents} />
 </Layout>
