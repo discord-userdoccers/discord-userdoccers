@@ -19,6 +19,10 @@ export default defineConfig({
 		remarkPlugins: [remarkSuperSub],
 		shikiConfig: {
 			transformers: [shikiMetaParser(), shikiDiffNotation(), shikiLineNumbers()],
+			themes: {
+				light: "github-light",
+				dark: "github-dark",
+			},
 		},
 	},
 });
