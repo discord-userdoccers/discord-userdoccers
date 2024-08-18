@@ -844,8 +844,8 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/voice-connections#resuming-voice-connection">
                 Resuming Voice Connection
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#other-client-disconnection">
-                Other Client Disconnection
+              <NavigationSubLink href="/topics/voice-connections#connected-clients">
+                Connected Clients
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
                 Voice Backend Version
