@@ -200,11 +200,18 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 
 | Field              | Type                                                 | Description                                                  |
 | ------------------ | ---------------------------------------------------- | ------------------------------------------------------------ |
-| protocol           | string                                               | The voice protocol to use (`udp` or `webrtc`)                |
+| protocol           | string                                               | The [voice protocol](#protocol-type) to use                  |
 | data               | ?[protocol data](#protocol-data-structure) \| string | The voice connection data or WebRTC SDP                      |
 | rtc_connection_id? | string                                               | The UUID4 RTC connection ID, used for analytics              |
-| codecs?            | array[codec object]                                  | The supported audio/video codecs (defaults to OPUS and H264) |
+| codecs?            | array[[codec](#codec-structure) object]              | The supported audio/video codecs                             |
 | experiments?       | array[string]                                        | The [received voice experiments](#ready-structure) to enable |
+
+###### Protocol Type
+
+| Value  | Description                                       |
+| ------ | ------------------------------------------------- |
+| udp    | [Standard UDP voice connection](#udp-connections) |
+| webrtc | [WebRTC voice connection](#webrtc-connections)    |
 
 ###### Protocol Data Structure
 
@@ -215,6 +222,37 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 | mode        | string  | The [encryption mode](#encryption-mode) to use |
 
 ^1^ These fields are only used to receive voice data. If you do not care about receiving voice data, you can randomize these values.
+
+###### Codec Structure
+
+| Field              | Type    | Description                                                                 |
+| ------------------ | ------- | --------------------------------------------------------------------------- |
+| name               | string  | The [name of the codec](#supported-codecs)                                  |
+| type               | string  | The [type of codec](#supported-codecs)                                      |
+| priority ^1^       | integer | The preferred priority of the codec as a multiple of 1000 (unique per type) |
+| payload_type ^2^   | integer | The dynamic RTP payload type of the codec                                   |
+| rtx_payload_type?  | integer | The dynamic RTP payload type of the retransmission codec (video-only)       ||
+| encode?            | boolean | Whether the client supports encoding this codec (default `true`)            |
+| decode?            | boolean | Whether the client supports decoding this codec (default `true`)            |
+
+^1^ For audio, opus is the only available codec and should be priority `1000`.
+
+^2^ For backwards compatibility, the payload type of the opus codec defaults to `120` when codecs are not specified. No payload type should be set to `96`, as it is reserved for probe packets.
+
+###### Supported Codecs
+
+Providing codecs is optional due to backwards compatibility with old clients and bots that do not handle video.
+If the client does not provide any codecs, the server assumes an opus audio codec with a payload type of `120` and no specific video codec.
+If no clients with specified video codecs are connected, the server defaults to H264.
+
+| Type  | Name  | Status    |
+| ----- | ----- | --------- |
+| audio | opus  | Required  |
+| video | AV1   | Preferred |
+| video | H265  | Preferred |
+| video | H264  | Default   |
+| video | VP8   | Available |
+| video | VP9   | Available |
 
 ###### Example Select Protocol
 
@@ -228,6 +266,33 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
       "port": 1337,
       "mode": "aead_aes256_gcm_rtpsize"
     },
+    "codecs": [
+      {
+        "name": "opus",
+        "type": "audio",
+        "priority": 1000,
+        "payload_type": 120
+      },
+      {
+        "name": "AV1",
+        "type": "video",
+        "priority": 1000,
+        "payload_type": 101,
+        "rtx_payload_type": 102,
+        "encode": false,
+        "decode": true
+      },
+      {
+        "name": "H264",
+        "type": "video",
+        "priority": 3000,
+        "payload_type": 103,
+        "rtx_payload_type": 104,
+        "encode": true,
+        "decode": true
+      }
+    ],
+    "rtc_connection_id": "d6b92f64-40df-48eb-8bce-7facb043149a",
     "experiments": ["fixed_keyframe_interval"]
   }
 }
@@ -291,9 +356,9 @@ This may also be sent to update the current `media_session_id` or `keyframe_inte
 
 ###### Session Update Structure (Send)
 
-| Field  | Type                | Description                          |
-| ------ | ------------------- | ------------------------------------ |
-| codecs | array[codec object] | The new supported audio/video codecs |
+| Field  | Type                                    | Description                      |
+| ------ | --------------------------------------- | -------------------------------- |
+| codecs | array[[codec](#codec-structure) object] | The supported audio/video codecs |
 
 ###### Session Update Structure (Receive)
 
@@ -583,7 +648,7 @@ These events are meant to inform a new client of all existing clients and their 
 | Field   | Type      | Description                            |
 | ------- | --------- | -------------------------------------- |
 | user_id | snowflake | The ID of the user that connected      |
-| flags   | integer   | The [user's voice flags](#voice-flags) |
+| flags   | ?integer  | The [user's voice flags](#voice-flags) |
 
 ###### Voice Flags
 
