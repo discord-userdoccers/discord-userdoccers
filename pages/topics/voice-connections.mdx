@@ -1,6 +1,12 @@
 # Voice
 
-Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#connections) connection. However, they use a different set of payloads and a separate UDP-based connection for voice data transmission. Because UDP is used for both receiving and transmitting voice data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information). The Discord voice servers implement functionality (see [IP Discovery](#ip-discovery)) for discovering the local machine's remote UDP IP/Port, which can assist in some network configurations. While video from a camera feed is sent in the same connection as voice, streaming (the "Go Live" feature) uses seperate Gateway Opcodes and a second below voice connection.
+Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#connections) connection.
+However, they use a different set of payloads and a separate UDP-based connection for voice data transmission.
+Because UDP is generally used for both receiving and transmitting voice data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information).
+The Discord voice servers implement functionality (see [IP Discovery](#ip-discovery)) for discovering the local machine's remote UDP IP/Port, which can assist in some network configurations.
+If you cannot support a UDP connection, you may implement a [WebRTC connection](#webrtc-connections) instead.
+
+While video from a camera feed is sent in the same connection as voice, streaming (the "Go Live" feature) uses seperate [Gateway Opcodes](/topics/gateway) and a second below voice connection.
 
 ## Voice Gateway
 
@@ -33,6 +39,7 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Resume](#resume-structure)                               | Resume a dropped connection               |
 | [Heartbeat](#example-heartbeat-since-v8)                  | Maintain an active WebSocket connection   |
 | [Select Protocol](#select-protocol-structure)             | Select the voice protocol and mode        |
+| [Session Update](#session-update-structure-(send))        | Indicate the client's supported codecs    |
 | [Speaking](#speaking-structure)                           | Indicate the user's speaking state        |
 | [Voice Backend Version](#voice-backend-version-structure) | Request the current voice backend version |
 
@@ -45,7 +52,7 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                                  |
 | [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                                          |
 | [Session Description](#session-description-structure)               | Acknowledges a successful Select Protocol and contains the information needed to send/receive voice data             |
-| [Session Update](#session-update-structure)                         | Client session description changed                                                                                   |
+| [Session Update](#session-update-structure-(receive))               | Client session description changed                                                                                   |
 | [Speaking](#speaking-structure)                                     | User speaking state updated                                                                                          |
 | [Client Connect](#client-connections)                               | A user connected to voice, also sent on initial connection to inform the client of existing users                    |                                                                                 |
 | [Client Disconnect](#client-disconnections)                         | A user disconnected from voice                                                                                       |
@@ -72,7 +79,7 @@ Having the `MANAGE_CHANNELS` permission bypasses this limit and allows you to jo
 
 </Alert>
 
-## Establishing a Voice WebSocket Connection
+### Establishing a Voice WebSocket Connection
 
 Once we retrieve a `session_id`, `token`, and `endpoint` information, we can connect and handshake with the voice server over another secure WebSocket. Unlike the Gateway endpoint we receive in a [Get Gateway](/topics/gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/topics/gateway-events#voice-server-update) payload does not contain a URL protocol, so some libraries may require manually prepending it with `wss://` before connecting. Once connected to the voice WebSocket endpoint, we can immediately send an [Opcode 0 Identify](#gateway-commands) payload with our `server_id`, `user_id`, `session_id`, and `token`:
 
@@ -147,18 +154,18 @@ interface StreamParametersWire {
 }
 ```
 
-The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of the SSRC, connection IP/port, supported encryption modes, and experiments the voice server expects:
+The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of the SSRC, connection IP/port, supported encryption modes, and experiments the voice server supports:
 
 ###### Ready Structure
 
-| Field       | Type                 | Description                                  |
-| ----------- | -------------------- | -------------------------------------------- |
-| ssrc        | integer              | The SSRC of the user's voice connection      |
-| ip          | string               | The IP address of the voice server           |
-| port        | integer              | The port of the voice server                 |
-| modes       | array[string]        | An array of supported voice encryption modes |
-| experiments | array[string]        | An array of available voice experiments      |
-| streams     | array[stream object] | An array of available video streams          |
+| Field       | Type                                      | Description                                  |
+| ----------- | ----------------------------------------- | -------------------------------------------- |
+| ssrc        | integer                                   | The SSRC of the user's voice connection      |
+| ip          | string                                    | The IP address of the voice server           |
+| port        | integer                                   | The port of the voice server                 |
+| modes       | array[string]                             | An array of supported voice encryption modes |
+| experiments | array[string]                             | An array of available voice experiments      |
+| streams     | array[[stream](#stream-structure) object] | An array of available video streams          |
 
 ###### Example Ready
 
@@ -184,88 +191,10 @@ The voice server should respond with an [Opcode 2 Ready](#gateway-events) payloa
 }
 ```
 
-## Heartbeating
-
-In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode 8 Hello](#gateway-events).
-
-This is sent at the start of the connection. Be warned that the [Opcode 8 Hello](#gateway-events) structure differs by Gateway version.
-Versions below v3 follow a flat structure without `op` or `d` fields, including only a single `heartbeat_interval` field. Be sure to expect this different format based on your version.
-
-This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish.
-For example, the web client uses a heartbeat interval of `min(heartbeat_interval, 5000)` if the Gateway version is v4 or above, and `heartbeat_interval * 0.1` otherwise. The desktop client uses the provided heartbeat interval if the Gateway version is v4 or above, and `heartbeat_interval * 0.25` otherwise.
-
-###### Hello Structure
-
-| Field              | Type    | Description                                                           |
-| ------------------ | ------- | --------------------------------------------------------------------- |
-| v                  | integer | The [voice server version](#gateway-versions)                         |
-| heartbeat_interval | integer | The minimum interval (in milliseconds) the client should heartbeat at |
-
-###### Example Hello
-
-```json
-{
-  "op": 8,
-  "d": {
-    "v": 8,
-    "heartbeat_interval": 41250
-  }
-}
-```
-
-The Gateway may request a heartbeat from the client in some situations by sending an [Opcode 3 Heartbeat](#gateway-events). When this occurs, the client should immediately send an [Opcode 3 Heartbeat](#gateway-events) without waiting the remainder of the current interval.
-
-After receiving [Opcode 8 Hello](#gateway-events), you should send [Opcode 3 Heartbeat](#gateway-events)—which contains an integer nonce—every elapsed interval:
-
-###### Example Heartbeat Before v8
-
-```json
-{
-  "op": 3,
-  "d": 1501184119561
-}
-```
-
-###### Example Heartbeat Since v8
-
-```json
-{
-  "op": 3,
-  "d": {
-    "t": 1501184119561,
-    "seq_ack": 10
-  }
-}
-```
-
-Since Gateway v8, heartbeat messages must include `seq_ack` which contains the sequence number of the last numbered message received from the gateway. See [Buffered Resume](#buffered-resume) for more information.
-
-In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) that contains the previously sent nonce:
-
-###### Example Heartbeat ACK Before v8
-
-```json
-{
-  "op": 6,
-  "d": 1501184119561
-}
-```
-
-###### Example Heartbeat ACK Since v8
-
-```json
-{
-  "op": 6,
-  "d": {
-    "t": 1501184119561
-  }
-}
-```
-
-## Establishing a Voice Connection
+### Establishing a Voice Connection
 
 Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for voice data.
-First, we connect to the IP and port provided in the Ready payload. We then send an [Opcode 1 Select Protocol](#gateway-events) with details about our connection:
+First, we establish either a [UDP connection](#udp-connections) using the [Ready](#ready-structure) payload data, or prepare a [WebRTC](#webrtc-connections) SDP. We then send an [Opcode 1 Select Protocol](#gateway-events) with details about our connection:
 
 ###### Select Protocol Structure
 
@@ -274,7 +203,7 @@ First, we connect to the IP and port provided in the Ready payload. We then send
 | protocol           | string                                               | The voice protocol to use (`udp` or `webrtc`)                |
 | data               | ?[protocol data](#protocol-data-structure) \| string | The voice connection data or WebRTC SDP                      |
 | rtc_connection_id? | string                                               | The UUID4 RTC connection ID, used for analytics              |
-| codecs?            | array[codec object]                                  | The supported audio/video codecs                             |
+| codecs?            | array[codec object]                                  | The supported audio/video codecs (defaults to OPUS and H264) |
 | experiments?       | array[string]                                        | The [received voice experiments](#ready-structure) to enable |
 
 ###### Protocol Data Structure
@@ -351,9 +280,22 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
 }
 ```
 
-Sometimes, the voice server will later send an [Opcode 14 Session Update](#gateway-events) to indicate an update to the voice session:
+We can now start sending and receiving voice data over the previously established [UDP](#udp-connections) or [WebRTC](#webrtc-connections) connection.
 
-###### Session Update Structure
+### Session Updates
+
+At any time, the client may update the `codecs` they support using an [Opcode 14 Session Update](#gateway-events).
+If a user joins that does not support the current codecs, or a user indicates that they no longer support the current codecs, the voice server will send an [Opcode 14 Session Update](#gateway-events):
+
+This may also be sent to update the current `media_session_id` or `keyframe_interval`.
+
+###### Session Update Structure (Send)
+
+| Field  | Type                | Description                          |
+| ------ | ------------------- | ------------------------------------ |
+| codecs | array[codec object] | The new supported audio/video codecs |
+
+###### Session Update Structure (Receive)
 
 | Field              | Type    | Description                                  |
 | ------------------ | ------- | -------------------------------------------- |
@@ -362,15 +304,75 @@ Sometimes, the voice server will later send an [Opcode 14 Session Update](#gatew
 | media_session_id?  | string  | The new media session ID, used for analytics |
 | keyframe_interval? | integer | The keyframe interval in milliseconds        |
 
-We can now start encrypting/decrypting and sending/receiving voice data over the previously established connection.
+## Heartbeating
 
-<Alert type="warn">
+In order to maintain your WebSocket connection, you need to continuously send heartbeats at the interval determined in [Opcode 8 Hello](#gateway-events).
 
-The nonce has to be stripped from the payload before encrypting or decrypting audio data.
+This is sent at the start of the connection. Be warned that the [Opcode 8 Hello](#gateway-events) structure differs by Gateway version.
+Versions below v3 follow a flat structure without `op` or `d` fields, including only a single `heartbeat_interval` field. Be sure to expect this different format based on your version.
 
-</Alert>
+This heartbeat interval is the minimum interval you should heartbeat at. You can heartbeat at a faster interval if you wish.
+For example, the web client uses a heartbeat interval of `min(heartbeat_interval, 5000)` if the Gateway version is v4 or above, and `heartbeat_interval * 0.1` otherwise. The desktop client uses the provided heartbeat interval if the Gateway version is v4 or above, and `heartbeat_interval * 0.25` otherwise.
 
-### UDP Connections
+###### Hello Structure
+
+| Field              | Type    | Description                                                           |
+| ------------------ | ------- | --------------------------------------------------------------------- |
+| v                  | integer | The [voice server version](#gateway-versions)                         |
+| heartbeat_interval | integer | The minimum interval (in milliseconds) the client should heartbeat at |
+
+###### Example Hello
+
+```json
+{
+  "op": 8,
+  "d": {
+    "v": 8,
+    "heartbeat_interval": 41250
+  }
+}
+```
+
+The Gateway may request a heartbeat from the client in some situations by sending an [Opcode 3 Heartbeat](#gateway-events). When this occurs, the client should immediately send an [Opcode 3 Heartbeat](#gateway-events) without waiting the remainder of the current interval.
+
+After receiving [Opcode 8 Hello](#gateway-events), you should send [Opcode 3 Heartbeat](#gateway-events)—which contains an integer nonce—every elapsed interval:
+
+###### Heartbeat Structure
+
+| Field    | Type    | Description                                              |
+| -------- | ------- | -------------------------------------------------------- |
+| t        | integer | A unique integer nonce (e.g. the current unix timestamp) |
+| seq_ack? | integer | The last received sequence number                        |
+
+###### Example Heartbeat
+
+```json
+{
+  "op": 3,
+  "d": {
+    "t": 1501184119561,
+    "seq_ack": 10
+  }
+}
+```
+
+Since Gateway v8, heartbeat messages must include `seq_ack` which contains the sequence number of the last numbered message received from the gateway. See [Buffered Resume](#buffered-resume) for more information.
+Previous versions follow a flat structure, with the `d` field representing the `t` field in both the [Heartbeat](#example-heartbeat) and [Heartbeat ACK](#example-heartbeat-ack) structure.
+
+In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) that contains the previously sent nonce:
+
+###### Example Heartbeat ACK
+
+```json
+{
+  "op": 6,
+  "d": {
+    "t": 1501184119561
+  }
+}
+```
+
+## UDP Connections
 
 UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection.
 Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-structure) to begin sending/receiving voice data.
@@ -393,6 +395,12 @@ Voice data sent to and received from Discord should be encoded or decoded with [
 
 When receiving data, the user who sent the voice packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any voice data is received, so the user ID should always be available.
 
+<Alert type="warn">
+
+The nonce has to be stripped from the payload before encrypting or decrypting audio data.
+
+</Alert>
+
 ###### Voice Packet Structure
 
 | Field           | Type                          | Size    |
@@ -404,7 +412,7 @@ When receiving data, the user who sent the voice packet is identified by caching
 | SSRC            | Unsigned integer (big endian) | 4 bytes |
 | Encrypted Audio | Binary data                   | n bytes |
 
-### WebRTC Connections
+## WebRTC Connections
 
 WebRTC allows for direct peer-to-peer voice connections, and is most commonly used in browsers. To use WebRTC, you must first send a [Select Protocol](#establishing-a-voice-connection) payload as outlined above, with the `protocol` field set to `webrtc`, and `data` set to the client's WebRTC SDP. The voice server will respond with a [Session Description](#session-description-structure) payload, with the `sdp` field set to the server's WebRTC SDP. The client can then use this SDP to establish a WebRTC connection.
 
@@ -549,15 +557,15 @@ The resume may be unsuccessful if the buffer for the session no longer contains 
 
 ### Client Connections
 
-At connection start, and when a client thereafter connects to voice, the voice server will send a series of events, including an [Opcode 11 Client Connect](#gateway-events), and [Opcode 18 Client Flags](#gateway-events) and [Opcode 20 Client Platform]](#gateway-events) for every joined user.
+At connection start, and when a client thereafter connects to voice, the voice server will send a series of events, including an [Opcode 11 Client Connect](#gateway-events), and [Opcode 18 Client Flags](#gateway-events) and [Opcode 20 Client Platform](#gateway-events) for every joined user.
 
 These events are meant to inform a new client of all existing clients and their flags/platform, and inform existing clients of a newly-connected client.
 
 ###### Client Connect Structure
 
-| Field    | Type      | Description                        |
-| -------- | --------- | ---------------------------------- |
-| user_ids | snowflake | The IDs of the user that connected |
+| Field    | Type      | Description                         |
+| -------- | --------- | ----------------------------------- |
+| user_ids | snowflake | The IDs of the users that connected |
 
 ###### Example Client Connect
 

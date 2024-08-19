@@ -833,9 +833,6 @@ export default function Navigation() {
                 Connecting to Voice
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#heartbeating">Heartbeating</NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-websocket-connection">
-                Establishing a Voice WebSocket Connection
-              </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#udp-connections">UDP Connections</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#webrtc-connections">
                 WebRTC Connections
