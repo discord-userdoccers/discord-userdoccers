@@ -47,7 +47,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
   }, [showingCopied]);
 
   return (
-    <As className={"group " + classes} id={anchor}>
+    <As className={`group ${classes}`} id={anchor}>
       <a href={`#${anchor}`}>{children}</a>
       <button
         type="button"
