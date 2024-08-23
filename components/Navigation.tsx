@@ -721,8 +721,8 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#bots">Bots</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#webhooks">Webhooks</NavigationSubLink>
-              <NavigationSubLink href="/topics/oauth2#endpoints">Endpoints</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#oauth2-token-object">OAuth2 Token Object</NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
         >
