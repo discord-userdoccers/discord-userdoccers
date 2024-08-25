@@ -38,7 +38,7 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Identify](#identify-structure)                           | Start a new voice connection              |
 | [Resume](#resume-structure)                               | Resume a dropped connection               |
 | [Heartbeat](#example-heartbeat-since-v8)                  | Maintain an active WebSocket connection   |
-| [Media Sink Wants](#dynamic-media-quality)                | Indicate the desired media stream quality |
+| [Media Sink Wants](#simulcasting)                         | Indicate the desired media stream quality |
 | [Select Protocol](#select-protocol-structure)             | Select the voice protocol and mode        |
 | [Session Update](<#session-update-structure-(send)>)      | Indicate the client's supported codecs    |
 | [Speaking](#speaking-structure)                           | Indicate the user's speaking state        |
@@ -54,10 +54,10 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Client Flags](#client-connections)                                 | Contains the flags of a user that connected to voice, also sent on initial connection for each existing user         |
 | [Client Platform](#client-connections)                              | Contains the platform type of a user that connected to voice, also sent on initial connection for each existing user |
 | [Client Disconnect](#client-disconnections)                         | A user disconnected from voice                                                                                       |
-| [Media Sink Wants](#dynamic-media-quality)                          | Requested media stream quality updated                                                                               |
+| [Media Sink Wants](#simulcasting)                                   | Requested media stream quality updated                                                                               |
 | [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                                  |
 | [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                                          |
-| [Session Description](#session-description-structure)               | Acknowledges a successful protocol selection and contains the information needed to send/receive RTC data          |
+| [Session Description](#session-description-structure)               | Acknowledges a successful protocol selection and contains the information needed to send/receive RTC data            |
 | [Session Update](<#session-update-structure-(receive)>)             | Client session description changed                                                                                   |
 | [Speaking](#speaking-structure)                                     | User speaking state updated                                                                                          |
 | [Voice Backend Version](<#example-voice-backend-version-(receive)>) | Current voice backend version information, as requested by the client                                                |
@@ -94,51 +94,46 @@ Once we retrieve a `session_id`, `token`, and `endpoint` information, we can con
 | session_id | string                                    | The session ID of the current session                      |
 | token      | string                                    | The voice token for the current session                    |
 | video?     | boolean                                   | Whether this connection supports video (default false)     |
-| streams?   | array[[stream](#stream-structure) object] | An array of stream objects                                 |
+| streams?   | array[[stream](#stream-structure) object] | Simulcast streams to send                                  |
 
 ###### Stream Structure
 
-| Field      | Type                                      | Description                                                |
-| ---------- | ----------------------------------------- | ---------------------------------------------------------- |
-| server_id  | snowflake                                 | The ID of the guild or private channel being connecting to |
-| user_id    | snowflake                                 | The ID of the current user                                 |
-| session_id | string                                    | The session ID of the current session                      |
-| token      | string                                    | The voice token for the current session                    |
-| video?     | boolean                                   | Whether or not this connection supports video              |
-| streams?   | array[[stream](#stream-structure) object] | An array of stream objects                                 |
+| Field           | Type                                                     | Description                                     |
+| --------------- | -------------------------------------------------------- | ----------------------------------------------- |
+| type ^1^        | string                                                   | The [type of media stream](#media-type) to send |
+| rid             | string                                                   | The RTP stream ID                               |
+| quality?        | integer                                                  | The media quality to send (0-100, default 0)    |
+| active?         | boolean                                                  | Whether the stream is active (default false)    |
+| max_bitrate?    | integer                                                  | The maximum bitrate to send in bps              |
+| max_framerate?  | integer                                                  | The maximum framerate to send in fps            |
+| max_resolution? | [stream resolution](#stream-resolution-structure) object | The maximum resolution to send                  |
+| ssrc?           | integer                                                  | The SSRC of the stream                          |
+| rtx_ssrc?       | integer                                                  | The SSRC of the retransmission stream           |
 
-```ts
-export type MediaEngineSinkWantValue = 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
+^1^ Currently, this field is ignored and the only type supported is `video`.
 
-enum MediaTypes {
-  AUDIO = "audio",
-  VIDEO = "video",
-  SCREEN = "screen",
-}
+###### Media Type
 
-enum ResolutionTypes {
-  FIXED = "fixed",
-  SOURCE = "source",
-}
+| Value  | Description |
+| ------ | ----------- |
+| audio  | Audio       |
+| video  | Video       |
+| screen | Screenshare |
 
-interface StreamResolution {
-  type: ResolutionTypes;
-  width: number;
-  height: number;
-}
+###### Stream Resolution Structure
 
-interface StreamParametersWire {
-  type: MediaTypes;
-  ssrc: number;
-  rtx_ssrc: number;
-  rid: string;
-  quality: MediaEngineSinkWantValue;
-  active: boolean;
-  max_bitrate?: number;
-  max_framerate?: number;
-  max_resolution?: StreamResolution;
-}
-```
+| Field  | Type   | Description                                    |
+| ------ | ------ | ---------------------------------------------- |
+| type   | string | The [resolution type](#resolution-type) to use |
+| width  | number | The fixed resolution width, or 0 for source    |
+| height | number | The fixed resolution height, or 0 for source   |
+
+###### Resolution Type
+
+| Value  | Description       |
+| ------ | ----------------- |
+| fixed  | Fixed resolution  |
+| source | Source resolution |
 
 ###### Example Identify
 
@@ -148,10 +143,13 @@ interface StreamParametersWire {
   "d": {
     "server_id": "41771983423143937",
     "user_id": "104694319306248192",
-    "session_id": "my_session_id",
-    "token": "my_token",
+    "session_id": "30f32c5d54ae86130fc4a215c7474263",
+    "token": "66d29164ee8cd919",
     "video": true,
-    "streams": []
+    "streams": [
+      { "type": "video", "rid": "100", "quality": 100 },
+      { "type": "video", "rid": "50", "quality": 50 }
+    ]
   }
 }
 ```
@@ -531,7 +529,7 @@ The following flags can be used as a bitwise mask. For example `5` would be prio
 }
 ```
 
-When a different user's speaking state is updated, the voice server will send an [Opcode 5 Speaking](#gateway-events) payload:
+When a different user's speaking state is updated, and for each user with a speaking state at connection start, the voice server will send an [Opcode 5 Speaking](#gateway-events) payload:
 
 ###### Example Speaking (Receive)
 
@@ -542,6 +540,88 @@ When a different user's speaking state is updated, the voice server will send an
     "speaking": 5,
     "ssrc": 2,
     "user_id": "852892297661906993"
+  }
+}
+```
+
+## Video
+
+To notify the voice server that you are sending video, send an [Opcode 12 Video](#gateway-commands) payload:
+
+<Alert type="warn">
+
+You must send at least one [Video](#video) payload before sending or receiving video data, or you will be disconnected with an Invalid SSRC error.
+
+</Alert>
+
+###### Video Structure
+
+| Field        | Type                                      | Description                                                |
+| ------------ | ----------------------------------------- | ---------------------------------------------------------- |
+| audio_ssrc   | integer                                   | The [SSRC](#ready-structure) of the audio stream           |
+| video_ssrc   | integer                                   | The [SSRC](#stream-structure) of the video stream          |
+| rtx_ssrc ^1^ | integer                                   | The [SSRC](#stream-structure) of the retransmission stream |
+| streams      | array[[stream](#stream-structure) object] | Simulcast streams to send                                  |
+| user_id ^2^  | snowflake                                 | The user ID of the video user                              |
+
+^1^ Not sent by the voice server.
+
+^2^ Only sent by the voice server.
+
+###### Example Video (Send)
+
+```json
+{
+  "op": 12,
+  "d": {
+    "audio_ssrc": 13959,
+    "video_ssrc": 13960,
+    "rtx_ssrc": 13961,
+    "streams": [
+      {
+        "type": "video",
+        "rid": "100",
+        "ssrc": 13960,
+        "active": true,
+        "quality": 100,
+        "rtx_ssrc": 13961,
+        "max_bitrate": 9000000,
+        "max_framerate": 60,
+        "max_resolution": {
+          "type": "source",
+          "width": 0,
+          "height": 0
+        }
+      }
+    ]
+  }
+}
+```
+
+When a different user's video state is updated, and for each user with a video state at connection start, the voice server will send an [Opcode 12 Video](#gateway-events) payload:
+
+```json
+{
+  "op": 12,
+  "d": {
+    "user_id": "852892297661906993",
+    "audio_ssrc": 13959,
+    "video_ssrc": 13960,
+    "streams": [
+      {
+        "ssrc": 13960,
+        "rtx_ssrc": 13961,
+        "rid": "100",
+        "quality": 100,
+        "max_resolution": {
+          "width": 0,
+          "type": "source",
+          "height": 0
+        },
+        "max_framerate": 60,
+        "active": true
+      }
+    ]
   }
 }
 ```
@@ -723,10 +803,10 @@ When received, the SSRC of the user should be discarded.
 }
 ```
 
-## Dynamic Media Quality
+## Simulcasting
 
-The voice server supports dynamic media quality, allowing clients to send multiple video streams of different qualities and adjust the quality of the video stream they receive.
-This can be used to lower the quality of a video stream when the user is not in focus, or to disable the transmission of a voice or video stream entirely when a user is off-screen or a client has muted them.
+The voice server supports simulcasting, allowing clients to send multiple video streams of different qualities and adjust the quality of the video stream they receive to fit bandwidth constraints.
+This can be used to lower the quality of a received video stream when the user is not in focus, or to disable the transmission of a voice or video stream entirely when a user is off-screen or a client has muted them.
 
 A media stream specified by a given SSRC can be requested at a quality level between 0 and 100, with 0 disabling it entirely and 100 being the highest quality.
 Additionally, if the user offers multiple streams for a given media type, the client can request a specific stream by setting its quality level to 100 and the others to 0.
@@ -735,6 +815,12 @@ A special SSRC value of `any` can be used to request a quality level for all str
 Clients may request the media quality they want per SSRC by sending an [Opcode 15 Media Sink Wants](#gateway-commands) payload with a mapping of SSRCs to quality levels.
 
 Likewise, the voice server may send a [Opcode 15 Media Sink Wants](#gateway-events) payload to inform the client of the quality levels it should be sending for each SSRC.
+
+<Alert type="warn">
+
+This is only available on [Gateway version 5 and above](#gateway-versions).
+
+</Alert>
 
 ###### Example Media Sink Wants
 
@@ -749,7 +835,13 @@ Likewise, the voice server may send a [Opcode 15 Media Sink Wants](#gateway-even
 
 ## Voice Backend Version
 
-For analytics, the client may want to receive information about the voice backend's current version. This is only available on Gateway v6 and above. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload:
+For analytics, the client may want to receive information about the voice backend's current version. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload:
+
+<Alert type="warn">
+
+This is only available on [Gateway version 6 and above](#gateway-versions).
+
+</Alert>
 
 ###### Voice Backend Version Structure
 

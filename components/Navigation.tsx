@@ -838,14 +838,15 @@ export default function Navigation() {
                 WebRTC Connections
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#speaking">Speaking</NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#video">Video</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#resuming-voice-connection">
                 Resuming Voice Connection
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#connected-clients">
                 Connected Clients
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#dynamic-media-quality">
-                Dynamic Media Quality
+              <NavigationSubLink href="/topics/voice-connections#simulcasting">
+                Simulcasting
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
                 Voice Backend Version
