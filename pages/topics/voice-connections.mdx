@@ -1,8 +1,8 @@
 # Voice
 
 Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#connections) connection.
-However, they use a different set of payloads and a separate UDP-based connection for voice data transmission.
-Because UDP is generally used for both receiving and transmitting voice data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information).
+However, they use a different set of payloads and a separate UDP-based connection for RTC data transmission.
+Because UDP is generally used for both receiving and transmitting RTC data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information).
 The Discord voice servers implement functionality (see [IP Discovery](#ip-discovery)) for discovering the local machine's remote UDP IP/Port, which can assist in some network configurations.
 If you cannot support a UDP connection, you may implement a [WebRTC connection](#webrtc-connections) instead.
 
@@ -57,7 +57,7 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Media Sink Wants](#dynamic-media-quality)                          | Requested media stream quality updated                                                                               |
 | [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                                  |
 | [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                                          |
-| [Session Description](#session-description-structure)               | Acknowledges a successful protocol selection and contains the information needed to send/receive voice data          |
+| [Session Description](#session-description-structure)               | Acknowledges a successful protocol selection and contains the information needed to send/receive RTC data          |
 | [Session Update](<#session-update-structure-(receive)>)             | Client session description changed                                                                                   |
 | [Speaking](#speaking-structure)                                     | User speaking state updated                                                                                          |
 | [Voice Backend Version](<#example-voice-backend-version-(receive)>) | Current voice backend version information, as requested by the client                                                |
@@ -195,7 +195,7 @@ The voice server should respond with an [Opcode 2 Ready](#gateway-events) payloa
 
 ### Establishing a Voice Connection
 
-Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for voice data.
+Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for RTC data.
 First, we establish either a [UDP connection](#udp-connections) using the [Ready](#ready-structure) payload data, or prepare a [WebRTC](#webrtc-connections) SDP. We then send an [Opcode 1 Select Protocol](#gateway-events) with details about our connection:
 
 ###### Select Protocol Structure
@@ -223,7 +223,7 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 | port ^1^    | integer | The discovered UDP port of the client          |
 | mode        | string  | The [encryption mode](#encryption-mode) to use |
 
-^1^ These fields are only used to receive voice data. If you do not care about receiving voice data, you can randomize these values.
+^1^ These fields are only used to receive RTC data. If you only wish to send frames and do not care about receiving, you can randomize these values.
 
 ###### Codec Structure
 
@@ -318,7 +318,7 @@ Compatible modes will always include `aead_xchacha20_poly1305_rtpsize` but may n
 | xsalsa20_poly1305_suffix        | XSalsa20 Poly1305 (Suffix)         | 24 random bytes                                       | Deprecated |
 | xsalsa20_poly1305_lite          | XSalsa20 Poly1305 (Lite)           | 32-bit incremental integer value, appended to payload | Deprecated |
 
-Finally, the voice server will respond with an [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [sending and receiving](#sending-and-receiving-voice) voice data:
+Finally, the voice server will respond with an [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [sending and receiving](#sending-and-receiving-voice) RTC data:
 
 ###### Session Description Structure
 
@@ -347,7 +347,7 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
 }
 ```
 
-We can now start sending and receiving voice data over the previously established [UDP](#udp-connections) or [WebRTC](#webrtc-connections) connection.
+We can now start sending and receiving RTC data over the previously established [UDP](#udp-connections) or [WebRTC](#webrtc-connections) connection.
 
 ### Session Updates
 
@@ -442,7 +442,7 @@ In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) th
 ## UDP Connections
 
 UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection.
-Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-structure) to begin sending/receiving voice data.
+Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-structure) to begin sending/receiving RTC data.
 
 ##### IP Discovery
 
@@ -458,9 +458,9 @@ Generally routers on the Internet mask or obfuscate UDP ports through a process 
 
 ##### Sending and Receiving Voice
 
-Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Voice Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data. Voice encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Video data should be encoded or decoded using the RFCs relevant to the codec specified. RTC data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
 
-When receiving data, the user who sent the voice packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any voice data is received, so the user ID should always be available.
+When receiving data, the user who sent the packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any frames are received, so the user ID should always be available.
 
 <Alert type="warn">
 
@@ -472,7 +472,7 @@ The nonce has to be stripped from the payload before encrypting or decrypting au
 
 | Field           | Type                          | Description                                                                          | Size    |
 | --------------- | ----------------------------- | ------------------------------------------------------------------------------------ | ------- |
-| Version + Flags | Unsigned byte                 | The RTP version and flags (`0x80`)                                                   | 1 byte  |
+| Version + Flags | Unsigned byte                 | The RTP version and flags (always `0x80` for voice)                                  | 1 byte  |
 | Payload Type    | Unsigned byte                 | The [type of payload](#codec-structure) (`0x78` with the default Opus configuration) | 1 byte  |
 | Sequence        | Unsigned short (big endian)   | The sequence number of the packet                                                    | 2 bytes |
 | Timestamp       | Unsigned integer (big endian) | The RTC timestamp of the packet                                                      | 4 bytes |
@@ -489,7 +489,7 @@ To notify the voice server that you are speaking or have stopped speaking, send 
 
 <Alert type="warn">
 
-You must send at least one Speaking payload before sending or receiving voice data, or you will be disconnected with an Invalid SSRC error.
+You must send at least one [Speaking](#speaking) payload before sending or receiving data, or you will be disconnected with an Invalid SSRC error.
 
 </Alert>
 
