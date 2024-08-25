@@ -459,7 +459,7 @@ In return, you will be sent back an [Opcode 6 Heartbeat ACK](#gateway-events) th
 UDP is the most likely protocol that clients will use. First, we open a UDP connection to the IP and port provided in the Ready payload. If required, we can now perform an [IP Discovery](#ip-discovery) using this connection.
 Once we've fully discovered our external IP and UDP port, we can then tell the voice WebSocket what it is by sending a [Select Protocol](#select-protocol-structure) as outlined above, and receive our [Session Description](#session-description-structure) to begin sending/receiving RTC data.
 
-##### IP Discovery
+### IP Discovery
 
 Generally routers on the Internet mask or obfuscate UDP ports through a process called NAT. Most users who implement voice will want to utilize IP discovery to find their external IP and port which will then be used for receiving voice communications. To retrieve your external IP and port, send the following UDP packet to your voice port (all numeric are big endian):
 
@@ -471,7 +471,7 @@ Generally routers on the Internet mask or obfuscate UDP ports through a process 
 | Address | Null-terminated string        | The external IP address of the user                            | 64 bytes |
 | Port    | Unsigned short (big endian)   | The external port number of the user                           | 2 bytes  |
 
-##### Sending and Receiving Voice
+### Sending and Receiving Voice
 
 Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Video data should be encoded or decoded using the RFCs relevant to the [codec being used](#session-description-structure). Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data or video data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
 
@@ -503,6 +503,12 @@ Discord expects a [playout delay](https://webrtc.googlesource.com/src/+/refs/hea
 ^1^ If sending an RTP header extension, the flags should have the extension bit (`1 << 4`) set (e.g. `0x80` becomes `0x90`).
 
 ^2^ When sending a final video frame, the payload type should have the M bit (`1 << 7`) set (e.g. `0x78` becomes `0xF8`).
+
+### Quality of Service
+
+Discord utilizes [RTCP](http://www.rfcreader.com/#rfc3550_line855) packets to monitor the quality of the connection. Sending and parsing these packets is not required, but is recommended to aid in monitoring the connection and synchronizing audio and video streams.
+The client should send an [RTCP Sender Report](http://www.rfcreader.com/#rfc3550_line1614) roughly every 5 seconds (without padding or reception report blocks) to inform the server of the current state of the connection.
+Likewise, Discord will send [RTCP Receiver Reports](http://www.rfcreader.com/#rfc3550_line1879) to the client to provide feedback on the quality of the connection.
 
 ## WebRTC Connections
 
