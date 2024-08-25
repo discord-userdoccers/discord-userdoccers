@@ -473,7 +473,7 @@ Generally routers on the Internet mask or obfuscate UDP ports through a process 
 
 ##### Sending and Receiving Voice
 
-Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Video data should be encoded or decoded using the RFCs relevant to the codec specified. RTC data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Video data should be encoded or decoded using the RFCs relevant to the [codec being used](#session-description-structure). Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data or video data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
 
 When receiving data, the user who sent the packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any frames are received, so the user ID should always be available.
 
@@ -483,16 +483,26 @@ The nonce has to be stripped from the payload before encrypting or decrypting au
 
 </Alert>
 
-###### Voice Packet Structure
+<Alert type="info">
 
-| Field           | Type                          | Description                                                                          | Size    |
-| --------------- | ----------------------------- | ------------------------------------------------------------------------------------ | ------- |
-| Version + Flags | Unsigned byte                 | The RTP version and flags (always `0x80` for voice)                                  | 1 byte  |
-| Payload Type    | Unsigned byte                 | The [type of payload](#codec-structure) (`0x78` with the default Opus configuration) | 1 byte  |
-| Sequence        | Unsigned short (big endian)   | The sequence number of the packet                                                    | 2 bytes |
-| Timestamp       | Unsigned integer (big endian) | The RTC timestamp of the packet                                                      | 4 bytes |
-| SSRC            | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                                             | 4 bytes |
-| Payload         | Binary data                   | Encrypted audio/video data                                                           | n bytes |
+Discord expects a [playout delay](https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/playout-delay) RTP extension header on every video packet.
+
+</Alert>
+
+###### RTP Packet Structure
+
+| Field               | Type                          | Description                                                                          | Size    |
+| ------------------- | ----------------------------- | ------------------------------------------------------------------------------------ | ------- |
+| Version + Flags ^1^ | Unsigned byte                 | The RTP version and flags (always `0x80` for voice)                                  | 1 byte  |
+| Payload Type ^2^    | Unsigned byte                 | The [type of payload](#codec-structure) (`0x78` with the default Opus configuration) | 1 byte  |
+| Sequence            | Unsigned short (big endian)   | The sequence number of the packet                                                    | 2 bytes |
+| Timestamp           | Unsigned integer (big endian) | The RTC timestamp of the packet                                                      | 4 bytes |
+| SSRC                | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                                             | 4 bytes |
+| Payload             | Binary data                   | Encrypted audio/video data                                                           | n bytes |
+
+^1^ If sending an RTP header extension, the flags should have the extension bit (`1 << 4`) set (e.g. `0x80` becomes `0x90`).
+
+^2^ When sending a final video frame, the payload type should have the M bit (`1 << 7`) set (e.g. `0x78` becomes `0xF8`).
 
 ## WebRTC Connections
 
@@ -616,6 +626,8 @@ You must send at least one [Video](#video) payload before sending or receiving v
 ```
 
 When a different user's video state is updated, and for each user with a video state at connection start, the voice server will send an [Opcode 12 Video](#gateway-events) payload:
+
+###### Example Video (Receive)
 
 ```json
 {
@@ -835,7 +847,7 @@ Likewise, the voice server may send a [Opcode 15 Media Sink Wants](#gateway-even
 
 <Alert type="warn">
 
-This is only available on [Gateway version 5 and above](#gateway-versions).
+This functionality is only available on [Gateway version 5 and above](#gateway-versions).
 
 </Alert>
 
@@ -856,7 +868,7 @@ For analytics, the client may want to receive information about the voice backen
 
 <Alert type="warn">
 
-This is only available on [Gateway version 6 and above](#gateway-versions).
+This functionality is only available on [Gateway version 6 and above](#gateway-versions).
 
 </Alert>
 
