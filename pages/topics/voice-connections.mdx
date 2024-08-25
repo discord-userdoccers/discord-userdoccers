@@ -38,8 +38,9 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Identify](#identify-structure)                           | Start a new voice connection              |
 | [Resume](#resume-structure)                               | Resume a dropped connection               |
 | [Heartbeat](#example-heartbeat-since-v8)                  | Maintain an active WebSocket connection   |
+| [Media Sink Wants](#dynamic-media-quality)                | Indicate the desired media stream quality |
 | [Select Protocol](#select-protocol-structure)             | Select the voice protocol and mode        |
-| [Session Update](#session-update-structure-(send))        | Indicate the client's supported codecs    |
+| [Session Update](<#session-update-structure-(send)>)      | Indicate the client's supported codecs    |
 | [Speaking](#speaking-structure)                           | Indicate the user's speaking state        |
 | [Voice Backend Version](#voice-backend-version-structure) | Request the current voice backend version |
 
@@ -49,16 +50,17 @@ The voice server does not provide a default version. You must explicitly pass a 
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | [Hello](#hello-structure)                                           | Defines the heartbeat interval                                                                                       |
 | [Heartbeat ACK](#example-heartbeat-ack-since-v8)                    | Acknowledges a received client heartbeat                                                                             |
-| [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                                  |
-| [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                                          |
-| [Session Description](#session-description-structure)               | Acknowledges a successful Select Protocol and contains the information needed to send/receive voice data             |
-| [Session Update](#session-update-structure-(receive))               | Client session description changed                                                                                   |
-| [Speaking](#speaking-structure)                                     | User speaking state updated                                                                                          |
-| [Client Connect](#client-connections)                               | A user connected to voice, also sent on initial connection to inform the client of existing users                    |                                                                                 |
-| [Client Disconnect](#client-disconnections)                         | A user disconnected from voice                                                                                       |
-| [Voice Backend Version](<#example-voice-backend-version-(receive)>) | Current voice backend version information, as requested by the client                                                |
+| [Client Connect](#client-connections)                               | A user connected to voice, also sent on initial connection to inform the client of existing users                    |
 | [Client Flags](#client-connections)                                 | Contains the flags of a user that connected to voice, also sent on initial connection for each existing user         |
 | [Client Platform](#client-connections)                              | Contains the platform type of a user that connected to voice, also sent on initial connection for each existing user |
+| [Client Disconnect](#client-disconnections)                         | A user disconnected from voice                                                                                       |
+| [Media Sink Wants](#dynamic-media-quality)                          | Requested media stream quality updated                                                                               |
+| [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                                  |
+| [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                                          |
+| [Session Description](#session-description-structure)               | Acknowledges a successful protocol selection and contains the information needed to send/receive voice data          |
+| [Session Update](<#session-update-structure-(receive)>)             | Client session description changed                                                                                   |
+| [Speaking](#speaking-structure)                                     | User speaking state updated                                                                                          |
+| [Voice Backend Version](<#example-voice-backend-version-(receive)>) | Current voice backend version information, as requested by the client                                                |
 
 ## Connecting to Voice
 
@@ -91,7 +93,7 @@ Once we retrieve a `session_id`, `token`, and `endpoint` information, we can con
 | user_id    | snowflake                                 | The ID of the current user                                 |
 | session_id | string                                    | The session ID of the current session                      |
 | token      | string                                    | The voice token for the current session                    |
-| video?     | boolean                                   | Whether or not this connection supports video              |
+| video?     | boolean                                   | Whether this connection supports video (default false)     |
 | streams?   | array[[stream](#stream-structure) object] | An array of stream objects                                 |
 
 ###### Stream Structure
@@ -109,14 +111,14 @@ Once we retrieve a `session_id`, `token`, and `endpoint` information, we can con
 export type MediaEngineSinkWantValue = 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
 
 enum MediaTypes {
-  AUDIO = 'audio',
-  VIDEO = 'video',
-  SCREEN = 'screen',
+  AUDIO = "audio",
+  VIDEO = "video",
+  SCREEN = "screen",
 }
 
 enum ResolutionTypes {
-  FIXED = 'fixed',
-  SOURCE = 'source',
+  FIXED = "fixed",
+  SOURCE = "source",
 }
 
 interface StreamResolution {
@@ -225,34 +227,34 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 
 ###### Codec Structure
 
-| Field              | Type    | Description                                                                 |
-| ------------------ | ------- | --------------------------------------------------------------------------- |
-| name               | string  | The [name of the codec](#supported-codecs)                                  |
-| type               | string  | The [type of codec](#supported-codecs)                                      |
-| priority ^1^       | integer | The preferred priority of the codec as a multiple of 1000 (unique per type) |
-| payload_type ^2^   | integer | The dynamic RTP payload type of the codec                                   |
-| rtx_payload_type?  | integer | The dynamic RTP payload type of the retransmission codec (video-only)       ||
-| encode?            | boolean | Whether the client supports encoding this codec (default `true`)            |
-| decode?            | boolean | Whether the client supports decoding this codec (default `true`)            |
+| Field             | Type    | Description                                                                 |
+| ----------------- | ------- | --------------------------------------------------------------------------- |
+| name              | string  | The [name of the codec](#supported-codecs)                                  |
+| type              | string  | The [type of codec](#supported-codecs)                                      |
+| priority ^1^      | integer | The preferred priority of the codec as a multiple of 1000 (unique per type) |
+| payload_type ^2^  | integer | The dynamic RTP payload type of the codec                                   |
+| rtx_payload_type? | integer | The dynamic RTP payload type of the retransmission codec (video-only)       |
+| encode?           | boolean | Whether the client supports encoding this codec (default `true`)            |
+| decode?           | boolean | Whether the client supports decoding this codec (default `true`)            |
 
-^1^ For audio, opus is the only available codec and should be priority `1000`.
+^1^ For audio, Opus is the only available codec and should be priority `1000`.
 
 ^2^ No payload type should be set to `96`, as it is reserved for probe packets.
 
 ###### Supported Codecs
 
 Providing codecs is optional due to backwards compatibility with old clients and bots that do not handle video.
-If the client does not provide any codecs, the server assumes an opus audio codec with a payload type of `120` and no specific video codec.
+If the client does not provide any codecs, the server assumes an Opus audio codec with a payload type of `120` and no specific video codec.
 If no clients with specified video codecs are connected, the server defaults to H264.
 
-| Type  | Name  | Status    |
-| ----- | ----- | --------- |
-| audio | opus  | Required  |
-| video | AV1   | Preferred |
-| video | H265  | Preferred |
-| video | H264  | Default   |
-| video | VP8   | Available |
-| video | VP9   | Available |
+| Type  | Name | Status    |
+| ----- | ---- | --------- |
+| audio | opus | Required  |
+| video | AV1  | Preferred |
+| video | H265 | Preferred |
+| video | H264 | Default   |
+| video | VP8  | Available |
+| video | VP9  | Available |
 
 ###### Example Select Protocol
 
@@ -446,13 +448,13 @@ Once we've fully discovered our external IP and UDP port, we can then tell the v
 
 Generally routers on the Internet mask or obfuscate UDP ports through a process called NAT. Most users who implement voice will want to utilize IP discovery to find their external IP and port which will then be used for receiving voice communications. To retrieve your external IP and port, send the following UDP packet to your voice port (all numeric are big endian):
 
-| Field   | Description                                                    | Size     |
-| ------- | -------------------------------------------------------------- | -------- |
-| Type    | Values 0x1 and 0x2 indicate request and response, respectively | 2 bytes  |
-| Length  | Message length excluding Type and Length fields (value 70)     | 2 bytes  |
-| SSRC    | Unsigned integer                                               | 4 bytes  |
-| Address | Null-terminated string in response                             | 64 bytes |
-| Port    | Unsigned short                                                 | 2 bytes  |
+| Field   | Type                          | Description                                                    | Size     |
+| ------- | ----------------------------- | -------------------------------------------------------------- | -------- |
+| Type    | Unsigned short (big endian)   | Values 0x1 and 0x2 indicate request and response, respectively | 2 bytes  |
+| Length  | Unsigned short (big endian)   | Message length excluding Type and Length fields (value `70`)   | 2 bytes  |
+| SSRC    | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                       | 4 bytes  |
+| Address | Null-terminated string        | The external IP address of the user                            | 64 bytes |
+| Port    | Unsigned short (big endian)   | The external port number of the user                           | 2 bytes  |
 
 ##### Sending and Receiving Voice
 
@@ -468,14 +470,14 @@ The nonce has to be stripped from the payload before encrypting or decrypting au
 
 ###### Voice Packet Structure
 
-| Field           | Type                          | Size    |
-| --------------- | ----------------------------- | ------- |
-| Version + Flags | Single byte value of `0x80`   | 1 byte  |
-| Payload Type    | Single byte value of `0x78`   | 1 byte  |
-| Sequence        | Unsigned short (big endian)   | 2 bytes |
-| Timestamp       | Unsigned integer (big endian) | 4 bytes |
-| SSRC            | Unsigned integer (big endian) | 4 bytes |
-| Encrypted Audio | Binary data                   | n bytes |
+| Field           | Type                          | Description                                                                          | Size    |
+| --------------- | ----------------------------- | ------------------------------------------------------------------------------------ | ------- |
+| Version + Flags | Unsigned byte                 | The RTP version and flags (`0x80`)                                                   | 1 byte  |
+| Payload Type    | Unsigned byte                 | The [type of payload](#codec-structure) (`0x78` with the default Opus configuration) | 1 byte  |
+| Sequence        | Unsigned short (big endian)   | The sequence number of the packet                                                    | 2 bytes |
+| Timestamp       | Unsigned integer (big endian) | The RTC timestamp of the packet                                                      | 4 bytes |
+| SSRC            | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                                             | 4 bytes |
+| Payload         | Binary data                   | Encrypted audio/video data                                                           | n bytes |
 
 ## WebRTC Connections
 
@@ -638,7 +640,7 @@ These events are meant to inform a new client of all existing clients and their 
 {
   "op": 11,
   "d": {
-    "user_ids": [ "852892297661906993" ]
+    "user_ids": ["852892297661906993"]
   }
 }
 ```
@@ -679,12 +681,12 @@ These events are meant to inform a new client of all existing clients and their 
 
 ###### Voice Platform
 
-| Value  | Name        | Description             |
-| ------ | ----------- | ----------------------- |
-| 0      | DESKTOP     | Desktop-based client    |
-| 1      | MOBILE      | Mobile client           |
-| 2      | XBOX        | Xbox integration        |
-| 3      | PLAYSTATION | PlayStation integration |
+| Value | Name        | Description             |
+| ----- | ----------- | ----------------------- |
+| 0     | DESKTOP     | Desktop-based client    |
+| 1     | MOBILE      | Mobile client           |
+| 2     | XBOX        | Xbox integration        |
+| 3     | PLAYSTATION | PlayStation integration |
 
 ###### Example Client Platform
 
@@ -717,6 +719,30 @@ When received, the SSRC of the user should be discarded.
   "op": 13,
   "d": {
     "user_id": "852892297661906993"
+  }
+}
+```
+
+## Dynamic Media Quality
+
+The voice server supports dynamic media quality, allowing clients to send multiple video streams of different qualities and adjust the quality of the video stream they receive.
+This can be used to lower the quality of a video stream when the user is not in focus, or to disable the transmission of a voice or video stream entirely when a user is off-screen or a client has muted them.
+
+A media stream specified by a given SSRC can be requested at a quality level between 0 and 100, with 0 disabling it entirely and 100 being the highest quality.
+Additionally, if the user offers multiple streams for a given media type, the client can request a specific stream by setting its quality level to 100 and the others to 0.
+A special SSRC value of `any` can be used to request a quality level for all streams.
+
+Clients may request the media quality they want per SSRC by sending an [Opcode 15 Media Sink Wants](#gateway-commands) payload with a mapping of SSRCs to quality levels.
+
+Likewise, the voice server may send a [Opcode 15 Media Sink Wants](#gateway-events) payload to inform the client of the quality levels it should be sending for each SSRC.
+
+###### Example Media Sink Wants
+
+```json
+{
+  "op": 15,
+  "d": {
+    "any": 100
   }
 }
 ```

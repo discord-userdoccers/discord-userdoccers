@@ -844,6 +844,9 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/voice-connections#connected-clients">
                 Connected Clients
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#dynamic-media-quality">
+                Dynamic Media Quality
+              </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
                 Voice Backend Version
               </NavigationSubLink>
