@@ -92,13 +92,22 @@ If a form body error is returned, the client should display the error message to
 
 Once the user is logged in, the client should store the authentication token to avoid having to log in again in the future.
 
-### WebAuthn Conditional UI (Passwordless) Login
+### Passwordless Login
 
-An alternative to the traditional email/password login flow is the WebAuthn conditional UI flow.
+An alternative to the traditional email/password login flow is the WebAuthn Conditional UI flow.
 This [allows users to log in using an WebAuthn device](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/isConditionalMediationAvailable) (e.g. a security key) instead of a password.
 
 To use this flow, the client must first generate a challenge using the [Start Passwordless Login](#start-passwordless-login) endpoint. After the user completes the WebAuthn challenge, the client must use the [Finish Passwordless Login](#finish-passwordless-login) endpoint to complete the login process.
 Using this flow, you must still take care to handle any errors as outlined above.
+
+### Authentication Handoff
+
+The handoff process is used to securely transfer the user's authentication state between two clients, commonly used to authenticate the Discord website from a native client and vice-versa.
+
+To handoff authentication to another client, the source client must first use the [Create Handoff Token](#create-handoff-token) endpoint to generate a handoff token.
+The token should then be passed to the target client, which can use the [Exchange Handoff Token](#exchange-handoff-token) endpoint to retrieve a new authentication token.
+
+Note that handoff tokens are single-use and valid only for the IP address they were generated from.
 
 ### Endpoints
 
@@ -378,6 +387,44 @@ Authorizes the client's IP address for login. Returns a 204 empty response on su
 | Field | Type   | Description                                                                         |
 | ----- | ------ | ----------------------------------------------------------------------------------- |
 | token | string | The verification token received from the email or phone number verification process |
+
+<RouteHeader method="POST" url="/auth/handoff" unauthenticated>
+  Create Handoff Token
+</RouteHeader>
+
+Creates a handoff token to transfer the user's authentication state to another client.
+
+###### JSON Params
+
+| Field | Type   | Description                                                       |
+| ----- | ------ | ----------------------------------------------------------------- |
+| key   | string | A unique key to identify the handoff request (e.g. a random UUID) |
+
+###### Response Body
+
+| Field         | Type   | Description                                                                  |
+| ------------- | ------ | ---------------------------------------------------------------------------- |
+| handoff_token | string | The handoff token to pass to the target; this is not an authentication token |
+
+<RouteHeader method="POST" url="/auth/handoff/exchange" unauthenticated>
+  Exchange Handoff Token
+</RouteHeader>
+
+Exchanges a handoff token for an authentication token. Handoff tokens can only be exchanged once and are only valid from the same IP address they were created from.
+
+###### JSON Params
+
+| Field         | Type   | Description                                                                                |
+| ------------- | ------ | ------------------------------------------------------------------------------------------ |
+| key           | string | The unique key used to create the handoff token                                            |
+| handoff_token | string | The handoff token received from the [Create Handoff Token](#create-handoff-token) endpoint |
+
+###### Response Body
+
+| Field | Type                                               | Description                     |
+| ----- | -------------------------------------------------- | ------------------------------- |
+| token | string                                             | The authentication token        |
+| user  | partial [user](/resources/user#user-object) object | The user that was authenticated |
 
 ## Register
 

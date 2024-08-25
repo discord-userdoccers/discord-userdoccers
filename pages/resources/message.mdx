@@ -157,6 +157,7 @@ The type of rendered message is determined via converting the message's `timesta
 | 1 << 12 | SUPPRESS_NOTIFICATIONS                 | This message will not trigger push and desktop notifications                      |
 | 1 << 13 | VOICE_MESSAGE                          | This message's audio attachments are rendered as voice messages                   |
 | 1 << 14 | HAS_SNAPSHOT                           | This message has a forwarded message snapshot attached                            |
+| 1 << 15 | IS_UIKIT_COMPONENTS                    | This message contains components from the UI kit                                  |
 
 ###### Example Message
 
@@ -273,11 +274,37 @@ Metadata about the interaction, including the source of the interaction and the 
 | id                               | snowflake                                                                   | The ID of the interaction                                                                                                                                                                                                                                                  |
 | type                             | integer                                                                     | The [type of interaction](/interactions/receiving-and-responding#interaction-type)                                                                                                                                                                                         |
 | name?                            | string                                                                      | The name of the [application command](/interactions/application-commands#application-command-object) executed (including subcommands and subcommand groups), present only on [`APPLICATION_COMMAND`](/interactions/receiving-and-responding#interaction-type) interactions |
+| command_type?                    | integer                                                                     | The [type of application command](/interactions/application-commands#application-command-types) executed, present only on [`APPLICATION_COMMAND`](/interactions/receiving-and-responding#interaction-type) interactions                                                    |
+| ephemerality_reason?             | integer                                                                     | The [reason this interaction is ephemeral](#ephemerality-reason)                                                                                                                                                                                                           |
 | user                             | partial [user](/resources/user#user-object) object                          | The user that initiated the interaction                                                                                                                                                                                                                                    |
 | authorizing_integration_owners   | map[integer, snowflake]                                                     | IDs for each [installation context](/resources/application#application-integration-type) related to an interaction                                                                                                                                                         |
 | original_response_message_id?    | snowflake                                                                   | The ID of the original response message, present only on [follow-up messages](/interactions/receiving-and-responding#followup-messages)                                                                                                                                    |
 | interacted_message_id?           | snowflake                                                                   | ID of the message that contained interactive component, present only on messages created from component interactions                                                                                                                                                       |
 | triggering_interaction_metadata? | [message interaction metadata](#message-interaction-metadata-object) object | Metadata for the interaction that was used to open the modal, present only on [`MODAL_SUBMIT`](/interactions/receiving-and-responding#interaction-type) interactions                                                                                                       |
+
+###### Ephemerality Reason
+
+| Value | Name                     | Description                                                                                        |
+| ----- | ------------------------ | -------------------------------------------------------------------------------------------------- |
+| 0     | NONE                     | Unknown reason                                                                                     |
+| 1     | FEATURE_LIMITED          | A required feature is temporarily limited                                                          |
+| 2     | GUILD_FEATURE_LIMITED    | A required feature is temporarily limited for this guild                                           |
+| 3     | USER_FEATURE_LIMITED     | A required feature is temporarily limited for this user                                            |
+| 4     | SLOWMODE                 | The user is sending messages [past their `rate_limit_per_user`](/resources/channel#channel-object) |
+| 5     | RATE_LIMIT               | The user is being rate limited                                                                     |
+| 6     | CANNOT_MESSAGE_USER      | The user does not have permission to message the target user                                       |
+| 7     | USER_VERIFICATION_LEVEL  | The user does not meet the [guild `verification_level`](/resources/guild#guild-object) requirement |
+| 8     | CANNOT_UNARCHIVE_THREAD  | The user does not have permission to unarchive the thread                                          |
+| 9     | CANNOT_JOIN_THREAD       | The user does not have permission to join the thread                                               |
+| 10    | MISSING_PERMISSIONS      | The user does not have permission to send messages in the channel                                  |
+| 11    | CANNOT_SEND_ATTACHMENTS  | The user does not have permission to send attachments in the channel                               |
+| 12    | CANNOT_SEND_EMBEDS       | The user does not have permission to send embeds in the channel                                    |
+| 13    | CANNOT_SEND_STICKERS     | The user does not have permission to send stickers in the channel                                  |
+| 14    | AUTOMOD_BLOCKED          | The message was blocked by AutoMod                                                                 |
+| 15    | HARMFUL_LINK             | The message contains a link blocked by Discord                                                     |
+| 16    | CANNOT_USE_COMMAND       | The user does not have permission to use this command in this channel                              |
+| 17    | BETA_GUILD_SIZE          | The message is only visible to the user for this beta test                                         |
+| 18    | CANNOT_USE_EXTERNAL_APPS | The user does not have permission to use external applications in this channel                     |
 
 ### Message Role Subscription Object
 
@@ -554,6 +581,12 @@ The combined sum of characters in all `title`, `description`, `field.name`, `fie
 <Alert type="info">
 
 Embeds are deduplicated by URL. If a message contains multiple embeds with the same URL, only the first is shown. If the duplicates have additional images, all images are shown in a grid in the first embed.
+
+</Alert>
+
+<Alert type="info">
+
+The media proxy caches link embeds for 30 minutes.
 
 </Alert>
 
