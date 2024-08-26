@@ -19,7 +19,7 @@ All Gateway events in Discord are tagged with an opcode that denotes the payload
 | 8      | Request Guild Members                  | Send         | Request information about guild members.                                                |
 | 9      | Invalid Session                        | Receive      | The session has been invalidated. You should reconnect and identify/resume accordingly. |
 | 10     | Hello                                  | Receive      | Sent immediately after connecting, contains the `heartbeat_interval` to use.            |
-| 11     | Heartbeat ACK                          | Receive      | Response to receiving a heartbeat to acknowledge that it has been received.             |
+| 11     | Heartbeat ACK                          | Receive      | Acknowledge a received heartbeat.                                                       |
 | ~~12~~ | ~~Guild Sync~~                         | ~~Send~~     | ~~Request all members and presences for guilds.~~                                       |
 | 13     | Call Connect                           | Send         | Request a private channels's pre-existing call data.                                    |
 | 14     | Guild Subscriptions                    | Send         | Update subscriptions for a guild.                                                       |
@@ -68,28 +68,32 @@ All Gateway events in Discord are tagged with an opcode that denotes the payload
 
 ## Voice
 
-The voice websocket has its own set of opcodes and close codes.
+The Voice Gateway has its own set of opcodes and close codes.
 
 ###### Voice Opcodes
 
-| Code | Name                   | Action       | Description                                                                  |
-| ---- | ---------------------- | ------------ | ---------------------------------------------------------------------------- |
-| 0    | Identify               | Send         | Start a new voice WebSocket connection.                                      |
-| 1    | Select Protocol        | Send         | Select the voice protocol.                                                   |
-| 2    | Ready                  | Receive      | Complete the WebSocket handshake.                                            |
-| 3    | Heartbeat              | Send/Receive | Keep the WebSocket connection alive.                                         |
-| 4    | Session Description    | Receive      | Describe the session.                                                        |
-| 5    | Speaking               | Send/Receive | Indicate which users are speaking.                                           |
-| 6    | Heartbeat ACK          | Receive      | Response to receiving a heartbeat to acknowledge that it has been received.  |
-| 7    | Resume                 | Send         | Resume a previous session that was disconnected.                             |
-| 8    | Hello                  | Receive      | Sent immediately after connecting, contains the `heartbeat_interval` to use. |
-| 9    | Resumed                | Receive      | Response to acknowledging a successful resume.                               |
-| 12   | Video                  | Send/Receive | Describe the video session.                                                  |
-| 13   | Client Disconnect      | server       | A client has disconnected from the voice channel.                            |
-| 14   | Session Update         | Receive      | Update in session description.                                               |
-| 15   | Media Sink Wants       | Send/Receive |                                                                              |
-| 16   | Voice Backend Version  | Send/Receive | Version information about the voice backend.                                 |
-| 17   | Channel Options Update | Receive      |                                                                              |
+| Code   | Name                       | Action       | Description                                                                  |
+| ------ | -------------------------- | ------------ | ---------------------------------------------------------------------------- |
+| 0      | Identify                   | Send         | Start a new voice WebSocket connection.                                      |
+| 1      | Select Protocol            | Send         | Select the voice protocol.                                                   |
+| 2      | Ready                      | Receive      | Complete the WebSocket handshake.                                            |
+| 3      | Heartbeat                  | Send/Receive | Keep the WebSocket connection alive.                                         |
+| 4      | Session Description        | Receive      | Describe the session.                                                        |
+| 5      | Speaking                   | Send/Receive | Indicate which users are speaking.                                           |
+| 6      | Heartbeat ACK              | Receive      | Acknowledge a received heartbeat.                                            |
+| 7      | Resume                     | Send         | Resume a previous session that was disconnected.                             |
+| 8      | Hello                      | Receive      | Sent immediately after connecting, contains the `heartbeat_interval` to use. |
+| 9      | Resumed                    | Receive      | Response to acknowledging a successful resume.                               |
+| 11     | Client Connect             | Receive      | Indicate that clients have connected to the voice channel.                   |
+| 12     | Video                      | Send/Receive | Describe the video session.                                                  |
+| 13     | Client Disconnect          | server       | Indicate that a client has disconnected from the voice channel.              |
+| 14     | Session Update             | Send/Receive | Indicate an update in session description.                                   |
+| 15     | Media Sink Wants           | Send/Receive | Indicate the media streams wanted for simulcasting.                          |
+| 16     | Voice Backend Version      | Send/Receive | Version information about the voice backend.                                 |
+| ~~17~~ | ~~Channel Options Update~~ | ~~Receive~~  | ~~Indicate an update in the RTC log ephemeral key.~~                         |
+| 18     | Client Flags               | Receive      | Indicate a client's flags.                                                   |
+| ~~19~~ | ~~Speed Test~~             | ~~Send~~     | ~~Start a speed test.~~                                                      |
+| 20     | Client Platform            | Receive      | Indicate the platform a client is connected on                               |
 
 ###### Voice Close Event Codes
 
@@ -129,9 +133,10 @@ The API will return semantically valid HTTP response codes based on the success 
 | 409 (CONFLICT)            | The requested resource update could not be completed due to the current state of the target resource.      |
 | 410 (GONE)                | The resource being accessed is no longer available.                                                        |
 | 413 (PAYLOAD TOO LARGE)   | The request entity was too large.                                                                          |
-| 415 (UNSUPPORTED MEDIA)   | The requested content type is not supported (CDN Only).                                                    |
+| 415 (UNSUPPORTED MEDIA)   | The requested content type is not supported (CDN only).                                                    |
 | 429 (TOO MANY REQUESTS)   | You are being rate limited, see [Rate Limits](/topics/rate-limits).                                        |
-| 502 (GATEWAY UNAVAILABLE) | There was not a gateway available to process your request. Wait a bit and retry.                           |
+| 502 (GATEWAY UNAVAILABLE) | There was no gateway available to process your request. Wait a bit and retry.                              |
+| 503 (SERVICE UNAVAILABLE) | The service required to process your request is unavailable. Wait a bit and retry.                         |
 | 5xx (SERVER ERROR) ^1^    | The server had an error processing your request.                                                           |
 
 ^1^ 502, 504, 507, 522, 523, 524 should be retried with a backoff. The number of failed requests can be specified with the `X-Failed-Requests` header. Whether you retry other 5xx errors is up to you.
@@ -142,10 +147,13 @@ Along with the HTTP error code, the API can also return more detailed error code
 
 <Alert type="info">
 
-A special `40333` JSON error code is returned if your request is blocked by CloudFlare. This may be due to a malformed request or improper user agent. The response resembles a normal error structure:
+A special `40333` JSON error code is returned if your request is blocked by Cloudflare. This may be due to a malformed request or improper user agent. The response resembles a normal error structure:
 
 ```json
-{ "message": "internal network error", "code": 40333 }
+{
+  "message": "internal network error",
+  "code": 40333
+}
 ```
 
 </Alert>

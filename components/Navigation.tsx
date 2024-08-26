@@ -834,20 +834,19 @@ export default function Navigation() {
                 Connecting to Voice
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#heartbeating">Heartbeating</NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#establishing-a-voice-websocket-connection">
-                Establishing a Voice WebSocket Connection
-              </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#udp-connections">UDP Connections</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#webrtc-connections">
                 WebRTC Connections
               </NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#speaking">Speaking</NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#video">Video</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#resuming-voice-connection">
                 Resuming Voice Connection
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#other-client-disconnection">
-                Other Client Disconnection
+              <NavigationSubLink href="/topics/voice-connections#connected-clients">
+                Connected Clients
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#simulcasting">Simulcasting</NavigationSubLink>
               <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
                 Voice Backend Version
               </NavigationSubLink>
