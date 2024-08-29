@@ -1,0 +1,193 @@
+---
+// Most of this code is copied from [Starlight](https://github.com/withastro/starlight) licensed under MIT
+// Thanks a lot!
+
+import "@pagefind/default-ui/css/ui.css";
+import SearchIcon from "@components/icons/Search.astro";
+import "./pagefind.css";
+---
+
+<site-search>
+	<button
+		data-open-modal
+		disabled
+		aria-keyshortcuts="Control+K"
+		class="bg-white dark:bg dark:bg-table-row-background-secondary-dark px-2 py-1 rounded-md mb-4"
+	>
+		<SearchIcon />
+		<span>Search</span>
+		<kbd class="hidden md:flex" style="display: none;">
+			<kbd>Ctrl</kbd><kbd>K</kbd>
+		</kbd>
+	</button>
+
+	<dialog class="p-0 dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light text-black dark:text-white">
+		<div class="dialog-frame flex">
+			{import.meta.env.DEV && <p>Search wont work in dev!</p>}
+			<div class="search-container">
+				<div id="pagefind-search"></div>
+			</div>
+			<button data-close-modal class="flex md:hidden">Cancel</button>
+		</div>
+	</dialog>
+</site-search>
+
+<script is:inline>
+	(() => {
+		const openBtn = document.querySelector("button[data-open-modal]");
+		const shortcut = openBtn?.querySelector("kbd");
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector("kbd");
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = "⌘";
+			openBtn.setAttribute("aria-keyshortcuts", "Meta+K");
+		}
+		shortcut.style.display = "";
+	})();
+</script>
+
+<script>
+	class SiteSearch extends HTMLElement {
+		constructor() {
+			super();
+			const openBtn = this.querySelector<HTMLButtonElement>("button[data-open-modal]")!;
+			const closeBtn = this.querySelector<HTMLButtonElement>("button[data-close-modal]")!;
+			const dialog = this.querySelector("dialog")!;
+			const dialogFrame = this.querySelector(".dialog-frame")!;
+
+			const closeModal = () => dialog.close();
+			const openModal = (event?: MouseEvent) => {
+				dialog.showModal();
+				document.body.toggleAttribute("data-search-modal-open", true);
+				this.querySelector("input")?.focus();
+				event?.stopPropagation();
+				window.addEventListener("click", onClick);
+			};
+
+			const onClick = (event: MouseEvent) => {
+				if ("href" in (event.target || {}) || (document.body.contains(event.target as Node) && !dialogFrame.contains(event.target as Node)))
+					closeModal();
+			};
+
+			openBtn.addEventListener("click", openModal);
+			openBtn.disabled = false;
+			closeBtn.addEventListener("click", closeModal);
+
+			dialog.addEventListener("close", () => {
+				document.body.toggleAttribute("data-search-modal-open", false);
+				window.removeEventListener("click", onClick);
+			});
+
+			window.addEventListener("keydown", (e) => {
+				if ((e.metaKey === true || e.ctrlKey === true) && e.key === "k") {
+					if (dialog.open) closeModal();
+					else openModal();
+					e.preventDefault();
+				}
+			});
+
+			window.addEventListener("DOMContentLoaded", () => {
+				const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+				onIdle(async () => {
+					// @ts-expect-error — Missing types for @pagefind/default-ui package.
+					const { PagefindUI } = await import("@pagefind/default-ui");
+					new PagefindUI({
+						element: "#pagefind-search",
+						baseUrl: import.meta.env.BASE_URL,
+						bundlePath: import.meta.env.BASE_URL.replace(/\/$/, "") + "/pagefind/",
+						showImages: false,
+						showSubResults: true,
+					});
+				});
+			});
+		}
+	}
+
+	customElements.define("site-search", SiteSearch);
+</script>
+
+<style>
+	site-search {
+		display: contents;
+	}
+
+	site-search > button {
+		width: 100%;
+		display: flex;
+		align-items: center;
+	}
+
+	site-search > button > span {
+		flex-grow: 1;
+		text-align: left;
+		padding-left: 4px;
+	}
+
+	site-search > button:active,
+	site-search > button:focus,
+	site-search > button:hover {
+		outline: none;
+		box-shadow: inset 0 0 0 2px #5468ff;
+	}
+
+	dialog {
+		margin: 0;
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		max-height: 100%;
+		scrollbar-gutter: stable;
+	}
+
+	dialog[open] {
+		display: flex;
+	}
+
+	dialog::backdrop {
+		-webkit-backdrop-filter: blur(0.25rem);
+		backdrop-filter: blur(0.25rem);
+	}
+
+	.dialog-frame {
+		flex-direction: column;
+		flex-grow: 1;
+		gap: 1rem;
+		padding: 1rem;
+	}
+
+	#pagefind-search {
+		--sl-search-cancel-space: 5rem;
+	}
+
+	@media (min-width: 768px) {
+		dialog {
+			margin: 4rem auto auto;
+			border-radius: 0.5rem;
+			width: 90%;
+			max-width: 40rem;
+			height: max-content;
+			min-height: 15rem;
+			max-height: calc(100% - 8rem);
+		}
+
+		.dialog-frame {
+			padding: 1.5rem;
+		}
+
+		#pagefind-search {
+			--sl-search-cancel-space: 0px;
+		}
+	}
+
+	button[data-close-modal] {
+		position: absolute;
+		z-index: 1;
+		align-items: center;
+		align-self: flex-end;
+		height: calc(64px * var(--pagefind-ui-scale));
+		padding: 0.25rem;
+		border: 0;
+		background: transparent;
+		cursor: pointer;
+	}
+</style>
