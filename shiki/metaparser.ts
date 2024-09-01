@@ -10,14 +10,16 @@ export function shikiMetaParser(): ShikiTransformer {
 			meta = {};
 			const rawMeta: string = options.meta?.__raw;
 			if (!rawMeta) return;
-			meta = Object.fromEntries(rawMeta.split(" ").map((s) => {
-				const parts = s.split("=").map((s) => s.trim());
-				return [[parts[0]], parts[1] ? JSON.parse(parts[1]) : true];
-			}))
+			meta = Object.fromEntries(
+				rawMeta.split(" ").map((s) => {
+					const parts = s.split("=").map((s) => s.trim());
+					return [[parts[0]], parts[1] ? JSON.parse(parts[1]) : true];
+				}),
+			);
 		},
 		code(node: any) {
 			node.properties = { ...node.properties, ...meta };
 			node.meta = meta;
-		}
-	}
+		},
+	};
 }

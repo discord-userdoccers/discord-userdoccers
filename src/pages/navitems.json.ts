@@ -8,7 +8,8 @@ const rendered = await Promise.all(entries.map((e) => e.render()));
 
 const output: output = {};
 for (let i = 0; i < entries.length; i++) {
-	const e = entries[i], { headings } = rendered[i];
+	const e = entries[i],
+		{ headings } = rendered[i];
 	output[e.slug] = headings.map((h) => [h.slug, h.text, h.depth]);
 }
 

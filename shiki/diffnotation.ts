@@ -16,15 +16,8 @@ export interface shikiDiffNotationOptions {
 
 export type MetaNode = Element & { meta?: Record<string, any> };
 
-export function shikiDiffNotation(
-	options: shikiDiffNotationOptions = {}
-): ShikiTransformer {
-	const {
-		classLineAdd = "add",
-		classLineRemove = "remove",
-		classLineHighlight = "highlight",
-		classActivePre = "diff",
-	} = options;
+export function shikiDiffNotation(options: shikiDiffNotationOptions = {}): ShikiTransformer {
+	const { classLineAdd = "add", classLineRemove = "remove", classLineHighlight = "highlight", classActivePre = "diff" } = options;
 
 	return {
 		name: "shiki-diff-notation",
@@ -32,9 +25,7 @@ export function shikiDiffNotation(
 			if (!node.meta?.diff) return;
 			this.addClassToHast(this.pre, classActivePre);
 
-			const lines = node.children.filter(
-				(node) => node.type === "element"
-			) as Element[];
+			const lines = node.children.filter((node) => node.type === "element") as Element[];
 
 			lines.forEach((line) => {
 				for (const child of line.children) {

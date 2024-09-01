@@ -1,7 +1,6 @@
 import type { ShikiTransformer } from "@shikijs/core";
 import type { MetaNode } from "./diffnotation";
 
-
 export function shikiLineNumbers(classToAdd = "line-numbers"): ShikiTransformer {
 	return {
 		name: "shiki-linenumbers",

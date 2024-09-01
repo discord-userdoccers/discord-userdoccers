@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-undef, @typescript-eslint/no-require-imports
 const colors = require("tailwindcss/colors");
 
 /** @type {import('tailwindcss').Config} */
@@ -42,13 +43,6 @@ export default {
 				yellow: colors.amber,
 				purple: colors.violet,
 			},
-
-			// TODO: Change these out for whatever legitimate font family names discord uses,
-			// just here to visualise what itd look like with them rn
-			fontFamily: {
-				whitney: ["Whitney Medium", "sans-serif"],
-				"whitney-bold": ["Whitney Semibold Regular", "sans-serif"],
-			},
 			animation: {
 				"fade-in-out": "fadeIn 75ms ease-in",
 			},
@@ -60,5 +54,6 @@ export default {
 			},
 		},
 	},
+	// eslint-disable-next-line no-undef, @typescript-eslint/no-require-imports
 	plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")],
 };

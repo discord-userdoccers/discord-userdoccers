@@ -8,7 +8,6 @@ export function createSelector<T>(source: ReadableAtom<T>): (key: T, listener: (
 		for (const l of m.get(newValue) ?? []) l(true);
 	});
 
-
 	return (key, listener) => {
 		if (!m.has(key)) m.set(key, []);
 		m.get(key)!.push(listener);
@@ -17,7 +16,7 @@ export function createSelector<T>(source: ReadableAtom<T>): (key: T, listener: (
 }
 
 export const browserTheme = atom<"light" | "dark">("dark");
-export const userTheme = atom<"light" | "dark" | "system">(localStorage.getItem("theme") as any || "system");
+export const userTheme = atom<"light" | "dark" | "system">((localStorage.getItem("theme") as any) || "system");
 userTheme.listen((value) => {
 	localStorage.setItem("theme", value);
 });
@@ -31,7 +30,7 @@ export const theme = batched([browserTheme, userTheme], (browser, user) => {
 
 theme.subscribe((value) => {
 	localStorage.setItem("calculatedTheme", value);
-})
+});
 
 export const path = atom<string>("/");
 export const hash = atom<string>("");
