@@ -21,10 +21,10 @@ import Search from "./Search.astro";
 						</a>
 						<ThemeSwitch />
 					</div>
-
 					<Search />
-
-					<Links />
+					<div class="links-container">
+						<Links />
+					</div>
 				</div>
 			</div>
 		</div>
@@ -33,6 +33,8 @@ import Search from "./Search.astro";
 
 <script>
 	import { menuOpen } from "src/nano";
+	import { template } from "./Sublink.astro";
+	import type { output as navitemsOutput } from "../../pages/navitems.json";
 
 	let firstRun = true;
 	requestAnimationFrame(() => (firstRun = false));
@@ -43,6 +45,9 @@ import Search from "./Search.astro";
 			super();
 			if (!firstRun) return;
 			const scrollEl = this.querySelector(".menu-scroller")!;
+			const linksContainer = this.querySelector(".links-container")!;
+			const clickOutsideEl = this.querySelector(".nav-click-outside")!;
+			
 			document.addEventListener("astro:before-swap", () => (this.scrollPos = scrollEl.scrollTop));
 			document.addEventListener("astro:after-swap", () => scrollEl.scrollTo({ top: this.scrollPos, behavior: "instant" }));
 
@@ -50,7 +55,6 @@ import Search from "./Search.astro";
 				this.toggleAttribute("open", isOpen);
 			});
 
-			const clickOutsideEl = this.querySelector(".nav-click-outside")!;
 			function clickOutsideListener(event: MouseEvent | TouchEvent) {
 				if (clickOutsideEl === event.target || clickOutsideEl.contains(event.target as Node)) return;
 				menuOpen.set(false);
@@ -60,6 +64,15 @@ import Search from "./Search.astro";
 
 			document.addEventListener("astro:after-swap", () => {
 				menuOpen.set(false);
+			});
+
+			fetch("/navitems.json").then((r) => r.json()).then((r) => {
+				for (const [parentSlug, headings] of Object.entries(r as navitemsOutput)) {
+					const matchingEl = linksContainer.querySelector(`[data-slug="/${parentSlug}/"] .sublinks`);
+					if (!matchingEl) continue;
+					matchingEl.innerHTML = headings.map((h, i) => template({ first: i === 0, slug: h[0], text: h[1], depth: h[2], parentSlug })).join("");
+				}
+				window.hasInitialized = true;
 			});
 		}
 	}
@@ -101,5 +114,9 @@ import Search from "./Search.astro";
 	nav-menu .bars-button {
 		margin-left: 12px;
 		margin-top: 18px;
+	}
+
+	nav-menu .links-container {
+		display: contents;
 	}
 </style>

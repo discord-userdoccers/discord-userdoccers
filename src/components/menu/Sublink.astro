@@ -8,25 +8,29 @@ interface Props {
 }
 
 const { parentSlug, slug, text, first, depth = 1 } = Astro.props;
+
+export function template({ first, slug, text, depth = 1, parentSlug }: Props) {
+	return `
+		<sub-link data-first="${first}" data-slug="#${slug}" style="--m: ${10 + 5 * depth}px">▹<a href="/${parentSlug}/#${slug}">${text}</a></sub-link>
+	`;
+}
 ---
 
 <sub-link data-first={first} data-slug={"#" + slug} style={`--m: ${10 + 5 * depth}px`}>▹<a href={`/${parentSlug}/#${slug}`}>{text}</a></sub-link>
 
 <script>
 	import { createSelector, hash } from "src/nano";
-	let firstRun = true;
-	requestAnimationFrame(() => (firstRun = false));
 	const hashSelector = createSelector(hash);
 
 	class Sublink extends HTMLElement {
 		constructor() {
 			super();
-			if (!firstRun) return; // second run => navigate, but since we persist navigation element we dont want to run setup just for the component ot be replaced
+			if (window.hasInitialized) return; // second run, we dont get inserted into page at all.
 			const l = (v: boolean) => {
 				this.toggleAttribute("selected", v);
 			};
 			hashSelector(this.dataset.slug!, l);
-			if (typeof this.dataset.first === "string") hashSelector("", l);
+			if (typeof this.dataset.first === "string" && this.dataset.first !== "false") hashSelector("", l);
 		}
 	}
 
