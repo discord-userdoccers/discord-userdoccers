@@ -569,6 +569,38 @@ export default function Navigation() {
           Teams
         </NavigationLink>
         <NavigationLink
+          href="/resources/user-settings"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/user-settings#legacy-user-settings">
+                Legacy User Settings
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-sticker-animation-option">
+                Legacy Sticker Animation Option
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-custom-status-object">
+                Legacy Custom Status Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-explicit-content-filter">
+                Legacy Explicit Content Filter
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-friend-discovery-flags">
+                Legacy Friend Discovery Flags
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-friend-flags-object">
+                Legacy Friend Source Flags Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-guild-folder">
+                Legacy Guild Folder Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-theme">Legacy Theme</NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          User Settings
+        </NavigationLink>
+        <NavigationLink
           href="/resources/user"
           subLinks={
             <Fragment>
