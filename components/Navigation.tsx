@@ -593,7 +593,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user-settings#legacy-guild-folder">
                 Legacy Guild Folder Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/user-settings#legacy-theme">Legacy Theme</NavigationSubLink>
               <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
