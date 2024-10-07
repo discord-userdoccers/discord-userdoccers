@@ -227,7 +227,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 18     | CERTIFIED_MODERATOR          | Moderator Programs Alumni                                                                   | Yes     |
 | 1 << 19     | BOT_HTTP_INTERACTIONS        | Bot uses only HTTP interactions and is shown in the online member list                      | Yes     |
 | 1 << 20     | SPAMMER                      | User is marked as a spammer and has their messages collapsed in the UI                      | Yes     |
-| 1 << 21     | DISABLE_PREMIUM              | User has manually disabled premium (Nitro) features                                         | No      |
+| ~~1 << 21~~ | ~~DISABLE_PREMIUM~~          | ~~User has manually disabled premium (Nitro) features~~                                     | ~~No~~  |
 | 1 << 22     | ACTIVE_DEVELOPER             | [Active Developer](https://support-dev.discord.com/hc/articles/10113997751447)              | Yes     |
 | 1 << 23     | PROVISIONAL_ACCOUNT          | User is a provisional account used with the social layer integration                        | Yes     |
 | 1 << 33     | HIGH_GLOBAL_RATE_LIMIT       | User has a raised global ratelimit                                                          | No ^1^  |
@@ -239,7 +239,6 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 39     | USED_WEB_CLIENT              | User has used the web client                                                                | No ^1^  |
 | 1 << 40     | USED_MOBILE_CLIENT           | User has used the mobile client                                                             | No ^1^  |
 | 1 << 41     | DISABLED                     | User's account is disabled                                                                  | No ^1^  |
-| 1 << 43     | VERIFIED_EMAIL               | User has a verified email                                                                   | No ^1^  |
 | 1 << 44     | QUARANTINED                  | User is quarantined and cannot create DMs or accept invites                                 | No      |
 | 1 << 50     | COLLABORATOR                 | User is a collaborator and is considered staff                                              | No      |
 | 1 << 51     | RESTRICTED_COLLABORATOR      | User is a restricted collaborator and is considered staff                                   | No      |
@@ -629,13 +628,16 @@ A relationship between the current user and another user.
 
 ###### Relationship Structure
 
-| Field    | Type                         | Description                                                     |
-| -------- | ---------------------------- | --------------------------------------------------------------- |
-| id       | string                       | The ID of the target user                                       |
-| type     | integer                      | The [type](#relationship-type) of relationship                  |
-| user     | partial [user](#user-object) | The target user                                                 |
-| nickname | ?string                      | The nickname of the user in this relationship (1-32 characters) |
-| since?   | ISO8601 timestamp            | When the user requested a relationship                          |
+| Field                | Type                         | Description                                                     |
+| -------------------- | ---------------------------- | --------------------------------------------------------------- |
+| id                   | string                       | The ID of the target user                                       |
+| type                 | integer                      | The [type](#relationship-type) of relationship                  |
+| user                 | partial [user](#user-object) | The target user                                                 |
+| nickname             | ?string                      | The nickname of the user in this relationship (1-32 characters) |
+| is_spam_request? ^1^ | boolean                      | Whether the relationship was flagged as spam (default false)    |
+| since?               | ISO8601 timestamp            | When the user requested a relationship                          |
+
+^1^ Only applicable to relationships of type `INCOMING_REQUEST`.
 
 ###### Relationship Type
 
@@ -656,6 +658,7 @@ A relationship between the current user and another user.
   "id": "852892297661906993",
   "type": 3,
   "nickname": null,
+  "is_spam_request": false,
   "user": {
     "id": "852892297661906993",
     "username": "alien",
@@ -748,7 +751,7 @@ Modifies the requester's user account settings. Returns a [user](#user-object) o
 | bio?                      | ?string                            | The user's bio (max 190 characters)                                                                                                                                       |
 | banner?                   | ?[image data](/reference#cdn-data) | The user's banner; can only be changed for premium (Nitro) users                                                                                                          |
 | accent_color?             | ?integer                           | The user's accent color as a hex integer                                                                                                                                  |
-| flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED`, `HAS_UNREAD_URGENT_MESSAGES`, and `DISABLE_PREMIUM` can be set)                                          |
+| flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED` and `HAS_UNREAD_URGENT_MESSAGES` can be set)                                                              |
 | date_of_birth? ^2^        | ISO8601 timestamp                  | The user's date of birth; can only be set once                                                                                                                            |
 | password? ^1^             | string                             | The user's current password; if the account does not have a password, this sets it                                                                                        |
 | new_password? ^3^         | string                             | The user's new password (8-72 characters)                                                                                                                                 |
@@ -1751,6 +1754,19 @@ Modifies a relationship to another user. Returns a 204 empty response on success
 </RouteHeader>
 
 Removes a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway event.
+
+<RouteHeader method="DELETE" url="/users/@me/relationships">
+  Bulk Remove Relationships
+</RouteHeader>
+
+Removes multiple relationships. Returns a 204 empty response on success. May fire multiple [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway events.
+
+###### Query Params
+
+| Field              | Type    | Description                                                                                                                             |
+| ------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| relationship_type? | integer | Remove relationships with this [relationship type](#relationship-type) (default `INCOMING_REQUEST`, only `INCOMING_REQUEST` is allowed) |
+| only_spam?         | boolean | Whether to remove relationships that were flagged as spam (default false)                                                               |
 
 <RouteHeader method="GET" url="/friend-suggestions">
   Get Friend Suggestions
