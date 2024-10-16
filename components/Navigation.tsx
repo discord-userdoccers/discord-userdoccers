@@ -569,6 +569,19 @@ export default function Navigation() {
           Teams
         </NavigationLink>
         <NavigationLink
+          href="/resources/user-settings"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/user-settings#legacy-user-settings">
+                Legacy User Settings
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          User Settings
+        </NavigationLink>
+        <NavigationLink
           href="/resources/user"
           subLinks={
             <Fragment>
