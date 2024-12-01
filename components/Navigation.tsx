@@ -257,6 +257,12 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/channel#channel-object">Channel Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#partial-channel-object">
+                Partial Channel Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#followed-channel-object">
+                Followed Channel Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#permission-overwrite-object">
                 Permission Overwrite Object
               </NavigationSubLink>
@@ -440,9 +446,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#message-snapshot-object">
                 Message Snapshot Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#followed-channel-object">
-                Followed Channel Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#reaction-object">Reaction Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#embed-object">Embed Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#attachment-object">Attachment Object</NavigationSubLink>
@@ -567,6 +570,19 @@ export default function Navigation() {
           }
         >
           Teams
+        </NavigationLink>
+        <NavigationLink
+          href="/resources/user-settings"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/user-settings#legacy-user-settings">
+                Legacy User Settings
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          User Settings
         </NavigationLink>
         <NavigationLink
           href="/resources/user"

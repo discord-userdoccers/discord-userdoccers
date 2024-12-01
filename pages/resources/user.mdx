@@ -70,7 +70,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | global_name ^5^          | ?string                                                             | The user's display name (1-32 characters); for bots, this is the application name                               |
 | avatar                   | ?string                                                             | The user's [avatar hash](/reference#cdn-formatting)                                                             |
 | avatar_decoration_data   | ?[avatar decoration data](#avatar-decoration-data-structure) object | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
-| clan?                    | ?[user clan](#user-clan-structure) object                           | The primary clan the user is in                                                                                 |
+| primary_guild?           | ?[primary guild](#primary-guild-structure) object                   | The primary clan guild the user is in                                                                           |
 | bot?                     | boolean                                                             | Whether the user is a bot account                                                                               |
 | system?                  | boolean                                                             | Whether the user is an official Discord System user (part of the urgent message system)                         |
 | mfa_enabled              | boolean                                                             | Whether the user has multi-factor authentication enabled on their account                                       |
@@ -114,7 +114,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | global_name? ^1^        | ?string                                                          | The user's display name (1-32 characters); for bots, this is the application name                               |
 | avatar                  | ?string                                                          | The user's [avatar hash](/reference#cdn-formatting)                                                             |
 | avatar_decoration_data? | ?[avatar decoration data](#avatar-decoration-data-object) object | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
-| clan?                   | ?[user clan](#user-clan-structure) object                        | The primary clan the user is in                                                                                 |
+| primary_guild?          | ?[primary guild](#primary-guild-structure) object                | The primary clan guild the user is in                                                                           |
 | bot?                    | boolean                                                          | Whether the user is a bot account                                                                               |
 | system?                 | boolean                                                          | Whether the user is an official Discord System user (part of the urgent message system)                         |
 | banner? ^2^             | ?string                                                          | The user's [banner hash](/reference#cdn-formatting)                                                             |
@@ -127,13 +127,13 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 
 ^3^ Only guaranteed to be included when fetched through the [Get User](#get-user) endpoint or the [`author` field on the message object](/resources/message#message-object). May be included in data received through other API endpoints.
 
-###### User Clan Structure
+###### Primary Guild Structure
 
 | Field                 | Type       | Description                                        |
 | --------------------- | ---------- | -------------------------------------------------- |
-| identity_guild_id ^1^ | ?snowflake | The ID of the user's primary clan                  |
 | identity_enabled      | boolean    | Whether the user is displaying their clan tag      |
-| tag ^1^               | ?string    | The text of the user's clan tag (max 4 characters) |
+| identity_guild_id ^1^ | ?snowflake | The ID of the guild                                |
+| tag ^1^               | ?string    | The user's clan tag (max 4 characters)             |
 | badge ^1^             | ?string    | The clan's [badge hash](/reference#cdn-formatting) |
 
 ^1^ Only populated for users with `identity_enabled` set to `true`.
@@ -167,7 +167,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
   "verified": true,
   "phone": "+18885940085",
   "authenticator_types": [1, 2, 3],
-  "clan": {
+  "primary_guild": {
     "identity_guild_id": "80351110224678913",
     "identity_enabled": true,
     "tag": "MEOW",
@@ -193,7 +193,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
     "asset": "a_fed43ab12698df65902ba06727e20c0e",
     "expires_at": null
   },
-  "clan": {
+  "primary_guild": {
     "identity_guild_id": "80351110224678913",
     "identity_enabled": true,
     "tag": "MEOW",
@@ -227,7 +227,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 18     | CERTIFIED_MODERATOR          | Moderator Programs Alumni                                                                   | Yes     |
 | 1 << 19     | BOT_HTTP_INTERACTIONS        | Bot uses only HTTP interactions and is shown in the online member list                      | Yes     |
 | 1 << 20     | SPAMMER                      | User is marked as a spammer and has their messages collapsed in the UI                      | Yes     |
-| 1 << 21     | DISABLE_PREMIUM              | User has manually disabled premium (Nitro) features                                         | No      |
+| ~~1 << 21~~ | ~~DISABLE_PREMIUM~~          | ~~User has manually disabled premium (Nitro) features~~                                     | ~~No~~  |
 | 1 << 22     | ACTIVE_DEVELOPER             | [Active Developer](https://support-dev.discord.com/hc/articles/10113997751447)              | Yes     |
 | 1 << 23     | PROVISIONAL_ACCOUNT          | User is a provisional account used with the social layer integration                        | Yes     |
 | 1 << 33     | HIGH_GLOBAL_RATE_LIMIT       | User has a raised global ratelimit                                                          | No ^1^  |
@@ -297,26 +297,17 @@ Required action types denote an action Discord requires the user to take before 
 
 ^1^ This is now represented by first receiving a `VERIFY_PHONE` action, and then receiving a `VERIFY_EMAIL` action after the phone number has been verified.
 
-###### Client Theme
-
-The client theme denotes the theme the user has set in their client.
-
-| Value | Description |
-| ----- | ----------- |
-| dark  | Dark theme  |
-| light | Light theme |
-
 ### Avatar Decoration Data Object
 
 A user's active avatar decoration.
 
 ###### Avatar Decoration Data Structure
 
-| Field       | Type               | Description                                             |
-| ----------- | ------------------ | ------------------------------------------------------- |
-| asset       | string             | The [avatar decoration hash](/reference#cdn-formatting) |
-| sku_id?     | string             | The ID of the avatar decoration's SKU                   |
-| expires_at? | ?ISO8601 timestamp | When the current avatar decoration expires              |
+| Field       | Type     | Description                                                                    |
+| ----------- | -------- | ------------------------------------------------------------------------------ |
+| asset       | string   | The [avatar decoration hash](/reference#cdn-formatting)                        |
+| sku_id?     | string   | The ID of the avatar decoration's SKU                                          |
+| expires_at? | ?integer | Unix timestamp (in milliseconds) of when the current avatar decoration expires |
 
 ###### Example Avatar Decoration Data
 
@@ -350,10 +341,10 @@ A user's profile metadata.
 
 ###### Profile Effect Structure
 
-| Field      | Type               | Description                             |
-| ---------- | ------------------ | --------------------------------------- |
-| id         | snowflake          | The ID of the profile effect            |
-| expires_at | ?ISO8601 timestamp | When the current profile effect expires |
+| Field      | Type      | Description                                                                 |
+| ---------- | --------- | --------------------------------------------------------------------------- |
+| id         | snowflake | The ID of the profile effect                                                |
+| expires_at | ?integer  | Unix timestamp (in milliseconds) of when the current profile effect expires |
 
 ###### Example Profile Metadata
 
@@ -628,13 +619,16 @@ A relationship between the current user and another user.
 
 ###### Relationship Structure
 
-| Field    | Type                         | Description                                                     |
-| -------- | ---------------------------- | --------------------------------------------------------------- |
-| id       | string                       | The ID of the target user                                       |
-| type     | integer                      | The [type](#relationship-type) of relationship                  |
-| user     | partial [user](#user-object) | The target user                                                 |
-| nickname | ?string                      | The nickname of the user in this relationship (1-32 characters) |
-| since?   | ISO8601 timestamp            | When the user requested a relationship                          |
+| Field                | Type                         | Description                                                     |
+| -------------------- | ---------------------------- | --------------------------------------------------------------- |
+| id                   | string                       | The ID of the target user                                       |
+| type                 | integer                      | The [type](#relationship-type) of relationship                  |
+| user                 | partial [user](#user-object) | The target user                                                 |
+| nickname             | ?string                      | The nickname of the user in this relationship (1-32 characters) |
+| is_spam_request? ^1^ | boolean                      | Whether the relationship was flagged as spam (default false)    |
+| since?               | ISO8601 timestamp            | When the user requested a relationship                          |
+
+^1^ Only applicable to relationships of type `INCOMING_REQUEST`.
 
 ###### Relationship Type
 
@@ -655,6 +649,7 @@ A relationship between the current user and another user.
   "id": "852892297661906993",
   "type": 3,
   "nickname": null,
+  "is_spam_request": false,
   "user": {
     "id": "852892297661906993",
     "username": "alien",
@@ -747,7 +742,7 @@ Modifies the requester's user account settings. Returns a [user](#user-object) o
 | bio?                      | ?string                            | The user's bio (max 190 characters)                                                                                                                                       |
 | banner?                   | ?[image data](/reference#cdn-data) | The user's banner; can only be changed for premium (Nitro) users                                                                                                          |
 | accent_color?             | ?integer                           | The user's accent color as a hex integer                                                                                                                                  |
-| flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED`, `HAS_UNREAD_URGENT_MESSAGES`, and `DISABLE_PREMIUM` can be set)                                          |
+| flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED` and `HAS_UNREAD_URGENT_MESSAGES` can be set)                                                              |
 | date_of_birth? ^2^        | ISO8601 timestamp                  | The user's date of birth; can only be set once                                                                                                                            |
 | password? ^1^             | string                             | The user's current password; if the account does not have a password, this sets it                                                                                        |
 | new_password? ^3^         | string                             | The user's new password (8-72 characters)                                                                                                                                 |
@@ -1751,6 +1746,19 @@ Modifies a relationship to another user. Returns a 204 empty response on success
 
 Removes a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway event.
 
+<RouteHeader method="DELETE" url="/users/@me/relationships">
+  Bulk Remove Relationships
+</RouteHeader>
+
+Removes multiple relationships. Returns a 204 empty response on success. May fire multiple [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway events.
+
+###### Query Params
+
+| Field              | Type    | Description                                                                                                                             |
+| ------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| relationship_type? | integer | Remove relationships with this [relationship type](#relationship-type) (default `INCOMING_REQUEST`, only `INCOMING_REQUEST` is allowed) |
+| only_spam?         | boolean | Whether to remove relationships that were flagged as spam (default false)                                                               |
+
 <RouteHeader method="GET" url="/friend-suggestions">
   Get Friend Suggestions
 </RouteHeader>
@@ -1818,6 +1826,73 @@ Confirms the given [tutorial](/topics/gateway-events#tutorial-structure) indicat
 </RouteHeader>
 
 Suppresses all [tutorial](/topics/gateway-events#tutorial-structure) indicators. Returns a 204 empty response on success.
+
+<RouteHeader method="POST" url="/hypesquad/online">
+  Join HypeSquad Online
+</RouteHeader>
+
+Joins a HypeSquad house and applies the relevant [user flag](#user-flags) to the current user. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field    | Type    | Description                                     |
+| -------- | ------- | ----------------------------------------------- |
+| house_id | integer | The [HypeSquad house](#hypesquad-house) to join |
+
+###### HypeSquad House
+
+| Value | Description          |
+| ----- | -------------------- |
+| 1     | HypeSquad Bravery    |
+| 2     | HypeSquad Brilliance |
+| 3     | HypeSquad Balance    |
+
+<RouteHeader method="DELETE" url="/hypesquad/online">
+  Leave HypeSquad Online
+</RouteHeader>
+
+Leaves the current user's HypeSquad house and removes the relevant [user flag](#user-flags). Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<RouteHeader method="POST" url="/developers/active-program">
+  Join Active Developer Program
+</RouteHeader>
+
+Joins the active developer program and applies the [`ACTIVE_DEVELOPER` user flag](#user-flags) to the current user. Requires the `MANAGE_WEBHOOKS` permission in the target channel. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) and [Webhooks Update](/topics/gateway-events#webhooks-update) Gateway event.
+
+<Alert type="note">
+
+If the application the user is joining the program with loses the `ACTIVE` application flag, the user will have their [`ACTIVE_DEVELOPER` user flag](#user-flags) removed after a 30 day grace period.
+
+</Alert>
+
+###### JSON Params
+
+| Field              | Type                                                  | Description                                        |
+| ------------------ | ----------------------------------------------------- | -------------------------------------------------- |
+| application_id ^1^ | snowflake                                             | The ID of the application to join the program with |
+| channel_id ^2^     | The ID of the channel to create a follower webhook in |
+
+^1^ User must be the owner of the application or member of the current team. The application must have the [`ACTIVE` application flag](/resources/application#application-flags).
+
+^2^ This webhook will point to the official Discord Developers #developer-news channel and will be used to send updates about developing on Discord.
+
+###### Response Body
+
+| Field    | Type                                                                  | Description          |
+| -------- | --------------------------------------------------------------------- | -------------------- |
+| follower | [followed channel](/resources/channel#followed-channel-object) object | The followed channel |
+
+<RouteHeader method="DELETE" url="/developers/active-program">
+  Leave Active Developer Program
+</RouteHeader>
+
+Leaves the active developer program and removes the [`ACTIVE_DEVELOPER` user flag](#user-flags) from the current user. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint does not remove the webhook created by the user when joining the program. The webhook must be manually deleted.
+
+</Alert>
 
 <RouteHeader method="GET" url="/users/@me/premium-usage">
   Get User Premium Usage
