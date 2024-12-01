@@ -130,6 +130,84 @@ If `id` is `null` and `guild_ids` is a single element array, this folder is not 
 | id        | ?integer         | The ID of the folder                                                                   |
 | name      | ?string          | The name of the folder (default `', '.join(guild.name for guild in folder.guilds)`)    |
 
+### Channel Override Object
+
+Represents override for the channel.
+
+### Channel Override Structure
+
+| Field                 | Type                                                         | Description                                                                                |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| channel_id            | snowflake                                                    | The ID of the channel                                                                      |
+| collapsed             | boolean                                                      | Whether channel is collapsed                                                               |
+| flags?                | integer                                                      | The [channel override's flags](#channel-override-flags)                                    |
+| message_notifications | integer                                                      | The [message notification level](/resources/guild#message-notification-level) for the user |
+| mute_config           | ?[mute config](/resources/channel#mute-config-object) object | The mute metadata for the channel                                                          |
+| muted                 | boolean                                                      | Whether the channel is muted                                                               |
+
+###### Channel Override Flags
+
+| Value   | Name                  | Description                      |
+| ------- | --------------------- | -------------------------------- |
+| 1 << 9  | UNREADS_ONLY_MENTIONS | TODO                             |
+| 1 << 10 | UNREADS_ALL_MESSAGES  | TODO                             |
+| 1 << 11 | FAVORITED             | Whether the channel is favorited |
+| 1 << 12 | OPT_IN_ENABLED        | Unknown                          |
+| 1 << 13 | NEW_FORUM_THREADS_OFF | Unknown                          |
+| 1 << 14 | NEW_FORUM_THREADS_ON  | Unknown                          |
+
+### User Guild Settings Object
+
+Represents guild-specific settings for the current user.
+
+### User Guild Settings Structure
+
+| Field                 | Type                                                         | Description                                                                |
+| --------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| channel_overrides     | array[[channel override](#channel-override-object) object]   | The overrides for channels                                                 |
+| flags                 | integer                                                      | The [user guild settings flags](#user-guild-settings-flags)                |
+| guild_id              | ?snowflake                                                   | The ID of the guild                                                        |
+| hide_muted_channels   | boolean                                                      | Whether to hide muted channels from UI                                     |
+| message_notifications | integer                                                      | The [message notification level](#message-notification-level) for the user |
+| mobile_push           | boolean                                                      | Whether to send push notifications on mobile                               |
+| mute_config           | ?[mute config](/resources/channel#mute-config-object) object | The mute metadata for the guild                                            |
+| mute_scheduled_events | boolean                                                      | Whether the new scheduled events are muted                                 |
+| muted                 | boolean                                                      | Whether the guild is muted                                                 |
+| notify_highlights     | integer                                                      | The [highlight level](#highlight-level) for the user                       |
+| suppress_everyone     | integer                                                      | Whether to suppress `@everyone` notifications                              |
+| suppress_roles        | integer                                                      | Whether to suppress role notifications                                     |
+| version               | integer                                                      | The version of guild settings                                              |
+
+### Partial User Guild Settings Object
+
+Specifies what fields to update in [user guild settings](#user-guild-settings-object) object.
+
+### Partial User Guild Settings Structure
+
+| Field                  | Type                                                                | Description                                                                |
+| ---------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| channel_overrides      | map[snowflake, [channel override](#channel-override-object) object] | The overrides for channels                                                 |
+| flags?                 | integer                                                             | The [user guild settings flags](#user-guild-settings-flags)                |
+| guild_id?              | ?snowflake                                                          | The ID of the guild                                                        |
+| hide_muted_channels?   | boolean                                                             | Whether to hide muted channels from UI                                     |
+| message_notifications? | integer                                                             | The [message notification level](#message-notification-level) for the user |
+| mobile_push?           | boolean                                                             | Whether to send push notifications on mobile                               |
+| mute_config?           | ?[mute config](/resources/channel#mute-config-object) object        | The mute metadata for the guild                                            |
+| mute_scheduled_events? | boolean                                                             | Whether the new scheduled events are muted                                 |
+| muted?                 | boolean                                                             | Whether the guild is muted                                                 |
+| notify_highlights?     | integer                                                             | The [highlight level](#highlight-level) for the user                       |
+| suppress_everyone?     | integer                                                             | Whether to suppress `@everyone` notifications                              |
+| suppress_roles?        | integer                                                             | Whether to suppress role notifications                                     |
+
+## User Guild Settings Flags
+
+| Value   | Name                  | Description                              |
+| ------- | --------------------- | ---------------------------------------- |
+| 1 << 11 | UNREADS_ALL_MESSAGES  | TODO                                     |
+| 1 << 12 | UNREADS_ONLY_MENTIONS | TODO                                     |
+| 1 << 13 | OPT_IN_CHANNELS_OFF   | TODO                                     |
+| 1 << 14 | OPT_IN_CHANNELS_ON    | Whether to show all guild channels in UI |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/settings" deprecated>
@@ -182,3 +260,21 @@ Modifies the requester's user settings. Returns a [user settings](#user-settings
 | theme?                                 | string                                                    | The [theme](#legacy-client-theme)                                                                              |
 | timezone_offset?                       | integer                                                   | The timezone offset from UTC to use (in minutes)                                                               |
 | view_nsfw_guilds?                      | boolean                                                   | Whether NSFW guilds are shown on iOS                                                                           |
+
+<RouteHeader method="PATCH" url="/users/@me/guilds/settings">
+  Bulk Modify User Guild Settings
+</RouteHeader>
+
+Modifies user guild's settings. Returns list of an outdated [user guild settings](#user-guild-settings-object) objects on success. Fires mulitple [User Guild Settings Update](/topics/gateway-events#user-guild-settings-update) Gateway events.
+
+###### JSON params
+
+| Field  | Type                                                                       | Description                                             |
+| ------ | -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| guilds | map[snowflake, partial [user guild settings](#user-guild-settings) object] | The mapping of guild IDs to partial user guild settings |
+
+<RouteHeader method="PATCH" url="/users/@me/guilds/{guild.id}/settings OR /users/@me/guilds/@me/settings">
+  Modify User Guild Settings
+</RouteHeader>
+
+Modifies user guild's settings. Takes [partial user guild settings](#partial-user-guild-settings) object. Returns [user guild settings](#user-guild-settings-object) object on success. Fires [User Guild Settings Update](/topics/gateway-events#user-guild-settings-update) Gateway event.
