@@ -257,6 +257,12 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/channel#channel-object">Channel Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#partial-channel-object">
+                Partial Channel Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#followed-channel-object">
+                Followed Channel Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#permission-overwrite-object">
                 Permission Overwrite Object
               </NavigationSubLink>
@@ -439,9 +445,6 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/resources/message#message-snapshot-object">
                 Message Snapshot Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#followed-channel-object">
-                Followed Channel Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/message#reaction-object">Reaction Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#embed-object">Embed Object</NavigationSubLink>
