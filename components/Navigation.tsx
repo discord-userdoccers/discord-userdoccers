@@ -575,6 +575,9 @@ export default function Navigation() {
           href="/resources/user-settings"
           subLinks={
             <Fragment>
+              <NavigationSubLink href="/resources/user-settings#user-settings-proto-object">
+                User Settings Proto Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/user-settings#legacy-user-settings-object">
                 Legacy User Settings Object
               </NavigationSubLink>

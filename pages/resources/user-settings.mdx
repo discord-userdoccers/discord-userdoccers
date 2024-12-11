@@ -8,7 +8,19 @@ Protobuf user settings are not yet documented here. Refer to [this repository](h
 
 </Alert>
 
-### Legacy User Settings Object
+## User Settings Proto Object
+
+This object is actually a serialized protobuf message. The individual fields are not yet documented, but the .proto files are available on [this repository](https://github.com/dolfies/discord-protos).
+
+###### User Settings Proto Type
+
+| Value | Name          | Description                    |
+| ----- | ------------- | ------------------------------ |
+| 1     | PRELOADED     | General Discord user settings  |
+| 2     | FRECENCY      | Frecency and favorites storage |
+| 3     | TEST_SETTINGS | Unknown                        |
+
+## Legacy User Settings Object
 
 Contains general user settings. This is deprecated in favour of protobuf user settings.
 
@@ -132,17 +144,68 @@ If `id` is `null` and `guild_ids` is a single element array, this folder is not 
 
 ## Endpoints
 
+<RouteHeader method="GET" url="/users/@me/settings-proto/{type}">
+  Get User Settings Proto
+</RouteHeader>
+
+Returns the requester's [user settings protobuf](#user-settings-proto-object) for the specified type.
+
+###### Response Body
+
+| Field    | Type   | Description                                           |
+| -------- | ------ | ----------------------------------------------------- |
+| settings | string | The base 64-encoded serialized user settings protobuf |
+
+<RouteHeader method="PATCH" url="/users/@me/settings-proto/{type}">
+  Modify User Settings Proto
+</RouteHeader>
+
+Modifies the requester's user settings protobuf for the specified type. Fires a [User Settings Proto Update](/topics/gateway-events#user-settings-proto-update) and [User Settings Update](/topics/gateway-events#user-settings-update) Gateway event.
+
+<Alert type="warn">
+
+When updating protobuf user settings, the entire top-level field being modified must be sent, or any subfields not sent will be reset to their default values.
+
+For example, if updating `PreloadedUserSettings.AppearanceSettings.developer_mode`, the entire `PreloadedUserSettings.AppearanceSettings` field must be sent, or everything in it will be reset.
+
+</Alert>
+
+<Alert type="info">
+
+This endpoint is ratelimited heavily. Updates should be batched together and sent at intervals.
+
+Infrequent actions do not need a delay. Frequent actions should be delayed by 10 seconds and batched.  
+Automated actions (such as migrations or frecency updates) should be delayed by 30 seconds and batched.  
+Daily actions (things that change often and are not meaningful, such as emoji frencency) should be delayed by 1 day and batched.
+
+</Alert>
+
+###### JSON Params
+
+| Field                      | Type    | Description                                                         |
+| -------------------------- | ------- | ------------------------------------------------------------------- |
+| settings                   | string  | The base-64 encoded serialized user settings protobuf modifications |
+| required_data_version? ^1^ | integer | The required data version of the proto                              |
+
+^1^ When making offline edits, the required data version of the proto should be set to the last known version. This ensures that the client doesn't overwrite newer edits made on a different client on edit.
+
+###### Response Body
+
+| Field    | Type   | Description                                           |
+| -------- | ------ | ----------------------------------------------------- |
+| settings | string | The base-64 encoded serialized user settings protobuf |
+
 <RouteHeader method="GET" url="/users/@me/settings" deprecated>
-  Get Current User Settings
+  Get User Settings
 </RouteHeader>
 
 Returns the requester's [user settings](#legacy-user-settings-object).
 
 <RouteHeader method="PATCH" url="/users/@me/settings" deprecated>
-  Modify Current User Settings
+  Modify User Settings
 </RouteHeader>
 
-Modifies the requester's user settings. Returns a [user settings](#legacy-user-settings-object) object on success. Fires a [User Settings Update](/topics/gateway-events#user-settings-update) Gateway event.
+Modifies the requester's user settings. Returns a [user settings](#legacy-user-settings-object) object on success. Fires a [User Settings Proto Update](/topics/gateway-events#user-settings-proto-update) and [User Settings Update](/topics/gateway-events#user-settings-update) Gateway event.
 
 ###### JSON Params
 
