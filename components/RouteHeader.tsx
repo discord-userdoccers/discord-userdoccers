@@ -47,11 +47,11 @@ export default function RouteHeader({
   return (
     <Fragment>
       <H3 className="mb-0">{children}</H3>
-      <div className="flex items-center mt-1">
+      <div className="mt-1 flex items-center">
         <MethodBadge method={method} />
-        <code className="p-2 dark:text-text-dark text-text-light break-all">{url}</code>
+        <code className="break-all p-2 text-text-light dark:text-text-dark">{url}</code>
       </div>
-      <div className="flex gap-2 items-center mt-2">
+      <div className="mt-2 flex items-center gap-2">
         {mfa ? (
           <Badge
             href="/resources/user#user-object"
