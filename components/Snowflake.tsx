@@ -7,7 +7,7 @@ export default function Snowflake(props: PropsWithChildren) {
       data-name="Snowflake-Deconstruction"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 450.58 233.56"
-      className="dark:text-text-dark text-text-light fill-current"
+      className="fill-current text-text-light dark:text-text-dark"
       {...props}
     >
       <text

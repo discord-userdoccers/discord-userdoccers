@@ -37,10 +37,10 @@ export default function Menu() {
 
   return (
     <div className={classes}>
-      <div className="flex flex-col w-full dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light md:w-80" ref={ref}>
-        <div className="flex flex-col flex-grow pb-4 pt-5 overflow-y-auto">
+      <div className="flex w-full flex-col bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark md:w-80" ref={ref}>
+        <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
           <div className="flex flex-1 flex-col items-start">
-            <Bars onClick={setClose} className="ml-6 h-7 text-black dark:text-white cursor-pointer md:hidden" />
+            <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black dark:text-white md:hidden" />
             <Navigation />
           </div>
         </div>

@@ -63,7 +63,7 @@ export default function App({ Component, pageProps, router }: AppProps) {
         {/* eslint-disable-next-line react/jsx-pascal-case */}
         <MDX>
           <OpenGraph description={meta?.description} section={meta?.title} />
-          <div className="flex h-screen dark:bg-background-dark bg-white overflow-hidden">
+          <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
 

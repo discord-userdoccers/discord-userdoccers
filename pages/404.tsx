@@ -11,9 +11,9 @@ function LinkList({ className, children }: { className: string; children: ReactN
 
 function LinkPanel({ title, href, children }: { title: string; href: string; children: ReactNode }) {
   return (
-    <li className="bg-indigo-100 dark:bg-table-head-background-dark rounded-lg">
+    <li className="rounded-lg bg-indigo-100 dark:bg-table-head-background-dark">
       <Link href={href} className="block p-4">
-        <h4 className="text-center text-black dark:text-white text-lg font-bold">{title}</h4>
+        <h4 className="text-center text-lg font-bold text-black dark:text-white">{title}</h4>
         <Paragraph>{children}</Paragraph>
       </Link>
     </li>
@@ -25,11 +25,11 @@ function LinkPanel({ title, href, children }: { title: string; href: string; chi
 export default function NotFound() {
   return (
     <ContentWrapper>
-      <div className="px-4 py-16 min-h-screen sm:px-6 sm:py-24 lg:grid lg:place-items-center lg:px-8">
+      <div className="min-h-screen px-4 py-16 sm:px-6 sm:py-24 lg:grid lg:place-items-center lg:px-8">
         <div className="mx-auto max-w-max">
           <main className="lg:flex">
             <div className="lg:ml-6">
-              <h1 className="text-center text-black dark:text-white text-4xl font-extrabold tracking-tight sm:text-5xl">
+              <h1 className="text-center text-4xl font-extrabold tracking-tight text-black dark:text-white sm:text-5xl">
                 404: Page not found
               </h1>
 

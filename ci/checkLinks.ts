@@ -57,6 +57,8 @@ function scanFile(
     const matches = line.matchAll(regex);
 
     for (const match of matches) {
+      // We remove <> from the match because it works but is erroneously detected as a base URL
+      match[index] = match[index].replace(/[<>]/g, "");
       const split = match[index].split("#");
       let url = split[0].endsWith("/") ? split[0].slice(0, -1) : split[0];
       if (match[index].startsWith("#")) url = name;
@@ -149,7 +151,7 @@ for (const [name, raw] of mdxFiles) {
   }
   const ownResults = results.get(fileName)!;
   scanFile(
-    /(?<![!`])\[.+?\]\((?!(?:https?)|(?:mailto))(.+?)\)(?!`)/g,
+    /(?<![!`])\[[^\[\]]+?\]\((?!(?:https?)|(?:mailto))([^\(\)]*?(?:\([^\(\)]*?\)[^\(\)]*?)*?)\)(?!`)/g,
     1,
     name.slice(0, -extLength),
     file,
