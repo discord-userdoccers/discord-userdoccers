@@ -21,7 +21,7 @@ function NavigationSection({ title, className, children }: MenuSelectionProps) {
   return (
     <section className={classes}>
       {title ? (
-        <h3 className="mb-2 ml-2 text-black dark:text-white font-whitney-bold text-xs uppercase">{title}</h3>
+        <h3 className="mb-2 ml-2 font-whitney-bold text-xs uppercase text-black dark:text-white">{title}</h3>
       ) : null}
       {children}
     </section>
@@ -104,9 +104,9 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
   }, [router.asPath]);
 
   return (
-    <span className="relative flex items-center ml-4">
+    <span className="relative ml-4 flex items-center">
       <Link href={href} className={classes}>
-        {currentPath === href ? <Caret className="absolute -ml-4 w-2 h-2" /> : null}
+        {currentPath === href ? <Caret className="absolute -ml-4 h-2 w-2" /> : null}
         {children}
       </Link>
     </span>
@@ -115,8 +115,8 @@ function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
 
 export default function Navigation() {
   return (
-    <nav className="flex-1 self-stretch mt-5 px-6">
-      <div className="hidden items-center -mt-4 mb-8 md:flex">
+    <nav className="mt-5 flex-1 self-stretch px-6">
+      <div className="-mt-4 mb-8 hidden items-center md:flex">
         <a href="/intro" className="hidden md:block">
           <Userdoccers className="w-9/12 text-black dark:text-white" />
         </a>
@@ -124,7 +124,7 @@ export default function Navigation() {
       </div>
 
       <NavigationSection>
-        <div id="searchContainer" className="w-full flex-1 flex">
+        <div id="searchContainer" className="flex w-full flex-1">
           <Searchbar />
         </div>
 
@@ -257,6 +257,12 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/channel#channel-object">Channel Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#partial-channel-object">
+                Partial Channel Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/channel#followed-channel-object">
+                Followed Channel Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#permission-overwrite-object">
                 Permission Overwrite Object
               </NavigationSubLink>
@@ -440,9 +446,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#message-snapshot-object">
                 Message Snapshot Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/message#followed-channel-object">
-                Followed Channel Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/message#reaction-object">Reaction Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#embed-object">Embed Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#attachment-object">Attachment Object</NavigationSubLink>
@@ -452,6 +455,9 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#poll-object">Poll Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#poll-result-notifications">
                 Poll Result Notifications
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#conversation-summary-object">
+                Conversation Summary Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/message#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
@@ -572,8 +578,11 @@ export default function Navigation() {
           href="/resources/user-settings"
           subLinks={
             <Fragment>
-              <NavigationSubLink href="/resources/user-settings#legacy-user-settings">
-                Legacy User Settings
+              <NavigationSubLink href="/resources/user-settings#user-settings-proto-object">
+                User Settings Proto Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-user-settings-object">
+                Legacy User Settings Object
               </NavigationSubLink>
               <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
             </Fragment>

@@ -23,9 +23,9 @@ export default function ThemeSwitcher() {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="dark:hover:bg-brand-blurple inline-flex justify-center p-2 w-full text-black dark:text-white hover:text-white text-sm font-medium hover:bg-brand-blurple dark:bg-table-row-background-secondary-dark bg-white rounded-md focus:outline-none transition duration-100 focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75">
+        <Menu.Button className="inline-flex w-full justify-center rounded-md bg-white p-2 text-sm font-medium text-black transition duration-100 hover:bg-brand-blurple hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 dark:bg-table-row-background-secondary-dark dark:text-white dark:hover:bg-brand-blurple">
           <span className="sr-only">Change Theme</span>
-          <Lightbulb className="w-4 h-4 md:w-6 md:h-6" aria-hidden="true" />
+          <Lightbulb className="h-4 w-4 md:h-6 md:w-6" aria-hidden="true" />
         </Menu.Button>
       </div>
       <Transition
@@ -37,15 +37,15 @@ export default function ThemeSwitcher() {
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 w-56 dark:bg-table-row-background-secondary-dark bg-white rounded-md focus:outline-none shadow-lg divide-gray-100 dark:divide-gray-900 divide-y origin-top-right ring-1 ring-brand-blurple ring-opacity-5 z-40">
+        <Menu.Items className="absolute right-0 z-40 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-brand-blurple ring-opacity-5 focus:outline-none dark:divide-gray-900 dark:bg-table-row-background-secondary-dark">
           <div className="px-1 py-1">
             <Menu.Item>
               {({ active }) => (
                 <button className={getMenuItemClasses(active)} onClick={() => setTheme("system")}>
                   {theme === "system" ? (
-                    <Check className="mr-2 w-5 h-5" aria-hidden="true" />
+                    <Check className="mr-2 h-5 w-5" aria-hidden="true" />
                   ) : (
-                    <Gear className="mr-2 w-5 h-5" aria-hidden="true" />
+                    <Gear className="mr-2 h-5 w-5" aria-hidden="true" />
                   )}
                   System Theme
                 </button>
@@ -55,9 +55,9 @@ export default function ThemeSwitcher() {
               {({ active }) => (
                 <button className={getMenuItemClasses(active)} onClick={() => setTheme("light")}>
                   {theme === "light" ? (
-                    <Check className="mr-2 w-5 h-5" aria-hidden="true" />
+                    <Check className="mr-2 h-5 w-5" aria-hidden="true" />
                   ) : (
-                    <Sun className="mr-2 w-5 h-5" aria-hidden="true" />
+                    <Sun className="mr-2 h-5 w-5" aria-hidden="true" />
                   )}
                   Light Theme
                 </button>
@@ -67,9 +67,9 @@ export default function ThemeSwitcher() {
               {({ active }) => (
                 <button className={getMenuItemClasses(active)} onClick={() => setTheme("dark")}>
                   {theme === "dark" ? (
-                    <Check className="mr-2 w-5 h-5" aria-hidden="true" />
+                    <Check className="mr-2 h-5 w-5" aria-hidden="true" />
                   ) : (
-                    <Moon className="mr-2 w-5 h-5" aria-hidden="true" />
+                    <Moon className="mr-2 h-5 w-5" aria-hidden="true" />
                   )}
                   Dark Theme
                 </button>
