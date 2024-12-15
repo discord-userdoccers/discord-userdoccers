@@ -164,6 +164,7 @@ export default function Navigation() {
               <NavigationSubLink href="/authentication#login">Login</NavigationSubLink>
               <NavigationSubLink href="/authentication#register">Register</NavigationSubLink>
               <NavigationSubLink href="/authentication#logout">Logout</NavigationSubLink>
+              <NavigationSubLink href="/authentication#password-recovery">Password Recovery</NavigationSubLink>
               <NavigationSubLink href="/authentication#account-recovery">Account Recovery</NavigationSubLink>
               <NavigationSubLink href="/authentication#mfa-verification">MFA Verification</NavigationSubLink>
             </Fragment>
