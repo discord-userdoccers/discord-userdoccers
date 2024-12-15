@@ -630,7 +630,7 @@ Invalidates the given authentication session and unregisters the provided push n
 
 ^1^ VOIP-specific push notification tokens are only used with PushKit on iOS.
 
-## Account Recovery
+## Password Recovery
 
 If a user has forgotten their password, they can reset it using either their email address or phone number. To initiate a password reset, the client should use the [Forgot Password](#forgot-password) endpoint.
 
@@ -718,6 +718,54 @@ To complete the password reset, the client must retry the request with the `tick
   "totp": true,
   "webauthn": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
 }
+```
+
+## Account Recovery
+
+Account recovery is a feature intended for post-takeover recovery, after an attacker has already changed the victim's email, password, phone number or MFA settings.
+
+Upon an email change, Discord will send an email to the victim about the change and give them the option to start the account recovery process. The email will include a link that redirects to the official Discord client with a revert token present in the URL (e.g. `https://discord.com/wasntme/eyJhbGciOiJIUzI1NiIsImtpZCI6ImQ1YmYxZjg2LTU5NDgtNDA4Ni04MmQxLTE2NmQwOWYzMDQ1MiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MzI0NjE0MjAsIm5iZiI6MTczMjQ2MTQyMCwiaXNzIjoiMjNmMDYyNmEtNTUyOS00MGVjLTllMDgtMzNhMThmNmI4YzVjIiwiYXVkIjoiZWRkZGZiODctODYxMy00OTgwLWIxMjItYjI0MmQzNTM0MjFhIiwic3ViIjoxMTU1ODk2MDM1NjEzMzQzODQ1LCJleHAiOjE3MzI1NDc4MjAsInRpY2tldCI6ImQyNzVjM2RkLWEwMjQtNDliMC04ODA0LWFlZDhmYzkwMzMyOCJ9.dtvQvVWio7E5XEujEb6G1muP3xhY3u6oGFPjQEAskA0`).
+
+This token can be used with the [Revert Account](#revert-account) endpoint to revert the account back to the previous settings. Upon completion, the current phone number is removed from the account and all phone numbers previously associated with the account are blacklisted. This is to prevent a follow-up takeover via [sim-jacking](https://en.wikipedia.org/wiki/SIM_swap_scam).
+
+### Endpoints
+
+<RouteHeader method="POST" url="/auth/revert">
+  Revert Account
+</RouteHeader>
+
+Recovers an account after account takeover. This endpoint will:
+
+- Invalidate the revert token used
+- Invalidate all authorization tokens and active Gateway sessions associated with the account
+- Set the account's email back to the original
+- Set the account's password to the one provided
+- Remove MFA from the account
+- Remove and blacklist all phone numbers previously associated with the account
+
+<Alert type="warn">
+
+This process will fail if the account was deleted beforehand (e.g. by anti-spam or a Discord employee), or if the original email was assigned to a different account.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description                              |
+| -------- | ------ | ---------------------------------------- |
+| token    | string | The revert token from the recovery email |
+| password | string | The new password for the account         |
+
+###### Response Body
+
+| Field | Type   | Description                  |
+| ----- | ------ | ---------------------------- |
+| email | string | The account's restored email |
+
+###### Example Response
+
+```json
+{ "email": "alien@shiroko.me" }
 ```
 
 ## MFA Verification
