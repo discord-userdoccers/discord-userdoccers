@@ -520,17 +520,6 @@ export default function Navigation() {
         >
           Quests
         </NavigationLink>
-
-        <NavigationLink
-          href="/resources/account-revert"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/resources/account-revert#endpoints">Endpoints</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          Account Revert
-        </NavigationLink>
         <NavigationLink
           href="/resources/soundboard"
           subLinks={
