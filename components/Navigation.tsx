@@ -866,9 +866,7 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
                 Voice Backend Version
               </NavigationSubLink>
-              <NavigationSubLink href="/topics/voice-connections#streams">
-                Streams
-              </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#streams">Streams</NavigationSubLink>
             </Fragment>
           }
         >
