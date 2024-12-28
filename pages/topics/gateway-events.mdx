@@ -52,32 +52,31 @@ Gateway event payloads have a common structure, but the contents of the associat
 
 Send events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by a client to Discord through a Gateway connection.
 
-| Name                                                    | Description                                                            |
-| ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [Identify](#identify)                                   | Trigger the initial handshake with the Gateway                         |
-| [Resume](#resume)                                       | Resume a dropped Gateway connection                                    |
-| [Heartbeat](#heartbeat)                                 | Maintain an active Gateway connection                                  |
-| [Update Presence](#update-presence)                     | Update the client's presence                                           |
-| [Update Voice State](#update-voice-state)               | Join, move, or disconnect the client from a voice channel or call      |
-| [Ping Voice Server](#ping-voice-server)                 | Ping the Discord voice servers                                         |
-| [Request Guild Members](#request-guild-members)         | Request members for one or more guilds                                 |
-| [Request Call Connect](#request-call-connect)           | Request a private channels's pre-existing call information             |
-| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                       |
-| Update Guild Subscriptions                              | Update subscriptions for a guild                                       |
-| Create Stream                                           | Create a stream for the client (Go Live)                               |
-| Delete Stream                                           | End a client stream                                                    |
-| Watch Stream                                            | Watch a user's stream                                                  |
-| Ping Stream                                             | Ping a user stream's voice server                                      |
-| Set Stream Paused                                       | Pause/resume a client stream                                           |
-| Request Forum Unreads                                   | Request thread-only channel unread counts                              |
-| Remote Command                                          | Send a remote command to an embedded (Xbox, PlayStation) voice session |
-| Request Deleted Entity IDs                              | Request deleted entity IDs not matching a given hash for a guild       |
-| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                       |
-| Create Speed Test                                       | Create a voice speed test                                              |
-| Delete Speed Test                                       | Delete a voice speed test                                              |
-| [Request Last Messages](#request-last-messages)         | Request last messages for a guild's channels                           |
-| [Search Recent Members](#search-recent-members)         | Request recently-joined members for a guild                            |
-| [Request Channel Statuses](#request-channel-statuses)   | Request voice channel statuses for a guild                             |
+| Name                                                    | Description                                                       |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
+| [Identify](#identify)                                   | Trigger the initial handshake with the Gateway                    |
+| [Resume](#resume)                                       | Resume a dropped Gateway connection                               |
+| [Heartbeat](#heartbeat)                                 | Maintain an active Gateway connection                             |
+| [Update Presence](#update-presence)                     | Update the client's presence                                      |
+| [Update Voice State](#update-voice-state)               | Join, move, or disconnect the client from a voice channel or call |
+| [Ping Voice Server](#ping-voice-server)                 | Ping the Discord voice servers                                    |
+| [Request Guild Members](#request-guild-members)         | Request members for one or more guilds                            |
+| [Request Call Connect](#request-call-connect)           | Request a private channels's pre-existing call information        |
+| Update Guild Subscriptions                              | Update subscriptions for a guild                                  |
+| Create Stream                                           | Create a stream for the client (Go Live)                          |
+| Delete Stream                                           | End a client stream                                               |
+| Watch Stream                                            | Watch a user's stream                                             |
+| Ping Stream                                             | Ping a user stream's voice server                                 |
+| Set Stream Paused                                       | Pause/resume a client stream                                      |
+| Request Forum Unreads                                   | Request thread-only channel unread counts                         |
+| [Remote Command](<#remote-command-(send)>)              | Send a message to another Gateway session                         |
+| Request Deleted Entity IDs                              | Request deleted entity IDs not matching a given hash for a guild  |
+| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                  |
+| Create Speed Test                                       | Create a voice speed test                                         |
+| Delete Speed Test                                       | Delete a voice speed test                                         |
+| [Request Last Messages](#request-last-messages)         | Request last messages for a guild's channels                      |
+| [Search Recent Members](#search-recent-members)         | Request recently-joined members for a guild                       |
+| [Request Channel Statuses](#request-channel-statuses)   | Request voice channel statuses for a guild                        |
 
 #### Identify
 
@@ -349,6 +348,35 @@ When using the `AUTO_CALL_CONNECT` [Gateway capability](/topics/gateway#gateway-
 }
 ```
 
+#### Remote Command (Send)
+
+Used to send a message to another Gateway session. Typically, this is used to control embedded sessions, such as an Xbox or PlayStation session. Fires a [Remote Command](<#remote-command-(receive)>) Gateway event on the target session.
+
+###### Remote Command Structure
+
+| Field             | Type   | Description                  |
+| ----------------- | ------ | ---------------------------- |
+| target_session_id | string | ID of the session to send to |
+| payload ^1^       | any    | The payload to send          |
+
+^1^ The sent payload is not standardized or validated by the server.
+
+###### Example Remote Command
+
+```json
+{
+  "op": 29,
+  "d": {
+    "target_session_id": "30f32c5d54ae86130fc4a215c7474263",
+    "payload": {
+      "type": "VOICE_STATE_UPDATE",
+      "self_mute": false,
+      "self_deaf": false
+    }
+  }
+}
+```
+
 #### Request Soundboard Sounds
 
 Used to request soundboard sounds for a list of guilds. Fires a [Soundboard Sounds](#soundboard-sounds) Gateway event for every guild in response.
@@ -545,6 +573,7 @@ These events directly correspond with a specific action or state change that has
 | [Ready](#ready)                                                                   | Initial state information                                                                       |
 | [Ready Supplemental](#ready-supplemental)                                         | Supplemental information for the initial state, not critical to beginning use of the platform   |
 | [Resumed](#resumed)                                                               | Acknowledges a successful [Resume](#resume)                                                     |
+| [Remote Command](<#remote-command-(receive)>)                                     | Received a message from another Gateway session                                                 |
 | [Auth Session Change](#auth-session-change)                                       | Current session's associated auth session ID changed                                            |
 | [Authenticator Create](#authenticator-create)                                     | WebAuthn authenticator was created                                                              |
 | [Authenticator Update](#authenticator-update)                                     | WebAuthn authenticator was updated                                                              |
@@ -786,6 +815,10 @@ Sent when a client has sent a [resume payload](#resume) to the Gateway (for resu
   ]
 }
 ```
+
+#### Remote Command (Receive)
+
+Sent when a message is received from another Gateway session. The inner payload is the [sent message](<#remote-command-(send)>).
 
 ### Authentication
 
@@ -1599,7 +1632,7 @@ Unlike persistent messages, ephemeral messages are sent directly to the user and
 
 | Field           | Type                                                                | Description                                                                                                                                    |
 | --------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| channel_type    | integer                                                             | The [type of channel](/resources/channel#channel-type) this message was sent in                                                                   |
+| channel_type    | integer                                                             | The [type of channel](/resources/channel#channel-type) this message was sent in                                                                |
 | guild_id? ^1^   | snowflake                                                           | The ID of the guild the message was sent in                                                                                                    |
 | member? ^1^ ^2^ | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author                                                                                                    |
 | mentions ^1^    | array[[user](/resources/user#user-object) object]                   | Users specifically mentioned in the message, with an extra [`member`](/resources/guild#guild-member-object) key representing guild member data |
