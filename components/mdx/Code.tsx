@@ -86,7 +86,7 @@ export default function Code({ children, className, metastring, file, ...props }
   const lineNumberClasses = classNames("line_number inline-block w-6 text-right leading-6 select-none");
 
   return (
-    <div className="code-block relative my-3 font-mono rounded-md">
+    <div className="code-block relative my-3 rounded-md font-mono">
       {/* <InfoBar fileName={file} language={language} /> */}
       <Highlight {...defaultProps} code={children} language={language}>
         {({
@@ -102,11 +102,11 @@ export default function Code({ children, className, metastring, file, ...props }
         }) => (
           <pre
             className={classNames(
-              "relative inline-grid grid-rows-max-content m-0 mb-4 w-full leading-normal overflow-auto",
+              "relative m-0 mb-4 inline-grid w-full grid-rows-max-content overflow-auto leading-normal",
               blockClassName,
             )}
           >
-            <code className="p-4 px-1.5 rounded-md">
+            <code className="rounded-md p-4 px-1.5">
               {cleanTokens(tokens).map((line: Token[], i: number) => {
                 const lineClass = {};
                 let isDiff = false;
@@ -173,8 +173,8 @@ export default function Code({ children, className, metastring, file, ...props }
         )}
       </Highlight>
       {hasCopy && (
-        <div className="group copy-button-wrapper absolute top-0 right-0 w-12 h-12">
-          <div className="copy-button absolute top-2 right-2 hidden p-3 transition group-hover:block rounded-md">
+        <div className="copy-button-wrapper group absolute right-0 top-0 h-12 w-12">
+          <div className="copy-button absolute right-2 top-2 hidden rounded-md p-3 transition group-hover:block">
             <CopyButton text={children}>
               <CopyIcon className="w-5" />
             </CopyButton>

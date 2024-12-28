@@ -10,7 +10,7 @@ export default function Badge({ href, name, tooltip }: BadgeProps) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center px-2.5 py-0.5 dark:text-text-dark text-text-light font-mono text-xs font-medium dark:bg-theme-dark-sidebar bg-theme-light-sidebar rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75"
+      className="inline-flex items-center rounded-full bg-theme-light-sidebar px-2.5 py-0.5 font-mono text-xs font-medium text-text-light focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 dark:bg-theme-dark-sidebar dark:text-text-dark"
     >
       <abbr title={tooltip} className="no-underline">
         {name}

@@ -20,9 +20,10 @@ A guild or private channel within Discord.
 | nsfw?                               | boolean                                                            | Whether the channel is NSFW                                                                                                                                                                  |
 | last_message_id?                    | ?snowflake                                                         | The ID of the last message sent (or thread created for thread-only channels, guild added for directory channels) in this channel (may not point to an existing resource)                     |
 | bitrate?                            | integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                                   |
-| user_limit?                         | integer                                                            | The user limit of the voice channel (max 1000, 0 refers to no limit)                                                                                                                         |
-| rate_limit_per_user? ^1^            | integer                                                            | Duration in seconds seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected |
-| recipients?                         | array[[user](/resources/user#user-object) object]                  | The recipients of the private channel                                                                                                                                                        |
+| user_limit? ^1^                     | integer                                                            | The user limit of the voice channel (max 99, 0 refers to no limit)                                                                                                                           |
+| rate_limit_per_user? ^2^            | integer                                                            | Duration in seconds seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected |
+| recipients?                         | array[[user](/resources/user#user-object) object]                  | The recipients of the private channel, excluding the requesting user                                                                                                                         |
+| recipient_flags? ^3^                | integer                                                            | The [recipient flags](#recipient-flags) of the DM                                                                                                                                            |
 | icon?                               | ?string                                                            | The group DM's [icon hash](/reference#cdn-formatting)                                                                                                                                        |
 | managed?                            | boolean                                                            | Whether the group DM is managed by an application                                                                                                                                            |
 | application_id?                     | snowflake                                                          | The ID of the application that manages the group DM                                                                                                                                          |
@@ -38,9 +39,9 @@ A guild or private channel within Discord.
 | member_ids_preview?                 | array[snowflake]                                                   | The IDs of some of the members in a thread                                                                                                                                                   |
 | thread_metadata?                    | [thread metadata](#thread-metadata-object) object                  | Thread-specific channel metadata                                                                                                                                                             |
 | member?                             | [thread member](#thread-member-object) object                      | Thread member object for the current user, if they have joined the thread; only included on certain API endpoints                                                                            |
-| default_auto_archive_duration? ^3^  | ?integer                                                           | Default duration in minutes for newly created threads to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080)                                                    |
+| default_auto_archive_duration? ^4^  | ?integer                                                           | Default duration in minutes for newly created threads to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080)                                                    |
 | default_thread_rate_limit_per_user? | integer                                                            | Default duration in seconds a user has to wait before sending another message in newly created threads; this field is copied to the thread at creation time and does not live update         |
-| permissions? ^2^                    | string                                                             | Computed permissions for the invoking user in the channel, including overwrites                                                                                                              |
+| permissions? ^5^                    | string                                                             | Computed permissions for the invoking user in the channel, including overwrites                                                                                                              |
 | flags?                              | integer                                                            | The [channel's flags](#channel-flags)                                                                                                                                                        |
 | available_tags?                     | array[[tag](#forum-tag-object) object]                             | The tags that can be used in a thread-only channel (max 20)                                                                                                                                  |
 | applied_tags?                       | array[snowflake]                                                   | The IDs of tags that are applied to a thread in a thread-only channel (max 5)                                                                                                                |
@@ -52,15 +53,24 @@ A guild or private channel within Discord.
 | is_message_request_timestamp?       | ?ISO8601 timestamp                                                 | When the message request was created                                                                                                                                                         |
 | is_spam?                            | boolean                                                            | Whether the DM is a spam message request                                                                                                                                                     |
 | theme_color?                        | ?integer                                                           | The background color of the channel icon emoji encoded as an integer representation of hexadecimal color code                                                                                |
-| status? ^4^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
+| status? ^6^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
+| hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming entitlement expires for the voice channel                                                                                                                              |
+| hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming entitlement to the voice channel                                                                                                             |
+| blocked_user_warning_dismissed? ^7^ | boolean                                                            | Whether the user has acknowledged the presence of blocked users in the group DM                                                                                                              |
 
-^1^ `rate_limit_per_user` also applies to thread creation. Users can send one message and create one thread during each `rate_limit_per_user` interval.
+^1^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
 
-^2^ Only returned when part of the `resolved` data received in a slash command interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+^2^ `rate_limit_per_user` also applies to thread creation. Users can send one message and create one thread during each `rate_limit_per_user` interval.
 
-^3^ This field is not automatically copied into new threads created in the channel. It should be manually set when creating a thread.
+^3^ Only included in [Gateway events](/topics/gateway-events#channels).
 
-^4^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
+^4^ This field is not automatically copied into new threads created in the channel. It should be manually set when creating a thread.
+
+^5^ Only returned when part of the `resolved` data received in a slash command interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+
+^6^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
+
+^7^ Only included in [Gateway events](/topics/gateway-events#channels) and when fetched from the [Get Private Channels](#get-private-channels) endpoint.
 
 ###### Channel Type
 
@@ -89,6 +99,8 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 | 14    | GUILD_DIRECTORY   | The main channel in a [hub](https://support.discord.com/hc/en-us/articles/4406046651927-Discord-Student-Hubs-FAQ) containing the listed guilds                     |
 | 15    | GUILD_FORUM       | A channel that can only contain threads                                                                                                                            |
 | 16    | GUILD_MEDIA       | A channel that can only contain threads in a gallery view                                                                                                          |
+| 17    | LOBBY             | A game lobby channel                                                                                                                                               |
+| 18    | DM_SDK            | A private channel created by the social layer SDK                                                                                                                  |
 
 ###### Channel Flags
 
@@ -109,8 +121,17 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 | 1 << 14     | BROADCASTING                               | This group DM is used for broadcasting a live stream                                                                                                            |
 | 1 << 15     | HIDE_MEDIA_DOWNLOAD_OPTIONS                | This media channel has the embedded download options hidden for media attachments                                                                               |
 | 1 << 16     | JOIN_REQUEST_INTERVIEW_CHANNEL             | This group DM is used for [guild join request interviews](https://support.discord.com/hc/en-us/articles/23187611406999-Guilds-FAQ#h_01HXW2MCD0BT70FB9SRV1YRPBV) |
+| 1 << 17     | OBFUSCATED ^2^                             | This channel is unavailable for the current user and has its details obfuscated                                                                                 |
 
 ^1^ Media channels are now represented by the [`GUILD_MEDIA` channel type](#channel-type).
+
+^2^ The channel's name and topic are always returned as `___hidden___`.
+
+###### Recipient Flags
+
+| Value  | Name                          | Description                                                                                                     |
+| ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1 << 0 | DISMISSED_IN_GAME_MESSAGE_NUX | The user has dismissed the [`IN_GAME_MESSAGE_NUX` message](/resources/message#message-type) for this DM channel |
 
 ###### Video Quality Mode
 
@@ -294,7 +315,8 @@ Users can post or publish messages in this type of channel if they have the prop
       "banner": "a_999640fa66eb908d8ec2f969516b97c8",
       "accent_color": 11983775,
       "global_name": "not splatter",
-      "avatar_decoration_data": null
+      "avatar_decoration_data": null,
+      "primary_guild": null
     }
   ]
 }
@@ -316,7 +338,8 @@ Users can post or publish messages in this type of channel if they have the prop
       "banner": "a_999640fa66eb908d8ec2f969516b97c8",
       "accent_color": 11983775,
       "global_name": "not splatter",
-      "avatar_decoration_data": null
+      "avatar_decoration_data": null,
+      "primary_guild": null
     },
     {
       "id": "211270674482724864",
@@ -327,14 +350,16 @@ Users can post or publish messages in this type of channel if they have the prop
       "banner": "785814ab5375e10deafe9e7de256dd0e",
       "accent_color": 47615,
       "global_name": "12pixels",
-      "avatar_decoration_data": null
+      "avatar_decoration_data": null,
+      "primary_guild": null
     }
   ],
   "last_message_id": "3343820033257021450",
   "type": 3,
   "id": "319674150115710528",
   "flags": 0,
-  "owner_id": "82198810841029460"
+  "owner_id": "82198810841029460",
+  "blocked_user_warning_dismissed": true
 }
 ```
 
@@ -557,7 +582,7 @@ Represents the duration of a thread mute.
 
 Returns a list of active [private channel](#channel-object) objects the user is participating in.
 
-<RouteHeader method="GET" url="/users/@me/dms/{user.id}">
+<RouteHeader method="GET" url="/users/@me/dms/{user.id}" supportsOAuth2="dm_channels.read">
   Get DM Channel
 </RouteHeader>
 
@@ -629,22 +654,24 @@ Creates a new channel in the guild. Requires the `MANAGE_CHANNELS` permission. I
 | topic?                              | ?string                                                             | The channel topic (max 1024 characters)                                                                                                                                              | Text, News, Stage, Forum, Media        |
 | nsfw?                               | ?boolean                                                            | Whether the channel is NSFW                                                                                                                                                          | Text, News, Voice, Stage, Forum, Media |
 | rate_limit_per_user?                | ?integer                                                            | Duration in seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected | Text, News, Voice, Stage, Forum, Media |
-| bitrate?                            | ?integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                           | Voice, Stage                           |
-| user_limit?                         | ?integer                                                            | the user limit of the voice channel (max 1000, 0 refers to no limit)                                                                                                                 | Voice, Stage                           |
+| bitrate? ^1^                        | ?integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                           | Voice, Stage                           |
+| user_limit? ^2^                     | ?integer                                                            | The user limit of the voice channel (max 99, 0 refers to no limit)                                                                                                                   | Voice, Stage                           |
 | permission_overwrites?              | ?array[[permission overwrite](#permission-overwrite-object) object] | Explicit permission overwrites for members and roles                                                                                                                                 | All                                    |
 | parent_id?                          | ?snowflake                                                          | The ID of the parent category for the guild channel                                                                                                                                  | Text, News, Voice, Stage, Forum, Media |
 | rtc_region?                         | ?string                                                             | The [voice region](/resources/voice#voice-region-object) ID for the voice channel (automatic when `null`)                                                                            | Voice, Stage                           |
 | video_quality_mode?                 | ?integer                                                            | The camera [video quality mode](#video-quality-mode) of the voice channel                                                                                                            | Voice, Stage                           |
 | default_auto_archive_duration?      | ?integer                                                            | Default duration in minutes for newly created threads to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080)                                            | Text, News, Forum, Media               |
 | default_thread_rate_limit_per_user? | ?integer                                                            | Default duration in seconds a user has to wait before sending another message in newly created threads; this field is copied to the thread at creation time and does not live update | Text, News, Forum, Media               |
-| available_tags? ^2^                 | ?array[partial [tag](#forum-tag-object) object]                     | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                           |
+| available_tags? ^3^                 | ?array[partial [tag](#forum-tag-object) object]                     | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                           |
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object                | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                    | Forum, Media                           |
 | default_forum_layout?               | ?integer                                                            | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                  |
 | default_sort_order?                 | ?integer                                                            | The default [sort order](#sort-order-type) of a thread-only channel's threads                                                                                                        | Forum, Media                           |
 
 ^1^ For voice channels, guilds without premium (boost level) can set bitrate up to 96000, guilds with premium tier 1 can set up to 128000, guilds with premium tier 2 can set up to 256000, and guilds with premium tier 3 or the `VIP_REGIONS` guild feature can set up to 384000. For stage channels, bitrate can only be set up to 64000.
 
-^2^ Only the `name` field is required.
+^2^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
+
+^3^ Only the `name` field is required.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/channels">
   Modify Guild Channel Positions
@@ -697,7 +724,7 @@ If modifying a thread and setting `archived` to `false`, when `locked` is also `
 | nsfw?                               | ?boolean                                                            | Whether the channel is NSFW                                                                                                                                                          | Text, News, Voice, Stage, Forum                                    |
 | rate_limit_per_user?                | ?integer                                                            | Duration in seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected | Text, News, Voice, Stage, Forum, Media, Thread                     |
 | bitrate? ^1^                        | ?integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                           | Voice, Stage                                                       |
-| user_limit?                         | ?integer                                                            | the user limit of the voice channel (max 1000, 0 refers to no limit)                                                                                                                 | Voice, Stage                                                       |
+| user_limit? ^2^                     | ?integer                                                            | the user limit of the voice channel (max 99, 0 refers to no limit)                                                                                                                   | Voice, Stage                                                       |
 | permission_overwrites?              | ?array[[permission overwrite](#permission-overwrite-object) object] | Explicit permission overwrites for members and roles                                                                                                                                 | Text, News, Voice, Category, Stage, Forum, Media                   |
 | parent_id?                          | ?snowflake                                                          | The ID of the parent category for the guild channel                                                                                                                                  | Text, News, Voice, Stage, Forum, Media                             |
 | owner?                              | ?snowflake                                                          | The ID of the owner for the group DM                                                                                                                                                 | Group DM                                                           |
@@ -720,7 +747,9 @@ If modifying a thread and setting `archived` to `false`, when `locked` is also `
 
 ^1^ For voice channels, guilds without premium (boost level) can set bitrate up to 96000, guilds with premium tier 1 can set up to 128000, guilds with premium tier 2 can set up to 256000, and guilds with premium tier 3 or the `VIP_REGIONS` guild feature can set up to 384000. For stage channels, bitrate can only be set up to 64000.
 
-^2^ Only the `name` field is required (`id` may be passed to denote an existing tag).
+^2^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
+
+^3^ Only the `name` field is required (`id` may be passed to denote an existing tag).
 
 <RouteHeader method="DELETE" url="/channels/{channel.id}" supportsAuditReason>
   Delete Channel
@@ -759,7 +788,7 @@ This should be used to delete various read states of channels the client has not
 | Field            | Type    | Description                                                                                                                              |
 | ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | version?         | integer | The version of the read state feature you are using (default 1, should be 2 to allow the usage of read state types other than `CHANNEL`) |
-| read_state_type? | integer | The [read state type](#read-state-type) to delete (default `CHANNEL`)                                                                    |
+| read_state_type? | integer | The read state type to delete (default `CHANNEL`)                                                                                        |
 
 <RouteHeader method="PUT" url="/channels/{channel.id}/voice-status" supportsAuditReason>
   Modify Channel Status
@@ -920,7 +949,7 @@ Removes a recipient from a group DM. Requires ownership of the target channel. R
   Update Message Request
 </RouteHeader>
 
-Modifies a message request's status. Returns a [DM channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway-event#channel-update) Gateway event.
+Modifies a message request's status. Returns a [DM channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
 
 <Alert type="warn">
 
@@ -947,13 +976,13 @@ Consent statuses other than `ACCEPTED` are only usable by Discord employees.
   Reject Message Request
 </RouteHeader>
 
-Rejects and deletes a pending message request. Returns a [DM channel](#channel-object) object on success. Fires [Channel Update](/topics/gateway-events#channel-update), [Message ACK](/topics/gateway-events#message-ack), [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
+Rejects and deletes a pending message request. Returns a [DM channel](#channel-object) object on success. Fires [Channel Update](/topics/gateway-events#channel-update), Message ACK, [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
 
 <RouteHeader method="PUT" url="/channels/recipients/@me/batch-reject">
   Batch Reject Message Requests
 </RouteHeader>
 
-Rejects and deletes multiple pending message requests. Returns a list of [DM channel](#channel-object) objects on success. Fires multiple [Channel Update](/topics/gateway-events#channel-update), [Message ACK](/topics/gateway-events#message-ack), [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
+Rejects and deletes multiple pending message requests. Returns a list of [DM channel](#channel-object) objects on success. Fires multiple [Channel Update](/topics/gateway-events#channel-update), Message ACK, [Channel Delete](/topics/gateway-events#channel-delete), and optionally [DM Settings Upsell Show](/topics/gateway-events#dm-settings-upsell-show) Gateway events.
 
 ###### JSON Params
 
@@ -979,6 +1008,12 @@ Returns a list of [supplemental message request](#supplemental-message-request-s
 | --------------- | --------------------------------------------------- | ----------------------------- |
 | channel_id      | snowflake                                           | The ID of the message request |
 | message_preview | [message](/resources/message#message-object) object | The trigger message           |
+
+<RouteHeader method="POST" url="/channels/{channel.id}/blocked-user-warning-dismissal">
+  Dismiss Blocked User Warning
+</RouteHeader>
+
+Acknowledges that a group DM contains users the current user has blocked. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/threads/active">
   Get Guild Active Threads
@@ -1251,7 +1286,7 @@ Returns an array of [thread members](#thread-member-object) objects that are mem
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts, and is restricted according to whether the `GUILD_MEMBERS` [Privileged Intent](/topics/gateway#privileged-intents) is enabled for the application.
+This endpoint is not usable by user accounts and is restricted according to whether the `GUILD_MEMBERS` [Privileged Intent](/topics/gateway#privileged-intents) is enabled for the application.
 
 </Alert>
 
