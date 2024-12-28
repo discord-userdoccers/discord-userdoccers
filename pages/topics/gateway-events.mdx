@@ -52,31 +52,29 @@ Gateway event payloads have a common structure, but the contents of the associat
 
 Send events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by a client to Discord through a Gateway connection.
 
-| Name                                                    | Description                                                       |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| [Identify](#identify)                                   | Trigger the initial handshake with the Gateway                    |
-| [Resume](#resume)                                       | Resume a dropped Gateway connection                               |
-| [Heartbeat](#heartbeat)                                 | Maintain an active Gateway connection                             |
-| [Update Presence](#update-presence)                     | Update the client's presence                                      |
-| [Update Voice State](#update-voice-state)               | Join, move, or disconnect the client from a voice channel or call |
-| [Ping Voice Server](#ping-voice-server)                 | Ping the Discord voice servers                                    |
-| [Request Guild Members](#request-guild-members)         | Request members for one or more guilds                            |
-| [Request Call Connect](#request-call-connect)           | Request a private channels's pre-existing call information        |
-| Update Guild Subscriptions                              | Update subscriptions for a guild                                  |
-| Create Stream                                           | Create a stream for the client (Go Live)                          |
-| Delete Stream                                           | End a client stream                                               |
-| Watch Stream                                            | Watch a user's stream                                             |
-| Ping Stream                                             | Ping a user stream's voice server                                 |
-| Set Stream Paused                                       | Pause/resume a client stream                                      |
-| Request Forum Unreads                                   | Request thread-only channel unread counts                         |
-| [Remote Command](<#remote-command-(send)>)              | Send a message to another Gateway session                         |
-| Request Deleted Entity IDs                              | Request deleted entity IDs not matching a given hash for a guild  |
-| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                  |
-| Create Speed Test                                       | Create a voice speed test                                         |
-| Delete Speed Test                                       | Delete a voice speed test                                         |
-| [Request Last Messages](#request-last-messages)         | Request last messages for a guild's channels                      |
-| [Search Recent Members](#search-recent-members)         | Request recently-joined members for a guild                       |
-| [Request Channel Statuses](#request-channel-statuses)   | Request voice channel statuses for a guild                        |
+| Name                                                    | Description                                                                |
+| ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [Identify](#identify)                                   | Trigger the initial handshake with the Gateway                             |
+| [Resume](#resume)                                       | Resume a dropped Gateway connection                                        |
+| [Heartbeat](#heartbeat)                                 | Maintain an active Gateway connection                                      |
+| [Update Presence](#update-presence)                     | Update the client's presence                                               |
+| [Update Voice State](#update-voice-state)               | Join, move, or disconnect the client from a voice channel or call          |
+| [Ping Voice Server](#ping-voice-server)                 | Ping the Discord voice servers                                             |
+| [Create Stream](#create-stream)                         | Create a stream for the client (Go Live)                                   |
+| [Watch Stream](#watch-stream)                           | Watch a user's stream                                                      |
+| [Set Stream Paused](#set-stream-paused)                 | Pause/resume a client stream                                               |
+| [Delete Stream](#delete-stream)                         | End a client stream                                                        |
+| [Ping Stream Server](#ping-stream-server)               | Ping a user's stream voice server                                          |
+| [Request Guild Members](#request-guild-members)         | Request members for one or more guilds                                     |
+| [Request Call Connect](#request-call-connect)           | Request a private channels's pre-existing call information                 |
+| Update Guild Subscriptions                              | Update subscriptions for a guild                                           |
+| Request Forum Unreads                                   | Request thread-only channel unread counts                                  |
+| [Remote Command](<#remote-command-(send)>)              | Send a message to another Gateway session                                  |
+| Request Deleted Entity IDs                              | Request deleted entity IDs not matching a given hash for a guild           |
+| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                           |
+| [Request Last Messages](#request-last-messages)         | Request last messages for a guild's channels                               |
+| [Search Recent Members](#search-recent-members)         | Request recently-joined members for a guild                                |
+| [Request Channel Statuses](#request-channel-statuses)   | Request voice channel statuses for a guild                                 |
 
 #### Identify
 
@@ -235,19 +233,20 @@ All incoming Gateway events will be paused until the updated presence is propaga
 
 #### Update Voice State
 
-Sent when a client wants to join, move, or disconnect from a voice channel.
+Sent when a client wants to join, move, or disconnect from a voice channel. Fires a [Voice State Update](#voice-state-update) and optionally [Voice Server Update](#voice-server-update) Gateway event.
 
 ###### Update Voice State Structure
 
-| Field             | Type       | Description                                                                                                  |
-| ----------------- | ---------- | ------------------------------------------------------------------------------------------------------------ |
-| guild_id          | ?snowflake | The ID of the guild the voice channel is in, if any                                                          |
-| channel_id        | ?snowflake | The ID of the voice or private channel the client wants to join (`null` if disconnecting)                    |
-| self_mute         | boolean    | Whether the client is muted                                                                                  |
-| self_deaf         | boolean    | Whether the client is deafened                                                                               |
-| self_video?       | boolean    | Whether the client is streaming video to the channel                                                         |
-| preferred_region? | string     | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel (not guaranteed) |
-| flags?            | integer    | The client's [voice flags](/topics/voice-connections#voice-flags)                                            |
+| Field              | Type          | Description                                                                                 |
+| ------------------ | ------------- | ------------------------------------------------------------------------------------------- |
+| guild_id           | ?snowflake    | The ID of the guild the voice channel is in, if any                                         |
+| channel_id         | ?snowflake    | The ID of the voice or private channel the client wants to join (`null` if disconnecting)   |
+| self_mute          | boolean       | Whether the client is muted                                                                 |
+| self_deaf          | boolean       | Whether the client is deafened                                                              |
+| self_video?        | boolean       | Whether the client is streaming video to the channel                                        |
+| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
+| preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the voice channel   |
+| flags?             | integer       | The client's [voice flags](/topics/voice-connections#voice-flags)                           |
 
 ###### Example Update Voice State
 
@@ -260,6 +259,8 @@ Sent when a client wants to join, move, or disconnect from a voice channel.
     "self_mute": false,
     "self_deaf": false,
     "self_video": false,
+    "preferred_region": "newark",
+    "preferred_regions": ["newark", "us-central", "us-east", "atlanta", "us-south"],
     "flags": 3
   }
 }
@@ -267,7 +268,7 @@ Sent when a client wants to join, move, or disconnect from a voice channel.
 
 #### Ping Voice Server
 
-Sent when a client wants to ping a voice server. The inner `d` key should be set to `null`.
+Sent when a client wants to request that the Gateway pings a misbehaving voice server. This will force a check server-side and potentially reallocate the voice server. The inner `d` key should be set to `null`. May fire a [Voice Server Update](#voice-server-update) Gateway event.
 
 ###### Example Ping Voice Server
 
@@ -275,6 +276,119 @@ Sent when a client wants to ping a voice server. The inner `d` key should be set
 {
   "op": 5,
   "d": null
+}
+```
+
+#### Create Stream
+
+Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
+
+###### Create Stream Structure
+
+| Field             | Type       | Description                                                                                 |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------------- |
+| type              | string     | The [type of stream](#stream-type) to create                                                |
+| guild_id?         | ?snowflake | The ID of the guild to stream in, if any                                                    |
+| channel_id        | snowflake  | The ID of the voice channel to stream in                                                    |
+| preferred_region? | string     | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
+
+###### Example Create Stream
+
+```json
+{
+  "op": 18,
+  "d": {
+    "type": "call",
+    "guild_id": null,
+    "channel_id": "1142105002492575794",
+    "preferred_region": "us-east"
+  }
+}
+```
+
+### Watch Stream
+
+Sent by the client to start watching a user's stream. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
+
+###### Watch Stream Structure
+
+| Field      | Type   | Description                            |
+| ---------- | ------ | -------------------------------------- |
+| stream_key | string | The [stream key](#stream-key) to watch |
+
+###### Example Watch Stream
+
+```json
+{
+  "op": 20,
+  "d": {
+    "stream_key": "call:1110739331624210483:852892297661906993"
+  }
+}
+```
+
+#### Set Stream Paused
+
+Sent by the client to pause or resume their stream. Fires a [Stream Server Update](#stream-server-update) Gateway event.
+
+###### Set Stream Paused Structure
+
+| Field      | Type    | Description                                      |
+| ---------- | ------- | ------------------------------------------------ |
+| stream_key | string  | The [stream key](#stream-key) to pause or resume |
+| paused     | boolean | Whether the stream should be paused or resumed   |
+
+###### Example Set Stream Paused
+
+```json
+{
+  "op": 22,
+  "d": {
+    "stream_key": "call:1110739331624210483:852892297661906993",
+    "paused": true
+  }
+}
+```
+
+#### Delete Stream
+
+Sent by the client to disconnect from a stream. If the client is the owner of the stream, the stream will be deleted. Fires a [Stream Delete](#stream-delete) Gateway event.
+
+###### Delete Stream Structure
+
+| Field      | Type   | Description                             |
+| ---------- | ------ | --------------------------------------- |
+| stream_key | string | The [stream key](#stream-key) to delete |
+
+###### Example Delete Stream
+
+```json
+{
+  "op": 19,
+  "d": {
+    "stream_key": "call:1110739331624210483:852892297661906993"
+  }
+}
+```
+
+#### Ping Stream Server
+
+Sent when a client wants to request that the Gateway pings a misbehaving stream server. This will force a check server-side and potentially reallocate the stream server. May fire a [Stream Server Update](#stream-server-update) Gateway event.
+
+###### Ping Stream Server Structure
+
+| Field      | Type   | Description                           |
+| ---------- | ------ | ------------------------------------- |
+| stream_key | string | The [stream key](#stream-key) to ping |
+
+###### Example Ping Stream Server
+
+```json
+{
+  "op": 21,
+  "d": {
+    "stream_key": "call:1110739331624210483:852892297661906993"
+  }
 }
 ```
 
@@ -660,6 +774,10 @@ These events directly correspond with a specific action or state change that has
 | [Stage Instance Create](#stage-instance-create)                                   | Stage instance was created                                                                      |
 | [Stage Instance Update](#stage-instance-update)                                   | Stage instance was updated                                                                      |
 | [Stage Instance Delete](#stage-instance-delete)                                   | Stage instance was deleted or closed                                                            |
+| [Stream Create](#stream-create)                                                   | Stream was created                                                                              |
+| [Stream Server Update](#stream-server-update)                                     | Stream server was updated                                                                       |
+| [Stream Update](#stream-update)                                                   | Stream was updated                                                                              |
+| [Stream Delete](#stream-delete)                                                   | Stream was deleted                                                                              |
 | [Typing Start](#typing-start)                                                     | User started typing in a channel                                                                |
 | [User Update](#user-update)                                                       | Current user changed                                                                            |
 | [User Application Update](#user-application-update)                               | User installed an application or application was updated                                        |
@@ -1913,6 +2031,131 @@ Sent when a [stage instance](/resources/stage-instance) is updated. The inner pa
 
 Sent when a [stage instance](/resources/stage-instance) is deleted (i.e. the stage has been closed). The inner payload is a [stage instance](/resources/stage-instance#stage-instance-object) object.
 
+### Streams
+
+#### Stream Object
+
+###### Stream Structure
+
+| Field             | Type      | Description                                                            |
+| ----------------- | --------- | ---------------------------------------------------------------------- |
+| stream_key        | string    | The [stream key](#stream-key)                                          |
+| rtc_server_id ^1^ | snowflake | The ID of the RTC server for the stream, used when connecting to voice |
+| region            | string    | The voice region the stream is in                                      |
+| viewer_ids        | array     | The IDs of the viewers currently watching the stream                   |
+| paused            | boolean   | Whether the stream is paused                                           |
+
+^1^ Only present in [Stream Create](#stream-create) Gateway events.
+
+###### Stream Key
+
+The stream key is a unique identifier for a stream, represented as a colon-delimited list of values. The first value is the type of stream, followed by the location of the stream, and finally the owner of the stream.
+
+###### Stream Key Structure
+
+| Field       | Type      | Description                             |
+| ----------- | --------- | --------------------------------------- |
+| type        | string    | The [type of stream](#stream-type)      |
+| guild_id?   | snowflake | The ID of the guild being streamed to   |
+| channel_id? | snowflake | The ID of the channel being streamed to |
+| owner_id    | snowflake | The ID of the user who owns the stream  |
+
+###### Stream Type
+
+| Value | Description                                                               |
+| ----- | ------------------------------------------------------------------------- |
+| guild | A stream in a guild voice channel                                         |
+| call  | A stream in a DM call                                                     |
+| test  | A stream used for speed tests; not encountered in regular stream contexts |
+
+###### Example Stream Key
+
+```md
+- guild:839502008108580904:850360749460553769:852892297661906993
+- call:1110739331624210483:852892297661906993
+- test:852892297661906993
+```
+
+###### Example Stream
+
+```json
+{
+  "stream_key": "call:1110739331624210483:852892297661906993",
+  "rtc_server_id": "1278201813102755892",
+  "region": "us-east",
+  "viewer_ids": ["193696591125807105"],
+  "paused": false
+}
+```
+
+#### Stream Create
+
+Sent when a stream is created. The inner payload is a [stream](#stream-object) object.
+
+#### Stream Server Update
+
+Sent when a stream's voice server is updated. This is sent when initially connecting to a stream, and when the current stream instance fails over to a new server.
+
+<Alert type="warn">
+
+A `null` endpoint means that the voice server allocated has gone away and is trying to be reallocated. You should attempt to disconnect from the currently connected voice server, and not attempt to reconnect until a new voice server is allocated.
+
+</Alert>
+
+###### Stream Server Update Structure
+
+| Field      | Type    | Description                |
+| ---------- | ------- | -------------------------- |
+| token      | string  | The voice connection token |
+| stream_key | string  | The stream key             |
+| endpoint   | ?string | The voice server host      |
+
+###### Example Stream Server Update
+
+```json
+{
+  "token": "91f8016f34a5cd17",
+  "stream_key": "call:1110739331624210483:852892297661906993",
+  "guild_id": null,
+  "endpoint": "smart.loyal.discord.media:443"
+}
+```
+
+#### Stream Update
+
+Sent when a stream is updated. The inner payload is a [stream](#stream-object) object.
+
+#### Stream Delete
+
+Sent when a stream is deleted, or becomes unavailable due to an outage.
+
+###### Stream Delete Structure
+
+| Field        | Type    | Description                                               |
+| ------------ | ------- | --------------------------------------------------------- |
+| stream_key   | string  | The stream key                                            |
+| reason       | string  | The [reason for ending the stream](#stream-delete-reason) |
+| unavailable? | boolean | Whether the stream is unavailable due to an outage        |
+
+###### Stream Delete Reason
+
+| Value                     | Description                                           |
+| ------------------------- | ----------------------------------------------------- |
+| user_requested            | The user requested to end the stream                  |
+| stream_ended              | The client was disconnected because the stream ended  |
+| stream_full               | The client attempted to join a full stream            |
+| unauthorized              | The client is not authorized to view the stream       |
+| safety_guild_rate_limited | The stream was rate limited due to guild restrictions |
+
+###### Example Stream Delete
+
+```json
+{
+  "stream_key": "call:1110739331624210483:852892297661906993",
+  "reason": "stream_ended"
+}
+```
+
 ### Typing
 
 #### Typing Start
@@ -2043,7 +2286,7 @@ A `null` endpoint means that the voice server allocated has gone away and is try
 
 ```json
 {
-  "token": "my_token",
+  "token": "66d29164ee8cd919",
   "guild_id": "41771983423143937",
   "endpoint": "smart.loyal.discord.media:443"
 }
