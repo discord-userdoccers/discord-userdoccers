@@ -802,6 +802,7 @@ This endpoint requires one of the following:
 - The user is a friend of the current user
 - The user is a friend suggestion of the current user
 - The user has an outgoing friend request to the current user
+- A valid [`friend_token`](#get-friend-token) is provided
 
 </Alert>
 
@@ -812,6 +813,7 @@ This endpoint requires one of the following:
 | with_mutual_guilds?        | boolean   | Whether to include the mutual guilds of the user with the current user (default true)              |
 | with_mutual_friends?       | boolean   | Whether to include mutual friends the user has with the current user (default false)               |
 | with_mutual_friends_count? | boolean   | Whether to include the number of mutual friends the user has with the current user (default false) |
+| friend_token?              | string    | The friend token to use for the request                                                            |
 | guild_id?                  | snowflake | The guild ID to get the user's member profile in                                                   |
 | connections_role_id?       | snowflake | The role ID to get the user's application role connection metadata in                              |
 
@@ -1731,7 +1733,9 @@ Suspicious friend request activity may be flagged by Discord and require [additi
 | ----------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | type?                   | integer | The [relationship type](#relationship-type) to create (defaults to -1, which accepts an existing or creates a new friend request) |
 | from_friend_suggestion? | boolean | Whether the relationship was created from a friend suggestion (default false)                                                     |
-| friend_token?           | string  | The friend token of the user to add a direct friend relationship to                                                               |
+| friend_token? ^1^       | string  | The friend token of the user to add as a friend                                                                                   |
+
+^1^ Providing a valid [friend token](#get-friend-token) will bypass the user's friend request settings.
 
 <RouteHeader method="PATCH" url="/users/@me/relationships/{user.id}">
   Modify User Relationship
@@ -1754,7 +1758,7 @@ Modifies a relationship to another user. Returns a 204 empty response on success
 Removes a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway event.
 
 <RouteHeader method="DELETE" url="/users/@me/relationships">
-  Bulk Remove Relationships
+  Bulk Remove User Relationships
 </RouteHeader>
 
 Removes multiple relationships. Returns a 204 empty response on success. May fire multiple [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway events.
@@ -1765,6 +1769,30 @@ Removes multiple relationships. Returns a 204 empty response on success. May fir
 | ------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | relationship_type? | integer | Remove relationships with this [relationship type](#relationship-type) (default `INCOMING_REQUEST`, only `INCOMING_REQUEST` is allowed) |
 | only_spam?         | boolean | Whether to remove relationships that were flagged as spam (default false)                                                               |
+
+<RouteHeader method="GET" url="/users/@me/friend-token">
+  Get Friend Token
+</RouteHeader>
+
+Returns the current user's friend token. These can be used to [fetch the user's profile](#get-user-profile) without a mutual and [add the user as a friend](#create-user-relationship) regardless of their friend request settings.
+
+<Alert type="info">
+
+Friend tokens are validated similarly to regular authentication tokens. They only expire after an authentication change (e.g. password reset).
+
+</Alert>
+
+###### Response Body
+
+| Field        | Type   | Description                     |
+| ------------ | ------ | ------------------------------- |
+| friend_token | string | The current user's friend token |
+
+###### Example Response
+
+```json
+{ "friend_token": "ODUyODkyMjk3NjYxOTA2OTkz.Z3cftw.IClap6I53w2tYxs6xD8zaGX_7KA" }
+```
 
 <RouteHeader method="GET" url="/friend-suggestions">
   Get Friend Suggestions
