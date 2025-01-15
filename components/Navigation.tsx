@@ -333,7 +333,6 @@ export default function Navigation() {
             <Fragment>
               <NavigationSubLink href="/resources/guild#guild-object">Guild Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#user-guild-object">User Guild Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#supplemental-guild-member-object">
