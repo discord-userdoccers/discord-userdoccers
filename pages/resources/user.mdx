@@ -429,29 +429,75 @@ A multi-factor authentication backup code.
 
 A user's data harvest.
 
+<Alert type="info">
+
+This object is more verbose than needed as it is used internally by Discord employees to archive user data.
+
+</Alert>
+
 ###### Harvest Structure
 
-| Field         | Type               | Description                                  |
-| ------------- | ------------------ | -------------------------------------------- |
-| harvest_id    | snowflake          | The ID of the harvest                        |
-| user_id       | snowflake          | The ID of the user being harvested           |
-| status        | integer            | The [status](#harvest-status) of the harvest |
-| created_at    | ISO8601 timestamp  | The time the harvest was created             |
-| polled_at     | ?ISO8601 timestamp | The time the harvest was last polled         |
-| completed_at? | ?ISO8601 timestamp | The time the harvest was completed           |
+| Field            | Type                                                   | Description                                                                                           |
+| ---------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| harvest_id       | snowflake                                              | The ID of the harvest                                                                                 |
+| user_id          | snowflake                                              | The ID of the user being harvested                                                                    |
+| email            | string                                                 | The email the harvest will be sent to                                                                 |
+| state            | string                                                 | The [state](#harvest-state) of the harvest                                                            |
+| status           | integer                                                | The [status](#harvest-status) of the harvest                                                          |
+| created_at       | ISO8601 timestamp                                      | When the harvest was created                                                                          |
+| completed_at     | ?ISO8601 timestamp                                     | When the harvest was completed                                                                        |
+| polled_at        | ?ISO8601 timestamp                                     | When the harvest was last polled                                                                      |
+| backends         | map[string, string]                                    | The [state](#harvest-backend-state) of each [backend](#harvest-backend-internal-type) being harvested |
+| updated_at       | ISO8601 timestamp                                      | When the harvest was last updated                                                                     |
+| shadow_run       | boolean                                                | Whether the harvest is a shadow run                                                                   |
+| harvest_metadata | [harvest metadata](#harvest-metadata-structure) object | Additional metadata about the harvest                                                                 |
 
 ###### Example Harvest
 
 ```json
 {
-  "harvest_id": "1069316408502124624",
+  "harvest_id": "1319498748052639754",
   "user_id": "852892297661906993",
+  "email": "alien@dolfi.es",
+  "state": "DELIVERED",
   "status": 3,
-  "created_at": "2023-01-29T18:01:38.730771+00:00",
-  "completed_at": "2023-02-01T08:29:03.680228+00:00",
-  "polled_at": "2023-02-01T08:29:03.680228+00:00"
+  "created_at": "2024-12-20T02:56:56.639579+00:00",
+  "completed_at": "2024-12-21T11:05:41.462828+00:00",
+  "polled_at": "2024-12-21T11:05:41.462828+00:00",
+  "backends": {
+    "users": "EXTRACTED",
+    "guilds": "EXTRACTED",
+    "hubspot": "EXTRACTED",
+    "messages": "EXTRACTED",
+    "analytics": "EXTRACTED",
+    "activities_e": "EXTRACTED",
+    "activities_w": "EXTRACTED"
+  },
+  "updated_at": "2024-12-21T11:05:41.462828+00:00",
+  "shadow_run": false,
+  "harvest_metadata": {
+    "user_is_staff": false,
+    "sla_email_sent": false,
+    "bypass_cooldown": false
+  }
 }
 ```
+
+###### Harvest Metadata Structure
+
+| Field           | Type    | Description                                                                                       |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| user_is_staff   | boolean | Whether the user being harvested is a Discord employee                                            |
+| sla_email_sent  | boolean | Whether an email has been sent informing the user that the archive is taking longer than expected |
+| bypass_cooldown | boolean | Whether the harvest bypasses the cooldown period for requesting harvests                          |
+
+###### Harvest State
+
+| Value      | Description                                |
+| ---------- | ------------------------------------------ |
+| INCOMPLETE | The harvest is not yet complete            |
+| DELIVERED  | The harvest has been delivered to the user |
+| CANCELLED  | The harvest has been cancelled             |
 
 ###### Harvest Status
 
@@ -461,7 +507,27 @@ A user's data harvest.
 | 1     | RUNNING   | The harvest is currently running               |
 | 2     | FAILED    | The harvest has failed                         |
 | 3     | COMPLETED | The harvest has completed successfully         |
-| 4     | UNKNOWN   | This enum value is not known                   |
+| 4     | CANCELLED | The harvest has been cancelled                 |
+
+###### Harvest Backend Internal Type
+
+| Value        | Description                                  |
+| ------------ | -------------------------------------------- |
+| users        | All account information                      |
+| analytics    | Actions the user has taken in Discord        |
+| activities_e | First-party embedded activity information    |
+| activities_w | First-party embedded activity information    |
+| messages     | All user messages                            |
+| hubspot      | Official Discord programs                    |
+| guilds       | All guilds the user is currently a member of |
+
+###### Harvest Backend State
+
+| Value     | Description                         |
+| --------- | ----------------------------------- |
+| INITIAL   | The backend has not been processed  |
+| RUNNING   | The backend is currently processing |
+| EXTRACTED | The backend has been processed      |
 
 ### Connection Object
 
@@ -1429,13 +1495,13 @@ Acknowledges a message the current user has been mentioned in. Returns a 204 emp
   Get User Harvest
 </RouteHeader>
 
-If it exists, returns a [harvest](#harvest-object) object representing the current user's most recent personal data harvest request. Otherwise, returns a 204 empty response.
+If it exists, returns a [harvest](#harvest-object) object representing the current user's most recent user data harvest request. Otherwise, returns a 204 empty response.
 
 <RouteHeader method="POST" url="/users/@me/harvest">
   Create User Harvest
 </RouteHeader>
 
-Creates a personal data harvest request for the current user. Returns a [harvest](#harvest-object) object on success.
+Creates a user data harvest request for the current user. Returns a [harvest](#harvest-object) object on success.
 
 ###### JSON Params
 
@@ -1443,7 +1509,7 @@ Creates a personal data harvest request for the current user. Returns a [harvest
 | --------- | -------------- | ------------------------------------------ |
 | backends? | ?array[string] | The types of user data being requested ^1^ |
 
-^1^ Invalid options are ignored. If the array is empty after this, it requests all data types.
+^1^ Invalid options are ignored. If the array contains no valid values, all data types are requested.
 
 ###### Harvest Backend Type
 
