@@ -4,6 +4,7 @@ import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
 import sitemap from "@astrojs/sitemap";
 import remarkSuperSub from "remark-supersub";
+import AutoImport from "astro-auto-import";
 import mdx from "@astrojs/mdx";
 import { shikiDiffNotation } from "./shiki/diffnotation";
 import { shikiMetaParser } from "./shiki/metaparser";
@@ -17,6 +18,9 @@ export default defineConfig({
 	integrations: [
 		tailwind(),
 		sitemap(),
+		AutoImport({
+			imports: ["./src/components/Alert.astro", "./src/components/RouteHeader.astro"],
+		}),
 		mdx(),
 		{
 			name: "pagefind-post-build",

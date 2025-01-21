@@ -1,0 +1,164 @@
+diff --git a/dist/vite-plugin-mdx.js b/dist/vite-plugin-mdx.js
+index 298d1a39dfae4a1565fe2cd7a98a59ba3fbbaa3e..9b7809d8d51ef0cb668f54e4424dc7279211543b 100644
+--- a/dist/vite-plugin-mdx.js
++++ b/dist/vite-plugin-mdx.js
+@@ -2,82 +2,84 @@ import { getAstroMetadata } from "astro/jsx/rehype.js";
+ import { VFile } from "vfile";
+ import { createMdxProcessor } from "./plugins.js";
+ import { safeParseFrontmatter } from "./utils.js";
++const bs_marker = "$FAKE_BACKSLASH_MARKER$";
+ function vitePluginMdx(opts) {
+-  let processor;
+-  let sourcemapEnabled;
+-  return {
+-    name: "@mdx-js/rollup",
+-    enforce: "pre",
+-    buildEnd() {
+-      processor = void 0;
+-    },
+-    configResolved(resolved) {
+-      sourcemapEnabled = !!resolved.build.sourcemap;
+-      const jsxPluginIndex = resolved.plugins.findIndex((p) => p.name === "astro:jsx");
+-      if (jsxPluginIndex !== -1) {
+-        resolved.plugins.splice(jsxPluginIndex, 1);
+-      }
+-    },
+-    async resolveId(source, importer, options) {
+-      if (importer?.endsWith(".mdx") && source[0] !== "/") {
+-        let resolved = await this.resolve(source, importer, options);
+-        if (!resolved) resolved = await this.resolve("./" + source, importer, options);
+-        return resolved;
+-      }
+-    },
+-    // Override transform to alter code before MDX compilation
+-    // ex. inject layouts
+-    async transform(code, id) {
+-      if (!id.endsWith(".mdx")) return;
+-      const { frontmatter, content } = safeParseFrontmatter(code, id);
+-      const vfile = new VFile({
+-        value: content,
+-        path: id,
+-        data: {
+-          astro: {
+-            frontmatter
+-          },
+-          applyFrontmatterExport: {
+-            srcDir: opts.srcDir
+-          }
+-        }
+-      });
+-      if (!processor) {
+-        processor = createMdxProcessor(opts.mdxOptions, { sourcemap: sourcemapEnabled });
+-      }
+-      try {
+-        const compiled = await processor.process(vfile);
+-        return {
+-          code: String(compiled.value),
+-          map: compiled.map,
+-          meta: getMdxMeta(vfile)
+-        };
+-      } catch (e) {
+-        const err = e;
+-        err.name = "MDXError";
+-        err.loc = { file: id, line: e.line, column: e.column };
+-        Error.captureStackTrace(err);
+-        throw err;
+-      }
+-    }
+-  };
++	let processor;
++	let sourcemapEnabled;
++	return {
++		name: "@mdx-js/rollup",
++		enforce: "pre",
++		buildEnd() {
++			processor = void 0;
++		},
++		configResolved(resolved) {
++			sourcemapEnabled = !!resolved.build.sourcemap;
++			const jsxPluginIndex = resolved.plugins.findIndex((p) => p.name === "astro:jsx");
++			if (jsxPluginIndex !== -1) {
++				resolved.plugins.splice(jsxPluginIndex, 1);
++			}
++		},
++		async resolveId(source, importer, options) {
++			if (importer?.endsWith(".mdx") && source[0] !== "/") {
++				let resolved = await this.resolve(source, importer, options);
++				if (!resolved) resolved = await this.resolve("./" + source, importer, options);
++				return resolved;
++			}
++		},
++		// Override transform to alter code before MDX compilation
++		// ex. inject layouts
++		async transform(code, id) {
++			if (!id.endsWith(".mdx")) return;
++			code = code.replaceAll(/(<\/[a-zA-Z]+[^a-zA-Z>\s])|(<[a-zA-Z]*[^a-zA-Z>\s\/])/gm, (match) => bs_marker + "\\" + match);
++			code = code.replaceAll(/{[a-zA-Z_0-9]/gm, (match) => bs_marker + "\\" + match);
++			const { frontmatter, content } = safeParseFrontmatter(code, id);
++			const vfile = new VFile({
++				value: content,
++				path: id,
++				data: {
++					astro: {
++						frontmatter,
++					},
++					applyFrontmatterExport: {
++						srcDir: opts.srcDir,
++					},
++				},
++			});
++			if (!processor) {
++				processor = createMdxProcessor(opts.mdxOptions, { sourcemap: sourcemapEnabled });
++			}
++			try {
++				const compiled = await processor.process(vfile);
++				let str = String(compiled.value);
++				str = str.replaceAll(bs_marker + "\\\\", "");
++				str = str.replaceAll(bs_marker, "");
++				return {
++					code: str,
++					map: compiled.map,
++					meta: getMdxMeta(vfile),
++				};
++			} catch (e) {
++				const err = e;
++				err.name = "MDXError";
++				err.loc = { file: id, line: e.line, column: e.column };
++				Error.captureStackTrace(err);
++				throw err;
++			}
++		},
++	};
+ }
+ function getMdxMeta(vfile) {
+-  const astroMetadata = getAstroMetadata(vfile);
+-  if (!astroMetadata) {
+-    throw new Error(
+-      "Internal MDX error: Astro metadata is not set by rehype-analyze-astro-metadata"
+-    );
+-  }
+-  return {
+-    astro: astroMetadata,
+-    vite: {
+-      // Setting this vite metadata to `ts` causes Vite to resolve .js
+-      // extensions to .ts files.
+-      lang: "ts"
+-    }
+-  };
++	const astroMetadata = getAstroMetadata(vfile);
++	if (!astroMetadata) {
++		throw new Error("Internal MDX error: Astro metadata is not set by rehype-analyze-astro-metadata");
++	}
++	return {
++		astro: astroMetadata,
++		vite: {
++			// Setting this vite metadata to `ts` causes Vite to resolve .js
++			// extensions to .ts files.
++			lang: "ts",
++		},
++	};
+ }
+-export {
+-  vitePluginMdx
+-};
++export { vitePluginMdx };
