@@ -34,12 +34,11 @@ If the current Gateway session's authentication session ever changes (e.g. due t
 
 ###### Auth Session Client Info Structure
 
-| Field    | Type    | Description                                                           |
-| -------- | ------- | --------------------------------------------------------------------- |
-| os       | ?string | The operating system of the client                                    |
-| platform | ?string | The name of the client or browser platform                            |
-| location | ?string | The approximate location of the client                                |
-| ip?      | string  | The IP address of the client, if the location could not be determined |
+| Field    | Type    | Description                                |
+| -------- | ------- | ------------------------------------------ |
+| os       | ?string | The operating system of the client         |
+| platform | ?string | The name of the client or browser platform |
+| location | ?string | The approximate location of the client     |
 
 ###### Example Auth Session
 
@@ -93,13 +92,22 @@ If a form body error is returned, the client should display the error message to
 
 Once the user is logged in, the client should store the authentication token to avoid having to log in again in the future.
 
-### WebAuthn Conditional UI (Passwordless) Login
+### Passwordless Login
 
-An alternative to the traditional email/password login flow is the WebAuthn conditional UI flow.
+An alternative to the traditional email/password login flow is the WebAuthn Conditional UI flow.
 This [allows users to log in using an WebAuthn device](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/isConditionalMediationAvailable) (e.g. a security key) instead of a password.
 
 To use this flow, the client must first generate a challenge using the [Start Passwordless Login](#start-passwordless-login) endpoint. After the user completes the WebAuthn challenge, the client must use the [Finish Passwordless Login](#finish-passwordless-login) endpoint to complete the login process.
 Using this flow, you must still take care to handle any errors as outlined above.
+
+### Authentication Handoff
+
+The handoff process is used to securely transfer the user's authentication state between two clients, commonly used to authenticate the Discord website from a native client and vice-versa.
+
+To handoff authentication to another client, the source client must first use the [Create Handoff Token](#create-handoff-token) endpoint to generate a handoff token.
+The token should then be passed to the target client, which can use the [Exchange Handoff Token](#exchange-handoff-token) endpoint to retrieve a new authentication token.
+
+Note that handoff tokens are single-use and valid only for the IP address they were generated from.
 
 ### Endpoints
 
@@ -122,7 +130,7 @@ When first logging into an account (without MFA enabled) from a new location, Di
 If logging in via email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
 
 If logging in via phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
-A verification token should be retrieved by [verifying the phone number](/topics/verification#verify-phone).
+A verification token should be retrieved by verifying the phone number. {/* todo: link this here */}
 
 After [IP authorization](#authorize-ip-address) with this verification token, the login request should be retried. A new CAPTCHA challenge should not be required.
 
@@ -188,10 +196,10 @@ Where a login is initiated from outside of the normal login flow.
 
 A partial settings object to bootstrap the client with.
 
-| Field  | Type   | Description                                                           |
-| ------ | ------ | --------------------------------------------------------------------- |
-| locale | string | The [language option](/reference#locales) chosen by the user          |
-| theme  | string | The [client theme](/resources/user#client-theme) selected by the user |
+| Field  | Type   | Description                                                                           |
+| ------ | ------ | ------------------------------------------------------------------------------------- |
+| locale | string | The [language option](/reference#locales) chosen by the user                          |
+| theme  | string | The [client theme](/resources/user-settings#legacy-client-theme) selected by the user |
 
 ###### Login Required Action Type
 
@@ -292,7 +300,7 @@ Generates a challenge to start the conditional UI flow for WebAuthn login.
 
 <Alert type="info">
 
-If this endpoint is requested with a valid authentication token, an [authentication token](#example-response-completed) will be returned irrespective of the request body.
+If this endpoint is requested with a valid authentication token, an [authentication token](<#example-response-(completed)>) will be returned irrespective of the request body.
 
 </Alert>
 
@@ -380,6 +388,44 @@ Authorizes the client's IP address for login. Returns a 204 empty response on su
 | ----- | ------ | ----------------------------------------------------------------------------------- |
 | token | string | The verification token received from the email or phone number verification process |
 
+<RouteHeader method="POST" url="/auth/handoff" unauthenticated>
+  Create Handoff Token
+</RouteHeader>
+
+Creates a handoff token to transfer the user's authentication state to another client.
+
+###### JSON Params
+
+| Field | Type   | Description                                                       |
+| ----- | ------ | ----------------------------------------------------------------- |
+| key   | string | A unique key to identify the handoff request (e.g. a random UUID) |
+
+###### Response Body
+
+| Field         | Type   | Description                                                                  |
+| ------------- | ------ | ---------------------------------------------------------------------------- |
+| handoff_token | string | The handoff token to pass to the target; this is not an authentication token |
+
+<RouteHeader method="POST" url="/auth/handoff/exchange" unauthenticated>
+  Exchange Handoff Token
+</RouteHeader>
+
+Exchanges a handoff token for an authentication token. Handoff tokens can only be exchanged once and are only valid from the same IP address they were created from.
+
+###### JSON Params
+
+| Field         | Type   | Description                                                                                |
+| ------------- | ------ | ------------------------------------------------------------------------------------------ |
+| key           | string | The unique key used to create the handoff token                                            |
+| handoff_token | string | The handoff token received from the [Create Handoff Token](#create-handoff-token) endpoint |
+
+###### Response Body
+
+| Field | Type                                               | Description                     |
+| ----- | -------------------------------------------------- | ------------------------------- |
+| token | string                                             | The authentication token        |
+| user  | partial [user](/resources/user#user-object) object | The user that was authenticated |
+
 ## Register
 
 Potential users must register an account before they are able to use most of the platform.
@@ -396,7 +442,7 @@ Once the user is registered, the client should store the authentication token to
 ### Phone Registration
 
 Clients can alternatively register an account using a phone number. To do so, the client must first use the [Register by Phone Number](#register-by-phone-number) endpoint to send a verification code to the user's phone number.
-Then, the client must [verify the phone number](/topics/verification#verify-phone) using the received code before completing the registration using the [Register Account](#register-account) endpoint as usual.
+Then, the client must verify the phone number using the received code before completing the registration using the [Register Account](#register-account) endpoint as usual. {/* todo: link this here */}
 
 ### Endpoints
 
@@ -464,7 +510,7 @@ Suspicious account creations may be flagged by Discord and require [additional v
   Register by Phone Number
 </RouteHeader>
 
-Sends a verification code to the user's phone number to register an account. Returns a 204 empty response on success. The verification code should be first used to [verify the phone number](/topics/verification#verify-phone) before [completing the registration](#register-account).
+Sends a verification code to the user's phone number to register an account. Returns a 204 empty response on success. The verification code should be first used to verify the phone number before [completing the registration](#register-account). {/* todo: link this here */}
 
 ###### JSON Params
 
@@ -575,16 +621,16 @@ Invalidates the given authentication session and unregisters the provided push n
 
 ###### JSON Params
 
-| Field              | Type   | Description                                                                                 |
-| ------------------ | ------ | ------------------------------------------------------------------------------------------- |
-| provider?          | string | The [push notification provider](#push-notification-provider) to revoke                     |
-| token?             | string | The push notification token to unregister                                                   |
-| voip_provider? ^1^ | string | The VOIP [push notification provider](#push-notification-provider) to revoke the token from |
-| voip_token? ^1^    | string | The VOIP push notification token to unregister                                              |
+| Field              | Type   | Description                                                                                                           |
+| ------------------ | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| provider?          | string | The [push notification provider](/topics/push-notifications#push-notification-provider) to revoke                     |
+| token?             | string | The push notification token to unregister                                                                             |
+| voip_provider? ^1^ | string | The VOIP [push notification provider](/topics/push-notifications#push-notification-provider) to revoke the token from |
+| voip_token? ^1^    | string | The VOIP push notification token to unregister                                                                        |
 
 ^1^ VOIP-specific push notification tokens are only used with PushKit on iOS.
 
-## Account Recovery
+## Password Recovery
 
 If a user has forgotten their password, they can reset it using either their email address or phone number. To initiate a password reset, the client should use the [Forgot Password](#forgot-password) endpoint.
 
@@ -603,7 +649,7 @@ Initiates the password reset process for the given email or phone number. Return
 If providing an email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/reset#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
 
 If providing a phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
-A verification token should be retrieved by [verifying the phone number](/topics/verification#verify-phone).
+A verification token should be retrieved by verifying the phone number. {/* todo: link this here */}
 
 If the user is ineligible to reset their password via phone number, the phone number verification request will fail with a [`70009` JSON error code](/topics/opcodes-and-status-codes#json-error-codes) and the user will receive a link to reset their password via email.
 
@@ -672,6 +718,57 @@ To complete the password reset, the client must retry the request with the `tick
   "totp": true,
   "webauthn": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
 }
+```
+
+## Account Recovery
+
+Account recovery is a feature intended for post-takeover recovery after an attacker has already changed the victim's email, password, phone number or MFA settings.
+
+Upon an email change, Discord will email the victim about the change and give them the option to start the account recovery process.
+The email will include a link that redirects to the official Discord client with a revert token present in the URL (e.g. `https://discord.com/wasntme/BIGJWTHERE`).
+This token is valid for one day.
+
+This token can be used with the [Revert Account](#revert-account) endpoint to revert the account back to the previous settings.
+Upon completion, the current phone number is removed from the account and all phone numbers previously associated with the account are blacklisted. This prevents a follow-up takeover via [sim-jacking](https://en.wikipedia.org/wiki/SIM_swap_scam).
+
+### Endpoints
+
+<RouteHeader method="POST" url="/auth/revert">
+  Revert Account
+</RouteHeader>
+
+Recovers an account after account takeover. This endpoint will:
+
+- Invalidate the revert token used
+- Invalidate all authorization tokens and active Gateway sessions associated with the account
+- Set the account's email back to the original
+- Set the account's password to the one provided
+- Remove MFA from the account
+- Remove and blacklist all phone numbers previously associated with the account
+
+<Alert type="warn">
+
+This process will fail if the account was deleted beforehand (e.g. by anti-spam or a Discord employee) or the original email was assigned to a different account.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description                              |
+| -------- | ------ | ---------------------------------------- |
+| token    | string | The revert token from the recovery email |
+| password | string | The new password for the account         |
+
+###### Response Body
+
+| Field | Type   | Description                  |
+| ----- | ------ | ---------------------------- |
+| email | string | The account's restored email |
+
+###### Example Response
+
+```json
+{ "email": "alien@shiroko.me" }
 ```
 
 ## MFA Verification

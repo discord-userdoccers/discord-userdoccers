@@ -10,14 +10,14 @@ However, it has a separate set of payloads and events, as well as a simplified p
 
 ###### Gateway Versions
 
-| Version | Status       | Default  |
-| ------- | ------------ | -------- |
-| 2       | Available    | ✓ Client |
-| 1       | Discontinued |          |
+| Version | Status       |
+| ------- | ------------ |
+| 2       | Available    |
+| 1       | Discontinued |
 
 ### Gateway Payloads
 
-In practice, opcodes are lower-cased with under_scores joining each word in the name. For instance, [Nonce Proof](#nonce-proof) would be `nonce_proof`.
+In practice, opcodes are lower-cased with under_scores joining each word in the name. For instance, [Nonce Proof](<#nonce-proof-structure-(receive)>) would be `nonce_proof`.
 
 For readability, opcodes in the following documentation are typically left in Title Case.
 
@@ -35,11 +35,11 @@ Remote authentication Gateway event payloads are flat packets, with the `op` fie
 
 ###### Gateway Commands
 
-| Name                                       | Description                                   |
-| ------------------------------------------ | --------------------------------------------- |
-| [Init](#init-structure)                    | Start a new remote auth session               |
-| [Heartbeat](#heartbeating)                 | Maintain an active WebSocket connection       |
-| [Nonce Proof](#nonce-proof-structure-send) | Submit a cryprographic proof of the handshake |
+| Name                                           | Description                                   |
+| ---------------------------------------------- | --------------------------------------------- |
+| [Init](#init-structure)                        | Start a new remote auth session               |
+| [Heartbeat](#heartbeating)                     | Maintain an active WebSocket connection       |
+| [Nonce Proof](<#nonce-proof-structure-(send)>) | Submit a cryprographic proof of the handshake |
 
 ###### Gateway Events
 
@@ -47,7 +47,7 @@ Remote authentication Gateway event payloads are flat packets, with the `op` fie
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | [Hello](#hello-structure)                             | Defines the heartbeat and timeout intervals                                                                   |
 | [Heartbeat ACK](#heartbeating)                        | Acknowledges a received client heartbeat                                                                      |
-| [Nonce Proof](#nonce-proof-structure-receive)         | Requests a cryptographic proof of the handshake                                                               |
+| [Nonce Proof](<#nonce-proof-structure-(receive)>)     | Requests a cryptographic proof of the handshake                                                               |
 | [Pending Remote Init](#pending-remote-init-structure) | Acknowledges a successful handshake                                                                           |
 | [Pending Ticket](#pending-ticket-structure)           | Acknowledges a successful [mobile session creation](/remote-authentication/mobile#create-remote-auth-session) |
 | [Pending Login](#pending-login-structure)             | Indicates that the mobile session was [finished](/remote-authentication/mobile#finish-remote-auth)            |
@@ -55,13 +55,15 @@ Remote authentication Gateway event payloads are flat packets, with the `op` fie
 
 ###### Gateway Close Event Codes
 
-| Code | Description       | Explanation                                                                                                                                                           |
-| ---- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1000 | Normal closure    | The remote auth session was [finished](/remote-authentication/mobile#finish-remote-auth) or [canceled](/remote-authentication/mobile#cancel-remote-auth) successfully |
-| 4000 | Unknown error     | We're not sure what went wrong; try reconnecting?                                                                                                                     |
-| 4001 | Handshake failure | The [initial handshake](#handshaking) failed; maybe reconnect and try again?                                                                                          |
-| 4002 | Decode error      | You sent an invalid payload; don't do that!                                                                                                                           |
-| 4003 | Timeout           | Your session [timed out](#hello-structure); reconnect and start a new one                                                                                             |
+| Code     | Description       | Explanation                                                                                                                                                            |
+| -------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1000 ^1^ | Normal closure    | The remote auth session was [finished](/remote-authentication/mobile#finish-remote-auth) or [canceled](/remote-authentication/mobile#cancel-remote-auth) successfully. |
+| 4000     | Invalid version   | You sent an invalid version for the remote auth Gateway.                                                                                                               |
+| 4001     | Decode error      | You sent an invalid payload. Don't do that!                                                                                                                            |
+| 4002     | Handshake failure | The [initial handshake](#handshaking) failed. Maybe reconnect and try again?                                                                                           |
+| 4003     | Timeout           | Your session [timed out](#hello-structure). Reconnect and start a new one.                                                                                             |
+
+^1^ This code may be erroneously received for protocol errors.
 
 ### Connecting
 
@@ -152,7 +154,7 @@ encoded_public_key = base64.b64encode(spki).decode("utf-8")
 }
 ```
 
-If the Gateway accepts the public key, it will respond with an [Opcode Nonce Proof](#nonce-proof-structure-receive) payload, which contains a nonce that you must decrypt with your private key.
+If the Gateway accepts the public key, it will respond with an [Opcode Nonce Proof](<#nonce-proof-structure-(receive)>) payload, which contains a nonce that you must decrypt with your private key.
 
 ###### Nonce Proof Structure (Receive)
 
@@ -169,7 +171,7 @@ If the Gateway accepts the public key, it will respond with an [Opcode Nonce Pro
 }
 ```
 
-You should then send an [Opcode Nonce Proof](#nonce-proof-structure-send) payload containing a base64URL-encoded representation of the decrypted nonce's SHA-256 digest.
+You should then send an [Opcode Nonce Proof](<#nonce-proof-structure-(send)>) payload containing a base64URL-encoded representation of the decrypted nonce's SHA-256 digest.
 
 An example in Python pseudocode would be:
 
@@ -277,12 +279,14 @@ The user payload is a colon-separated string in the format `852892297661906993:0
 
 It contains the following fields (see the [user](/resources/user#user-object) object for more information):
 
-| Field         | Type      | Description                                                              |
-| ------------- | --------- | ------------------------------------------------------------------------ |
-| id            | snowflake | The ID of the user                                                       |
-| discriminator | string    | The user's stringified 4-digit Discord tag                               |
-| avatar        | ?string   | The user's [avatar hash](/reference#cdn-formatting)                      |
-| username      | string    | The user's username, may be unique across the platform (2-32 characters) |
+| Field         | Type      | Description                                         |
+| ------------- | --------- | --------------------------------------------------- |
+| id            | snowflake | The ID of the user                                  |
+| discriminator | string    | The user's stringified 4-digit Discord tag          |
+| avatar ^1^    | string    | The user's [avatar hash](/reference#cdn-formatting) |
+| username      | string    | The user's username (2-32 characters)               |
+
+^1^ The avatar hash will be `0` to represent a `null` avatar.
 
 ###### Example Pending Ticket
 

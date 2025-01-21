@@ -38,7 +38,7 @@ These are a list of all the OAuth2 scopes that Discord supports. Some scopes req
 | connections                  | allows [/users/@me/connections](/resources/user#get-user-connections) to return linked third-party accounts                                                      |
 | email                        | enables [/users/@me](/resources/user#get-current-user) to return an `email`                                                                                      |
 | gdm.join                     | allows your app to [join users to a group dm](/resources/channel#add-channel-recipient)                                                                          |
-| guilds                       | allows [/users/@me/guilds](/resources/user#get-user-guilds) to return basic information about all of a user's guilds                                             |
+| guilds                       | allows [/users/@me/guilds](/resources/guild#get-user-guilds) to return basic information about all of a user's guilds                                            |
 | guilds.join                  | allows [/guilds/{guild.id}/members/{user.id}](/resources/guild#add-guild-member) to be used for joining users to a guild                                         |
 | identify                     | allows [/users/@me](/resources/user#get-current-user) without `email`                                                                                            |
 | messages.read                | for local rpc server api access, this allows you to read messages from all client channels (otherwise restricted to channels/guilds your app creates)            |
@@ -80,7 +80,7 @@ When someone navigates to this URL, they will be prompted to authorize your appl
 
 `prompt` controls how the authorization flow handles existing authorizations. If a user has previously authorized your application with the requested scopes and prompt is set to `consent`, it will request them to reapprove their authorization. If set to `none`, it will skip the authorization screen and redirect them back to your redirect URI without requesting their authorization. For passthrough scopes, like `bot` and `webhook.incoming`, authorization is always required.
 
-The `integration_type` parameter specifies the [installation context](/resources/application#installation-context) for the authorization. The installation context determines where the application will be installed, and is only relevant when `scope` contains `applications.commands`. When set to `GUILD_INSTALL`, the application will be authorized for installation to a guild. When set to `USER_INSTALL`, the application will be authorized for installation to a user. The application must be configured in the Developer Portal to support the provided `integration_type`.
+The `integration_type` parameter specifies the [installation context](/resources/application#application-integration-type) for the authorization. The installation context determines where the application will be installed, and is only relevant when `scope` contains `applications.commands`. When set to `GUILD_INSTALL`, the application will be authorized for installation to a guild. When set to `USER_INSTALL`, the application will be authorized for installation to a user. The application must be configured in the Developer Portal to support the provided `integration_type`.
 
 ###### Redirect URL Example
 
@@ -377,6 +377,18 @@ From this object, you should store the `webhook.token` and `webhook.id`. See the
 
 Any user that wishes to add your webhook to their channel will need to go through the full OAuth2 flow. A new webhook is created each time, so you will need to save the token and id. If you wish to send a message to all your webhooks, you'll need to iterate over each stored id:token combination and make `POST` requests to each one. Be mindful of our [Rate Limits](/topics/rate-limits#rate-limits)!
 
+### OAuth2 Token Object
+
+Represents an OAuth2 authorization.
+
+###### OAuth2 Token Structure
+
+| Field       | Type                                                                    | Description                                            |
+| ----------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| id          | snowflake                                                               | The ID of the token                                    |
+| scopes      | array[string]                                                           | The scopes the user has authorized the application for |
+| application | partial [application](/resources/application#application-object) object | The authorized application                             |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/oauth2/@me" supportsOAuth2>
@@ -405,15 +417,40 @@ This endpoint is only usable with an OAuth2 access token.
 ```json
 {
   "application": {
-    "id": "159799960412356608",
-    "name": "AIRHORN SOLUTIONS",
-    "icon": "f03590d3eb764081d154a66340ea7d6d",
-    "description": "",
+    "id": "1011683823555199066",
+    "name": "Krunker Strike FRVR",
+    "icon": "6ed44e27aadafd1897c633c49cf9e111",
+    "description": "Enter the Krunker Strike FRVR universe and compete in a cross-platform shooter in REAL-TIME MULTIPLAYER BATTLES with a wide range of arsenal across scenic locations.",
+    "type": null,
+    "cover_image": "6ed44e27aadafd1897c633c49cf9e111",
+    "bot": {
+      "id": "1011683823555199066",
+      "username": "Krunker Strike FRVR",
+      "avatar": "6ed44e27aadafd1897c633c49cf9e111",
+      "discriminator": "6546",
+      "public_flags": 589824,
+      "bot": true,
+      "banner": null,
+      "accent_color": null,
+      "global_name": null,
+      "avatar_decoration_data": null,
+      "primary_guild": null
+    },
     "summary": "",
-    "hook": true,
+    "is_monetized": true,
+    "is_verified": true,
+    "is_discoverable": true,
+    "guild_id": "448194623580667916",
     "bot_public": true,
     "bot_require_code_grant": false,
-    "verify_key": "c8cde6a3c8c6e49d86af3191287b3ce255872be1fff6dc285bdb420c06a2c3c8"
+    "terms_of_service_url": "https://frvr.com/legal/krunker#TermsofService",
+    "privacy_policy_url": "https://frvr.com/legal/krunker#PrivacyPolicy",
+    "verify_key": "75e97499e54bb5489bd7e217e95cf3061fde7731a7c6b18257f827abaad3d8bf",
+    "flags": 131082,
+    "max_participants": 12,
+    "tags": ["Arcade", "FPS", "Shooter"],
+    "hook": true,
+    "storefront_available": true
   },
   "scopes": ["guilds.join", "identify"],
   "expires": "2021-01-23T02:33:17.017000+00:00",
@@ -424,7 +461,20 @@ This endpoint is only usable with an OAuth2 access token.
     "avatar": "f749bb0cbeeb26ef21eca719337d20f1",
     "discriminator": "0",
     "public_flags": 4325376,
-    "avatar_decoration_data": null
+    "avatar_decoration_data": null,
+    "primary_guild": null
   }
 }
 ```
+
+<RouteHeader method="GET" url="/oauth2/tokens">
+  Get OAuth2 Tokens
+</RouteHeader>
+
+Returns a list of [OAuth2 token](#oauth2-token-object) objects.
+
+<RouteHeader method="DELETE" url="/oauth2/tokens/{token.id}">
+  Delete OAuth2 Token
+</RouteHeader>
+
+Revokes the given token. Returns a 204 empty response on success. Fires a [OAuth2 Token Revoke](/topics/gateway-events#oauth2-token-revoke) and optionally a [User Application Remove](/topics/gateway-events#user-application-remove) Gateway event.
