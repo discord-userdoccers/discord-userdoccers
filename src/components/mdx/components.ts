@@ -13,6 +13,8 @@ import td from "./table/TableData.astro";
 import p from "./Paragraph.astro";
 import code from "./Code.astro";
 import pre from "./CodeBlock.astro";
+import ol from "./Ol.astro";
+import ul from "./Ul.astro";
 
 export default {
 	a,
@@ -30,4 +32,6 @@ export default {
 	p,
 	code,
 	pre,
+	ol,
+	ul,
 };
