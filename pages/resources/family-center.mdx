@@ -1,0 +1,245 @@
+# Family Center Resource
+
+[Family Center](https://support.discord.com/hc/en-us/articles/14155043715735-Family-Center-for-Parents-and-Guardians) acts as Discord's parental controls solution to allow parents to monitor the activities of their teens on Discord. They do not allow parents to view message content, but Discord does share:
+- Users messaged (DMs and Group DMs)
+- Users called (DMs and Group DMs) in the last week
+- Friends added in the last week
+- Servers joined in the last week
+- Servers the teen has sent messages to in the last week
+
+A maximum of 8 accounts can be connected to a single parent.
+
+<Alert type="warn">
+
+Discord automatically removes all connected parents the month the teen turns 18 (as indicated by the age they entered after being prompted for their birthday). After this, viewing the Family Center from the teen's account will no longer show the option to display a QR code for connection, and attempts to generate a new code via the API will fail.
+
+</Alert>
+
+## Definitions
+
+In line with the API, instead of referring to Family Center users as "parents" or "teens" and links as "family", "connected teens", or "my family", the API terminology will be used instead.
+
+- **Requestor:** This is the user that _sends_ a link request to a different user and acts as the user the linked user is connected to. Can be viewed as the "parent."
+- **Linked user:** This is the user that _receives_ or _accepts_ a link request sent by the requestor and acts as the user the "parent" can view the activity of. Can be viewed as the "teen."
+- **Link:** Represents the connection between requestor and linked user.
+
+### Family Center Object
+
+###### Family Center Structure
+
+| Field          | Type                                                                      | Description                                                  |
+| -------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| linked_users   | array[[linked user]((#linked-user-object)) object                         | List of linked users                                         |
+| teen_audit_log | [teen audit log](#teen-audit-log-object) object                           | Audit log of the linked users activity                       |
+| users          | array[[partial user](/resources/user#partial-user-structure) object]      | List of requestors the linked user is connected to           |
+
+### Linked User Object
+
+Partial user data of an underage user linked to the requestor via [Family Center](https://support.discord.com/hc/en-us/articles/14155043715735-Family-Center-for-Parents-and-Guardians).
+
+###### Linked User Structure
+
+| Field            | Type                | Description                                                  |
+| ---------------- | ------------------- | ------------------------------------------------------------ |
+| created_at       | ISO8601 timestamp   | When the link request was sent                               |
+| updated_at       | ISO8601 timestamp   | When the link status was last updated                        |
+| link_status      | integer             | The [link status](#link-status) of the linked user           |
+| link_type        | integer             | The [link type](#link-type)                                  |
+| requestor_id ^1^ | snowflake           | The ID of the account the linked user is connected to        |
+| user_id ^1^      | snowflake           | The ID of the linked user                                    |
+
+^1^ If the link type is `1`, the `user_id` and `requestor_id` will be the same. See [Link Type](#link-type) for more information.
+
+###### Link Status
+
+The Link Status represents the current state of the link.
+
+| Value     | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| 1         | The Family Center link request has been sent, but not accepted   |
+| 2         | The linked user is currently connected to the requestor          |
+| 3         | The link has been disconnected                                   |
+| 4         | The link request was rejected                                    |
+
+###### Link Type
+
+The Link Type represents what part each user played in the connection.
+
+| Value     | Description                                                              |
+| --------- | ------------------------------------------------------------------------ |
+| 1         | The current user accepted the request and is the linked user of the link |
+| 2         | The current user sent the request and is the requestor of the link       |
+
+###### Example Linked User
+
+```json
+{
+  "created_at": "2024-07-30T19:49:09.800072+00:00",
+  "updated_at": "2024-07-30T19:55:43.834081+00:00"
+  "link_type": 2,
+  "link_status": 3,
+  "requestor_id": "246877849162743818",
+  "user_id": "801318363472330772",
+}
+```
+
+### Teen Audit Log Object
+
+Audit log of events of the linked user. Visible to both requestors and linked users.
+
+###### Teen Audit Log Structure
+
+| Field               | Type                                                                      | Description                                                                |
+| ------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| teen_user_id        | ?snowflake                                                                | The ID of the linked user                                                  |
+| range_start_id      | ?snowflake                                                                | The ID representing the start time of the 7-day track range?               |
+| actions             | array[[action](#action-structure) object]                                 | List of [actions](#action-structure) the linked user has done              |
+| users               | array[[partial user](/resources/user#partial-user-structure) object]      | List of users the linked user has interacted with within 7 days            |
+| guilds              | array[[guild](/resources/guild#guild-structure) object]                   | List of guilds the linked user has joined or interacted with within 7 days |
+| totals              | object                                                                    | Object keyed by [display types](#display-type), with their values          |
+
+###### Action Structure
+
+| Field           | Type         | Description                                                                                                         |
+| --------------- | ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| event_id        | snowflake    | The ID of the event action                                                                                          |
+| user_id         | snowflake    | The ID of the linked user                                                                                           |
+| entity_id       | snowflake    | The ID of the entity the action relates to (user, guild, or group DM) based off the [display type](#display-type)   |
+| display_type    | integer      | The [display type](#display-type) of the action, detailing what this action involved                                |
+
+###### Display Type
+
+The Display Type represents what kind of action the linked user engaged in.
+
+| Value     | Description                                                         |
+| --------- | ------------------------------------------------------------------- |
+| 1         | Users added within the last 7 days                                  |
+| 2         | Server joined within the last 7 days                                |
+| 3         | Users messaged within the last 7 days                               |
+| 4         | Servers the linked user has sent messages in within the last 7 days |
+| 5         | Users called                                                        |
+
+###### Example Teen Audit Log
+
+```json
+{
+  "teen_user_id": "801318363472330772",
+  "range_start_id": "1328607677722394624",
+  "actions": [
+    {
+      "event_id": "1331144363278860318",
+      "user_id": "801318363472330772",
+      "entity_id": "246877849162743818",
+      "display_type": 3
+    },
+  ],
+  "users": [
+    {
+      "id": "246877849162743818",
+      "username": "jay_taelien",
+      "global_name": "Jay",
+      "avatar": "91b7bc37e924f78625f7ea582fdbac5d",
+      "avatar_decoration_data": {
+        "asset": "a_aa2e1c2b3cf05b24f6ec7b8b4141f5fc",
+        "sku_id": "1144056631374647458",
+        "expires_at": null
+      },
+      "discriminator": "0",
+      "public_flags": 16512,
+      "primary_guild": {
+        "identity_guild_id": "1241115476021481582",
+        "identity_enabled": true,
+        "tag": "BUG",
+        "badge": "6cdb13f9bdba1234e711a7c24dce1f51"
+      },
+      "clan": {
+        "identity_guild_id": "1241115476021481582",
+        "identity_enabled": true,
+        "tag": "BUG",
+        "badge": "6cdb13f9bdba1234e711a7c24dce1f51"
+      }
+    },
+  ],
+  "guilds": [],
+  "totals": {
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 0
+  }
+}
+```
+
+### Linked Users Object
+
+Lists all linked users and requestors. Not to be confused with the [Linked User](#linked-user-object) object.
+
+###### Linked Users structure
+
+| Field          | Type                                                   | Description                                                  |
+| -------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
+| linked_users   | array[[linked user]((#linked-user-object)) object      | List of linked users                                         |
+| users          | array[[user](/resources/user#user-structure) object]   | List of requestors the linked user is connected to           |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/family-center/@me">
+  Get Family Center Data
+</RouteHeader>
+
+Returns a [Family Center](#family-center-object) object.
+
+<RouteHeader method="GET" url="/family-center/@me/link-code">
+  Get Link Code
+</RouteHeader>
+
+Generates the link code for usage in the generated QR code that a linked user receives to give to a requestor.
+
+<Alert type="info">
+
+The URL the QR Code represents follows this structure:
+`https://discord.com/feature/family-center/my-family/:linked_user_id/:link_code`
+
+Opening this link on the mobile app prompts the "send connection request" screen. Does nothing when visited on the Desktop client.
+
+</Alert>
+
+###### Response Body
+
+| Field       | Type         | Description                                                                                                  |
+| ----------- | -----------  | ------------------------------------------------------------------------------------------------------------ |
+| link_code   | string       | The code used to connect a requestor to a linked user, appended to the end of the URL the QR code encodes    |
+
+<RouteHeader method="GET" url="/users/@me/linked-users">
+  Get Linked Users
+</RouteHeader>
+
+Returns a [linked users](#linked-users-object) object.
+
+<RouteHeader method="POST" url="/users/@me/linked-users">
+  Create Linked User Request
+</RouteHeader>
+
+Creates a request that appears in the linked user's Family Center. Returns a [linked users](#linked-users-object) object on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field                | Type                               | Description                                                  |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| recipient_id         | snowflake                          | The ID of the user the requestor wants to connect to         |
+| code                 | string                             | The link code from the linked users device                   |
+
+<RouteHeader method="PATCH" url="/users/@me/linked-users">
+  Modify Linked Users
+</RouteHeader>
+
+Modifies the linked user status of a linked user. Can be invoked by either the linked user or the requestor if used for removing the link. Returns an array of [linked user](#linked-user-object) objects on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field                | Type                               | Description                                                  |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| link_status          | integer                            | The new [link status](#link-status) of the linked user       |
+| linked_user_id ^1^   | string                             | The ID of the user the linked user or requestor is modifying |
+
+^1^ If this request is sent to remove a link (setting [`link_status`](#link-status) to `3`), the `linked_user_id` changes depending on if the requestor or linked user is invoking it. If the linked user invokes the request, `linked_user_id` is the ID of the requestor, otherwise it's the ID of the linked user.
