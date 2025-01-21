@@ -6,9 +6,9 @@ import sitemap from "@astrojs/sitemap";
 import remarkSuperSub from "remark-supersub";
 import AutoImport from "astro-auto-import";
 import mdx from "@astrojs/mdx";
-import { shikiDiffNotation } from "./shiki/diffnotation";
-import { shikiMetaParser } from "./shiki/metaparser";
-import { shikiLineNumbers } from "./shiki/linenumbers";
+import { shikiDiffNotation } from "./src/shiki/diffnotation";
+import { shikiMetaParser } from "./src/shiki/metaparser";
+import { shikiLineNumbers } from "./src/shiki/linenumbers";
 import { spawn } from "node:child_process";
 
 // https://astro.build/config

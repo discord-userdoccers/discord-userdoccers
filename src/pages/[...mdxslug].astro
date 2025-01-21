@@ -4,29 +4,29 @@ import type { GetStaticPaths } from "astro";
 import Layout from "../layouts/Layout.astro";
 import mdxComponents from "@components/mdx/components";
 
+import { render } from "astro:content";
+
 export const getStaticPaths = (async () => {
 	const docs = await getCollection("docs");
-	const mapped = docs.map((e) => ({ params: { mdxslug: e.slug }, props: { entry: e } }));
+	const mapped = docs.map((e) => ({ params: { mdxslug: e.id }, props: e }));
 
 	return mapped;
 }) satisfies GetStaticPaths;
 
-const {
-	entry: { render, body, slug },
-} = Astro.props;
-const { Content } = await render();
+const entry = Astro.props;
+const { Content } = await render(entry);
 
-const spl = body.split("\n");
+const spl = entry.body!.split("\n");
 const title = spl.shift()!.replace(/#+\s+/, "");
 const description = spl.join(" ").replaceAll(/#+\s+/gm, "").replaceAll(/\s+/gm, " ").trim().slice(0, 200).trim() + "...";
 ---
 
 <Layout title={title} description={description}>
 	<Fragment slot="head">
-		<link rel="canonical" href={`${import.meta.env.SITE}/${slug}`} />
-		<meta property="og:url" content={`${import.meta.env.SITE}/${slug}`} />
+		<link rel="canonical" href={`${import.meta.env.SITE}/${entry.id}`} />
+		<meta property="og:url" content={`${import.meta.env.SITE}/${entry.id}`} />
 
-		{slug === "intro" && <meta property="og:image" content="/banner.webp" />}
+		{entry.id === "intro" && <meta property="og:image" content="/banner.webp" />}
 	</Fragment>
 	<Content components={mdxComponents} />
 </Layout>
