@@ -1,6 +1,9 @@
+// eslint-disable-next-line no-undef
 module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-}
+	plugins: [
+		// eslint-disable-next-line no-undef, @typescript-eslint/no-require-imports
+		require("cssnano")({
+			preset: "default",
+		}),
+	],
+};

@@ -1,0 +1,32 @@
+---
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import Layout from "../layouts/Layout.astro";
+import mdxComponents from "@components/mdx/components";
+
+import { render } from "astro:content";
+
+export const getStaticPaths = (async () => {
+	const docs = await getCollection("docs");
+	const mapped = docs.map((e) => ({ params: { mdxslug: e.id }, props: e }));
+
+	return mapped;
+}) satisfies GetStaticPaths;
+
+const entry = Astro.props;
+const { Content } = await render(entry);
+
+const spl = entry.body!.split("\n");
+const title = spl.shift()!.replace(/#+\s+/, "");
+const description = spl.join(" ").replaceAll(/#+\s+/gm, "").replaceAll(/\s+/gm, " ").trim().slice(0, 200).trim() + "...";
+---
+
+<Layout title={title} description={description}>
+	<Fragment slot="head">
+		<link rel="canonical" href={`${import.meta.env.SITE}/${entry.id}`} />
+		<meta property="og:url" content={`${import.meta.env.SITE}/${entry.id}`} />
+
+		{entry.id === "intro" && <meta property="og:image" content="/banner.webp" />}
+	</Fragment>
+	<Content components={mdxComponents} />
+</Layout>

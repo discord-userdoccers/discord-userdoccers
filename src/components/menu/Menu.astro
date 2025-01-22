@@ -1,0 +1,132 @@
+---
+import ThemeSwitch from "@components/ThemeSwitch.astro";
+import Links from "./Links.astro";
+import BarsButton from "./Bars.astro";
+import UserDoccers from "@components/icons/UserDoccers.astro";
+import Search from "./Search.astro";
+---
+
+<nav-menu
+	transition:persist
+	class="text-theme-light-text absolute -left-full pr-16 md:pr-0 top-0 w-full h-full flex transition-200 transform-gpu md:flex md:shrink-0 md:left-auto md:relative md:w-auto md:transform-none md:transition-none"
+>
+	<div class="flex flex-col w-full dark:bg-sidebar-tertiary-dark bg-sidebar-tertiary-light md:w-80 nav-click-outside">
+		<div class="flex flex-col flex-grow pb-4 overflow-y-auto menu-scroller">
+			<div class="flex flex-1 flex-col items-start">
+				<BarsButton class="h-7 w-7 m-3 cursor-pointer mobile-only bars-button" />
+				<div class="flex-1 self-stretch px-6 pt-4">
+					<div class="flex flex-row items-center pb-4 justify-between desktop-only">
+						<a href="/intro/" style="width: 150px;">
+							<UserDoccers />
+						</a>
+						<ThemeSwitch />
+					</div>
+					<Search />
+					<div class="links-container">
+						<Links />
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</nav-menu>
+
+<script>
+	import { menuOpen } from "src/nano";
+	import type { output as navitemsOutput } from "../../pages/navitems.json";
+	import type { props as SublinkProps } from "./Sublink.astro";
+
+	function SublinkTemplate({ first, slug, text, depth, parentSlug }: SublinkProps) {
+		return `
+			<sub-link data-first="${first}" data-slug="#${slug}" style="--m: ${10 + 5 * (depth ?? 1)}px">▹<a href="/${parentSlug}/#${slug}">${text}</a></sub-link>
+		`;
+	}
+
+	let firstRun = true;
+	requestAnimationFrame(() => (firstRun = false));
+	class Menu extends HTMLElement {
+		scrollPos = 0;
+
+		constructor() {
+			super();
+			if (!firstRun) return;
+			const scrollEl = this.querySelector(".menu-scroller")!;
+			const linksContainer = this.querySelector(".links-container")!;
+			const clickOutsideEl = this.querySelector(".nav-click-outside")!;
+
+			document.addEventListener("astro:before-swap", () => (this.scrollPos = scrollEl.scrollTop));
+			document.addEventListener("astro:after-swap", () => scrollEl.scrollTo({ top: this.scrollPos, behavior: "instant" }));
+
+			menuOpen.subscribe((isOpen) => {
+				this.toggleAttribute("open", isOpen);
+			});
+
+			function clickOutsideListener(event: MouseEvent | TouchEvent) {
+				if (clickOutsideEl === event.target || clickOutsideEl.contains(event.target as Node)) return;
+				menuOpen.set(false);
+			}
+			document.addEventListener("mousedown", clickOutsideListener);
+			document.addEventListener("touchstart", clickOutsideListener);
+
+			document.addEventListener("astro:after-swap", () => {
+				menuOpen.set(false);
+			});
+
+			fetch("/navitems.json")
+				.then((r) => r.json())
+				.then((r) => {
+					for (const [parentSlug, headings] of Object.entries(r as navitemsOutput)) {
+						const matchingEl = linksContainer.querySelector(`[data-slug="/${parentSlug}/"] .sublinks`);
+						if (!matchingEl) continue;
+						matchingEl.innerHTML = headings
+							.map((h, i) => SublinkTemplate({ first: i === 0, slug: h[0], text: h[1], depth: h[2], parentSlug }))
+							.join("");
+					}
+					window.hasInitialized = true;
+				});
+		}
+	}
+
+	customElements.define("nav-menu", Menu);
+</script>
+
+<style is:global>
+	@media (max-width: 767px) {
+		.desktop-only {
+			display: none;
+		}
+
+		nav-menu {
+			display: flex;
+		}
+
+		nav-menu[open] {
+			transform: translateX(100%);
+		}
+	}
+
+	@media (min-width: 768px) {
+		.mobile-only {
+			display: none;
+		}
+	}
+
+	nav-menu {
+		transform: none;
+		view-transition-name: nav-menu;
+		z-index: 200;
+	}
+
+	::view-transition-group(nav-menu) {
+		z-index: 200;
+	}
+
+	nav-menu .bars-button {
+		margin-left: 12px;
+		margin-top: 18px;
+	}
+
+	nav-menu .links-container {
+		display: contents;
+	}
+</style>

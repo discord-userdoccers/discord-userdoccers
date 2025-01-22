@@ -1,0 +1,96 @@
+---
+import CaretFill from "@components/icons/CaretFill.astro";
+import type { CollectionEntry } from "astro:content";
+import { render } from "astro:content";
+import Sublink from "./Sublink.astro";
+
+interface Props {
+	entry: CollectionEntry<"docs">;
+	noSub?: boolean;
+}
+
+const {
+	entry: { id },
+	noSub = false,
+} = Astro.props;
+const title = id
+	.split("/")
+	.pop()!
+	.split("-")
+	.map((s) => s[0].toLocaleUpperCase() + s.slice(1))
+	.join(" ");
+
+const { headings } = await render(Astro.props.entry);
+
+const currentPath = Astro.url.pathname;
+const slugWithSlashes = "/" + id + "/";
+const isCurrentPage = currentPath === slugWithSlashes;
+---
+
+<collapsible-link data-slug={slugWithSlashes} selected={isCurrentPage} open={isCurrentPage}>
+	<div class="link-button flex items-center font-whiteney rounded-md">
+		<div class="w-6 h-6 p-1">
+			{!noSub && headings.length && <CaretFill class="caretfill w-4 h-4 hover:cursor-pointer" />}
+		</div>
+		<a href={slugWithSlashes} class="group flex items-center px-2 py-1 w-full font-medium">
+			{title}
+		</a>
+	</div>
+	{
+		!noSub && (
+			<div class="sublinks flex-col">
+				{isCurrentPage && headings.map((h, i) => <Sublink parentSlug={id} slug={h.slug} text={h.text} first={i === 0} depth={h.depth} />)}
+			</div>
+		)
+	}
+</collapsible-link>
+
+<script>
+	import { path, createSelector } from "../../nano";
+	let firstRun = true;
+	requestAnimationFrame(() => (firstRun = false));
+	const pathSelector = createSelector(path);
+
+	class CollapsibleLink extends HTMLElement {
+		constructor() {
+			super();
+			if (!firstRun) return; // second run => navigate, but since we persist navigation element we dont want to run setup just for the component ot be replaced
+			this.querySelector(".caretfill")?.addEventListener("click", () => this.toggleAttribute("open"));
+			this.querySelector("a")?.addEventListener("click", () => this.toggleAttribute("open", true));
+			pathSelector(this.dataset.slug!, (v) => {
+				this.toggleAttribute("selected", v);
+			});
+		}
+	}
+
+	customElements.define("collapsible-link", CollapsibleLink);
+</script>
+
+<style>
+	.sublinks {
+		display: none;
+	}
+
+	collapsible-link[open] .sublinks {
+		display: flex;
+	}
+
+	collapsible-link[open] .caretfill {
+		transform: rotate(90deg);
+	}
+
+	collapsible-link:not([selected]) .link-button:hover {
+		background-color: rgb(212, 215, 220);
+		color: black;
+	}
+
+	html[data-theme="dark"] collapsible-link:not([selected]) .link-button:hover {
+		background-color: rgb(57, 60, 67);
+		color: white;
+	}
+
+	collapsible-link[selected] .link-button {
+		background-color: rgb(88, 101, 242);
+		color: white;
+	}
+</style>

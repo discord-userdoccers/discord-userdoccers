@@ -1,0 +1,65 @@
+---
+interface Props {
+	text?: string;
+	elementId?: string;
+	noTrim?: boolean;
+}
+
+const { text, elementId, noTrim } = Astro.props;
+if (!text && !elementId) throw new Error("You must provide a text or elementId prop to the CopyButton component.");
+---
+
+<copy-button data-text={text} data-element-id={elementId} data-no-trim={noTrim}>
+	<slot />
+</copy-button>
+
+<script>
+	class CopyButton extends HTMLElement {
+		stateTimeout?: NodeJS.Timeout;
+		oldChildren: Element[] = [];
+
+		constructor() {
+			super();
+		}
+
+		connectedCallback() {
+			this.addEventListener("click", this.copyText);
+			this.oldChildren = [...this.children];
+		}
+
+		revertChildren() {
+			this.replaceChildren("");
+			for (const child of this.oldChildren) {
+				this.appendChild(child);
+			}
+		}
+
+		copyText() {
+			let text = this.dataset.text || "";
+			const elementId = this.dataset.elementId,
+				noTrim = this.dataset.noTrim;
+			if (!text && elementId) {
+				const element = document.getElementById(elementId);
+				if (element) text = element.textContent!;
+			}
+
+			if (this.stateTimeout) clearTimeout(this.stateTimeout);
+			if (!noTrim) text = text.trim();
+
+			navigator.clipboard
+				.writeText(text)
+				.then(() => {
+					this.replaceChildren("Copied!");
+					this.stateTimeout = setTimeout(this.revertChildren.bind(this), 2000);
+				})
+				.catch(() => {
+					this.replaceChildren("Failed to copy :(");
+					this.stateTimeout = setTimeout(this.revertChildren.bind(this), 2000);
+				});
+		}
+	}
+
+	customElements.define("copy-button", CopyButton);
+</script>
+
+<style></style>

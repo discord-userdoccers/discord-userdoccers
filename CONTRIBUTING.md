@@ -1,6 +1,6 @@
 # Contributing
 
-This documentation strives to not only be accurate, but ***consistent***. It has many conventions to aid predictability and readability. These may be seen in the official documentation, but are not followed closely.
+This documentation strives to not only be accurate, but **_consistent_**. It has many conventions to aid predictability and readability. These may be seen in the official documentation, but are not followed closely.
 
 This document is meant as a guide to help you get started. If you are not sure on how to do something, _check other sections of the documentation_ to see how it is done.
 
@@ -27,9 +27,7 @@ Endpoints are defined like so:
 Alert boxes are defined like so:
 
 ```jsx
-<Alert type="warn">
-  This endpoint deletes Discord. Do not use it.
-</Alert>
+<Alert type="warn">This endpoint deletes Discord. Do not use it.</Alert>
 ```
 
 ### Formatting
@@ -77,7 +75,7 @@ If enums are used in multiple places, they should be defined by the most relevan
 | mobile  | A mobile platform  |
 | desktop | A desktop platform |
 
-Note that **Type** is used, *not* **Types** like in the official documentation.
+Note that **Type** is used, _not_ **Types** like in the official documentation.
 
 For enums that have strings as values, the name can be skipped like so:
 

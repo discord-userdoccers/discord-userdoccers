@@ -1,0 +1,72 @@
+---
+interface Props {
+	parentSlug: string;
+	slug: string;
+	text: string;
+	depth?: number;
+	first?: boolean;
+}
+export type props = Props;
+
+const { parentSlug, slug, text, first, depth = 1 } = Astro.props;
+
+// if you make any changes to this component, make sure to update its corresponding template in ./Menu.astro
+---
+
+<sub-link data-first={first} data-slug={"#" + slug} style={`--m: ${10 + 5 * depth}px`}>▹<a href={`/${parentSlug}/#${slug}`}>{text}</a></sub-link>
+
+<script>
+	import { createSelector, hash } from "src/nano";
+	const hashSelector = createSelector(hash);
+
+	class Sublink extends HTMLElement {
+		constructor() {
+			super();
+			if (window.hasInitialized) return; // second run, we dont get inserted into page at all.
+			const l = (v: boolean) => {
+				this.toggleAttribute("selected", v);
+			};
+			hashSelector(this.dataset.slug!, l);
+			if (typeof this.dataset.first === "string" && this.dataset.first !== "false") hashSelector("", l);
+		}
+	}
+
+	customElements.define("sub-link", Sublink);
+</script>
+
+<style is:global>
+	sub-link {
+		color: transparent;
+		padding-bottom: 3px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		font-weight: 500;
+		margin-left: var(--m);
+	}
+
+	sub-link a {
+		color: rgb(106 116 128);
+		padding: 0.25rem 0.5rem;
+		margin-bottom: -3px;
+	}
+
+	sub-link a:hover {
+		color: black;
+	}
+
+	html[data-theme="dark"] sub-link a:hover {
+		color: white;
+	}
+
+	collapsible-link[selected] sub-link[selected],
+	collapsible-link[selected] sub-link[selected] a {
+		color: white;
+	}
+	html[data-theme="light"] collapsible-link[selected] sub-link[selected],
+	html[data-theme="light"] collapsible-link[selected] sub-link[selected] a {
+		color: black;
+	}
+</style>

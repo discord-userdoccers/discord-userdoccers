@@ -1,0 +1,68 @@
+---
+import Badge from "./Badge.astro";
+
+interface Props {
+	method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+	url: string;
+	supportsAuditReason?: boolean;
+	unauthenticated?: boolean;
+	mfa?: boolean;
+	supportsOAuth2?: string | boolean;
+	deprecated?: boolean;
+}
+
+const { method, url, supportsAuditReason, unauthenticated, mfa, supportsOAuth2, deprecated } = Astro.props;
+
+const badges = [
+	mfa && {
+		name: "MFA Required",
+		tooltip: "Requires a user with MFA enabled to provide a valid MFA code in the body for certain operations",
+		href: "/reference/#mfa-required",
+	},
+	supportsAuditReason && {
+		name: "Audit Log Reason",
+		tooltip: "Supports the X-Audit-Log-Reason header",
+		href: "/reference/#audit-log-reason",
+	},
+	unauthenticated && {
+		name: "Unauthenticated",
+		tooltip: "Does not require authentication",
+		href: "/reference/#unauthenticated-request",
+	},
+	supportsOAuth2 && {
+		name: "OAuth2",
+		tooltip: `Supports OAuth2 for authentication${supportsOAuth2 !== true ? ` with the "${supportsOAuth2}" scope` : ""}`,
+		href: "/topics/oauth2",
+	},
+	deprecated && {
+		name: "Deprecated",
+		tooltip: "This endpoint is still active but should be avoided as it is considered deprecated",
+		href: "/reference/#deprecated-endpoint",
+	},
+];
+---
+
+<Fragment>
+	<slot />
+	<div class="flex items-center mt-1">
+		<code
+			class:list={[
+				"px-2 py-1 text-sm dark:bg-opacity-50 border-2 dark:border-opacity-50 rounded uppercase",
+				{
+					"bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-white border-blue-500": method === "GET",
+					"bg-green-100 text-green-700 dark:bg-green-600 dark:text-white border-green-500": method === "POST",
+					"bg-yellow-100 text-yellow-700 dark:bg-yellow-700 dark:text-white border-yellow-500": method === "PATCH" || method === "PUT",
+					"bg-red-100 text-red-500 dark:bg-red-700 dark:text-white border-red-500": method === "DELETE",
+				},
+			]}
+		>
+			{method}
+		</code>
+		<code class="p-2 dark:text-text-dark text-text-light break-all">
+			{url}
+		</code>
+	</div>
+	<div class="flex gap-2 items-center mt-2">
+		{badges.map((badge) => badge && <Badge {...badge} />)}
+	</div>
+</Fragment>
