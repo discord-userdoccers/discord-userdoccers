@@ -48,18 +48,18 @@ Active sessions are indicated with a status per platform. If a user is offline o
 
 | Field                | Type                                                         | Description                                                                           |
 | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| id                   | string                                                       | The ID of the activity; only unique across a single user's activities                 |
-| name ^1^             | string                                                       | The name of the activity                                                              |
+| id ^6^               | string                                                       | The ID of the activity; only unique across a single user's activities                 |
+| name ^1^             | string                                                       | The name of the activity (2-128 characters)                                           |
 | type                 | integer                                                      | The [activity type](#activity-type)                                                   |
-| url? ^2^             | ?string                                                      | The stream URL                                                                        |
-| created_at           | integer                                                      | Unix timestamp (in milliseconds) of when the activity was added to the user's session |
-| session_id?          | ?string                                                      | The ID of the session associated with the activity                                    |
+| url? ^2^             | ?string                                                      | The stream URL (max 512 characters)                                                   |
+| created_at ^6^       | integer                                                      | Unix timestamp (in milliseconds) of when the activity was added to the user's session |
+| session_id? ^6^      | ?string                                                      | The ID of the session associated with the activity                                    |
 | platform? ^3^        | string                                                       | The [platform](#activity-platform-type) the activity is being played on               |
 | supported_platforms? | array[string]                                                | The [platforms](#activity-platform-type) the activity is supported on                 |
 | timestamps?          | [activity timestamps](#activity-timestamps-structure) object | Unix timestamps (in milliseconds) for start and/or end of the game                    |
 | application_id?      | snowflake                                                    | The ID of the application representing the game the user is playing                   |
-| details?             | ?string                                                      | What the user is currently doing                                                      |
-| state? ^4^           | ?string                                                      | The user's current party status                                                       |
+| details?             | ?string                                                      | What the user is currently doing (max 128 characters)                                 |
+| state? ^4^           | ?string                                                      | The user's current party status (max 128 characters)                                  |
 | sync_id?             | string                                                       | The ID of the synced activity (e.g. Spotify song ID)                                  |
 | flags?               | integer                                                      | The [activity's flags](#activity-flags)                                               |
 | buttons?             | array[string]                                                | Custom buttons shown in rich presence (max 2)                                         |
@@ -71,13 +71,15 @@ Active sessions are indicated with a status per platform. If a user is offline o
 
 ^1^ The `name` of a `CUSTOM` activity should always be "Custom Status". The `name` of a `HANG` activity should always be "Hang Status".
 
-^2^ The `STREAMING` type currently only supports Twitch and YouTube. Only `https://twitch.tv/` and `https://youtube.com/` URLs will work.
+^2^ URLs must start with `http://` or `https://`.
 
 ^3^ This field is not commonly used for traditional presences (i.e. presences sent by regular clients over the Gateway) and is instead used to differentiate between various headless and embedded activities.
 
 ^4^ In the case of the `HANG` type, this field should be one of the [hang status types](#activity-hang-status-type). If set to `custom`, the `details` field should be used to specify the custom text, and the `emoji` field should be used to specify the custom emoji.
 
 ^5^ These fields are send-only. For retrieving rich presence metadata, see [Get Activity Metadata](#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](#get-activity-secret).
+
+^6^ These fields are received only and cannot be set.
 
 <Alert type="info">
 
@@ -182,17 +184,17 @@ When a `HANG` activity's `state` is set to one of these values, a built-in corre
 
 | Field | Type                    | Description                                                   |
 | ----- | ----------------------- | ------------------------------------------------------------- |
-| id?   | string                  | The ID of the party                                           |
+| id?   | string                  | The ID of the party (max 128 characters)                      |
 | size? | array[integer, integer] | The party's current and maximum size (current_size, max_size) |
 
 ###### Activity Assets Structure
 
-| Field        | Type   | Description                                                       |
-| ------------ | ------ | ----------------------------------------------------------------- |
-| large_image? | string | The large [activity asset image](#activity-asset-image)           |
-| large_text?  | string | Text displayed when hovering over the large image of the activity |
-| small_image? | string | The small [activity asset image](#activity-asset-image)           |
-| small_text?  | string | Text displayed when hovering over the small image of the activity |
+| Field        | Type   | Description                                                                            |
+| ------------ | ------ | -------------------------------------------------------------------------------------- |
+| large_image? | string | The large [activity asset image](#activity-asset-image) (max 313 characters)           |
+| large_text?  | string | Text displayed when hovering over the large image of the activity (max 128 characters) |
+| small_image? | string | The small [activity asset image](#activity-asset-image) (max 313 characters)           |
+| small_text?  | string | Text displayed when hovering over the small image of the activity (max 128 characters) |
 
 ###### Activity Asset Image
 
@@ -206,14 +208,15 @@ To use an external image via media proxy, specify the URL as the field's value w
 | Media Proxy       | `mp:{image_id}`          | `https://media.discordapp.net/{image_id}`                                             |
 | Twitch            | `twitch:{username}`      | `https://static-cdn.jtvnw.net/previews-ttv/live_user_{username}-{width}x{height}.jpg` |
 | YouTube           | `youtube:{video_id}`     | `https://i.ytimg.com/vi/{video_id}/{thumbnail_type}.jpg`                              |
+| Spotify           | `spotify:{spotify_id}`   | `https://i.scdn.co/image/{spotify_id}`                                                |
 
 ###### Activity Secrets Structure
 
-| Field                          | Type       | Description                                   |
-| ------------------------------ | ---------- | --------------------------------------------- |
-| join?                          | string     | The secret for joining a party                |
-| spectate? **(deprecated)** ^1^ | string     | The secret for spectating a game              |
-| ~~match?~~                     | ~~string~~ | ~~The secret for a specific instanced match~~ |
+| Field                          | Type       | Description                                                        |
+| ------------------------------ | ---------- | ------------------------------------------------------------------ |
+| join?                          | string     | The secret for joining a party (max 128 characters)                |
+| spectate? **(deprecated)** ^1^ | string     | The secret for spectating a game (max 128 characters)              |
+| ~~match?~~                     | ~~string~~ | ~~The secret for a specific instanced match (max 128 characters)~~ |
 
 ^1^ Spectating has been removed from official clients and is no longer supported.
 
