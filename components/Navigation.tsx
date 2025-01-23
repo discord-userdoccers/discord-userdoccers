@@ -328,6 +328,29 @@ export default function Navigation() {
           Emoji
         </NavigationLink>
         <NavigationLink
+          href="/resources/family-center"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/family-center#definitions">Definitions</NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#family-center-object">
+                Family Center Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#linked-user-object">
+                Linked User Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#linked-users-object">
+                Linked Users Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#teen-audit-log-object">
+                Teen Audit Log Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Family Center
+        </NavigationLink>
+        <NavigationLink
           href="/resources/guild"
           subLinks={
             <Fragment>
@@ -536,11 +559,11 @@ export default function Navigation() {
           href="/resources/stage-instance"
           subLinks={
             <Fragment>
+              <NavigationSubLink href="/resources/stage-instance#definitions">Definitions</NavigationSubLink>
+              <NavigationSubLink href="/resources/stage-instance#auto-closing">Auto Closing</NavigationSubLink>
               <NavigationSubLink href="/resources/stage-instance#stage-instance-object">
                 Stage Instance Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#definitions">Definitions</NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#auto-closing">Auto Closing</NavigationSubLink>
               <NavigationSubLink href="/resources/stage-instance#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
