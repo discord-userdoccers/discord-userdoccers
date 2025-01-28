@@ -22,7 +22,8 @@ A guild or private channel within Discord.
 | bitrate?                            | integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                                   |
 | user_limit? ^1^                     | integer                                                            | The user limit of the voice channel (max 99, 0 refers to no limit)                                                                                                                           |
 | rate_limit_per_user? ^2^            | integer                                                            | Duration in seconds seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected |
-| recipients?                         | array[[user](/resources/user#user-object) object]                  | The recipients of the private channel                                                                                                                                                        |
+| recipients?                         | array[partial [user](/resources/user#user-object) object]          | The recipients of the private channel, excluding the requesting user                                                                                                                         |
+| recipient_flags? ^3^                | integer                                                            | The [recipient flags](#recipient-flags) of the DM                                                                                                                                            |
 | icon?                               | ?string                                                            | The group DM's [icon hash](/reference#cdn-formatting)                                                                                                                                        |
 | managed?                            | boolean                                                            | Whether the group DM is managed by an application                                                                                                                                            |
 | application_id?                     | snowflake                                                          | The ID of the application that manages the group DM                                                                                                                                          |
@@ -38,9 +39,9 @@ A guild or private channel within Discord.
 | member_ids_preview?                 | array[snowflake]                                                   | The IDs of some of the members in a thread                                                                                                                                                   |
 | thread_metadata?                    | [thread metadata](#thread-metadata-object) object                  | Thread-specific channel metadata                                                                                                                                                             |
 | member?                             | [thread member](#thread-member-object) object                      | Thread member object for the current user, if they have joined the thread; only included on certain API endpoints                                                                            |
-| default_auto_archive_duration? ^3^  | ?integer                                                           | Default duration in minutes for newly created threads to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080)                                                    |
+| default_auto_archive_duration? ^4^  | ?integer                                                           | Default duration in minutes for newly created threads to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080)                                                    |
 | default_thread_rate_limit_per_user? | integer                                                            | Default duration in seconds a user has to wait before sending another message in newly created threads; this field is copied to the thread at creation time and does not live update         |
-| permissions? ^4^                    | string                                                             | Computed permissions for the invoking user in the channel, including overwrites                                                                                                              |
+| permissions? ^5^                    | string                                                             | Computed permissions for the invoking user in the channel, including overwrites                                                                                                              |
 | flags?                              | integer                                                            | The [channel's flags](#channel-flags)                                                                                                                                                        |
 | available_tags?                     | array[[tag](#forum-tag-object) object]                             | The tags that can be used in a thread-only channel (max 20)                                                                                                                                  |
 | applied_tags?                       | array[snowflake]                                                   | The IDs of tags that are applied to a thread in a thread-only channel (max 5)                                                                                                                |
@@ -52,19 +53,24 @@ A guild or private channel within Discord.
 | is_message_request_timestamp?       | ?ISO8601 timestamp                                                 | When the message request was created                                                                                                                                                         |
 | is_spam?                            | boolean                                                            | Whether the DM is a spam message request                                                                                                                                                     |
 | theme_color?                        | ?integer                                                           | The background color of the channel icon emoji encoded as an integer representation of hexadecimal color code                                                                                |
-| status? ^5^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
+| status? ^6^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
 | hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming entitlement expires for the voice channel                                                                                                                              |
 | hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming entitlement to the voice channel                                                                                                             |
+| blocked_user_warning_dismissed? ^7^ | boolean                                                            | Whether the user has acknowledged the presence of blocked users in the group DM                                                                                                              |
 
 ^1^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
 
 ^2^ `rate_limit_per_user` also applies to thread creation. Users can send one message and create one thread during each `rate_limit_per_user` interval.
 
-^3^ This field is not automatically copied into new threads created in the channel. It should be manually set when creating a thread.
+^3^ Only included in [Gateway events](/topics/gateway-events#channels).
 
-^4^ Only returned when part of the `resolved` data received in a slash command interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+^4^ This field is not automatically copied into new threads created in the channel. It should be manually set when creating a thread.
 
-^5^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
+^5^ Only returned when part of the `resolved` data received in a slash command interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+
+^6^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
+
+^7^ Only included in [Gateway events](/topics/gateway-events#channels) and when fetched from the [Get Private Channels](#get-private-channels) endpoint.
 
 ###### Channel Type
 
@@ -94,7 +100,7 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 | 15    | GUILD_FORUM       | A channel that can only contain threads                                                                                                                            |
 | 16    | GUILD_MEDIA       | A channel that can only contain threads in a gallery view                                                                                                          |
 | 17    | LOBBY             | A game lobby channel                                                                                                                                               |
-| 18    | DM_SDK            | A private channel created by the social layer SDK                                                                                                                  |
+| 18    | EPHEMERAL_DM      | A private channel created by the social layer SDK                                                                                                                  |
 
 ###### Channel Flags
 
@@ -115,8 +121,17 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 | 1 << 14     | BROADCASTING                               | This group DM is used for broadcasting a live stream                                                                                                            |
 | 1 << 15     | HIDE_MEDIA_DOWNLOAD_OPTIONS                | This media channel has the embedded download options hidden for media attachments                                                                               |
 | 1 << 16     | JOIN_REQUEST_INTERVIEW_CHANNEL             | This group DM is used for [guild join request interviews](https://support.discord.com/hc/en-us/articles/23187611406999-Guilds-FAQ#h_01HXW2MCD0BT70FB9SRV1YRPBV) |
+| 1 << 17     | OBFUSCATED ^2^                             | This channel is unavailable for the current user and has its details obfuscated                                                                                 |
 
 ^1^ Media channels are now represented by the [`GUILD_MEDIA` channel type](#channel-type).
+
+^2^ The channel's name and topic are always returned as `___hidden___`.
+
+###### Recipient Flags
+
+| Value  | Name                          | Description                                                                                                     |
+| ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1 << 0 | DISMISSED_IN_GAME_MESSAGE_NUX | The user has dismissed the [`IN_GAME_MESSAGE_NUX` message](/resources/message#message-type) for this DM channel |
 
 ###### Video Quality Mode
 
@@ -343,7 +358,8 @@ Users can post or publish messages in this type of channel if they have the prop
   "type": 3,
   "id": "319674150115710528",
   "flags": 0,
-  "owner_id": "82198810841029460"
+  "owner_id": "82198810841029460",
+  "blocked_user_warning_dismissed": true
 }
 ```
 
@@ -566,7 +582,7 @@ Represents the duration of a thread mute.
 
 Returns a list of active [private channel](#channel-object) objects the user is participating in.
 
-<RouteHeader method="GET" url="/users/@me/dms/{user.id}">
+<RouteHeader method="GET" url="/users/@me/dms/{user.id}" supportsOAuth2="dm_channels.read">
   Get DM Channel
 </RouteHeader>
 
@@ -589,7 +605,7 @@ Suspicious DM activity may be flagged by Discord and require [additional verific
 
 <Alert type="info">
 
-One of `recipient_id`, `recipients` or `access_tokens` is required.
+One of `recipient_id`, `recipients` or `access_tokens` is required. Bots cannot DM other bots or create group DMs without `access_tokens`.
 
 </Alert>
 
@@ -598,11 +614,15 @@ One of `recipient_id`, `recipients` or `access_tokens` is required.
 | Field                          | Type             | Description                                                                |
 | ------------------------------ | ---------------- | -------------------------------------------------------------------------- |
 | recipient_id? **(deprecated)** | snowflake        | The recipient to DM                                                        |
-| recipients?                    | array[snowflake] | The users to include in the private channel                                |
-| access_tokens? ^1^             | array[string]    | The access tokens of users that have granted your app the `gdm.join` scope |
-| nicks? ^1^                     | object           | A mapping of user IDs to their respective nicknames                        |
+| recipients? ^1^                | array[snowflake] | The users to include in the private channel                                |
+| access_tokens? ^2^             | array[string]    | The access tokens of users that have granted your app the `gdm.join` scope |
+| nicks? ^3^                     | object           | A mapping of user IDs to their respective nicknames                        |
 
-^1^ Only usable for OAuth2 requests (which can only create group DMs).
+^1^ When creating a group DM, the client user's ID can optionally be included in the `recipients` array. This allows creating a group DM with only one other user.
+
+^2^ Only usable by bots for OAuth2 requests, which can only create group DMs.
+
+^3^ Requires `access_tokens` to be provided.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/channels">
   Get Guild Channels
@@ -830,7 +850,7 @@ Official clients expire a typing indicator 10 seconds after the last [Typing Sta
 
 </Alert>
 
-<RouteHeader method="GET" url="/channels/{channel.id}/call">
+<RouteHeader method="GET" url="/channels/{channel.id}/call" supportsOAuth2="voice">
   Get Call Eligibility
 </RouteHeader>
 
@@ -860,7 +880,7 @@ This endpoint requires an active call to do anything.
 | ------- | ------ | ------------------------------------------------------------------------ |
 | region? | string | The [voice region](/resources/voice#voice-region-object) ID for the call |
 
-<RouteHeader method="POST" url="/channels/{channel.id}/call/ring">
+<RouteHeader method="POST" url="/channels/{channel.id}/call/ring" supportsOAuth2="voice">
   Ring Channel Recipients
 </RouteHeader>
 
@@ -878,7 +898,7 @@ This endpoint requires an active call to do anything.
 | ----------- | ----------------- | ------------------------------------ |
 | recipients? | ?array[snowflake] | The recipients to ring (default all) |
 
-<RouteHeader method="POST" url="/channels/{channel.id}/call/stop-ringing">
+<RouteHeader method="POST" url="/channels/{channel.id}/call/stop-ringing" supportsOAuth2="voice">
   Stop Ringing Channel Recipients
 </RouteHeader>
 
@@ -992,6 +1012,12 @@ Returns a list of [supplemental message request](#supplemental-message-request-s
 | --------------- | --------------------------------------------------- | ----------------------------- |
 | channel_id      | snowflake                                           | The ID of the message request |
 | message_preview | [message](/resources/message#message-object) object | The trigger message           |
+
+<RouteHeader method="POST" url="/channels/{channel.id}/blocked-user-warning-dismissal">
+  Dismiss Blocked User Warning
+</RouteHeader>
+
+Acknowledges that a group DM contains users the current user has blocked. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/threads/active">
   Get Guild Active Threads
@@ -1264,7 +1290,7 @@ Returns an array of [thread members](#thread-member-object) objects that are mem
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts, and is restricted according to whether the `GUILD_MEMBERS` [Privileged Intent](/topics/gateway#privileged-intents) is enabled for the application.
+This endpoint is not usable by user accounts and is restricted according to whether the `GUILD_MEMBERS` [Privileged Intent](/topics/gateway#privileged-intents) is enabled for the application.
 
 </Alert>
 

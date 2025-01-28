@@ -164,6 +164,7 @@ export default function Navigation() {
               <NavigationSubLink href="/authentication#login">Login</NavigationSubLink>
               <NavigationSubLink href="/authentication#register">Register</NavigationSubLink>
               <NavigationSubLink href="/authentication#logout">Logout</NavigationSubLink>
+              <NavigationSubLink href="/authentication#password-recovery">Password Recovery</NavigationSubLink>
               <NavigationSubLink href="/authentication#account-recovery">Account Recovery</NavigationSubLink>
               <NavigationSubLink href="/authentication#mfa-verification">MFA Verification</NavigationSubLink>
             </Fragment>
@@ -327,12 +328,34 @@ export default function Navigation() {
           Emoji
         </NavigationLink>
         <NavigationLink
+          href="/resources/family-center"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/family-center#definitions">Definitions</NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#family-center-object">
+                Family Center Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#linked-user-object">
+                Linked User Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#linked-users-object">
+                Linked Users Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#teen-audit-log-object">
+                Teen Audit Log Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/family-center#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Family Center
+        </NavigationLink>
+        <NavigationLink
           href="/resources/guild"
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/guild#guild-object">Guild Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#user-guild-object">User Guild Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/guild#guild-preview-object">Guild Preview Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-widget-object">Guild Widget Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#guild-member-object">Guild Member Object</NavigationSubLink>
               <NavigationSubLink href="/resources/guild#supplemental-guild-member-object">
@@ -536,11 +559,11 @@ export default function Navigation() {
           href="/resources/stage-instance"
           subLinks={
             <Fragment>
+              <NavigationSubLink href="/resources/stage-instance#definitions">Definitions</NavigationSubLink>
+              <NavigationSubLink href="/resources/stage-instance#auto-closing">Auto Closing</NavigationSubLink>
               <NavigationSubLink href="/resources/stage-instance#stage-instance-object">
                 Stage Instance Object
               </NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#definitions">Definitions</NavigationSubLink>
-              <NavigationSubLink href="/resources/stage-instance#auto-closing">Auto Closing</NavigationSubLink>
               <NavigationSubLink href="/resources/stage-instance#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
@@ -875,6 +898,7 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/voice-connections#voice-backend-version">
                 Voice Backend Version
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/voice-connections#streams">Streams</NavigationSubLink>
             </Fragment>
           }
         >

@@ -93,17 +93,77 @@ In [Message Reaction Add](/topics/gateway-events#message-reaction-add) events `a
 
 ## Endpoints
 
+<RouteHeader method="GET" url="/guilds/{guild.id}/emojis">
+  Get Guild Emojis
+</RouteHeader>
+
+Returns a list of [emoji](#emoji-object) objects for the given guild. Includes the `user` field if the user has the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/emojis/{emoji.id}">
+  Get Guild Emoji
+</RouteHeader>
+
+Returns an [emoji](#emoji-object) object for the given guild and emoji IDs. Includes the `user` field if the user has the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/top-emojis">
+  Get Guild Top Emojis
+</RouteHeader>
+
+Returns the most-used emojis for the given guild.
+
+###### Response Body
+
+| Field | Type                                            | Description                        |
+| ----- | ----------------------------------------------- | ---------------------------------- |
+| items | array[[top emoji](#top-emoji-structure) object] | The most-used emojis for the guild |
+
+###### Top Emoji Structure
+
+| Field      | Type      | Description                   |
+| ---------- | --------- | ----------------------------- |
+| emoji_id   | snowflake | The ID of the emoji           |
+| emoji_rank | integer   | The overall rank of the emoji |
+
+###### Example Response
+
+```json
+{
+  "items": [
+    {
+      "emoji_id": "1145727546747535412",
+      "emoji_rank": 1
+    },
+    {
+      "emoji_id": "1174435954090594505",
+      "emoji_rank": 2
+    },
+    {
+      "emoji_id": "1029462631163117629",
+      "emoji_rank": 3
+    },
+    {
+      "emoji_id": "1030570693903011921",
+      "emoji_rank": 4
+    },
+    {
+      "emoji_id": "1077714345825407067",
+      "emoji_rank": 5
+    }
+  ]
+}
+```
+
 <RouteHeader method="GET" url="/emojis/{emoji.id}/guild">
   Get Emoji Guild
 </RouteHeader>
 
-Returns a [discoverable guild](/resources/discovery#discoverable-guild-object) object for the guild that owns the given emoji. This endpoint requires the guild to be discoverable, not be [auto-removed](/resources/discovery#discoverable-guild-object), and have [emoji/sticker discoverability](/resources/discovery#discovery-metadata-object) enabled.
+Returns a [discoverable guild](/resources/discovery#discoverable-guild-object) object for the guild that owns the given emoji. This endpoint requires the guild to be discoverable, not be [auto-removed](/resources/discovery#discoverable-guild-object), and have [guild expression discoverability](/resources/discovery#discovery-metadata-object) enabled.
 
 <RouteHeader method="GET" url="/emojis/{emoji.id}/source">
   Get Emoji Source
 </RouteHeader>
 
-Returns an object containing information on the guild or application that owns the given emoji. If the source is a guild, this endpoint requires the guild to be discoverable, not be [auto-removed](/resources/discovery#discoverable-guild-object), and have [emoji/sticker discoverability](/resources/discovery#discovery-metadata-object) enabled.
+Returns an object containing information on the guild or application that owns the given emoji. If the source is a guild, this endpoint requires the guild to be discoverable, not be [auto-removed](/resources/discovery#discoverable-guild-object), and have [guild expression discoverability](/resources/discovery#discovery-metadata-object) enabled.
 
 ###### Response Body
 
@@ -190,71 +250,11 @@ Returns an object containing information on the guild or application that owns t
 }
 ```
 
-<RouteHeader method="GET" url="/guilds/{guild.id}/emojis">
-  Get Guild Emojis
-</RouteHeader>
-
-Returns a list of [emoji](#emoji-object) objects for the given guild. Includes the `user` field if the user has the `MANAGE_EXPRESSIONS` permission.
-
-<RouteHeader method="GET" url="/guilds/{guild.id}/emojis/{emoji.id}">
-  Get Guild Emoji
-</RouteHeader>
-
-Returns an [emoji](#emoji-object) object for the given guild and emoji IDs. Includes the `user` field if the user has the `MANAGE_EXPRESSIONS` permission.
-
-<RouteHeader method="GET" url="/guilds/{guild.id}/top-emojis">
-  Get Guild Top Emojis
-</RouteHeader>
-
-Returns the most-used emojis for the given guild.
-
-###### Response Body
-
-| Field | Type                                            | Description                        |
-| ----- | ----------------------------------------------- | ---------------------------------- |
-| items | array[[top emoji](#top-emoji-structure) object] | The most-used emojis for the guild |
-
-###### Top Emoji Structure
-
-| Field      | Type      | Description                   |
-| ---------- | --------- | ----------------------------- |
-| emoji_id   | snowflake | The ID of the emoji           |
-| emoji_rank | integer   | The overall rank of the emoji |
-
-###### Example Response
-
-```json
-{
-  "items": [
-    {
-      "emoji_id": "1145727546747535412",
-      "emoji_rank": 1
-    },
-    {
-      "emoji_id": "1174435954090594505",
-      "emoji_rank": 2
-    },
-    {
-      "emoji_id": "1029462631163117629",
-      "emoji_rank": 3
-    },
-    {
-      "emoji_id": "1030570693903011921",
-      "emoji_rank": 4
-    },
-    {
-      "emoji_id": "1077714345825407067",
-      "emoji_rank": 5
-    }
-  ]
-}
-```
-
 <RouteHeader method="POST" url="/guilds/{guild.id}/emojis" supportsAuditReason>
   Create Guild Emoji
 </RouteHeader>
 
-Creates a new emoji for the guild. Requires the `MANAGE_EXPRESSIONS` permission. Returns the new [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
+Creates a new emoji for the guild. Requires the `CREATE_EXPRESSIONS` permission. Returns the new [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
 
 <Alert type="warn">
 
@@ -274,7 +274,7 @@ Emojis have a maximum file size of 256 KiB. Attempting to upload an emoji larger
   Modify Guild Emoji
 </RouteHeader>
 
-Modifies the given emoji. Requires the `MANAGE_EXPRESSIONS` permission. Returns the updated [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
+Modifies the given emoji. For emojis created by the current user, requires either the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission. For other emojis, requires the `MANAGE_EXPRESSIONS` permission. Returns the updated [emoji](#emoji-object) object on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
 
 ###### JSON Params
 
@@ -287,7 +287,7 @@ Modifies the given emoji. Requires the `MANAGE_EXPRESSIONS` permission. Returns 
   Delete Guild Emoji
 </RouteHeader>
 
-Deletes the given emoji. Requires the `MANAGE_EXPRESSIONS` permission. Returns a 204 empty response on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
+Deletes the given emoji. For emojis created by the current user, requires either the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission. For other emojis, requires the `MANAGE_EXPRESSIONS` permission. Returns a 204 empty response on success. Fires a [Guild Emojis Update](/topics/gateway-events#guild-emojis-update) Gateway event.
 
 <RouteHeader method="GET" url="/applications/{application.id}/emojis">
   Get Application Emojis

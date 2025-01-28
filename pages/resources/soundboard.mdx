@@ -9,19 +9,21 @@ Custom soundboard sounds in a can be retrieved over the Gateway using [Request S
 
 ###### Soundboard Sound Structure
 
-| Field      | Type                                               | Description                                                                                      |
-| ---------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| sound_id   | snowflake                                          | The ID of the soundboard sound                                                                   |
-| name       | string                                             | The name of the soundboard sound (2-32 characters)                                               |
-| volume     | float                                              | The volume of the soundboard sound (represented as a float from 0 to 1)                          |
-| emoji_id   | ?snowflake                                         | The ID of the sound's custom emoji                                                               |
-| emoji_name | ?string                                            | The unicode character of the sound's emoji                                                       |
-| guild_id?  | snowflake                                          | The ID of the source guild                                                                       |
-| available? | boolean                                            | Whether this guild sound can be used; may be false due to loss of premium subscriptions (boosts) |
-| user_id    | snowflake                                          | The ID of the user who created this sound                                                        |
-| user? ^1^  | partial [user](/resources/user#user-object) object | The user who created this sound                                                                  |
+| Field        | Type                                               | Description                                                                                      |
+| ------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| sound_id     | snowflake                                          | The ID of the soundboard sound                                                                   |
+| name         | string                                             | The name of the soundboard sound (2-32 characters)                                               |
+| volume       | float                                              | The volume of the soundboard sound (represented as a float from 0 to 1)                          |
+| emoji_id     | ?snowflake                                         | The ID of the sound's custom emoji                                                               |
+| emoji_name   | ?string                                            | The unicode character of the sound's emoji                                                       |
+| guild_id?    | snowflake                                          | The ID of the source guild                                                                       |
+| available    | boolean                                            | Whether this guild sound can be used; may be false due to loss of premium subscriptions (boosts) |
+| user? ^1^    | partial [user](/resources/user#user-object) object | The user who created this sound                                                                  |
+| user_id? ^2^ | snowflake                                          | The ID of the user who created this sound                                                        |
 
-^1^ Only included in contexts where the sound is created or updated.
+^1^ Only included for sounds in contexts where the sound is created or updated, as well as when fetched through the [Get Guild Soundboard Sounds](#get-guild-soundboard-sounds) or [Get Guild Soundboard Sound](#get-guild-soundboard-sound) endpoints by a user with the `MANAGE_EXPRESSIONS` permission.
+
+^2^ Only included in Gateway events related to the soundboard.
 
 ### Endpoints
 
@@ -31,11 +33,29 @@ Custom soundboard sounds in a can be retrieved over the Gateway using [Request S
 
 Returns a list of [soundboard sound](#soundboard-sound-object) objects that can be used by all users.
 
+<RouteHeader method="GET" url="/guilds/{guild.id}/soundboard-sounds">
+  Get Guild Soundboard Sounds
+</RouteHeader>
+
+Returns an object containing a list of [soundboard sound](#soundboard-sound-object) objects for the given guild. Includes the `user` field if the user has the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission.
+
+###### Response Body
+
+| Field | Type                                                       | Description                        |
+| ----- | ---------------------------------------------------------- | ---------------------------------- |
+| items | array[[soundboard sound](#soundboard-sound-object) object] | The soundboard sounds in the guild |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/soundboard-sounds/{sound.id}">
+  Get Guild Soundboard Sound
+</RouteHeader>
+
+Returns a [soundboard sound](#soundboard-sound-object) object for the given guild and sound ID. Includes the `user` field if the user has the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission.
+
 <RouteHeader method="POST" url="/guilds/{guild.id}/soundboard-sounds" supportsAuditReason>
   Create Guild Soundboard Sound
 </RouteHeader>
 
-Creates a new soundboard sound for the guild. Requires the `MANAGE_GUILD_EXPRESSIONS` permission. Returns the new [soundboard sound](#soundboard-sound-object) object on success. Fires a [Guild Soundboard Sound Create](/topics/gateway-events#guild-soundboard-sound-create) Gateway event.
+Creates a new soundboard sound for the guild. Requires the `CREATE_EXPRESSIONS` permission. Returns the new [soundboard sound](#soundboard-sound-object) object on success. Fires a [Guild Soundboard Sound Create](/topics/gateway-events#guild-soundboard-sound-create) Gateway event.
 
 <Alert type="warn">
 
@@ -57,19 +77,13 @@ Soundboard sounds have a maximum file size of 512 KiB and a maximum duration of 
   Modify Guild Soundboard Sound
 </RouteHeader>
 
-Replaces the given soundboard sound. Requires the `MANAGE_GUILD_EXPRESSIONS` permission. Returns the updated [soundboard sound](#soundboard-sound-object) object on success. Fires a [Guild Soundboard Sound Update](/topics/gateway-events#guild-soundboard-sound-update) Gateway event.
-
-<Alert type="info">
-
-All parameters to this endpoint are optional and nullable. Omitting or setting a `null` value will set it to default (except for `name`, which will remain unchanged).
-
-</Alert>
+Modifies the given soundboard sound. For sounds created by the current user, requires either the `CREATE_EXPRESSIONS` or MANAGE_EXPRESSIONS permission. For other sounds, requires the `MANAGE_EXPRESSIONS` permission. Returns the updated [soundboard sound](#soundboard-sound-object) object on success. Fires a [Guild Soundboard Sound Update](/topics/gateway-events#guild-soundboard-sound-update) Gateway event.
 
 ###### JSON Params
 
 | Field       | Type       | Description                                                                        |
 | ----------- | ---------- | ---------------------------------------------------------------------------------- |
-| name?       | ?string    | The name of the soundboard sound (2-32 characters)                                 |
+| name?       | string     | The name of the soundboard sound (2-32 characters)                                 |
 | volume?     | ?float     | The volume of the soundboard sound (represented as a float from 0 to 1, default 1) |
 | emoji_id?   | ?snowflake | The ID of the sound's custom emoji                                                 |
 | emoji_name? | ?string    | The unicode character of the sound's emoji                                         |
@@ -78,7 +92,13 @@ All parameters to this endpoint are optional and nullable. Omitting or setting a
   Delete Guild Soundboard Sound
 </RouteHeader>
 
-Deletes the given soundboard sound. Requires the `MANAGE_GUILD_EXPRESSIONS` permission. Returns a 204 empty response on success. Fires a [Guild Soundboard Sound Delete](/topics/gateway-events#guild-soundboard-sound-delete) Gateway event.
+For sounds created by the current user, requires either the `CREATE_EXPRESSIONS` or `MANAGE_EXPRESSIONS` permission. For other sounds, requires the `MANAGE_EXPRESSIONS` permission. Returns a 204 empty response on success. Fires a [Guild Soundboard Sound Delete](/topics/gateway-events#guild-soundboard-sound-delete) Gateway event.
+
+<RouteHeader method="GET" url="/soundboard-sounds/{sound.id}/guild/{guild.id}">
+  Get Soundboard Sound Guild
+</RouteHeader>
+
+Returns a [discoverable guild](/resources/discovery#discoverable-guild-object) object for the guild that owns the given sound. This endpoint requires the guild to be discoverable, not be [auto-removed](/resources/discovery#discoverable-guild-object), and have [guild expression discoverability](/resources/discovery#discovery-metadata-object) enabled.
 
 <RouteHeader method="POST" url="/channels/{channel.id}/send-soundboard-sound">
   Send Soundboard Sound
