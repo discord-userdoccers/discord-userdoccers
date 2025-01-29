@@ -41,8 +41,8 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | premium_tier                       | integer                                                                                    | The guild's [premium tier](#premium-tier) (boost level)                                                                    |
 | premium_subscription_count         | integer                                                                                    | The number of premium subscriptions (boosts) the guild currently has                                                       |
 | preferred_locale                   | string                                                                                     | The preferred locale of the guild; used in discovery and notices from Discord (default "en-US")                            |
-| max_video_channel_users?           | integer                                                                                    | The maximum amount of users that can watch a video stream in a voice channel at once                                       |
-| max_stage_video_channel_users? ^1^ | integer                                                                                    | The maximum amount of users that can watch a video stream in a stage channel at once                                       |
+| max_video_channel_users?           | integer                                                                                    | The maximum number of users in a voice channel while someone has video enabled                                             |
+| max_stage_video_channel_users? ^1^ | integer                                                                                    | The maximum number of users in a stage channel while someone has video enabled                                             |
 | nsfw **(deprecated)**              | boolean                                                                                    | Whether the guild is considered NSFW (`EXPLICIT` or `AGE_RESTRICTED`)                                                      |
 | nsfw_level                         | integer                                                                                    | The [NSFW level](#nsfw-level) of the guild                                                                                 |
 | hub_type                           | ?integer                                                                                   | The [type of student hub](#hub-type) the guild is, if it is a student hub                                                  |
@@ -59,86 +59,26 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 
 ^3^ Only included in guild objects returned [over the Gateway](/topics/gateway-events#guilds).
 
-###### Example Guild
+###### Partial Guild Struture
 
-```json
-{
-  "id": "81384788765712384",
-  "name": "Discord API",
-  "icon": "a363a84e969bcbe1353eb2fdfb2e50e6",
-  "description": null,
-  "home_header": null,
-  "splash": null,
-  "discovery_splash": null,
-  "features": [
-    "INVITE_SPLASH",
-    "VIP_REGIONS",
-    "PREVIEW_ENABLED",
-    "VANITY_URL",
-    "CHANNEL_ICON_EMOJIS_GENERATED",
-    "COMMUNITY",
-    "NEW_THREAD_PERMISSIONS",
-    "WELCOME_SCREEN_ENABLED",
-    "NEWS",
-    "ANIMATED_ICON",
-    "AUTO_MODERATION",
-    "MEMBER_VERIFICATION_GATE_ENABLED",
-    "THREADS_ENABLED",
-    "COMMUNITY_EXP_LARGE_UNGATED",
-    "SOUNDBOARD",
-    "THREE_DAY_THREAD_ARCHIVE"
-  ],
-  "emojis": [],
-  "stickers": [],
-  "banner": null,
-  "owner_id": "80088516616269824",
-  "application_id": null,
-  "region": "deprecated",
-  "afk_channel_id": null,
-  "afk_timeout": 3600,
-  "system_channel_id": "381870553235193857",
-  "widget_enabled": true,
-  "widget_channel_id": null,
-  "verification_level": 3,
-  "roles": [
-    {
-      "id": "81384788765712384",
-      "name": "@everyone",
-      "description": null,
-      "permissions": "110917634608832",
-      "position": 0,
-      "color": 0,
-      "hoist": false,
-      "managed": false,
-      "mentionable": false,
-      "icon": null,
-      "unicode_emoji": null,
-      "flags": 0
-    }
-  ],
-  "default_message_notifications": 1,
-  "mfa_level": 1,
-  "explicit_content_filter": 2,
-  "max_presences": null,
-  "max_members": 500000,
-  "max_stage_video_channel_users": 50,
-  "max_video_channel_users": 25,
-  "vanity_url_code": "discord-api",
-  "premium_tier": 1,
-  "premium_subscription_count": 5,
-  "system_channel_flags": 9,
-  "preferred_locale": "en-US",
-  "rules_channel_id": "381898062269775883",
-  "safety_alerts_channel_id": null,
-  "public_updates_channel_id": "650136538264502282",
-  "hub_type": null,
-  "premium_progress_bar_enabled": false,
-  "latest_onboarding_question_id": null,
-  "incidents_data": null,
-  "nsfw": false,
-  "nsfw_level": 0
-}
-```
+| Field                           | Type                                                       | Description                                                                          |
+| ------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| id                              | snowflake                                                  | The ID of the guild                                                                  |
+| name                            | string                                                     | The name of the guild (2-100 characters)                                             |
+| icon                            | ?string                                                    | The guild's [icon hash](/reference#cdn-formatting)                                   |
+| description                     | ?string                                                    | The description for the guild                                                        |
+| splash                          | ?string                                                    | The guild's [splash hash](/reference#cdn-formatting)                                 |
+| discovery_splash                | ?string                                                    | The guild's [discovery splash hash](/reference#cdn-formatting)                       |
+| home_header                     | ?string                                                    | The guild's [home header hash](/reference#cdn-formatting), also used in server guide |
+| features                        | array[string]                                              | Enabled [guild features](#guild-features)                                            |
+| emojis? ^1^                     | array[[emoji](/resources/emoji#emoji-object) object]       | Custom guild emojis                                                                  |
+| stickers? ^1^                   | array[[sticker](/resources/sticker#sticker-object) object] | Custom guild stickers                                                                |
+| approximate_member_count? ^2^   | integer                                                    | Approximate number of total members in the guild                                     |
+| approximate_presence_count? ^2^ | integer                                                    | Approximate number of non-offline members in the guild                               |
+
+^1^ Only included when fetched from the [Get Guild Preview](#get-guild-preview) endpoint.
+
+^2^ Not included when fetched from the [Get Guild Basic](#get-guild-basic) endpoint.
 
 ###### Message Notification Level
 
@@ -284,6 +224,7 @@ The available guild features, their functionality, and their requirements is sub
 | ~~EXPOSED_TO_BOOSTING_TIERS_EXPERIMENT~~               | ~~Guild requires a reduced amount of premium subscriptions to go up a premium tier (see `BOOSTING_TIERS_EXPERIMENT_MEDIUM_GUILD`, `BOOSTING_TIERS_EXPERIMENT_SMALL_GUILD`)~~                                                                                                                       |
 | ~~FEATURABLE~~                                         | ~~Guild is featured in discovery~~                                                                                                                                                                                                                                                                 |
 | ~~FORCE_RELAY~~                                        | ~~Shards connections to the guild to different nodes that relay information between each other~~ (see `RELAY_ENABLED`)                                                                                                                                                                             |
+| FORWARDING_DISABLED                                    |
 | GENSHIN_L30                                            | Access to [clan conversion](/resources/clan#create-clan) based on the intensity of Genshin Impact engagement among the guild's members, as depicted by the power user curve                                                                                                                        |
 | GUESTS_ENABLED                                         | Guild has used guest invites                                                                                                                                                                                                                                                                       |
 | ~~GUILD_AUTOMOD_DEFAULT_LIST~~ ^1^                     |                                                                                                                                                                                                                                                                                                    |
@@ -311,6 +252,7 @@ The available guild features, their functionality, and their requirements is sub
 | INCREASED_THREAD_LIMIT                                 | Ability to have over 1,000 active threads                                                                                                                                                                                                                                                          |
 | INTERNAL_EMPLOYEE_ONLY                                 | Restricts guild joining to Discord employees                                                                                                                                                                                                                                                       |
 | INVITE_SPLASH                                          | Ability to set an invite splash background                                                                                                                                                                                                                                                         |
+| LEADERBOARD_ENABLED                                    | Guild has [game leaderboard](https://support.discord.com/hc/en-us/articles/27615657704983-Leaderboards-FAQ) enabled                                                                                                                                                                                |
 | INVITES_DISABLED                                       | Guild has [paused invites](https://support.discord.com/hc/en-us/articles/8458903738647-Pause-Invites-FAQ), preventing new members from joining                                                                                                                                                     |
 | LINKED_TO_HUB                                          | Guild is linked to a [student hub](https://dis.gd/studenthubs)                                                                                                                                                                                                                                     |
 | ~~LURKABLE~~                                           | ~~Ability to preview the guild before joining~~ (see `DISCOVERABLE` and `PREVIEW_ENABLED`)                                                                                                                                                                                                         |
@@ -339,6 +281,7 @@ The available guild features, their functionality, and their requirements is sub
 | RAID_ALERTS_DISABLED                                   | Raid alerts opted out                                                                                                                                                                                                                                                                              |
 | ~~RAID_ALERTS_ENABLED~~                                | ~~Raid alerts enabled~~ (see `RAID_ALERTS_DISABLED`)                                                                                                                                                                                                                                               |
 | RAPIDASH_TEST                                          | Access to [clan conversion](/resources/clan#create-clan) general availability                                                                                                                                                                                                                      |
+| RAPIDASH_TEST_REBIRTH                                  |
 | RELAY_ENABLED                                          | Shards connections to the guild to different nodes that relay information between each other                                                                                                                                                                                                       |
 | ~~RESTRICT_SPAM_RISK_GUILDS~~ ^1^                      |
 | ROLE_ICONS                                             | Ability to set an image or emoji as a role icon                                                                                                                                                                                                                                                    |
@@ -401,6 +344,123 @@ These guild features are mutable, and can be edited with the [Modify Guild](#mod
 
 ^4^ Guild must have access to conversation summaries (either the `SUMMARIES_ENABLED` or `SUMMARIES_ENABLED_GA` feature).
 
+###### Example Guild
+
+```json
+{
+  "id": "81384788765712384",
+  "name": "Discord API",
+  "icon": "a363a84e969bcbe1353eb2fdfb2e50e6",
+  "description": null,
+  "home_header": null,
+  "splash": null,
+  "discovery_splash": null,
+  "features": [
+    "INVITE_SPLASH",
+    "VIP_REGIONS",
+    "PREVIEW_ENABLED",
+    "VANITY_URL",
+    "CHANNEL_ICON_EMOJIS_GENERATED",
+    "COMMUNITY",
+    "NEW_THREAD_PERMISSIONS",
+    "WELCOME_SCREEN_ENABLED",
+    "NEWS",
+    "ANIMATED_ICON",
+    "AUTO_MODERATION",
+    "MEMBER_VERIFICATION_GATE_ENABLED",
+    "THREADS_ENABLED",
+    "COMMUNITY_EXP_LARGE_UNGATED",
+    "SOUNDBOARD",
+    "THREE_DAY_THREAD_ARCHIVE"
+  ],
+  "emojis": [],
+  "stickers": [],
+  "banner": null,
+  "owner_id": "80088516616269824",
+  "application_id": null,
+  "region": "deprecated",
+  "afk_channel_id": null,
+  "afk_timeout": 3600,
+  "system_channel_id": "381870553235193857",
+  "widget_enabled": true,
+  "widget_channel_id": null,
+  "verification_level": 3,
+  "roles": [
+    {
+      "id": "81384788765712384",
+      "name": "@everyone",
+      "description": null,
+      "permissions": "110917634608832",
+      "position": 0,
+      "color": 0,
+      "hoist": false,
+      "managed": false,
+      "mentionable": false,
+      "icon": null,
+      "unicode_emoji": null,
+      "flags": 0
+    }
+  ],
+  "default_message_notifications": 1,
+  "mfa_level": 1,
+  "explicit_content_filter": 2,
+  "max_presences": null,
+  "max_members": 500000,
+  "max_stage_video_channel_users": 50,
+  "max_video_channel_users": 25,
+  "vanity_url_code": "discord-api",
+  "premium_tier": 1,
+  "premium_subscription_count": 5,
+  "system_channel_flags": 9,
+  "preferred_locale": "en-US",
+  "rules_channel_id": "381898062269775883",
+  "safety_alerts_channel_id": null,
+  "public_updates_channel_id": "650136538264502282",
+  "hub_type": null,
+  "premium_progress_bar_enabled": false,
+  "latest_onboarding_question_id": null,
+  "incidents_data": null,
+  "nsfw": false,
+  "nsfw_level": 0
+}
+```
+
+###### Example Partial Guild
+
+```json
+{
+  "id": "752630786561409076",
+  "name": "Elite Creative",
+  "icon": "278da1c7740e394657c1179f4782aef1",
+  "description": "The largest Fortnite Creative server across the globe. Join a Creative community offering events, 1v1s. and more!",
+  "home_header": null,
+  "splash": "2b4ae5cdd71038b4880b1b57a6e5dacb",
+  "discovery_splash": "9d7ec672b89b320ef7a51e5b6ae453b8",
+  "features": [
+    "ANIMATED_BANNER",
+    "ANIMATED_ICON",
+    "AUTO_MODERATION",
+    "BANNER",
+    "COMMUNITY",
+    "DISCOVERABLE",
+    "ENABLED_DISCOVERABLE_BEFORE",
+    "GUILD_ONBOARDING_EVER_ENABLED",
+    "GUILD_WEB_PAGE_VANITY_URL",
+    "INVITE_SPLASH",
+    "NEWS",
+    "PREVIEW_ENABLED",
+    "RAID_ALERTS_ENABLED",
+    "ROLE_ICONS",
+    "VANITY_URL",
+    "WELCOME_SCREEN_ENABLED"
+  ],
+  "approximate_member_count": 155451,
+  "approximate_presence_count": 7532,
+  "emojis": [],
+  "stickers": []
+}
+```
+
 ### User Guild Object
 
 A partial guild object returned from the [Get User Guilds](#get-user-guilds) endpoint. Represents a guild the user is a member of.
@@ -437,63 +497,6 @@ A partial guild object returned from the [Get User Guilds](#get-user-guilds) end
     "approximate_presence_count": 69
   }
 ]
-```
-
-### Guild Preview Object
-
-A partial guild object returned from the [Get Guild Preview](#get-guild-preview) endpoint.
-
-###### Guild Preview Structure
-
-| Field                      | Type                                                       | Description                                                                          |
-| -------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| id                         | snowflake                                                  | The ID of the guild                                                                  |
-| name                       | string                                                     | The name of the guild (2-100 characters)                                             |
-| icon                       | ?string                                                    | The guild's [icon hash](/reference#cdn-formatting)                                   |
-| description                | ?string                                                    | The description for the guild                                                        |
-| splash                     | ?string                                                    | The guild's [splash hash](/reference#cdn-formatting)                                 |
-| discovery_splash           | ?string                                                    | The guild's [discovery splash hash](/reference#cdn-formatting)                       |
-| home_header                | ?string                                                    | The guild's [home header hash](/reference#cdn-formatting), also used in server guide |
-| features                   | array[string]                                              | Enabled [guild features](#guild-features)                                            |
-| emojis                     | array[[emoji](/resources/emoji#emoji-object) object]       | Custom guild emojis                                                                  |
-| stickers                   | array[[sticker](/resources/sticker#sticker-object) object] | Custom guild stickers                                                                |
-| approximate_member_count   | integer                                                    | Approximate number of total members in the guild                                     |
-| approximate_presence_count | integer                                                    | Approximate number of non-offline members in the guild                               |
-
-###### Example Guild Preview
-
-```json
-{
-  "id": "752630786561409076",
-  "name": "Elite Creative",
-  "icon": "278da1c7740e394657c1179f4782aef1",
-  "description": "The largest Fortnite Creative server across the globe. Join a Creative community offering events, 1v1s. and more!",
-  "home_header": null,
-  "splash": "2b4ae5cdd71038b4880b1b57a6e5dacb",
-  "discovery_splash": "9d7ec672b89b320ef7a51e5b6ae453b8",
-  "features": [
-    "ANIMATED_BANNER",
-    "ANIMATED_ICON",
-    "AUTO_MODERATION",
-    "BANNER",
-    "COMMUNITY",
-    "DISCOVERABLE",
-    "ENABLED_DISCOVERABLE_BEFORE",
-    "GUILD_ONBOARDING_EVER_ENABLED",
-    "GUILD_WEB_PAGE_VANITY_URL",
-    "INVITE_SPLASH",
-    "NEWS",
-    "PREVIEW_ENABLED",
-    "RAID_ALERTS_ENABLED",
-    "ROLE_ICONS",
-    "VANITY_URL",
-    "WELCOME_SCREEN_ENABLED"
-  ],
-  "approximate_member_count": 155451,
-  "approximate_presence_count": 7532,
-  "emojis": [],
-  "stickers": []
-}
 ```
 
 ### Guild Widget Object
@@ -1313,11 +1316,17 @@ Returns a [guild](#guild-object) object for the given guild ID.
 | ------------ | ------- | ------------------------------------------------------------------------- |
 | with_counts? | boolean | Whether to include approximate member and presence counts (default false) |
 
+<RouteHeader method="GET" url="/guilds/{guild.id}/basic">
+  Get Guild Basic
+</RouteHeader>
+
+Returns a partial [guild](#guild-object) object for the given guild ID. If the user is not in the guild, the guild must be discoverable.
+
 <RouteHeader method="GET" url="/guilds/{guild.id}/preview">
   Get Guild Preview
 </RouteHeader>
 
-Returns a [guild preview](#guild-preview-object) object for the given guild ID. If the user is not in the guild, the guild must be discoverable.
+Returns a partial [guild](#guild-object) object for the given guild ID with all partial fields. If the user is not in the guild, the guild must be discoverable.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}" supportsAuditReason mfa>
   Modify Guild
@@ -1529,7 +1538,7 @@ See [the unavailable resources section](/topics/rate-limits#unavailable-resource
   Get Guild Members Supplemental
 </RouteHeader>
 
-Returns a list of [supplemental guild member](#supplemental-guild-member-object) objects including join source information for the given user IDs.
+Returns a list of [supplemental guild member](#supplemental-guild-member-object) objects including join source information for the given user IDs. Requires the `MANAGE_GUILD` permission.
 
 ###### JSON Params
 
@@ -1708,7 +1717,7 @@ Returns a list of [ban](#ban-object) objects for the guild. Requires the `BAN_ME
   Search Guild Bans
 </RouteHeader>
 
-Returns a list of [ban](#ban-object) objects whose username or display name contains a provided string.
+Returns a list of [ban](#ban-object) objects whose username or display name contains a provided string. Requires the `BAN_MEMBERS` permission.
 
 ###### Query String Params
 
@@ -1916,7 +1925,7 @@ Deletes a guild role. Requires the `MANAGE_ROLES` permission. Returns a 204 empt
   Get Guild Prune
 </RouteHeader>
 
-Returns the number of members that would be removed in a prune operation. Requires both the `MANAGE_GUILD` and `KICK_MEMBERS` permission.
+Returns the number of members that would be removed in a prune operation. Requires both the `MANAGE_GUILD` and `KICK_MEMBERS` permissions.
 
 By default, prune will not remove users with roles. You can optionally include specific roles in your prune by providing the `include_roles` parameter. Any inactive user that has a subset of the provided role(s) will be counted in the prune and users with additional roles will not.
 
@@ -1945,7 +1954,7 @@ By default, prune will not remove users with roles. You can optionally include s
   Prune Guild
 </RouteHeader>
 
-Begins a prune operation. Requires both the `MANAGE_GUILD` and `KICK_MEMBERS` permission. For large guilds, it's recommended to set the `compute_prune_count` option to `false`, allowing the request to return before all members are pruned. Fires multiple [Guild Member Remove](/topics/gateway-events#guild-member-remove) Gateway events.
+Begins a prune operation. Requires both the `MANAGE_GUILD` and `KICK_MEMBERS` permissions. For large guilds, it's recommended to set the `compute_prune_count` option to `false`, allowing the request to return before all members are pruned. Fires multiple [Guild Member Remove](/topics/gateway-events#guild-member-remove) Gateway events.
 
 By default, prune will not remove users with roles. You can optionally include specific roles in your prune by providing the `include_roles` parameter. Any inactive user that has a subset of the provided role(s) will be included in the prune and users with additional roles will not.
 
@@ -2050,7 +2059,7 @@ Returns the vanity invite for the guild. The guild must have the `VANITY_URL` or
   Modify Guild Vanity Invite
 </RouteHeader>
 
-Modifies the vanity invite for the guild. The guild must have the `VANITY_URL` or `GUILD_WEB_PAGE_VANITY_URL` feature. Guilds without the `VANITY_URL` feature can only clear their vanity invite. Requires the `MANAGE_GUILD` permission. Fires a [Guild Update](/topics/gateway-events#guild-update) Gateway event.
+Modifies the vanity invite for the guild. The guild must have the `VANITY_URL` or `GUILD_WEB_PAGE_VANITY_URL` feature. Guilds without the `VANITY_URL` feature can only clear their vanity invite. Requires both the `MANAGE_GUILD` and `CREATE_INSTANT_INVITE` permissions. Fires a [Guild Update](/topics/gateway-events#guild-update) Gateway event.
 
 ###### JSON Params
 
@@ -2260,4 +2269,4 @@ Joins the Discord Admin Community through the guild. Requires the `MANAGE_GUILD`
   Join Wumpus Feedback Squad
 </RouteHeader>
 
-Joins Wumpus Feedback Sqaud through the guild. Requires the `MANAGE_GUILD` permission and the [`CLAN` guild feature](#guild-features). Returns a 204 empty response on success. Fires a [Guild Create](/topics/gateway-events#guild-create), [Guild Member Add](/topics/gateway-events#guild-member-add), and optionally [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event.
+Joins Wumpus Feedback Squad through the guild. Requires the `MANAGE_GUILD` permission and the [`CLAN` guild feature](#guild-features). Returns a 204 empty response on success. Fires a [Guild Create](/topics/gateway-events#guild-create), [Guild Member Add](/topics/gateway-events#guild-member-add), and optionally [Guild Join Request Create](/topics/gateway-events#guild-join-request-create) Gateway event.

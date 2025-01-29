@@ -79,7 +79,7 @@ At a high-level, Gateway connections consist of the following cycle:
 3. Client starts the heartbeat task: it sends an [Opcode 1 Heartbeat](#sending-heartbeats) event, then continue to send them every heartbeat interval until the connection is closed.
    - Discord will respond to each Heartbeat event with an [Opcode 11 Heartbeat ACK](#sending-heartbeats) event to confirm it was received. If the client doesn't receive a Heartbeat ACK before the next heartbeat interval, it should close the connection and reconnect.
    - Discord may send the client an [Opcode 1 Heartbeat](#sending-heartbeats) event, in which case it should respond with an [Opcode 1 Heartbeat](#sending-heartbeats) event immediately.
-4. Client sends an [Opcode 2 Identify](#identifying) event to perform the initial handshake with the Gateway.
+4. Client sends an [Opcode 2 Identify](#identifying) event to perform the initial handshake with the Gateway. The client does not have to wait for the [Opcode 10 Hello](#hello-event) event before identifying.
 5. Discord sends the client a [Ready](#ready-event) event which indicates the handshake was successful and the connection is established. The Ready event contains a `resume_gateway_url` that the client should keep track of to determine the WebSocket URL it should use to resume. **Read the section on [the Ready event](#ready-event).**
 6. The connection may be dropped for a variety of reasons. Whether the client can [resume](#resuming) the connection or whether it must re-identify is determined by a variety of factors like the [OPcode](/topics/opcodes-and-status-codes#gateway-opcodes) and [close code](/topics/opcodes-and-status-codes#gateway-close-event-codes) that it receives. **Read the section on [disconnecting](#disconnecting).**
 7. If the client **can** resume/reconnect, it should open a new connection using `resume_gateway_url`, then send an [Opcode 6 Resume](#resuming) event. If it **cannot** resume/reconnect, it should open a new connection using the cached URL from step #1, then repeat the whole Gateway cycle. _Yipee!_
@@ -242,7 +242,7 @@ Below is a list of all capabilities and a general description of their effects. 
 | 1 << 11 | PASSIVE_GUILD_UPDATE                  | Enables passive guild updates, allowing the client to receive Passive Update v1 events instead of Channel Unreads Update events for guilds it is not subscribed to                                                                                                                                                                             |
 | 1 << 12 | AUTO_CALL_CONNECT                     | Connects the client to all pre-existing calls upon connecting to the Gateway; this means clients will receive [Call Create](/topics/gateway-events#call-create) events for all calls created before the Gateway connection was established without needing to send a [Request Call Connect](/topics/gateway-events#request-call-connect) first |
 | 1 << 13 | DEBOUNCE_MESSAGE_REACTIONS            | Debounces message reaction events, preventing the client from receiving multiple [Message Reaction Add](/topics/gateway-events#message-reaction-add) events for the same message within a short period of time; clients will receive a single [Message Reaction Add Many](/topics/gateway-events#message-reaction-add-many) event instead      |
-| 1 << 14 | PASSIVE_GUILD_UPDATE_V2 ^2^           | Enables passive guild updates v2, allowing the client to receive Passive Update v2 events instead of Channel Unreads Updateevents for guilds it is not subscribed to                                                                                                                                                                           |
+| 1 << 14 | PASSIVE_GUILD_UPDATE_V2 ^2^           | Enables passive guild updates v2, allowing the client to receive Passive Update v2 events instead of Channel Unreads Update events for guilds it is not subscribed to                                                                                                                                                                          |
 
 ^1^ Requires `DEDUPE_USER_OBJECTS`. Without it, the capability will be ignored.
 
@@ -254,7 +254,7 @@ Below is a list of all capabilities and a general description of their effects. 
 
 <Alert type="info">
 
-For bots, intents are optionally supported on the v6 API but required as of v8. User accounts do not require intents, and they are not recommended for them.
+For bots, intents are optionally supported on the v6 API but required as of v8. User accounts do not require intents and their usage is not recommended.
 
 </Alert>
 
@@ -286,6 +286,7 @@ GUILDS (1 << 0)
   - CHANNEL_CREATE
   - CHANNEL_UPDATE
   - CHANNEL_DELETE
+  - VOICE_CHANNEL_STATUS_UPDATE
   - CHANNEL_PINS_UPDATE
   - THREAD_CREATE
   - THREAD_UPDATE
@@ -340,6 +341,7 @@ GUILD_MESSAGES (1 << 9)
 
 GUILD_MESSAGE_REACTIONS (1 << 10)
   - MESSAGE_REACTION_ADD
+  - MESSAGE_REACTION_ADD_MANY
   - MESSAGE_REACTION_REMOVE
   - MESSAGE_REACTION_REMOVE_ALL
   - MESSAGE_REACTION_REMOVE_EMOJI
@@ -355,6 +357,7 @@ DIRECT_MESSAGES (1 << 12)
 
 DIRECT_MESSAGE_REACTIONS (1 << 13)
   - MESSAGE_REACTION_ADD
+  - MESSAGE_REACTION_ADD_MANY
   - MESSAGE_REACTION_REMOVE
   - MESSAGE_REACTION_REMOVE_ALL
   - MESSAGE_REACTION_REMOVE_EMOJI
@@ -371,6 +374,16 @@ GUILD_SCHEDULED_EVENTS (1 << 16)
   - GUILD_SCHEDULED_EVENT_USER_ADD
   - GUILD_SCHEDULED_EVENT_USER_REMOVE
 
+GUILD_EMBEDDED_ACTIVITIES (1 << 17)
+  - EMBEDDED_ACTIVITY_UPDATE_V2
+
+PRIVATE_CHANNELS (1 << 18) ⁴
+  - CHANNEL_CREATE
+  - CHANNEL_UPDATE
+  - CHANNEL_DELETE
+  - CHANNEL_RECIPIENT_ADD
+  - CHANNEL_RECIPIENT_REMOVE
+
 AUTO_MODERATION_CONFIGURATION (1 << 20)
   - AUTO_MODERATION_RULE_CREATE
   - AUTO_MODERATION_RULE_UPDATE
@@ -379,6 +392,16 @@ AUTO_MODERATION_CONFIGURATION (1 << 20)
 AUTO_MODERATION_EXECUTION (1 << 21)
   - AUTO_MODERATION_ACTION_EXECUTION
 
+USER_RELATIONSHIPS (1 << 22) ⁴
+  - RELATIONSHIP_ADD
+  - RELATIONSHIP_UPDATE
+  - RELATIONSHIP_REMOVE
+  - GAME_RELATIONSHIP_ADD
+  - GAME_RELATIONSHIP_REMOVE
+
+USER_PRESENCE (1 << 23) ⁴
+  - PRESENCE_UPDATE
+
 GUILD_MESSAGE_POLLS (1 << 24)
   - MESSAGE_POLL_VOTE_ADD
   - MESSAGE_POLL_VOTE_REMOVE
@@ -386,6 +409,9 @@ GUILD_MESSAGE_POLLS (1 << 24)
 DIRECT_MESSAGE_POLLS (1 << 25)
   - MESSAGE_POLL_VOTE_ADD
   - MESSAGE_POLL_VOTE_REMOVE
+
+DIRECT_EMBEDDED_ACTIVITIES (1 << 26)
+  - EMBEDDED_ACTIVITY_UPDATE_V2
 ```
 
 ^1^ [Thread Members Update](/topics/gateway-events#thread-members-update) contains different data depending on which intents are used.
@@ -394,11 +420,15 @@ DIRECT_MESSAGE_POLLS (1 << 25)
 
 ^3^ `MESSAGE_CONTENT` does not represent individual events, but rather affects what data is present for events that could contain message content fields. More information is in the [message content intent](#message-content-intent) section.
 
+^4^ This intent cannot be used by bots.
+
 ### Caveats
 
 Any [events not defined in an intent](#gateway-events) are considered "passthrough" and will always be sent to you.
 
 [Guild Member Update](/topics/gateway-events#guild-member-update) is sent for current-user updates regardless of whether the `GUILD_MEMBERS` intent is set.
+
+[Message Create](/topics/gateway-events#message-create), [Message Update](/topics/gateway-events#message-update), and [Message Delete](/topics/gateway-events#message-delete) are sent for messages in group DMs regardless of any intents.
 
 [Guild Create](/topics/gateway-events#guild-create) and [Request Guild Members](/topics/gateway-events#request-guild-members) are uniquely affected by intents. See these sections for more information.
 
