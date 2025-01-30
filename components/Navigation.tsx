@@ -297,6 +297,7 @@ export default function Navigation() {
           href="/resources/discovery"
           subLinks={
             <Fragment>
+              <NavigationSubLink href="/resources/discovery#definitions">Definitions</NavigationSubLink>
               <NavigationSubLink href="/resources/discovery#searching-discovery">Searching Discovery</NavigationSubLink>
               <NavigationSubLink href="/resources/discovery#discoverable-guild-object">
                 Discoverable Guild Object
