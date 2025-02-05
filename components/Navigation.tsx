@@ -608,6 +608,12 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user-settings#legacy-user-settings-object">
                 Legacy User Settings Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#user-guild-settings-object">
+                User Guild Settings Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#mute-config-object">
+                Mute Config Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
