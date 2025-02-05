@@ -763,8 +763,9 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#implicit-grant">Implicit Grant</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#client-credentials-grant">
-                Client Gredentials Grant
+                Client Credentials Grant
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#pkce">PKCE</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#bots">Bots</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#webhooks">Webhooks</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#oauth2-token-object">OAuth2 Token Object</NavigationSubLink>

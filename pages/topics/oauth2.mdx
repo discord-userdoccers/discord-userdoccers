@@ -227,6 +227,87 @@ In return, you will receive an access token (without a refresh token):
 }
 ```
 
+## PKCE
+
+Discord supports the [Proof Key for Code Exchange (PKCE)](https://tools.ietf.org/html/rfc7636) extension to the OAuth2 authorization code flow.
+
+PKCE allows users to authenticate with your application without sharing your client secret.
+This enables user-facing applications such as browser extensions or mobile apps to manage authentication securely.
+The flow runs entirely between the user and Discord, allowing users to refresh their own bearer tokens without needing your application's client secret.
+
+If you want your clients to be able to refresh their own tokens automatically, you will need to set your Application's OAuth2 to be a `Public Client` in the Developer Portal.
+
+### Code Verifier
+
+Firstly, the client needs to create a code verifier, `code_verifier`:
+
+- The verifier must be a string of 43 - 128 characters. 
+- The characters must be alphanumeric (`A-Z`, `a-z`, `0-9`) and hyphens `-`, periods `.`, underscores `_`, and tildes `~`.
+- The code verifier must also be randomly generated for each authorization request.
+
+The PKCE specification recommends that you generate a 32 byte random string and base64 URL encode it without padding, resulting in a 43-byte string.
+
+```py
+import base64
+import os
+
+code_verifier = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode('utf-8')
+```
+
+### Code Challenge
+
+The client next needs to create a code challenge, `code_challenge`, which is the base64 URL-encoded SHA256 hash of the `code_verifier`, without padding.
+
+SHA256 is the only supported hashing algorithm for PKCE in Discord's OAuth2 implementation.
+
+```py
+import hashlib
+
+sha256 = hashlib.sha256(code_verifier.encode('utf-8')).digest()
+
+code_challenge = base64.urlsafe_b64encode(sha256).decode('utf-8').rstrip('=')
+```
+
+### Authorization Request
+
+The client then constructs the authorization URL with the `code_challenge` and `code_challenge_method` parameters:
+
+```
+https://discord.com/api/oauth2/authorize?response_type=code&client_id=290926444748734499&state=15773059ghq9183habn&scope=identify&code_challenge=CNPVOxIUDw5vcUaWT3Gn8fjrEeZs-kMEqpk2eNzqsmQ&code_challenge_method=S256
+```
+
+If successful, Discord will send you to the redirect url with the usual authorization code.
+The redirect URL can safely be forwarded to the client, as the `code_challenge` is not sensitive information, however it is also acceptable to keep the credentials on the server instead.
+
+### Access Token Exchange Example
+
+When exchanging the authorization code for an access token, the client must include the `code_verifier` in the request, instead of `client_secret`.
+
+```py
+API_ENDPOINT = 'https://discord.com/api/v8'
+CLIENT_ID = '332269999912132097'
+CODE_VERIFIER = 'Qs-0Scio0ScPJDYOFy1NYsOAsj6Rb6cP-Y12N9pbwV0'
+REDIRECT_URI = 'https://nicememe.website'
+
+def exchange_code(code):
+  data = {
+    'client_id': CLIENT_ID,
+    'grant_type': 'authorization_code',
+    'code': code,
+    'code_verifier': CODE_VERIFIER,
+    'redirect_uri': REDIRECT_URI
+  }
+  headers = {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  }
+  r = requests.post('%s/oauth2/token' % API_ENDPOINT, data=data, headers=headers)
+  r.raise_for_status()
+  return r.json()
+```
+
+This will give you an [access token response](#access-token-response) as usual.
+If you made your application public in the Developer Portal, you can now [refresh the token](#refresh-token-exchange-example) on the client, ommitting the `client_secret` field.
+
 ## Bots
 
 So, what are bot accounts?
