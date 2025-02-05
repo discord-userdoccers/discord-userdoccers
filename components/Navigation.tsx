@@ -544,6 +544,25 @@ export default function Navigation() {
           Quests
         </NavigationLink>
         <NavigationLink
+          href="/resources/relationships"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/relationships#relationship-object">
+                Relationship Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/relationships#game-relationship-object">
+                Game Relationship Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/relationships#friend-suggestion-object">
+                Friend Suggestion Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/relationships#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          Relationships
+        </NavigationLink>
+        <NavigationLink
           href="/resources/soundboard"
           subLinks={
             <Fragment>
@@ -639,10 +658,6 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user#backup-code-object">Backup Code Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#harvest-object">Harvest Object</NavigationSubLink>
               <NavigationSubLink href="/resources/user#connection-object">Connection Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/user#relationship-object">Relationship Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/user#friend-suggestion-object">
-                Friend Suggestion Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/user#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
