@@ -1,0 +1,328 @@
+# Relationships Resource
+
+Relationships in Discord are used to represent friendships, pending friend requests, and blocked users. Game relationships are used to distinguish special bonds created while in-game.
+
+### Relationship Object
+
+A relationship between the current user and another user.
+
+###### Relationship Structure
+
+| Field                  | Type                         | Description                                                                                                 |
+| ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| id                     | string                       | The ID of the target user                                                                                   |
+| type                   | integer                      | The [type](#relationship-type) of relationship                                                              |
+| user                   | partial [user](#user-object) | The target user                                                                                             |
+| nickname               | ?string                      | The nickname of the user in this relationship (1-32 characters)                                             |
+| is_spam_request?       | boolean                      | Whether the friend request was flagged as spam (default false)                                              |
+| is_stranger_request?   | boolean                      | Whether the friend request was sent by a user without a mutual friend or small mutual guild (default false) |
+| origin_application_id? | ?snowflake                   | The ID of the application that created the relationship                                                     |
+| since?                 | ISO8601 timestamp            | When the user requested a relationship                                                                      |
+
+###### Relationship Type
+
+| Value | Name             | Description                                              |
+| ----- | ---------------- | -------------------------------------------------------- |
+| ~~0~~ | ~~NONE~~         | ~~No relationship exists~~                               |
+| 1     | FRIEND           | The user is a friend                                     |
+| 2     | BLOCKED          | The user is blocked                                      |
+| 3     | INCOMING_REQUEST | The user has sent a friend request to the current user   |
+| 4     | OUTGOING_REQUEST | The current user has sent a friend request to the user   |
+| 5     | IMPLICIT         | The user is an affinity of the current user              |
+| ~~6~~ | ~~SUGGESTION~~   | ~~The user is a friend suggestion for the current user~~ |
+
+###### Example Relationship
+
+```json
+{
+  "id": "852892297661906993",
+  "type": 3,
+  "nickname": null,
+  "is_spam_request": false,
+  "user": {
+    "id": "852892297661906993",
+    "username": "alien",
+    "global_name": "Alien",
+    "avatar": "14733482e560d9267c0a414b21b2fb8d",
+    "discriminator": "0",
+    "public_flags": 64,
+    "avatar_decoration_data": null,
+    "primary_guild": null
+  },
+  "since": "2023-02-10T01:58:05.348000+00:00"
+}
+```
+
+### Game Relationship Object
+
+An in-game relationship between the current user and another user, created using the social layer SDK.
+
+###### Game Relationship Structure
+
+| Field          | Type                         | Description                                                           |
+| -------------- | ---------------------------- | --------------------------------------------------------------------- |
+| id             | string                       | The ID of the target user                                             |
+| application_id | snowflake                    | The ID of the application whose game the relationship originated from |
+| type           | integer                      | The [type](#game-relationship-type) of relationship                   |
+| user           | partial [user](#user-object) | The target user                                                       |
+| since          | ISO8601 timestamp            | When the user requested a relationship                                |
+| dm_access_type | integer                      | The [DM access level](#dm-access-type) for the relationship           |
+| user_id        | snowflake                    | The ID of the current user                                            |
+
+###### Game Relationship Type
+
+This enum is a subset of the [relationship type](#relationship-type) enum, supporting only `FRIEND`, `INCOMING_REQUEST`, and `OUTGOING_REQUEST`.
+
+###### DM Access Type
+
+This enum is unknown.
+
+###### Example Game Relationship
+
+```json
+{
+  "user_id": "852892297661906993",
+  "application_id": "1237856342484717650",
+  "id": "1001086404203389018",
+  "type": 1,
+  "since": "2025-01-22T00:26:18.616000+00:00",
+  "dm_access_type": 0,
+  "user": {
+    "id": "1001086404203389018",
+    "username": ".dziurwa",
+    "global_name": "Dziurwa💕",
+    "avatar": "f6c0363fbab45668fcf8f88fea56db9c",
+    "avatar_decoration_data": null,
+    "discriminator": "0",
+    "public_flags": 4210944,
+    "primary_guild": null
+  }
+}
+```
+
+### Friend Suggestion Object
+
+A friend suggestion for the current user.
+
+###### Friend Suggestion Structure
+
+| Field                         | Type                                                                          | Description                                                       |
+| ----------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| suggested_user                | partial [user](#user-object) object                                           | The suggested user                                                |
+| reasons                       | array[[friend suggestion reason](#friend-suggestion-reason-structure) object] | The sources of the suggestion                                     |
+| from_suggested_user_contacts? | boolean                                                                       | Whether the suggested user has the current user in their contacts |
+
+###### Friend Suggestion Reason Structure
+
+| Field    | Type    | Description                                                          |
+| -------- | ------- | -------------------------------------------------------------------- |
+| type     | integer | The [type of reason](#friend-suggestion-reason-type)                 |
+| platform | string  | The [platform that the suggestion originated from](#connection-type) |
+| name     | string  | The user's name on the platform                                      |
+
+###### Friend Suggestion Reason Type
+
+| Value | Name            | Description                              |
+| ----- | --------------- | ---------------------------------------- |
+| 1     | EXTERNAL_FRIEND | The user is a friend on another platform |
+
+###### Example Friend Suggestion
+
+```json
+{
+  "suggested_user": {
+    "id": "852892297661906993",
+    "username": "alien",
+    "global_name": "Alien",
+    "avatar": "14733482e560d9267c0a414b21b2fb8d",
+    "discriminator": "0",
+    "public_flags": 64,
+    "avatar_decoration_data": null,
+    "primary_guild": null
+  },
+  "reasons": [
+    {
+      "type": 1,
+      "platform_type": "contacts",
+      "name": "Gnarpy"
+    }
+  ]
+}
+```
+
+## Endpoints
+
+<RouteHeader method="GET" url="/users/@me/relationships" supportsOAuth2="relationships.read">
+  Get Relationships
+</RouteHeader>
+
+Returns a list of [relationship](#relationship-object) objects for the current user.
+
+###### Query String Params
+
+| Field              | Type    | Description                                               |
+| ------------------ | ------- | --------------------------------------------------------- |
+| with_implicit? ^1^ | boolean | Whether to include implicit relationships (default false) |
+
+^1^ Only usable with OAuth2 requests. On non-OAuth2 requests, only user-created relationships will be returned.
+
+<RouteHeader method="POST" url="/users/@me/relationships" supportsOAuth2="relationships.write">
+  Send Friend Request
+</RouteHeader>
+
+Sends a friend request to another user, which can be accepted by creating a new relationship of type `FRIEND`.
+Returns a 204 empty response on success. Fires a [Relationship Add](/topics/gateway-events#relationship-add) Gateway event.
+
+<Alert type="warn">
+
+You should not use this endpoint to create many friend requests in a short period of time.
+Suspicious friend request activity may be flagged by Discord and require [additional verification steps](/resources/user#required-action-type) or lead to immediate account termination.
+
+</Alert>
+
+###### JSON Params
+
+| Field             | Type    | Description                                                                |
+| ----------------- | ------- | -------------------------------------------------------------------------- |
+| username          | string  | The username of the user to send a friend request to                       |
+| discriminator ^1^ | ?string | The discriminator of the user to send a friend request to, if not migrated |
+
+^1^ `null` for migrated users. See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
+
+<RouteHeader method="PUT" url="/users/@me/relationships/{user.id}" supportsOAuth2="relationships.write">
+  Create Relationship
+</RouteHeader>
+
+Creates a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Add](/topics/gateway-events#relationship-add) Gateway event.
+
+<Alert type="warn">
+
+You should not use this endpoint to create many friend requests in a short period of time.
+Suspicious friend request activity may be flagged by Discord and require [additional verification steps](/resources/user#required-action-type) or lead to immediate account termination.
+
+</Alert>
+
+###### JSON Params
+
+| Field                   | Type    | Description                                                                                                                       |
+| ----------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| type?                   | integer | The [relationship type](#relationship-type) to create (defaults to -1, which accepts an existing or creates a new friend request) |
+| from_friend_suggestion? | boolean | Whether the relationship was created from a friend suggestion (default false)                                                     |
+| friend_token? ^1^       | string  | The friend token of the user to add as a friend                                                                                   |
+
+^1^ Providing a valid [friend token](/resources/user#get-friend-token) will bypass the user's friend request settings.
+
+<RouteHeader method="PATCH" url="/users/@me/relationships/{user.id}">
+  Modify Relationship
+</RouteHeader>
+
+Modifies a relationship to another user. Returns a 204 empty response on success. Fires a [Relationship Update](/topics/gateway-events#relationship-update) Gateway event.
+
+###### JSON Params
+
+| Field         | Type   | Description                                                     |
+| ------------- | ------ | --------------------------------------------------------------- |
+| nickname? ^1^ | string | The nickname of the user in this relationship (1-32 characters) |
+
+^1^ Only applicable to relationships of type `FRIEND`.
+
+<RouteHeader method="DELETE" url="/users/@me/relationships/{user.id}" supportsOAuth2="relationships.write">
+  Remove Relationship
+</RouteHeader>
+
+Removes a relationship with another user. Returns a 204 empty response on success. Fires a [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway event.
+
+<RouteHeader method="DELETE" url="/users/@me/relationships">
+  Bulk Remove Relationships
+</RouteHeader>
+
+Removes multiple relationships. Returns a 204 empty response on success. May fire multiple [Relationship Remove](/topics/gateway-events#relationship-remove) Gateway events.
+
+###### Query Params
+
+| Field              | Type    | Description                                                                                                                             |
+| ------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| relationship_type? | integer | Remove relationships with this [relationship type](#relationship-type) (default `INCOMING_REQUEST`, only `INCOMING_REQUEST` is allowed) |
+| only_spam?         | boolean | Whether to remove relationships that were flagged as spam (default false)                                                               |
+
+<RouteHeader method="GET" url="/users/@me/game-relationships" supportsOAuth2="relationships.read">
+  Get Game Relationships
+</RouteHeader>
+
+Returns a list of [game relationship](#game-relationship-object) objects for the current user.
+
+<RouteHeader method="POST" url="/users/@me/game-relationships" supportsOAuth2="relationships.write">
+  Send Game Friend Request
+</RouteHeader>
+
+Sends a game friend request to another user, which can be accepted in-game by creating a new game relationship of type `FRIEND`, or by the user using [Accept Game Relationship](#accept-game-relationship).
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `relationships.write` scope.
+The target user must have the same application as the requestor authorized to create a game relationship.
+
+</Alert>
+
+###### JSON Params
+
+| Field    | Type   | Description                                               |
+| -------- | ------ | --------------------------------------------------------- |
+| username | string | The username of the user to send a game friend request to |
+
+<RouteHeader method="PUT" url="/users/@me/game-relationships/{user.id}" supportsOAuth2="relationships.write">
+  Create Game Relationship
+</RouteHeader>
+
+Creates a game relationship with another user. Returns a 204 empty response on success.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `relationships.write` scope.
+The target user must have the same application as the requestor authorized to create a game relationship.
+
+</Alert>
+
+| Field | Type    | Description                                                                                                                            |
+| ----- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| type? | integer | The [relationship type](#game-relationship-type) to create (defaults to -1, which accepts an existing or creates a new friend request) |
+
+<RouteHeader method="PUT" url="/users/@me/game-relationships/{user.id}/{application.id}">
+  Create Game Relationship by Application
+</RouteHeader>
+
+Accepts a game relationship from another user on a specific application. Returns a 204 empty response on success.
+
+| Field | Type    | Description                                                                           |
+| ----- | ------- | ------------------------------------------------------------------------------------- |
+| type? | integer | The [relationship type](#game-relationship-type) to create (only `FRIEND` is allowed) |
+
+<RouteHeader method="DELETE" url="/users/@me/game-relationships/{user.id}" supportsOAuth2="relationships.write">
+  Remove Game Relationship
+</RouteHeader>
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `relationships.write` scope.
+
+</Alert>
+
+Removes a game relationship with another user. Returns a 204 empty response on success.
+
+<RouteHeader method="DELETE" url="/users/@me/game-relationships/{user.id}/{application.id}">
+  Remove Game Relationship by Application
+</RouteHeader>
+
+Removes a game relationship with another user. Returns a 204 empty response on success.
+
+<RouteHeader method="GET" url="/friend-suggestions">
+  Get Friend Suggestions
+</RouteHeader>
+
+Returns a list of [friend suggestion](#friend-suggestion-object) objects for the current user.
+
+<RouteHeader method="DELETE" url="/friend-suggestions/{user.id}">
+  Remove Friend Suggestion
+</RouteHeader>
+
+Removes a friend suggestion for the current user. Returns a 204 empty response on success. Fires a [Friend Suggestion Delete](/topics/gateway-events#friend-suggestion-delete) Gateway event.
