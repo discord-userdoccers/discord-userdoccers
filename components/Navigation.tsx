@@ -627,6 +627,12 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/user-settings#legacy-user-settings-object">
                 Legacy User Settings Object
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#user-guild-settings-object">
+                User Guild Settings Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#mute-config-object">
+                Mute Config Object
+              </NavigationSubLink>
               <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
             </Fragment>
           }
@@ -778,8 +784,9 @@ export default function Navigation() {
               </NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#implicit-grant">Implicit Grant</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#client-credentials-grant">
-                Client Gredentials Grant
+                Client Credentials Grant
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/oauth2#pkce">PKCE</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#bots">Bots</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#webhooks">Webhooks</NavigationSubLink>
               <NavigationSubLink href="/topics/oauth2#oauth2-token-object">OAuth2 Token Object</NavigationSubLink>
