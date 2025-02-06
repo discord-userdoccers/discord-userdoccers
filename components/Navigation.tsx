@@ -480,6 +480,7 @@ export default function Navigation() {
               <NavigationSubLink href="/resources/message#poll-result-notifications">
                 Poll Result Notifications
               </NavigationSubLink>
+              <NavigationSubLink href="/resources/message#potion-object">Potion Object</NavigationSubLink>
               <NavigationSubLink href="/resources/message#conversation-summary-object">
                 Conversation Summary Object
               </NavigationSubLink>
