@@ -625,19 +625,21 @@ One of `recipient_id`, `recipients` or `access_tokens` is required. Bots cannot 
   Get Guild Channels
 </RouteHeader>
 
-Returns a list of [guild channel](#channel-object) objects for the guild. Does not include threads.
+Returns a list of [guild channel](#channel-object) objects for the guild. Does not include threads. If the user is not in the guild, the guild must be discoverable.
 
 ###### Query String Params
 
-| Field        | Type    | Description                                                                                    |
-| ------------ | ------- | ---------------------------------------------------------------------------------------------- |
-| permissions? | boolean | Whether to return calculated permissions for the invoking user in each channel (default false) |
+| Field            | Type    | Description                                                                                    |
+| ---------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| permissions? ^1^ | boolean | Whether to return calculated permissions for the invoking user in each channel (default false) |
 
-<RouteHeader method="GET" url="/guilds/{guild.id}/top-read-channels">
+^1^ Permissions are not returned if the user is not in the guild.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/top-read-channels" deprecated>
   Get Guild Top Read Channels
 </RouteHeader>
 
-Returns a list of snowflakes representing up to 10 of the top read channels in the guild.
+Returns a list of snowflakes representing up to 10 of the top read channels in the guild. If the user is not in the guild, the guild must be discoverable.
 
 <RouteHeader method="POST" url="/guilds/{guild.id}/channels" supportsAuditReason>
   Create Guild Channel
@@ -701,7 +703,7 @@ This endpoint takes a JSON array of parameters in the following format:
   Get Channel
 </RouteHeader>
 
-Returns a [channel](#channel-object) object for a given channel ID. If the channel is a thread, a [thread member](#thread-member-object) object is included in the returned result.
+Returns a [channel](#channel-object) object for a given channel ID. Requires the `VIEW_CHANNEL` permission for the guild. If the channel is a thread, a [thread member](#thread-member-object) object is included in the returned result.
 
 <RouteHeader method="PATCH" url="/channels/{channel.id}" supportsAuditReason>
   Modify Channel
@@ -851,7 +853,7 @@ Official clients expire a typing indicator 10 seconds after the last [Typing Sta
   Get Call Eligibility
 </RouteHeader>
 
-Checks if the current user is eligible to start a call in the DM channel.
+Checks if the current user is eligible to ring a call in the DM channel.
 
 ###### Response Body
 
@@ -899,7 +901,7 @@ This endpoint requires an active call to do anything.
   Stop Ringing Channel Recipients
 </RouteHeader>
 
-Stops ringing the recipients of a private channel about an active call. Returns a 204 empty response on success. Fires a [Call Update](/topics/gateway-events#call-update) Gateway event.
+Stops ringing the recipients of a private channel. Returns a 204 empty response on success. Fires a [Call Update](/topics/gateway-events#call-update) Gateway event.
 
 <Alert type="info">
 
@@ -1052,7 +1054,7 @@ This endpoint is not usable by user accounts.
   Get Active Threads
 </RouteHeader>
 
-Returns all active threads in the channel, including public and private threads. Threads are ordered by their `id`, in descending order.
+Returns all active threads in the channel, including public and private threads. Threads are ordered by their `id`, in descending order. User must be a member of the guild.
 
 <Alert type="warn">
 
@@ -1201,7 +1203,8 @@ The ID of the created thread will be the same as the ID of the message, and as s
   Create Thread
 </RouteHeader>
 
-Creates a new thread that is not connected to an existing message. Returns a [channel](#channel-object) (with an optional extra [`message`](/resources/message#message-object) key containing the starter message) on success. Fires a [Thread Create](#channel-object) Gateway event.
+Creates a new thread that is not connected to an existing message. Requires the `CREATE_PUBLIC_THREADS` or `CREATE_PRIVATE_THREADS` permission, depending on the type of thread being created.
+Returns a [channel](#channel-object) (with an optional extra [`message`](/resources/message#message-object) key containing the starter message) on success. Fires a [Thread Create](#channel-object) Gateway event.
 
 In thread-only channels:
 
@@ -1296,7 +1299,7 @@ Returns a mapping of thread IDs to their [post data](#thread-post-data-structure
   Get Thread Members
 </RouteHeader>
 
-Returns an array of [thread members](#thread-member-object) objects that are members of the thread.
+Returns an array of [thread members](#thread-member-object) objects that are members of the thread. Requires the `VIEW_CHANNEL` permission.
 
 <Alert type="warn">
 
@@ -1324,7 +1327,7 @@ When `with_member` is set to `true`, the results will be paginated and each thre
   Get Thread Member
 </RouteHeader>
 
-Returns a [thread member](#thread-member-object) object for the specified user if they are a member of the thread.
+Returns a [thread member](#thread-member-object) object for the specified user if they are a member of the thread. Requires the `VIEW_CHANNEL` permission.
 
 <Alert type="warn">
 
@@ -1342,19 +1345,19 @@ This endpoint is not usable by user accounts.
   Join Thread
 </RouteHeader>
 
-Adds the current user to a thread. Also requires the thread is not archived. Returns a 204 empty response on success. Fires a [Thread Members Update](/topics/gateway-events#thread-members-update) and a [Thread Create](/topics/gateway-events#thread-create) Gateway event.
+Adds the current user to a thread. Requires the `VIEW_CHANNEL` permission. Also requires the thread is not archived. Returns a 204 empty response on success. Fires a [Thread Members Update](/topics/gateway-events#thread-members-update) and a [Thread Create](/topics/gateway-events#thread-create) Gateway event.
 
 <RouteHeader method="PUT" url="/channels/{channel.id}/thread-members/{user.id}">
   Add Thread Member
 </RouteHeader>
 
-Adds another member to a thread. Requires the ability to send messages in the thread. Also requires the thread is not archived. Returns a 204 empty response on success. Fires a [Thread Members Update](/topics/gateway-events#thread-members-update) Gateway event.
+Adds another member to a thread. Requires the `SEND_MESSAGES` permission. Also requires the thread is not archived. Returns a 204 empty response on success. Fires a [Thread Members Update](/topics/gateway-events#thread-members-update) Gateway event.
 
 <RouteHeader method="PATCH" url="/channels/{channel.id}/thread-members/@me/settings">
   Modify Thread Settings
 </RouteHeader>
 
-Updates the current user's thread settings. Returns a [thread member](#thread-member-object) on success, or a 204 empty response when nothing changed. Fires a [Thread Member Update](/topics/gateway-events#thread-member-update) Gateway event.
+Updates the current user's thread settings. User must be a member of the thread. Returns a [thread member](#thread-member-object) on success, or a 204 empty response when nothing changed. Fires a [Thread Member Update](/topics/gateway-events#thread-member-update) Gateway event.
 
 ###### JSON Params
 

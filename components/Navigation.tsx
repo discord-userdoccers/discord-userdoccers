@@ -826,6 +826,9 @@ export default function Navigation() {
               <NavigationSubLink href="/topics/permissions#inherited-permissions-(threads)">
                 Inherited Permissions (Threads)
               </NavigationSubLink>
+              <NavigationSubLink href="/topics/permissions#discoverable-guild-permissions">
+                Discoverable Guild Permissions
+              </NavigationSubLink>
               <NavigationSubLink href="/topics/permissions#permission-syncing">Permission Syncing</NavigationSubLink>
             </Fragment>
           }
