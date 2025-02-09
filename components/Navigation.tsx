@@ -619,28 +619,6 @@ export default function Navigation() {
           Teams
         </NavigationLink>
         <NavigationLink
-          href="/resources/user-settings"
-          subLinks={
-            <Fragment>
-              <NavigationSubLink href="/resources/user-settings#user-settings-proto-object">
-                User Settings Proto Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/user-settings#legacy-user-settings-object">
-                Legacy User Settings Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/user-settings#user-guild-settings-object">
-                User Guild Settings Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/user-settings#mute-config-object">
-                Mute Config Object
-              </NavigationSubLink>
-              <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
-            </Fragment>
-          }
-        >
-          User Settings
-        </NavigationLink>
-        <NavigationLink
           href="/resources/user"
           subLinks={
             <Fragment>
@@ -664,6 +642,28 @@ export default function Navigation() {
           }
         >
           User
+        </NavigationLink>
+        <NavigationLink
+          href="/resources/user-settings"
+          subLinks={
+            <Fragment>
+              <NavigationSubLink href="/resources/user-settings#user-settings-proto-object">
+                User Settings Proto Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#legacy-user-settings-object">
+                Legacy User Settings Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#user-guild-settings-object">
+                User Guild Settings Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#mute-config-object">
+                Mute Config Object
+              </NavigationSubLink>
+              <NavigationSubLink href="/resources/user-settings#endpoints">Endpoints</NavigationSubLink>
+            </Fragment>
+          }
+        >
+          User Settings
         </NavigationLink>
         <NavigationLink
           href="/resources/voice"
