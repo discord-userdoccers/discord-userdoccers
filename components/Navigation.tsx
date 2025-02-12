@@ -511,6 +511,7 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/presence#presence-object">Presence Object</NavigationSubLink>
+              <NavigationSubLink href="/resources/presence#session-object">Session Object</NavigationSubLink>
               <NavigationSubLink href="/resources/presence#client-status-object">
                 Client Status Object
               </NavigationSubLink>
