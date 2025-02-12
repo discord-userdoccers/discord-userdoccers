@@ -93,8 +93,6 @@ If flags are used in multiple places, they should be defined by the most relevan
 | ------ | ----- | ----------------------------- |
 | 1 << 0 | ADMIN | This user is an administrator |
 
-Note that the `IS_` prefix is removed from any flag names that may contain it, as it is redundant.
-
 ## Miscellaneous
 
 This is a collection of guidelines that apply to the whole documentation.
