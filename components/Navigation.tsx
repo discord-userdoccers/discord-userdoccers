@@ -258,9 +258,6 @@ export default function Navigation() {
           subLinks={
             <Fragment>
               <NavigationSubLink href="/resources/channel#channel-object">Channel Object</NavigationSubLink>
-              <NavigationSubLink href="/resources/channel#partial-channel-object">
-                Partial Channel Object
-              </NavigationSubLink>
               <NavigationSubLink href="/resources/channel#followed-channel-object">
                 Followed Channel Object
               </NavigationSubLink>
