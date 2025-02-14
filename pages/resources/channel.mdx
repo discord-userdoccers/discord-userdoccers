@@ -27,6 +27,8 @@ A guild or private channel within Discord.
 | icon?                               | ?string                                                            | The group DM's [icon hash](/reference#cdn-formatting)                                                                                                                                        |
 | nicks?                              | array[[channel nick](#channel-nick-structure) object]              | The nicknames of the users in the group DM                                                                                                                                                   |
 | managed?                            | boolean                                                            | Whether the group DM is managed by an application                                                                                                                                            |
+| blocked_user_warning_dismissed? ^7^ | boolean                                                            | Whether the user has acknowledged the presence of blocked users in the group DM                                                                                                              |
+| safety_warnings? ^3^                | array[[safety warning](#safety-warning-structure) object]          | The safety warnings for the DM channel                                                                                                                                                       |
 | application_id?                     | snowflake                                                          | The ID of the application that manages the group DM                                                                                                                                          |
 | owner_id?                           | snowflake                                                          | The ID of the owner of the group DM or thread                                                                                                                                                |
 | owner?                              | ?[guild member](/resources/guild#guild-member-object) object       | The owner of this thread; only included on certain API endpoints                                                                                                                             |
@@ -57,7 +59,6 @@ A guild or private channel within Discord.
 | status? ^6^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
 | hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming entitlement expires for the voice channel                                                                                                                              |
 | hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming entitlement to the voice channel                                                                                                             |
-| blocked_user_warning_dismissed? ^7^ | boolean                                                            | Whether the user has acknowledged the presence of blocked users in the group DM                                                                                                              |
 
 ^1^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
 
@@ -96,6 +97,24 @@ A channel referenced in an [invite](/resources/invite#invite-object) or [message
 | ----- | --------- | ------------------------ |
 | id    | snowflake | The ID of the user       |
 | nick  | string    | The nickname of the user |
+
+###### Safety Warning Structure
+
+| Field             | Type               | Description                                 |
+| ----------------- | ------------------ | ------------------------------------------- |
+| id                | string             | The ID of the warning                       |
+| type              | integer            | The [type of warning](#safety-warning-type) |
+| expiry            | ISO8601 timestamp  | When the warning expires                    |
+| dismiss_timestamp | ?ISO8601 timestamp | When the warning was dismissed by the user  |
+
+###### Safety Warning Type
+
+| Value | Name                              | Description                                                                      |
+| ----- | --------------------------------- | -------------------------------------------------------------------------------- |
+| 1     | STRANGER_DANGER                   | User may not want to interact with this person                                   |
+| 2     | INAPPROPRIATE_CONVERSATION_TIER_1 | User may not want to interact with this person due to inappropriate conversation |
+| 3     | INAPPROPRIATE_CONVERSATION_TIER_2 | User may not want to interact with this person due to inappropriate conversation |
+| 4     | LIKELY_ATO                        | The recipient's account is likely compromised and should be treated with caution |
 
 ###### Channel Type
 
@@ -1024,10 +1043,64 @@ Returns a list of [supplemental message request](#supplemental-message-request-s
 | message_preview | [message](/resources/message#message-object) object | The trigger message           |
 
 <RouteHeader method="POST" url="/channels/{channel.id}/blocked-user-warning-dismissal">
-  Dismiss Blocked User Warning
+  Acknowledge Blocked User Warning
 </RouteHeader>
 
 Acknowledges that a group DM contains users the current user has blocked. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+<RouteHeader method="POST" url="/channels/{channel.id}/safety-warnings/ack">
+  Acknowledge Safety Warnings
+</RouteHeader>
+
+Dismisses safety warnings in a DM. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+###### JSON Params
+
+| Field       | Type          | Description                                |
+| ----------- | ------------- | ------------------------------------------ |
+| warning_ids | array[string] | The IDs of the warnings to dismiss (1-100) |
+
+<RouteHeader method="POST" url="/channels/{channel.id}/add-safety-warning">
+  Add Safety Warning
+</RouteHeader>
+
+Adds a safety warning to a DM. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is only usable by Discord employees.
+
+</Alert>
+
+###### JSON Params
+
+| Field               | Type    | Description                                               |
+| ------------------- | ------- | --------------------------------------------------------- |
+| safety_warning_type | integer | The [type of safety warning](#safety-warning-type) to add |
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/safety-warnings">
+  Delete Safety Warnings
+</RouteHeader>
+
+Deletes all safety warnings in a DM. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is only usable by Discord employees.
+
+</Alert>
+
+<RouteHeader method="POST" url="/channels/{channel.id}/safety-warning/report-false-positive">
+  Report Safety Warning False Positive
+</RouteHeader>
+
+Reports all safety warnings in a DM as false positives. Returns a 200 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is only usable by Discord employees.
+
+</Alert>
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/threads/active">
   Get Guild Active Threads
