@@ -40,6 +40,9 @@ module.exports = {
         "theme-dark-sidebar-hover": "#393C43",
         "trueGray": colors.neutral,
 
+        'theme-light-collapsible': '#e6e7e8',
+        'theme-dark-collapsible': '#27292d',
+
         "green": colors.emerald,
         "yellow": colors.amber,
         "purple": colors.violet,
