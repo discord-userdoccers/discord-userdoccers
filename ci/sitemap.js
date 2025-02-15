@@ -55,15 +55,15 @@ const root = join(process.cwd(), "pages");
 const files = [
   ...(await walk(
     root,
-    (file) => file.endsWith(".mdx") && file.replaceAll("\\", "/").replace(`${root}/`, "").split("/").length !== 1,
+    (file) => file.endsWith(".mdx"),
   )),
 ]
   // Fix for Windows
   .map((file) => file.slice(root.length + 1, -4).replaceAll("\\", "/"))
-  // Prioritize the root pages
-  .sort((element) => ((pageSortTable[element] ?? element.includes("/")) ? 1 : 0))
   // Hide testing pages
-  .filter((element) => !element.startsWith("_"));
+  .filter((element) => !element.startsWith("_"))
+  // Prioritize the root pages
+  .sort((element) => (pageSortTable[element] ?? 0));
 
 // We generate the XML sitemap with the posts data
 const sitemap = generateSiteMap(files);
