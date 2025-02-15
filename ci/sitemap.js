@@ -67,10 +67,6 @@ const files = [
 
 // We generate the XML sitemap with the posts data
 const sitemap = generateSiteMap(files);
-
-
-
-
 const navigationLinks = {};
 const headerRegex = /(?<header>#+) (?<name>.*)/;
 
