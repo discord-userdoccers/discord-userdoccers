@@ -14,6 +14,7 @@ import Paragraph from "./mdx/Paragraph";
 import StrikeThrough from "./mdx/StrikeThrough";
 import Strong from "./mdx/Strong";
 import { Table, TableHead, TableData, TableHeader, TableRow } from "./mdx/Table";
+import React from "react";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,

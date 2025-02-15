@@ -45,6 +45,7 @@ export default function App({ Component, pageProps, router }: AppProps) {
           .replace(/^(<h\d>(.*?)<\/h\d>)+/, "")
           .replaceAll(/<[^>]*>?/gm, " ")
           .replace(/\s+/gm, " ")
+          .replace(/^---[\s\S]*?---/, "")
           .trim()
           .slice(0, 200)
           .trim()
