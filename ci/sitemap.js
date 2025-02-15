@@ -1,6 +1,6 @@
 /**
  * This script generates a sitemap.xml file for the website. It's meant to be run just before the site is deployed.
- * 
+ *
  * It reads all the .mdx files in the `pages` directory and generates a sitemap.xml file with the URLs.
  */
 
@@ -33,11 +33,6 @@ const createLink = (url) => `https://${BASE_DOMAIN}/${url}`;
 function generateSiteMap(pages) {
   return `<?xml version="1.0" encoding="UTF-8"?>
    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-     <!-- give the root pages a higher priority -->
-     <url><loc>${createLink("intro")}</loc></url>
-     <url><loc>${createLink("reference")}</loc></url>
-     <url><loc>${createLink("authentication")}</loc></url>
-     <!-- now the rest of the pages -->
      ${pages.map((url) => `<url><loc>${createLink(url)}</loc></url>`).join("\n     ")}
    </urlset>
  `;
@@ -45,10 +40,19 @@ function generateSiteMap(pages) {
 
 const root = join(process.cwd(), "pages");
 const files = [
-  ...(await walk(root, (file) => file.endsWith(".mdx") && file.replace(`${root  }/`, "").split("/").length !== 1)),
-].map((file) => file.slice(root.length + 1, -4));
+  ...(await walk(
+    root,
+    (file) => file.endsWith(".mdx") && file.replaceAll("\\", "/").replace(`${root}/`, "").split("/").length !== 1,
+  )),
+]
+  // Fix for Windows
+  .map((file) => file.slice(root.length + 1, -4).replaceAll("\\", "/"))
+  // Prioritize the root pages
+  .sort((element) => (element.includes("/") ? 1 : -1))
+  // Hide testing pages
+  .filter((element) => !element.startsWith("_"));
 
 // We generate the XML sitemap with the posts data
 const sitemap = generateSiteMap(files);
-  
-await writeFile(join(process.cwd(), 'public', 'sitemap.xml'), sitemap)
+
+await writeFile(join(process.cwd(), "public", "sitemap.xml"), sitemap);
