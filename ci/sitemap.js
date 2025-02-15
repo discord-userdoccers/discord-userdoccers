@@ -148,12 +148,12 @@ interface Section {
 }
 
 function createSubLink(element: SubLink): JSX.Element {
-  return <NavigationSubLink href={element.link}>{element.name}</NavigationSubLink>;
+  return <NavigationSubLink href={element.link} key={element.link}>{element.name}</NavigationSubLink>;
 }
 
 function createLink(element: Page): JSX.Element {
   return (
-    <NavigationLink href={element.link} subLinks={element.subLinks.map(createSubLink)}>
+    <NavigationLink href={element.link} subLinks={element.subLinks.map(createSubLink)} key={element.link}>
       {element.name}
     </NavigationLink>
   );
@@ -161,7 +161,7 @@ function createLink(element: Page): JSX.Element {
 
 function createSection(element: Section): JSX.Element {
   return (
-    <NavigationSection title={element.name ?? undefined}>
+    <NavigationSection title={element.name ?? undefined} key={element.section}>
       {element.name === null ? SearchItem : null}
       {element.pages.map((page) => createLink(page))}
     </NavigationSection>
