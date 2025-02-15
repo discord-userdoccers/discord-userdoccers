@@ -161,7 +161,7 @@ function createLink(element: Page): JSX.Element {
 
 function createSection(element: Section): JSX.Element {
   return (
-    <NavigationSection title={element.name || undefined}>
+    <NavigationSection title={element.name ?? undefined}>
       {element.name === null ? SearchItem : null}
       {element.pages.map((page) => createLink(page))}
     </NavigationSection>

@@ -1,5 +1,6 @@
 import { MDXProvider } from "@mdx-js/react";
 import Image from "next/legacy/image";
+import React from "react";
 import Alert from "./Alert";
 import RouteHeader from "./RouteHeader";
 import Anchor from "./mdx/Anchor";
@@ -14,7 +15,6 @@ import Paragraph from "./mdx/Paragraph";
 import StrikeThrough from "./mdx/StrikeThrough";
 import Strong from "./mdx/Strong";
 import { Table, TableHead, TableData, TableHeader, TableRow } from "./mdx/Table";
-import React from "react";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,
