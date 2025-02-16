@@ -19,6 +19,9 @@ const config = {
       assert: {
         type: "json",
       },
+      with: {
+        type: "json",
+      },
     }).then((json) => json.default),
   },
   // eslint-disable-next-line @typescript-eslint/require-await -- required for Next.js
