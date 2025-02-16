@@ -2,7 +2,6 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import path from "path";
 import * as github from "@actions/core";
 import chalk from "chalk";
-import { JSDOM } from "jsdom";
 const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE! : process.cwd();
 
 function importDirectory(directory: string, extension: string, subdirectories = true) {
@@ -86,53 +85,39 @@ function scanFile(
   });
 }
 
-const htmlFiles = importDirectory(path.join(cwd, ".next/server/pages"), ".html");
+const builtFiles = importDirectory(path.join(cwd, ".next/server/pages"), ".js");
 
-if (!htmlFiles) {
+if (!builtFiles) {
   console.error("No links found, ensure that build has been run!");
   process.exit(1);
 }
 
 const validLinks = new Map<string, string[]>();
 
-let extLength = ".html".length;
+let extLength = ".js".length;
+const regex = /"h\d",null,"(.*?)"|mdxType:"RouteHeader"},"(.*?)"/g;
 
-for (const [name, raw] of htmlFiles) {
+for (const [name, raw] of builtFiles) {
   const keyName = name.slice(0, -extLength);
   if (!validLinks.has(keyName)) {
     validLinks.set(keyName, []);
   }
   const validAnchors = validLinks.get(keyName)!;
-  const fragment = JSDOM.fragment(raw);
-  const main = fragment.querySelector("main");
-  if (!main) continue;
-  const allIds = main.querySelectorAll("*[id]");
-  for (const node of allIds.values()) {
-    validAnchors.push(node.id);
+  const matches = raw.matchAll(regex);
+
+  for (const match of matches) {
+    const name = match.slice(1).find((x) => x);
+    if (!name) {
+      throw new Error("Failed to find name for: " + match[0]);
+    }
+    // normalise the name
+    const normal = name.toLowerCase().replace(/[^a-z0-9()\/]+/g, "-");
+    validAnchors.push(normal);
   }
+  validLinks.set(keyName, validAnchors);
 }
 
 const results = new Map<string, github.AnnotationProperties[]>();
-
-try {
-  const navFile = "components/Navigation.tsx";
-  const nav = readFileSync(path.join(cwd, navFile), "utf8");
-  const file = nav.split("\n");
-  if (!results.has(navFile)) {
-    results.set(navFile, []);
-  }
-  const ownResults = results.get(navFile)!;
-  scanFile(
-    /(?<!!)href=(["'])(?!(?:https?)|(?:mailto))(.+?)\1/g,
-    2,
-    `/${navFile.slice(0, -".tsx".length)}`,
-    file,
-    validLinks,
-    ownResults,
-  );
-} catch {
-  console.warn("Navigation file not found!");
-}
 
 const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
 
