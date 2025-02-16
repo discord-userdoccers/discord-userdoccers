@@ -32,8 +32,8 @@ async function walk(path: string, filter: (file: string) => boolean): Promise<st
 
 const root = join(process.cwd(), "pages");
 const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename(file).startsWith("_")))]
-  .map((file) => file.slice(root.length + 1, -4).replaceAll(sep, '/'))
-  .sort((a, b) => a.split('/').length - b.split('/').length);
+  .map((file) => file.slice(root.length + 1, -4).replaceAll(sep, "/"))
+  .sort((a, b) => a.split("/").length - b.split("/").length);
 
 // SITEMAP
 
@@ -57,10 +57,14 @@ console.log("Done sitemap.xml");
 
 // NAVIGATION LINKS
 
-const navigationLinks: Record<
-  string,
-  { name: string | null; pages: Record<string, { name: string; link: `/${string}`; subLinks: any[]; sort: number }> }
-> = {};
+interface Page {
+  name: string;
+  link: `/${string}`;
+  subLinks: any[];
+  sort: number;
+}
+
+const navigationLinks: Record<string, { name: string | null; items?: Record<string, Page>; pages: Page[] }> = {};
 const headerRegex = /(?<header>#+) (?<name>.*)/;
 
 for (const file of files) {
@@ -75,17 +79,18 @@ for (const file of files) {
 
   navigationLinks[section] ??= {
     name: section ? section.replaceAll("-", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()) : null,
-    pages: {},
+    items: {},
+    pages: [],
   };
   const sectionList = navigationLinks[section];
 
-  sectionList.pages[link] ??= {
+  sectionList.items![link] ??= {
     name: parsed.data.name ?? parsed.content.trim().split("\n")[0].replace("# ", ""),
     link: `/${file}`,
     subLinks: [],
-    sort: parsed.data.sort ?? Number.MAX_SAFE_INTEGER,
+    sort: parsed.data.sort ?? 99999,
   };
-  const page = sectionList.pages[link];
+  const page = sectionList.items![link];
 
   const showSublinks = parsed.data["show-sublinks"] ?? true;
 
@@ -129,9 +134,8 @@ for (const file of files) {
 // FIXME: refactor this section
 
 for (const section in navigationLinks) {
-  navigationLinks[section].pages = Object.fromEntries(
-    Object.entries(navigationLinks[section].pages).sort(([, a], [, b]) => a.sort - b.sort),
-  );
+  navigationLinks[section].pages = Object.values(navigationLinks[section].items!).sort((a, b) => a.sort - b.sort);
+  delete navigationLinks[section].items;
 }
 
 const sectionSortTable: Record<string, number> = {
@@ -142,7 +146,7 @@ const sectionSortTable: Record<string, number> = {
 };
 
 const navigationLinksArray = Object.entries(navigationLinks)
-  .map(([section, data]) => ({ ...data, section }))
+  .map(([section, data]) => ({ ...data, name: data.name === "__ROOT__" ? null : data.name, section }))
   .sort((a, b) => sectionSortTable[a.section] - sectionSortTable[b.section]);
 
 await writeFile(join(process.cwd(), "dist", "navigation.json"), JSON.stringify(navigationLinksArray));

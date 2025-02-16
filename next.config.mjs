@@ -11,8 +11,15 @@ const config = {
   env: {
     BASE_DOMAIN:
       process.env.NODE_ENV === "production"
-        ? process.env.VERCEL_PROJECT_PRODUCTION_URL ?? 'docs.discord.sex'
-        : process.env.VERCEL_URL ?? "localhost:3000",
+        ? (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "docs.discord.sex")
+        : (process.env.VERCEL_URL ?? "localhost:3000"),
+  },
+  publicRuntimeConfig: {
+    navigation: await import("./dist/navigation.json", {
+      assert: {
+        type: "json",
+      },
+    }).then((json) => json.default),
   },
   // eslint-disable-next-line @typescript-eslint/require-await -- required for Next.js
   async redirects() {

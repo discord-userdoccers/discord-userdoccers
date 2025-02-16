@@ -2,10 +2,10 @@ import classNames from "classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Fragment, useEffect, useState } from "react";
-import Searchbar from "./Searchbar";
-import Caret from "./icons/Caret";
-import CaretFill from "./icons/CaretFill";
-import useToggle from "../hooks/useToggle";
+import useToggle from "../../hooks/useToggle";
+import Searchbar from "../Searchbar";
+import Caret from "../icons/Caret";
+import CaretFill from "../icons/CaretFill";
 
 interface MenuSelectionProps {
   title?: string;
