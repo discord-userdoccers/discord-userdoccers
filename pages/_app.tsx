@@ -1,6 +1,5 @@
 import classNames from "classnames";
-import App, { AppContext, AppInitialProps, AppProps } from "next/app";
-import getConfig from "next/config";
+import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
 import { useCallback, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
@@ -21,31 +20,7 @@ import "../stylesheets/snowflake-deconstruction.css";
 
 const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
 
-export interface AppOwnProps {
-  navigation: INavigation;
-}
-
-export type INavigation = NavigationSection[];
-
-interface NavigationSection {
-  name: string | null;
-  pages: Page[];
-  section: string;
-}
-
-interface Page {
-  name: string;
-  link: string;
-  subLinks: SubLink[];
-  sort: number;
-}
-interface SubLink {
-  link: string;
-  name: string;
-  level: number;
-}
-
-export default function MyApp({ Component, pageProps, router, navigation }: AppProps & AppOwnProps) {
+export default function MyApp({ Component, pageProps, router }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
@@ -91,7 +66,7 @@ export default function MyApp({ Component, pageProps, router, navigation }: AppP
           <OpenGraph description={meta?.description} section={meta?.title} />
           <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-            <Menu navigation={navigation} />
+            <Menu />
 
             <Component {...pageProps} />
           </div>
@@ -101,10 +76,3 @@ export default function MyApp({ Component, pageProps, router, navigation }: AppP
     </ThemeProvider>
   );
 }
-
-MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppInitialProps> => {
-  const ctx = await App.getInitialProps(context);
-  const config: { publicRuntimeConfig: AppOwnProps } = await getConfig();
-
-  return { ...ctx, ...config.publicRuntimeConfig };
-};

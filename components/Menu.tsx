@@ -5,9 +5,8 @@ import Bars from "./icons/Bars";
 import Navigation from "./navigation/Navigation";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
-import { AppOwnProps } from "../pages/_app.jsx";
 
-export default function Menu({ navigation }: AppOwnProps) {
+export default function Menu() {
   const ref = useRef(null);
   const router = useRouter();
   const { open, setClose } = useContext(MenuContext);
@@ -42,7 +41,7 @@ export default function Menu({ navigation }: AppOwnProps) {
         <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
           <div className="flex flex-1 flex-col items-start">
             <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black dark:text-white md:hidden" />
-            <Navigation data={navigation} />
+            <Navigation />
           </div>
         </div>
       </div>

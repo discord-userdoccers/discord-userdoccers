@@ -1,7 +1,7 @@
 import { NavigationSection, NavigationLink, NavigationSubLink, SearchItem } from "./NavigationItems";
-import type { INavigation } from "../../pages/_app";
+import data from "./data.json" with { type: "json" };
 
-export default function NavigationList({ data }: { data: INavigation }) {
+export default function NavigationList() {
   return (
     <>
       {data.map((section) => (

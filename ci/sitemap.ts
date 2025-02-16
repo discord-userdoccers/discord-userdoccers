@@ -148,6 +148,6 @@ const navigationLinksArray = Object.entries(navigationLinks)
   .map(([section, data]) => ({ ...data, name: data.name === "__ROOT__" ? null : data.name, section }))
   .sort((a, b) => sectionSortTable[a.section] - sectionSortTable[b.section]);
 
-await writeFile(join(process.cwd(), "dist", "navigation.json"), JSON.stringify(navigationLinksArray));
+await writeFile(join(process.cwd(), "components", "navigation", "data.json"), JSON.stringify(navigationLinksArray));
 
 console.log("Done navigation.json");
