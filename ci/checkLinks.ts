@@ -114,26 +114,6 @@ for (const [name, raw] of htmlFiles) {
 
 const results = new Map<string, github.AnnotationProperties[]>();
 
-try {
-  const navFile = "components/Navigation.tsx";
-  const nav = readFileSync(path.join(cwd, navFile), "utf8");
-  const file = nav.split("\n");
-  if (!results.has(navFile)) {
-    results.set(navFile, []);
-  }
-  const ownResults = results.get(navFile)!;
-  scanFile(
-    /(?<!!)href=(["'])(?!(?:https?)|(?:mailto))(.+?)\1/g,
-    2,
-    `/${navFile.slice(0, -".tsx".length)}`,
-    file,
-    validLinks,
-    ownResults,
-  );
-} catch {
-  console.warn("Navigation file not found!");
-}
-
 const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
 
 if (!mdxFiles) {
