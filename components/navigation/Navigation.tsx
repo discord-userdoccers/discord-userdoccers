@@ -4,9 +4,7 @@ import type { INavigation } from "../../pages/_app";
 import ThemeSwitcher from "../ThemeSwitcher";
 import Userdoccers from "../icons/Userdoccers";
 
-export default function Navigation({ data }: { data: INavigation; }) {
-  console.log(data)
-
+export default function Navigation({ data }: { data: INavigation }) {
   return (
     <nav className="mt-5 flex-1 self-stretch px-6">
       <div className="-mt-4 mb-8 hidden items-center md:flex">
