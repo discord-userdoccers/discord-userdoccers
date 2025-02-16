@@ -1,6 +1,6 @@
 import createMDX from "@next/mdx";
 import supersub from "remark-supersub";
-import frontmatter from "remark-frontmatter";
+import frontmatter from "./lib/frontmatter.mjs";
 
 /** @type {import('next').NextConfig} */
 const config = {
