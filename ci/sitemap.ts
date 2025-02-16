@@ -131,8 +131,7 @@ for (const file of files) {
 
 // SORTING NAVBAR
 
-// FIXME: refactor this section
-
+// Probably not the best way to do this but it's fine, just converts the object into an array
 for (const section in navigationLinks) {
   navigationLinks[section].pages = Object.values(navigationLinks[section].items!).sort((a, b) => a.sort - b.sort);
   delete navigationLinks[section].items;
