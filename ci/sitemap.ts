@@ -53,8 +53,6 @@ const sitemap = generateSiteMap(files);
 
 await writeFile(join(process.cwd(), "public", "sitemap.xml"), sitemap);
 
-console.log("Done sitemap.xml");
-
 // NAVIGATION LINKS
 
 interface Page {
@@ -105,15 +103,12 @@ for (const file of files) {
     if (inCodeBlock) continue;
 
     const match = headerRegex.exec(line);
-
     if (!match?.groups) continue;
 
     const { name, header } = match.groups;
-
     if (header.length < 2 || header.length > (parsed.data["max-sublink-level"] ?? 3)) continue;
 
     const subLinkName = name.toLowerCase().replaceAll(" ", "-");
-
     if (allowedSubLinks && !allowedSubLinks.includes(subLinkName)) continue;
 
     page.subLinks.push({
@@ -149,5 +144,3 @@ const navigationLinksArray = Object.entries(navigationLinks)
   .sort((a, b) => sectionSortTable[a.section] - sectionSortTable[b.section]);
 
 await writeFile(join(process.cwd(), "components", "navigation", "data.json"), JSON.stringify(navigationLinksArray));
-
-console.log("Done navigation.json");
