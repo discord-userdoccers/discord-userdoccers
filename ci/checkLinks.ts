@@ -117,6 +117,8 @@ for (const [name, raw] of builtFiles) {
   validLinks.set(keyName, validAnchors);
 }
 
+console.log(validLinks);
+
 const results = new Map<string, github.AnnotationProperties[]>();
 
 const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
