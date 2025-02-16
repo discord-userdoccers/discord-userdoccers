@@ -1,7 +1,3 @@
----
-max-sublink-level: 2
----
-
 # Gateway Events
 
 Gateway connections are WebSockets, meaning they're bidirectional and either side of the WebSocket can send events to the other. The following events are split up into two types:
@@ -2413,3 +2409,65 @@ Sent when a guild channel's webhook is created, updated, or deleted.
 #### Interaction Create
 
 Sent when a user uses an [Application Command](/interactions/application-commands/) or [Message Component](/interactions/message-components/). Inner payload is an [Interaction](/interactions/receiving-and-responding#interaction-structure).
+
+## Session Start Limit Object
+
+###### Session Start Limit Structure
+
+| Field           | Type    | Description                                                        |
+| --------------- | ------- | ------------------------------------------------------------------ |
+| total           | integer | The total number of session starts the current user is allowed     |
+| remaining       | integer | The remaining number of session starts the current user is allowed |
+| reset_after     | integer | The number of milliseconds after which the limit resets            |
+| max_concurrency | integer | The number of identify requests allowed per 5 seconds              |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/gateway" unauthenticated>
+  Get Gateway
+</RouteHeader>
+
+Returns an object with a single valid WebSocket URL, which the client can use for [Connecting](/topics/gateway#connecting). Clients **should** cache this value and only call this endpoint to retrieve a new URL if they are unable to properly establish a connection using the cached version of the URL.
+
+###### Response Body
+
+| Field | Type   | Description                                                      |
+| ----- | ------ | ---------------------------------------------------------------- |
+| url   | string | The WebSocket URL that can be used for connecting to the Gateway |
+
+###### Example Response
+
+```json
+{
+  "url": "wss://gateway.discord.gg/"
+}
+```
+
+<RouteHeader method="GET" url="/gateway/bot">
+  Get Gateway Bot
+</RouteHeader>
+
+Returns an object based on the information in [Get Gateway](#get-gateway), plus additional metadata that can help during the operation of large or [sharded](/topics/gateway#sharding) bots. Unlike [Get Gateway](#get-gateway), this route should not be cached for extended periods of time as the value is not guaranteed to be the same per-call, and changes as the user joins/leaves guilds.
+
+###### JSON Response
+
+| Field               | Type                                                      | Description                                                                         |
+| ------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| url                 | string                                                    | The WebSocket URL that can be used for connecting to the Gateway                    |
+| shards              | integer                                                   | The recommended number of [shards](/topics/gateway#sharding) to use when connecting |
+| session_start_limit | [session start limit](#session-start-limit-object) object | Information on the current session start limit                                      |
+
+###### Example Response
+
+```json
+{
+  "url": "wss://gateway.discord.gg/",
+  "shards": 9,
+  "session_start_limit": {
+    "total": 1000,
+    "remaining": 999,
+    "reset_after": 14400000,
+    "max_concurrency": 1
+  }
+}
+```

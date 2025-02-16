@@ -55,7 +55,6 @@ export default function App({ Component, pageProps, router }: AppProps) {
     return null;
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const meta = useMemo(() => getText(), []);
 
   return (

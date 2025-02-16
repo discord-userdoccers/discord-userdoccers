@@ -1,6 +1,5 @@
 import createMDX from "@next/mdx";
 import supersub from "remark-supersub";
-import frontmatter from "./lib/frontmatter.mjs";
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -28,7 +27,7 @@ const config = {
 
 const withMDX = createMDX({
   options: {
-    remarkPlugins: [supersub, frontmatter],
+    remarkPlugins: [supersub],
     rehypePlugins: [],
   },
 });
