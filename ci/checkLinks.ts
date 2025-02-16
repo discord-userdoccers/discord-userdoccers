@@ -87,7 +87,7 @@ function scanFile(
 
 const builtFiles = importDirectory(path.join(cwd, ".next/server/pages"), ".js");
 
-if (!builtFiles) {
+if (!builtFiles?.size) {
   console.error("No links found, ensure that build has been run!");
   process.exit(1);
 }
@@ -121,7 +121,7 @@ const results = new Map<string, github.AnnotationProperties[]>();
 
 const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
 
-if (!mdxFiles) {
+if (!mdxFiles?.size) {
   console.error("No mdx files found!");
   process.exit(1);
 }
