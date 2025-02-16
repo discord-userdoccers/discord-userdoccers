@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import classNames from "classnames";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
@@ -58,20 +59,23 @@ export default function App({ Component, pageProps, router }: AppProps) {
   const meta = useMemo(() => getText(), []);
 
   return (
-    <ThemeProvider defaultTheme="system" attribute="data-theme">
-      <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
-        {/* eslint-disable-next-line react/jsx-pascal-case */}
-        <MDX>
-          <OpenGraph description={meta?.description} section={meta?.title} />
-          <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
-            <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-            <Menu />
+    <>
+      <ThemeProvider defaultTheme="system" attribute="data-theme">
+        <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
+          {/* eslint-disable-next-line react/jsx-pascal-case */}
+          <MDX>
+            <OpenGraph description={meta?.description} section={meta?.title} />
+            <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
+              <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
+              <Menu />
 
-            <Component {...pageProps} />
-          </div>
-          <Footer />
-        </MDX>
-      </MenuContext.Provider>
-    </ThemeProvider>
+              <Component {...pageProps} />
+            </div>
+            <Footer />
+          </MDX>
+        </MenuContext.Provider>
+      </ThemeProvider>
+      <Analytics />
+    </>
   );
 }
