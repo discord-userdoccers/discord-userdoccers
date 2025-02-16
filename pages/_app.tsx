@@ -20,7 +20,7 @@ import "../stylesheets/snowflake-deconstruction.css";
 
 const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
 
-export default function MyApp({ Component, pageProps, router }: AppProps) {
+export default function App({ Component, pageProps, router }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
