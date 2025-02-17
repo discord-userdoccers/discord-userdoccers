@@ -16,6 +16,7 @@ import Paragraph from "./mdx/Paragraph";
 import StrikeThrough from "./mdx/StrikeThrough";
 import Strong from "./mdx/Strong";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
+import MDX_ICONS from "./mdx/icons";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,
@@ -47,6 +48,9 @@ const COMPONENTS = {
   Alert,
   RouteHeader,
   Collapsible,
+
+  // icons
+  ...MDX_ICONS,
 };
 
 interface MDXProps {
