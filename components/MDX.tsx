@@ -1,5 +1,6 @@
 import { MDXProvider } from "@mdx-js/react";
 import Image from "next/legacy/image";
+import React from "react";
 import Alert from "./Alert";
 import RouteHeader from "./RouteHeader";
 import Anchor from "./mdx/Anchor";

@@ -1,8 +1,8 @@
 import classNames from "classnames";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useRef } from "react";
-import Navigation from "./Navigation";
 import Bars from "./icons/Bars";
+import Navigation from "./navigation/Navigation";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
 
