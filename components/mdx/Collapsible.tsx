@@ -61,7 +61,12 @@ export default function Collapsible({
       className="rounded-md bg-theme-light-collapsible dark:bg-theme-dark-collapsible"
       onToggle={() => setOpen((open) => !open)}
     >
-      <summary className="group flex w-full cursor-pointer items-center justify-between border-text-light border-opacity-10 px-6 py-5 text-left dark:border-opacity-100">
+      <summary
+        className="group flex w-full cursor-pointer items-center justify-between border-text-light border-opacity-10 px-6 py-5 text-left dark:border-opacity-100"
+        style={{
+          borderBottomWidth: isOpen ? "1px" : "0",
+        }}
+      >
         <div className="flex flex-col gap-1">
           <h3 className="flex items-center gap-1.5 text-xl">
             {icon && <div className="collapsible-icon">{icon}</div>}
