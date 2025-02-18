@@ -1,4 +1,4 @@
-# Application Resource
+# Applications
 
 Applications are Discord entities that represent games, services, and other integrations that can be added to a guild. Applications can be used for a variety of purposes, including OAuth2 authentication, rich presence, bots, and much more.
 
@@ -44,7 +44,7 @@ Applications are Discord entities that represent games, services, and other inte
 | bot_disabled?                                | boolean                                                                                                                   | Whether the application's bot is disabled by Discord (default false)                                                                                                                                                             |
 | bot_quarantined?                             | boolean                                                                                                                   | Whether the application's bot is [quarantined](https://support.discord.com/hc/en-us/articles/6461420677527-Limited-Access-FAQ) by Discord; quarantined bots cannot join more guilds or start new direct messages (default false) |
 | approximate_guild_count?                     | integer                                                                                                                   | Approximate count of guilds the application's bot is in                                                                                                                                                                          |
-| approximate_user_install_count               | integer                                                                                                                   | Approximate count of user installations the application has                                                                                                                                                                      |
+| approximate_user_install_count               | integer                                                                                                                   | Approximate count of OAuth2 authorizations the application has                                                                                                                                                                   |
 | internal_guild_restriction                   | integer                                                                                                                   | What guilds the [application can be authorized in](#internal-guild-restriction)                                                                                                                                                  |
 | terms_of_service_url?                        | string                                                                                                                    | The URL to the application's terms of service                                                                                                                                                                                    |
 | privacy_policy_url?                          | string                                                                                                                    | The URL to the application's privacy policy                                                                                                                                                                                      |
@@ -196,7 +196,7 @@ Further complicating things, some optional fields may be omitted if their value 
 | 1 << 24     | ACTIVE                                 | Application has had at least one global application command used in the last 30 days                                                                       | No      |
 | 1 << 25     | ACTIVE_GRACE_PERIOD ^1^                | Application has not had any global application commands used in the last 30 days and has lost the `ACTIVE` flag                                            | No      |
 | 1 << 26     | IFRAME_MODAL                           | Application can use IFrames within modals                                                                                                                  | Yes     |
-| 1 << 27     | SOCIAL_LAYER_INTEGRATION               | Application can use the social layer integration                                                                                                           | Yes     |
+| 1 << 27     | SOCIAL_LAYER_INTEGRATION               | Application can use the social layer SDK                                                                                                                   | Yes     |
 | 1 << 29     | PROMOTED                               | Application is promoted by Discord in the application directory                                                                                            | Yes     |
 | 1 << 30     | PARTNER                                | Application is a Discord partner                                                                                                                           | Yes     |
 
@@ -744,7 +744,7 @@ The role connection object that an application has attached to a user.
 
 ### Application Role Connection Metadata Object
 
-A representation of role connection metadata for an [application](#application-resource).
+A representation of role connection metadata for an [application](#application-object).
 
 When a guild has added an application integration and that integration has configured its [`role_connections_verification_url`](#application-object), the application will render as a potential verification method in the guild's role verification configuration.
 
@@ -1359,6 +1359,57 @@ Returns a partial [application](#application-object) object for the given ID wit
 </RouteHeader>
 
 Returns a partial [application](#application-object) object for the given ID with rich presence-related fields.
+
+<RouteHeader method="GET" url="/applications/{application.id}/disclosures">
+  Get Application Disclosures
+</RouteHeader>
+
+Returns an object representing additional safety disclosures for the application.
+
+###### Response Body
+
+| Field             | Type           | Description                                                                             |
+| ----------------- | -------------- | --------------------------------------------------------------------------------------- |
+| disclosures       | array[integer] | The [disclosures](#application-disclosure-type) of the application                      |
+| acked_disclosures | array[integer] | The [disclosures](#application-disclosure-type) that have been acknowledged by the user |
+| all_acked         | boolean        | Whether all disclosures have been acknowledged by the user                              |
+
+###### Application Disclosure Type
+
+| Value | Name                             | Description                                      |
+| ----- | -------------------------------- | ------------------------------------------------ |
+| 0     | UNSPECIFIED_DISCLOSURE           | Unspecified disclosure                           |
+| 1     | IP_LOCATION                      | Application may access the user's IP address     |
+| 2     | DISPLAYS_ADVERTISEMENTS          | Application may display advertisements           |
+| 3     | PARTNER_SDK_DATA_SHARING_MESSAGE | Application's game utilizes the social layer SDK |
+
+###### Example Response
+
+```json
+{
+  "disclosures": [1, 2],
+  "acked_disclosures": [1, 2],
+  "all_acked": true
+}
+```
+
+<RouteHeader method="POST" url="/applications/{application.id}/disclosures">
+  Acknowledge Application Disclosures
+</RouteHeader>
+
+Acknowledges a list of disclosures for the application.
+
+###### JSON Params
+
+| Field       | Type           | Description                                                                 |
+| ----------- | -------------- | --------------------------------------------------------------------------- |
+| disclosures | array[integer] | The [disclosures](#application-disclosure-type) to acknowledge for the user |
+
+###### Response Body
+
+| Field       | Type           | Description                                                                             |
+| ----------- | -------------- | --------------------------------------------------------------------------------------- |
+| disclosures | array[integer] | The [disclosures](#application-disclosure-type) that have been acknowledged by the user |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/applications">
   Get Guild Applications

@@ -1,9 +1,11 @@
 import { MDXProvider } from "@mdx-js/react";
 import Image from "next/legacy/image";
+import React from "react";
 import Alert from "./Alert";
 import RouteHeader from "./RouteHeader";
 import Anchor from "./mdx/Anchor";
 import Code from "./mdx/Code";
+import Collapsible from "./mdx/Collapsible";
 import ContentWrapper from "./mdx/ContentWrapper";
 import Emphasis from "./mdx/Emphasis";
 import { H1, H2, H3, H4, H5, H6 } from "./mdx/Heading";
@@ -13,7 +15,8 @@ import { ListItem, OrderedList, UnorderedList } from "./mdx/List";
 import Paragraph from "./mdx/Paragraph";
 import StrikeThrough from "./mdx/StrikeThrough";
 import Strong from "./mdx/Strong";
-import { Table, TableHead, TableData, TableHeader, TableRow } from "./mdx/Table";
+import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
+import MDX_ICONS from "./mdx/icons";
 
 const COMPONENTS = {
   wrapper: (props: any) => <ContentWrapper {...props} />,
@@ -44,6 +47,10 @@ const COMPONENTS = {
   Image,
   Alert,
   RouteHeader,
+  Collapsible,
+
+  // icons
+  ...MDX_ICONS,
 };
 
 interface MDXProps {
