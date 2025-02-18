@@ -21,6 +21,10 @@ module.exports = {
         "text-light": "#2e3338",
         "text-dark": "#dcddde",
         "background-dark": "#36393f",
+
+        "icons-light": "#343331",
+        "icons-dark": "#dedddc",
+
         "sidebar-selected-primary-light": "#060607",
         "sidebar-selected-tertiary-light": "#D4D7DC",
         "sidebar-icon-primary-light": "#747f8d",
@@ -40,8 +44,8 @@ module.exports = {
         "theme-dark-sidebar-hover": "#393C43",
         "trueGray": colors.neutral,
 
-        'theme-light-collapsible': '#e6e7e8',
-        'theme-dark-collapsible': '#27292d',
+        "theme-light-collapsible": "#e6e7e8",
+        "theme-dark-collapsible": "#27292d",
 
         "green": colors.emerald,
         "yellow": colors.amber,
