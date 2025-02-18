@@ -15,8 +15,6 @@ export default function Collapsible({
   title,
   description,
 }: PropsWithChildren<CollapsibleProps>) {
-  const [isOpen, setIsOpen] = useState(false);
-
   // sometimes the first element in children is a string but the rest are <p> elements
   //
   // only if the element is called like this:
@@ -56,39 +54,29 @@ export default function Collapsible({
     else if (possibleKey && possibleKey in MDX_ICONS) icon = createElement(MDX_ICONS[possibleKey]);
   }
 
+  const [isOpen, setOpen] = useState(false);
+
   return (
-    <section className="rounded-md bg-theme-light-collapsible dark:bg-theme-dark-collapsible">
-      <button
-        className="group flex w-full items-center justify-between border-text-light border-opacity-10 px-6 py-5 text-left dark:border-opacity-100"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          borderBottomWidth: isOpen ? "1px" : "0",
-        }}
-      >
+    <details
+      className="rounded-md bg-theme-light-collapsible dark:bg-theme-dark-collapsible"
+      onToggle={() => setOpen((open) => !open)}
+    >
+      <summary className="group flex w-full cursor-pointer items-center justify-between border-text-light border-opacity-10 px-6 py-5 text-left dark:border-opacity-100">
         <div className="flex flex-col gap-1">
-          <h3 className="flex items-center justify-start gap-1.5 text-xl">
+          <h3 className="flex items-center gap-1.5 text-xl">
             {icon && <div className="collapsible-icon">{icon}</div>}
             {title}
           </h3>
           <p className="text-base leading-6 text-text-light dark:text-text-dark">{description}</p>
         </div>
         <Chevron
-          className="mr-2 size-5 opacity-70 transition-all group-hover:opacity-100"
+          className="mr-2 size-5 opacity-70 transition-transform duration-200 group-hover:opacity-100"
           style={{
             transform: isOpen ? "rotate(-180deg)" : "none",
           }}
         />
-      </button>
-
-      <div
-        className="px-6 py-2"
-        style={{
-          // hide visually to allow crawlers/algolia to index the entire text without interacting
-          display: isOpen ? "block" : "none",
-        }}
-      >
-        {children}
-      </div>
-    </section>
+      </summary>
+      <div className="px-6 py-2">{children}</div>
+    </details>
   );
 }
