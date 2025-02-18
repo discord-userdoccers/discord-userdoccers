@@ -23,7 +23,7 @@ Scheduled events are a way to plan and organize events in a guild. They can be a
 | entity_type                      | integer                                                                  | The [type](#guild-scheduled-event-entity-type) of scheduled event          |
 | entity_id                        | ?snowflake                                                               | The ID of an entity associated with the scheduled event                    |
 | entity_metadata ^2^              | ?[entity metadata](#guild-scheduled-event-entity-metadata) object        | Additional metadata for the scheduled event                                |
-| user_count?                      | integer                                                                  | The number of users subscribed to the scheduled event                      |
+| user_count? ^4^                  | integer                                                                  | The number of users subscribed to the scheduled event                      |
 | image?                           | ?string                                                                  | The [cover image hash](/reference#cdn-formatting) for the scheduled event  |
 | recurrence_rule                  | ?[recurrence rule](#guild-scheduled-event-recurrence-rule-object) object | The definition for how often this event should recur                       |
 | guild_scheduled_event_exceptions | array[[exception](#guild-scheduled-event-exception-object) object]       | Exceptions to the recurrence rule for this event                           |
@@ -34,38 +34,44 @@ Scheduled events are a way to plan and organize events in a guild. They can be a
 
 ^3^ Only included in [Gateway events](/topics/gateway-events#guild-scheduled-events). See [the automations section](#guild-scheduled-event-status-update-automation) for more info on how to determine this manually.
 
+^4^ Only included when fetched from the [Get Guild Scheduled Events](#get-guild-scheduled-events) or [Get Guild Scheduled Event](#get-guild-scheduled-event) endpoints with `with_user_count` set to `true`.
+
 ###### Example Guild Scheduled Event
 
 ```json
 {
   "id": "1059954443799498922",
   "guild_id": "1046920999469330512",
-  "channel_id": null,
-  "creator_id": "787017887877169173",
   "name": "Alien meetup",
   "description": "Aliens only!",
-  "image": "4b07ee3046773e8f2c8be856a70bd1a7",
-  "scheduled_start_time": "2023-12-31T23:00:00+00:00",
-  "scheduled_end_time": "2024-01-01T23:00:00+00:00",
-  "privacy_level": 2,
-  "status": 1,
-  "entity_type": 3,
-  "entity_id": null,
-  "entity_metadata": {
-    "location": "somwhere in ocean"
-  },
-  "sku_ids": [],
+  "channel_id": null,
+  "creator_id": "787017887877169173",
   "creator": {
     "id": "787017887877169173",
     "username": "dziurwa",
-    "global_name": "Dziurwa",
     "avatar": "cff3479a14360e4223f151eb8ad63dec",
     "discriminator": "0",
     "public_flags": 4194560,
+    "banner": null,
+    "accent_color": null,
+    "global_name": "Dziurwa",
     "avatar_decoration_data": null,
     "primary_guild": null
   },
-  "user_count": 7
+  "image": "4b07ee3046773e8f2c8be856a70bd1a7",
+  "scheduled_start_time": "2023-12-31T23:00:00+00:00",
+  "scheduled_end_time": "2024-01-01T23:00:00+00:00",
+  "status": 1,
+  "entity_type": 3,
+  "entity_id": null,
+  "recurrence_rule": null,
+  "user_count": 7,
+  "privacy_level": 2,
+  "sku_ids": [],
+  "guild_scheduled_event_exceptions": [],
+  "entity_metadata": {
+    "location": "somwhere in ocean"
+  }
 }
 ```
 
@@ -354,7 +360,7 @@ Returns an array of [guild scheduled event user](#guild-scheduled-event-user-obj
   Get Guild Scheduled Events
 </RouteHeader>
 
-Returns a list of [guild scheduled event](#guild-scheduled-event-object) objects for the given guild.
+Returns a list of `SCHEDULED` and `ACTIVE` [guild scheduled event](#guild-scheduled-event-object) objects for the given guild.
 
 ###### Query String Params
 
@@ -509,6 +515,36 @@ Modifies an exception to the recurrence rule for a guild scheduled event. Return
 </RouteHeader>
 
 Deletes an exception to the recurrence rule for a guild scheduled event. Returns a 204 empty response on success. Fires a [Guild Scheduled Event Exception Delete](/topics/gateway-events#guild-scheduled-event-exception-delete) Gateway event.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users/count">
+  Get Guild Scheduled Event User Count
+</RouteHeader>
+
+Returns the number of users subscribed to a guild scheduled event.
+
+###### Query String Params
+
+| Field                                | Type             | Description                                             |
+| ------------------------------------ | ---------------- | ------------------------------------------------------- |
+| guild_scheduled_event_exception_ids? | array[snowflake] | The IDs of the exceptions to return counts for (max 10) |
+
+###### Response Body
+
+| Field                                  | Type                    | Description                                                 |
+| -------------------------------------- | ----------------------- | ----------------------------------------------------------- |
+| guild_scheduled_event_count            | integer                 | The number of users subscribed to the guild scheduled event |
+| guild_scheduled_event_exception_counts | map[snowflake, integer] | The number of users subscribed to each exception            |
+
+###### Example Response
+
+```json
+{
+  "guild_scheduled_event_count": 18,
+  "guild_scheduled_event_exception_counts": {
+    "1456059344486400000": 18
+  }
+}
+```
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users">
   Get Guild Scheduled Event Users
