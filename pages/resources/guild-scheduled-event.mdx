@@ -6,29 +6,33 @@ Scheduled events are a way to plan and organize events in a guild. They can be a
 
 ###### Guild Scheduled Event Structure
 
-| Field                  | Type                                                                     | Description                                                                |
-| ---------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| id                     | snowflake                                                                | The ID of the scheduled event                                              |
-| guild_id               | snowflake                                                                | The ID of the guild the scheduled event belongs to                         |
-| channel_id ^2^         | ?snowflake                                                               | The ID of the channel in which the scheduled event will be hosted          |
-| creator_id? ^1^        | ?snowflake                                                               | The ID of the user that created the scheduled event                        |
-| creator?               | partial [user](/resources/user#user-object) object                       | The user that created the scheduled event                                  |
-| name                   | string                                                                   | The name of the scheduled event (1-100 characters)                         |
-| description?           | ?string                                                                  | The description for the scheduled event (1-1000 characters)                |
-| scheduled_start_time   | ISO8601 timestamp                                                        | When the scheduled event will start                                        |
-| scheduled_end_time ^2^ | ?ISO8601 timestamp                                                       | When the scheduled event will end                                          |
-| privacy_level          | integer                                                                  | The [privacy level](/resources/guild#privacy-level) of the scheduled event |
-| status                 | integer                                                                  | The [status](#guild-scheduled-event-status) of the scheduled event         |
-| entity_type            | integer                                                                  | The [type](#guild-scheduled-event-entity-type) of scheduled event          |
-| entity_id              | ?snowflake                                                               | The ID of an entity associated with the scheduled event                    |
-| entity_metadata ^2^    | ?[entity metadata](#guild-scheduled-event-entity-metadata) object        | Additional metadata for the scheduled event                                |
-| user_count?            | integer                                                                  | The number of users subscribed to the scheduled event                      |
-| image?                 | ?string                                                                  | The [cover image hash](/reference#cdn-formatting) for the scheduled event  |
-| recurrence_rule        | ?[recurrence rule](#guild-scheduled-event-recurrence-rule-object) object | The definition for how often this event should recur                       |
+| Field                            | Type                                                                     | Description                                                                |
+| -------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| id                               | snowflake                                                                | The ID of the scheduled event                                              |
+| guild_id                         | snowflake                                                                | The ID of the guild the scheduled event belongs to                         |
+| channel_id ^2^                   | ?snowflake                                                               | The ID of the channel in which the scheduled event will be hosted          |
+| creator_id? ^1^                  | ?snowflake                                                               | The ID of the user that created the scheduled event                        |
+| creator?                         | partial [user](/resources/user#user-object) object                       | The user that created the scheduled event                                  |
+| name                             | string                                                                   | The name of the scheduled event (1-100 characters)                         |
+| description?                     | ?string                                                                  | The description for the scheduled event (1-1000 characters)                |
+| scheduled_start_time             | ISO8601 timestamp                                                        | When the scheduled event will start                                        |
+| scheduled_end_time ^2^           | ?ISO8601 timestamp                                                       | When the scheduled event will end                                          |
+| auto_start? ^3^                  | boolean                                                                  | Whether the event should automatically start at the scheduled start time   |
+| privacy_level                    | integer                                                                  | The [privacy level](/resources/guild#privacy-level) of the scheduled event |
+| status                           | integer                                                                  | The [status](#guild-scheduled-event-status) of the scheduled event         |
+| entity_type                      | integer                                                                  | The [type](#guild-scheduled-event-entity-type) of scheduled event          |
+| entity_id                        | ?snowflake                                                               | The ID of an entity associated with the scheduled event                    |
+| entity_metadata ^2^              | ?[entity metadata](#guild-scheduled-event-entity-metadata) object        | Additional metadata for the scheduled event                                |
+| user_count?                      | integer                                                                  | The number of users subscribed to the scheduled event                      |
+| image?                           | ?string                                                                  | The [cover image hash](/reference#cdn-formatting) for the scheduled event  |
+| recurrence_rule                  | ?[recurrence rule](#guild-scheduled-event-recurrence-rule-object) object | The definition for how often this event should recur                       |
+| guild_scheduled_event_exceptions | array[[exception](#guild-scheduled-event-exception-object) object]       | Exceptions to the recurrence rule for this event                           |
 
 ^1^ `creator_id` will be null and `creator` will not be included for events created before October 25th, 2021, when the concept of `creator_id` was introduced and tracked.
 
 ^2^ See [field requirements by entity type](#guild-scheduled-event-entity-type-validation) to understand the relationship between `entity_type` and the following fields: `channel_id`, `entity_metadata`, and `scheduled_end_time`.
+
+^3^ Only included in [Gateway events](/topics/gateway-events#guild-scheduled-events). See [the automations section](#guild-scheduled-event-status-update-automation) for more info on how to determine this manually.
 
 ###### Example Guild Scheduled Event
 
@@ -69,7 +73,7 @@ Scheduled events are a way to plan and organize events in a guild. They can be a
 
 | Field         | Type   | Description                              |
 | ------------- | ------ | ---------------------------------------- |
-| location? ^1^ | string | location of the event (1-100 characters) |
+| location? ^1^ | string | Location of the event (1-100 characters) |
 
 ^1^ Required for events with an `entity_type` of `EXTERNAL`.
 
@@ -102,25 +106,6 @@ The following table shows field requirements based on current entity type.
 | STAGE_INSTANCE | required   | null                     | -                  |
 | VOICE          | required   | null                     | -                  |
 | EXTERNAL       | null       | required with `location` | required           |
-
-### Guild Scheduled Event User Object
-
-###### Guild Scheduled Event User Structure
-
-| Field                    | Type                                                        | Description                                                           |
-| ------------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| guild_scheduled_event_id | snowflake                                                   | The ID of the scheduled event the user subscribed to                  |
-| user                     | partial [user](/resources/user#user-object) object          | The user that subscribed to the scheduled event                       |
-| member?                  | [guild member](/resources/guild#guild-member-object) object | Guild member data for the user in the scheduled event's guild, if any |
-
-### Subscribed Guild Scheduled Event User Object
-
-###### Subscribed Guild Scheduled Event User Structure
-
-| Field                    | Type      | Description                                               |
-| ------------------------ | --------- | --------------------------------------------------------- |
-| guild_scheduled_event_id | snowflake | The ID of the scheduled event the user subscribed to      |
-| user_id                  | snowflake | The ID of the user that subscribed to the scheduled event |
 
 ### Guild Scheduled Event Recurrence Rule Object
 
@@ -301,13 +286,63 @@ by_month_day = [24];
 | NOVEMBER  | 11    |
 | DECEMBER  | 12    |
 
+### Guild Scheduled Event Exception Object
+
+Represents an exception to the recurrence rule for a guild scheduled event.
+
+###### Guild Scheduled Event Exception Structure
+
+| Field                | Type               | Description                                                                                |
+| -------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| event_id             | snowflake          | The ID of the scheduled event the exception is for                                         |
+| event_exception_id   | snowflake          | A snowflake representing when the scheduled event would have started without the exception |
+| is_canceled          | boolean            | Whether the scheduled event will be skipped on this recurrence                             |
+| scheduled_start_time | ?ISO8601 timestamp | The scheduled event's modified start time for this recurrence                              |
+| scheduled_end_time   | ?ISO8601 timestamp | The scheduled event's modified end time for this recurrence                                |
+
+###### Example Guild Scheduled Event Exception
+
+```json
+{
+  "event_id": "1341289071875461170",
+  "event_exception_id": "2117779587072000000",
+  "scheduled_start_time": "2030-02-18T00:01:00+00:00",
+  "scheduled_end_time": null,
+  "is_canceled": false
+}
+```
+
+### Guild Scheduled Event User Object
+
+Represents a user's subscription to a guild scheduled event or override for a specific exception.
+
+###### Guild Scheduled Event User Structure
+
+| Field                               | Type                                                        | Description                                                                        |
+| ----------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| guild_scheduled_event_id            | snowflake                                                   | The ID of the scheduled event the user subscribed to                               |
+| guild_scheduled_event_exception_id? | snowflake                                                   | The ID of the specific exception this subscription is for, if any                  |
+| response                            | integer                                                     | The user's [response](#guild-scheduled-event-user-response) to the scheduled event |
+| user_id                             | snowflake                                                   | The ID of the user that subscribed to the scheduled event                          |
+| user? ^1^                           | partial [user](/resources/user#user-object) object          | The user that subscribed to the scheduled event                                    |
+| member? ^1^                         | [guild member](/resources/guild#guild-member-object) object | Guild member data for the user in the scheduled event's guild, if any              |
+
+^1^ Only included when fetched from the [Get Guild Scheduled Event Users](#get-guild-scheduled-event-users) endpoint.
+
+###### Guild Scheduled Event User Response
+
+| Value | Name         | Description                                   |
+| ----- | ------------ | --------------------------------------------- |
+| 0     | UNINTERESTED | User is not interested in the occurrence      |
+| 1     | INTERESTED   | User is interested in the event or occurrence |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/scheduled-events">
   Get User Guild Scheduled Events
 </RouteHeader>
 
-Returns an array of [subscribed guild scheduled event user](#subscribed-guild-scheduled-event-user-object) objects for the current user for a given guild.
+Returns an array of [guild scheduled event user](#guild-scheduled-event-user-object) objects for the current user for a given guild.
 
 ###### Query String Params
 
@@ -351,6 +386,12 @@ A guild can have a maximum of 100 events with `SCHEDULED` or `ACTIVE` status at 
 
 </Alert>
 
+<Alert type="info">
+
+Creating an event will automatically add you as a subscriber.
+
+</Alert>
+
 ###### JSON Params
 
 | Field                   | Type                                                                     | Description                                                                  |
@@ -374,11 +415,26 @@ A guild can have a maximum of 100 events with `SCHEDULED` or `ACTIVE` status at 
   Modify Guild Scheduled Event
 </RouteHeader>
 
-Modifies a guild scheduled event. Returns the modified [guild scheduled event](#guild-scheduled-event-object) object on success. Fires a [Guild Scheduled Event Update](/topics/gateway-events#guild-scheduled-event-update) Gateway event.
+Modifies a guild scheduled event. Returns the modified [guild scheduled event](#guild-scheduled-event-object) object on success. Fires a [Guild Scheduled Event Update](/topics/gateway-events#guild-scheduled-event-update) and optionally a [Stage Instance Create](/topics/gateway-events#stage-instance-create) Gateway event.
 
 <Alert type="info">
 
 To start or end an event, use this endpoint to modify the event's [status](#guild-scheduled-event-status) field.
+
+</Alert>
+
+<Alert type="info">
+
+Starting an event with an `entity_type` of `STAGE_INSTANCE` will automatically create a stage instance.
+If an existing stage instance is associated with the channel, it will be overwritten.
+
+Ending an event with an `entity_type` of `STAGE_INSTANCE` will automatically delete any stage instance associated with the event's channel.
+
+</Alert>
+
+<Alert type="info">
+
+Setting `status` to `CANCELED` will cancel all future recurrences of the event as well.
 
 </Alert>
 
@@ -415,11 +471,93 @@ To start or end an event, use this endpoint to modify the event's [status](#guil
 
 Deletes a guild scheduled event. Returns a a 204 empty response on success. Fires a [Guild Scheduled Event Delete](/topics/gateway-events#guild-scheduled-event-delete) Gateway event.
 
+<RouteHeader
+  method="POST"
+  url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/exceptions"
+  supportsAuditReason
+>
+  Create Guild Scheduled Event Exception
+</RouteHeader>
+
+Creates an exception to the recurrence rule for a guild scheduled event. Returns a [guild scheduled event exception](#guild-scheduled-event-exception-object) object on success. Fires a [Guild Scheduled Event Exception Create](/topics/gateway-events#guild-scheduled-event-exception-create) Gateway event.
+
+###### JSON Params
+
+| Field                         | Type               | Description                                                       |
+| ----------------------------- | ------------------ | ----------------------------------------------------------------- |
+| original_scheduled_start_time | ISO8601 timestamp  | When the scheduled event would have started without the exception |
+| is_canceled?                  | boolean            | Whether the scheduled event will be skipped on this recurrence    |
+| scheduled_start_time?         | ?ISO8601 timestamp | The scheduled event's modified start time for this recurrence     |
+| scheduled_end_time?           | ?ISO8601 timestamp | The scheduled event's modified end time for this recurrence       |
+
+<RouteHeader
+  method="PATCH"
+  url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/{guild_scheduled_event_exception.id}"
+  supportsAuditReason
+>
+  Modify Guild Scheduled Event Exception
+</RouteHeader>
+
+Modifies an exception to the recurrence rule for a guild scheduled event. Returns the modified [guild scheduled event exception](#guild-scheduled-event-exception-object) object on success. Fires a [Guild Scheduled Event Exception Create](/topics/gateway-events#guild-scheduled-event-exception-create) Gateway event.
+
+<RouteHeader
+  method="DELETE"
+  url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/{guild_scheduled_event_exception.id}"
+  supportsAuditReason
+>
+  Delete Guild Scheduled Event Exception
+</RouteHeader>
+
+Deletes an exception to the recurrence rule for a guild scheduled event. Returns a 204 empty response on success. Fires a [Guild Scheduled Event Exception Delete](/topics/gateway-events#guild-scheduled-event-exception-delete) Gateway event.
+
 <RouteHeader method="GET" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users">
   Get Guild Scheduled Event Users
 </RouteHeader>
 
-Gets a list of users subscribed to a guild scheduled event.
+Returns a list of users subscribed to a guild scheduled event.
+
+###### Query String Params
+
+| Field                      | Type      | Description                                                    |
+| -------------------------- | --------- | -------------------------------------------------------------- |
+| before?                    | snowflake | Get users before this user ID                                  |
+| after?                     | snowflake | Get users after this user ID                                   |
+| limit?                     | number    | Max number of users to return (1-100, default 100)             |
+| with_member?               | boolean   | Whether to include possible guild member data (default false)  |
+| upgrade_response_type? ^1^ | boolean   | Whether to return the new response body format (default false) |
+
+^1^ This parameter is ignored for bots as they always receive the new response body format.
+
+###### Response Body
+
+When `upgrade_response_type` is set to `true`, the response is a list of [guild scheduled event user](#guild-scheduled-event-user-object) objects.
+
+Otherwise, the response looks like this:
+
+| Field | Type                                                      | Description                                                                                                                                             |
+| ----- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| users | array[partial [user](/resources/user#user-object) object] | The users subscribed to the scheduled event, with an extra [`guild_member`](/resources/guild#guild-member-object) containing optional guild member data |
+
+<RouteHeader method="PUT" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users/@me">
+  Create Guild Scheduled Event User
+</RouteHeader>
+
+Subscribes the current user to a guild scheduled event. Returns a [guild scheduled event user](#guild-scheduled-event-user-object) object on success. Fires a [Guild Scheduled Event User Add](/topics/gateway-events#guild-scheduled-event-user-add) Gateway event.
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users/@me">
+  Delete Guild Scheduled Event User
+</RouteHeader>
+
+Unsubscribes the current user from a guild scheduled event. Returns a 204 empty response on success. Fires a [Guild Scheduled Event User Remove](/topics/gateway-events#guild-scheduled-event-user-remove) Gateway event.
+
+<RouteHeader
+  method="GET"
+  url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/{guild_scheduled_event_exception.id}/users"
+>
+  Get Guild Scheduled Event Exception Users
+</RouteHeader>
+
+Returns a list of [guild scheduled event user](#guild-scheduled-event-user-object) objects subscribed to a specific guild scheduled event exception.
 
 ###### Query String Params
 
@@ -430,29 +568,29 @@ Gets a list of users subscribed to a guild scheduled event.
 | limit?       | number    | Max number of users to return (1-100, default 100)            |
 | with_member? | boolean   | Whether to include possible guild member data (default false) |
 
-###### Response Body
-
-<Alert type="warn">
-
-For bot requests, the endpoint instead returns an array of [guild scheduled event user](#guild-scheduled-event-user-object) objects.
-
-</Alert>
-
-| Field | Type                                                      | Description                                                                                                                                    |
-| ----- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| users | array[partial [user](/resources/user#user-object) object] | The users subscribed to the scheduled event, with an extra [`guild_member`](/resources/guild#guild-member-object) containing guild member data |
-
-<RouteHeader method="PUT" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users/@me">
-  Create Guild Scheduled Event User
+<RouteHeader
+  method="PUT"
+  url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/{guild_scheduled_event_exception.id}/users/@me"
+>
+  Create Guild Scheduled Event Exception User
 </RouteHeader>
 
-Subscribes the current user to a guild scheduled event. Returns a [subscribed guild scheduled event user](#subscribed-guild-scheduled-event-user-object) object on success. Fires a [Guild Scheduled Event User Add](/topics/gateway-events#guild-scheduled-event-user-add) Gateway event.
+Overrides the user's subscription to a guild scheduled event for a specific exception. Returns a [subscribed guild scheduled event user](#guild-scheduled-event-user-object) object on success. Fires a [Guild Scheduled Event User Add](/topics/gateway-events#guild-scheduled-event-user-add) Gateway event.
 
-<RouteHeader method="DELETE" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users/@me">
-  Delete Guild Scheduled Event User
+###### JSON Params
+
+| Field    | Type    | Description                                                                                  |
+| -------- | ------- | -------------------------------------------------------------------------------------------- |
+| response | integer | The user's [response](#guild-scheduled-event-user-response) to the scheduled event exception |
+
+<RouteHeader
+  method="DELETE"
+  url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/{guild_scheduled_event_exception.id}/users/@me"
+>
+  Delete Guild Scheduled Event Exception User
 </RouteHeader>
 
-Unsubscribes the current user from a guild scheduled event. Returns a 204 empty response on success. Fires a [Guild Scheduled Event User Remove](/topics/gateway-events#guild-scheduled-event-user-remove) Gateway event.
+Removes the user's subscription override for a specific exception. Returns a 204 empty response on success. Fires a [Guild Scheduled Event User Remove](/topics/gateway-events#guild-scheduled-event-user-remove) Gateway event.
 
 ## Guild Scheduled Event Status Update Automation
 
@@ -474,14 +612,14 @@ An event with an `entity_type` of `EXTERNAL` at its `scheduled_end_time` will au
 
 #### Any scheduled event which has not begun after its scheduled start time will be automatically cancelled after a few hours
 
-Any event with a `status` of `SCHEDULED` after a certain time interval (on the order of hours) beyond its `scheduled_start_time` will have its `status` automatically set to `CANCELLED`.
+Any event with a `status` of `SCHEDULED` after a certain time interval (on the order of hours) beyond its `scheduled_start_time` will have its `status` automatically set to `CANCELED`.
 
 ## Guild Scheduled Event Permissions Requirements
 
 <Alert type="info">
 
 A user must be a member of the guild in order to access events for that guild unless the guild is lurkable. If a guild is lurkable,
-events in that guild may be visible to lurkers depending on the event type and the permissions of any channels associated with the event.
+events in that guild may be visible to lurkers depending on the privacy level and the permissions of any channels associated with the event.
 
 </Alert>
 
