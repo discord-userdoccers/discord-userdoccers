@@ -58,7 +58,7 @@ export default function Collapsible({
 
   return (
     <details
-      className="rounded-md bg-theme-light-collapsible dark:bg-theme-dark-collapsible"
+      className="mb-6 rounded-md bg-theme-light-collapsible dark:bg-theme-dark-collapsible"
       onToggle={() => setOpen((open) => !open)}
     >
       <summary
