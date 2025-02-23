@@ -142,9 +142,56 @@ If `id` is `null` and `guild_ids` is a single element array, this folder is not 
 | id        | ?integer         | The ID of the folder                                                                   |
 | name      | ?string          | The name of the folder (default `', '.join(guild.name for guild in folder.guilds)`)    |
 
+### Notification Settings Object
+
+User-wide notification settings.
+
+###### Notification Settings Structure
+
+| Field | Type    | Description                                                     |
+| ----- | ------- | --------------------------------------------------------------- |
+| flags | integer | The [notification settings flags](#notification-settings-flags) |
+
+###### Notification Settings Flags
+
+| Value  | Name                    | Description                                                                                                            |
+| ------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1 << 4 | USE_NEW_NOTIFICATIONS   | Whether to separate unreads from the overall message notification level                                                |
+| 1 << 5 | MENTION_ON_ALL_MESSAGES | Whether to increment the mention count on all messages in channels with a message notification level of `ALL_MESSAGES` |
+
+###### Example Notification Settings
+
+```json
+{ "flags": 16 }
+```
+
+### Notification Settings Snapshot Object
+
+A snapshot of the user's guild settings.
+
+###### Notification Settings Snapshot Structure
+
+| Field       | Type              | Description                         |
+| ----------- | ----------------- | ----------------------------------- |
+| id          | snowflake         | The ID of the snapshot              |
+| label       | ?string           | The label of the snapshot           |
+| recorded_at | ISO8601 timestamp | When the snapshot was recorded      |
+| length      | integer           | The length of the snapshot in bytes |
+
+###### Example Notification Settings Snapshot
+
+```json
+{
+  "id": "1189703042711425185",
+  "label": "Before the Great Mute",
+  "recorded_at": "2023-12-27T22:55:08.998082+00:00",
+  "length": 145750
+}
+```
+
 ### User Guild Settings Object
 
-Represents guild-specific settings for the current user.
+Guild-specific settings for the current user.
 
 ###### User Guild Settings Structure
 
@@ -227,9 +274,40 @@ Used when modifying user guild settings.
 | 1     | DISABLED | Suppress highlights         |
 | 2     | ENABLED  | Don't suppress highlights   |
 
+###### Example User Guild Settings
+
+```json
+{
+  "guild_id": 373,
+  "suppress_everyone": false,
+  "suppress_roles": false,
+  "mute_scheduled_events": false,
+  "message_notifications": 1,
+  "flags": 0,
+  "mobile_push": true,
+  "muted": true,
+  "mute_config": {
+    "end_time": null,
+    "selected_time_window": -1
+  },
+  "hide_muted_channels": false,
+  "channel_overrides": [
+    {
+      "channel_id": "362165922212872202",
+      "message_notifications": 3,
+      "muted": false,
+      "mute_config": null,
+      "collapsed": true
+    }
+  ],
+  "notify_highlights": 0,
+  "version": 2016
+}
+```
+
 ### Mute Config Object
 
-Represents the duration of a mute.
+The duration of a mute.
 
 ###### Mute Config Structure
 
@@ -349,11 +427,65 @@ For OAuth2 requests, only the `status` and `custom_status` fields can be modifie
 | timezone_offset?                       | integer                                                             | The timezone offset from UTC to use (in minutes)                                                               |
 | view_nsfw_guilds?                      | boolean                                                             | Whether NSFW guilds are shown on iOS                                                                           |
 
+<RouteHeader method="PATCH" url="/users/@me/notification-settings">
+  Modify Notification Settings
+</RouteHeader>
+
+Replaces the notification settings for the user. Returns a [notification settings](#notification-settings-object) object on success. Fires a [Notification Settings Update](/topics/gateway-events#notification-settings-update) Gateway event.
+
+<Alert type="info">
+
+All parameters to this endpoint are optional and nullable. Omitting or setting a `null` value will set it to default.
+
+</Alert>
+
+###### JSON Params
+
+| Field  | Type     | Description                                                            |
+| ------ | -------- | ---------------------------------------------------------------------- |
+| flags? | ?integer | The [notification settings flags](#notification-settings-flags) to set |
+
+<RouteHeader method="GET" url="/users/@me/notification-settings/snapshots">
+  Get Notification Settings Snapshots
+</RouteHeader>
+
+Returns a list of [notification settings snapshot](#notification-settings-snapshot-object) objects for the user.
+
+<RouteHeader method="POST" url="/users/@me/notification-settings/snapshots">
+  Create Notification Settings Snapshot
+</RouteHeader>
+
+Creates a new notification settings snapshot for the user. Returns a list of [notification settings snapshot](#notification-settings-snapshot-object) objects on success.
+
+<Alert type="info">
+
+A maximum of 5 snapshots or 1 MiB of data can be stored per user.
+
+</Alert>
+
+###### JSON Params
+
+| Field  | Type    | Description                                    |
+| ------ | ------- | ---------------------------------------------- |
+| label? | ?string | The label of the snapshot (max 100 characters) |
+
+<RouteHeader method="POST" url="/users/@me/notification-settings/snapshots/{snapshot.id}/restore-guilds">
+  Restore Notification Settings Snapshot
+</RouteHeader>
+
+Restores a notification settings snapshot. Returns a mapping of guild IDs to [user guild settings](#user-guild-settings-object) objects on success. Fires multiple [User Guild Settings Update](/topics/gateway-events#user-guild-settings-update) Gateway events.
+
+<RouteHeader method="GET" url="/users/@me/notification-settings/snapshots/{snapshot.id}">
+  Delete Notification Settings Snapshot
+</RouteHeader>
+
+Deletes a notification settings snapshot. Returns a list of [notification settings snapshot](#notification-settings-snapshot-object) objects on success.
+
 <RouteHeader method="PATCH" url="/users/@me/guilds/{guild.id}/settings">
   Modify User Guild Settings
 </RouteHeader>
 
-Modifies a guild's settings. Accepts a [partial user guild settings](#partial-user-guild-settings-structure) object. Returns [user guild settings](#user-guild-settings-object) object on success. Fires a [User Guild Settings Update](/topics/gateway-events#user-guild-settings-update) Gateway event.
+Modifies a guild's settings. Accepts a [partial user guild settings](#partial-user-guild-settings-structure) object. Returns a [user guild settings](#user-guild-settings-object) object on success. Fires a [User Guild Settings Update](/topics/gateway-events#user-guild-settings-update) Gateway event.
 
 <Alert type="info">
 
