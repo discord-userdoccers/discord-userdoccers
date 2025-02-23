@@ -29,7 +29,7 @@ export default function NavigationList() {
           {Object.values(section.pages).map((page) => (
             <NavigationLink
               href={page.link}
-              subLinks={page.subLinks.map((subLink) => (
+              subLinks={page.subLinks.length === 0 ? null : page.subLinks.map((subLink) => (
                 <NavigationSubLink href={subLink.link} key={subLink.link}>
                   {subLink.name}
                 </NavigationSubLink>
