@@ -1,0 +1,152 @@
+# Directory
+
+A directory in Discord is a special type of channel that contains a list of directory entries, which are guilds and scheduled events that have been added and made discocerable by the community. Any user that can access a directory can view the entries and join the guilds.
+
+Directories are most commonly found in [student hubs](https://support.discord.com/hc/en-us/articles/4406046651927).
+
+### Directory Entry Object
+
+###### Directory Entry Structure
+
+| Field                      | Type                                                                     | Description                                              |
+| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------- |
+| type                       | integer                                                                  | The [type of directory entry](#directory-entry-type)     |
+| directory_channel_id       | snowflake                                                                | The ID of the directory channel that the entry is in     |
+| entity_id                  | snowflake                                                                | The ID of the guild or scheduled event                   |
+| created_at                 | string                                                                   | When the entry was created                               |
+| primary_category_id?       | integer                                                                  | The [primary category](#directory-category) of the entry |
+| description                | ?string                                                                  | The description of the entry                             |
+| author_id                  | snowflake                                                                | The ID of the user that created the entry                |
+| guild? ^1^                 | [directory guild](#directory-guild-structure) object                     | The guild entry                                          |
+| guild_scheduled_event? ^1^ | [directory scheduled event](#directory-scheduled-event-structure) object | The scheduled event entry                                |
+
+^1^ Not included when fetched from [Get Some Directory Entries](#get-some-directory-entries).
+
+###### Directory Entry Type
+
+| Value | Name                  | Description       |
+| ----- | --------------------- | ----------------- |
+| 0     | GUILD                 | A guild           |
+| 1     | GUILD_SCHEDULED_EVENT | A scheduled event |
+
+###### Directory Category
+
+| Value | Name              | Description                 |
+| ----- | ----------------- | --------------------------- |
+| 0     | UNCATEGORIZED     | Uncategorized entry         |
+| 1     | SCHOOL_CLUB       | School club or organization |
+| 2     | CLASS             | Class or subject            |
+| 3     | STUDY_SOCIAL      | Study or social group       |
+| ~~4~~ | ~~SUBJECT_MAJOR~~ | ~~For a subject or major~~  |
+| 5     | MISC              | Miscellaneous entry         |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/channels/{channel.id}/directory-entries/counts">
+  Get Directory Counts
+</RouteHeader>
+
+Returns a mapping of [directory categories](#directory-category) to their entry count in the given directory channel. Requires the `VIEW_CHANNEL` permission.
+
+<RouteHeader method="GET" url="/channels/{channel.id}/directory-entries">
+  Get Directory Entries
+</RouteHeader>
+
+Returns a list of [directory entry](#directory-entry-object) objects in the given directory channel. Requires the `VIEW_CHANNEL` permission.
+
+###### Query String Parameters
+
+| Field        | Type    | Description                                                       |
+| ------------ | ------- | ----------------------------------------------------------------- |
+| type?        | integer | The [type of directory entry](#directory-entry-type) to filter by |
+| category_id? | integer | The [primary category](#directory-category) to filter by          |
+
+<RouteHeader method="GET" url="/channels/{channel.id}/directory-entries/list">
+  Get Some Directory Entries
+</RouteHeader>
+
+Returns a list of partial [directory entry](#directory-entry-object) objects in the given directory channel. Requires the `VIEW_CHANNEL` permission.
+
+###### Query String Parameters
+
+| Field       | Type             | Description                                            |
+| ----------- | ---------------- | ------------------------------------------------------ |
+| entity_ids? | array[snowflake] | The IDs of the directory entries to retrieve (max 100) |
+
+<RouteHeader method="GET" url="/channels/{channel.id}/directory-entries/search">
+  Search Directory Entries
+</RouteHeader>
+
+Returns a list of [directory entry](#directory-entry-object) objects in the given directory channel that match the query. Requires the `VIEW_CHANNEL` permission.
+
+###### Query String Parameters
+
+| Field        | Type    | Description                                                       |
+| ------------ | ------- | ----------------------------------------------------------------- |
+| query        | string  | The query to search for (1-100 characters)                        |
+| type?        | integer | The [type of directory entry](#directory-entry-type) to filter by |
+| category_id? | integer | The [primary category](#directory-category) to filter by          |
+
+<RouteHeader method="GET" url="/channels/{channel.id}/directory-entry/{entity_id}">
+  Get Directory Entry
+</RouteHeader>
+
+Returns a [directory entry](#directory-entry-object) object for the given entity ID in the directory channel. Requires the `VIEW_CHANNEL` permission.
+
+<RouteHeader method="POST" url="/channels/{channel.id}/directory-entry/{entity_id}">
+  Create Directory Entry
+</RouteHeader>
+
+Creates a new [directory entry](#directory-entry-object) in the given directory channel. Requires the `VIEW_CHANNEL` permission and the `MANAGE_GUILD` permission on the entity being added.
+Returns the new [directory entry](#directory-entry-object) object on success. Fires a [Guild Directory Entry Create](/topics/gateway-events#guild-directory-entry-create) Gateway event.
+
+###### JSON Parameters
+
+| Field                | Type    | Description                                                                        |
+| -------------------- | ------- | ---------------------------------------------------------------------------------- |
+| type?                | integer | The [type of directory entry](#directory-entry-type) to create (default `GUILD`)   |
+| primary_category_id? | integer | The [primary category](#directory-category) of the entry (default `UNCATEGORIZED`) |
+| description?         | ?string | The description of the entry (max 200 characters)                                  |
+
+<RouteHeader method="PATCH" url="/channels/{channel.id}/directory-entry/{entity_id}">
+  Modify Directory Entry
+</RouteHeader>
+
+Modifies an existing directory entry in the given directory channel. Requires the `VIEW_CHANNEL` permission and the `MANAGE_GUILD` permission on the entity being modified.
+Returns the updated [directory entry](#directory-entry-object) object on success. Fires a [Guild Directory Entry Update](/topics/gateway-events#guild-directory-entry-update) Gateway event.
+
+###### JSON Parameters
+
+| Field                | Type    | Description                                              |
+| -------------------- | ------- | -------------------------------------------------------- |
+| primary_category_id? | integer | The [primary category](#directory-category) of the entry |
+| description?         | string  | The description of the entry (max 200 characters)        |
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/directory-entry/{entity_id}">
+  Delete Directory Entry
+</RouteHeader>
+
+Deletes a directory entry in the given directory channel. Requires the `VIEW_CHANNEL` permission and the `MANAGE_GUILD` permission on the entity being deleted.
+Returns a 204 empty response on success. Fires a [Guild Directory Entry Delete](/topics/gateway-events#guild-directory-entry-delete) Gateway event.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/directory-entries/broadcast">
+  Get Directory Broadcast Info
+</RouteHeader>
+
+Returns the broadcast information for the given guild and directory entry type. User must be a member of the guild.
+
+###### Query String Parameters
+
+| Field      | Type    | Description                                                                    |
+| ---------- | ------- | ------------------------------------------------------------------------------ |
+| type       | integer | The [type of directory entry](#directory-entry-type) to get broadcast info for |
+| entity_id? | integer | The ID of the directory entry to get broadcast info for                        |
+
+###### Response Body
+
+| Field              | Type    | Description                                                       |
+| ------------------ | ------- | ----------------------------------------------------------------- |
+| can_broadcast      | boolean | Whether the user can broadcast in any linked directory channels   |
+| has_broadcast? ^1^ | boolean | Whether the entity has been broadcasted in any directory channels |
+
+^1^ Only included when `entity_id` is provided.
