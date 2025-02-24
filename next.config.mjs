@@ -22,6 +22,12 @@ const config = {
         destination: "/intro",
         permanent: true,
       },
+      // for convenience
+      {
+        source: "/_github",
+        destination: "https://github.com/discord-userdoccers/discord-userdoccers",
+        permanent: true,
+      }
     ];
   },
 };
