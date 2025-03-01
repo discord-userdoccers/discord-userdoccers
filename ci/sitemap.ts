@@ -139,10 +139,11 @@ for (const section in navigationLinks) {
 }
 
 const sectionSortTable: Record<string, number> = {
-  "resources": 1,
-  "topics": 2,
-  "remote-authentication": 3,
-  "interactions": 4,
+  "datamining": 1,
+  "resources": 2,
+  "topics": 3,
+  "remote-authentication": 4,
+  "interactions": 5,
 };
 
 const navigationLinksArray = Object.entries(navigationLinks)
