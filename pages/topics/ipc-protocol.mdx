@@ -1,0 +1,347 @@
+# Discord IPC (Inter-Process Communication)
+
+The Discord IPC transport is used by external applications to communicate with locally running Discord clients, and is one of two transports that can be used to communicate with a locally running client.
+
+By sending packets through a Discord IPC pipe, you can programmatically control your local Discord client, like joining voice channels, retrieving guild or user information, and more. A Discord application from the [Developer Portal](https://discord.com/developers/applications) is required.
+
+<Alert type="warn">
+  Not all commands can be utilized via the IPC transport. However, authorization for the WebSocket transport is
+  extremely limited.
+</Alert>
+
+## Connecting
+
+Discord can be on any pipe ranging from `discord-ipc-0` to `discord-ipc-9`. It is a good idea to try and connect to each one and keeping the first one you successfully connect to. For multiple clients (e.g. Stable and Canary), you might want to add a feature to manually select the pipe so you can more easily debug.
+
+<Alert type="info">
+  On Windows, the Discord IPC pipe format is `\\\\?\\pipe\\discord-ipc-0`. On macOS & Linux, it'll be kept in the folder
+  indicated by the XDG_RUNTIME_DIR, TMPDIR, TMP or TEMP envvars. If none of those exist, use `/tmp/`.
+</Alert>
+
+Once connected to the ICP socket, you can start sending the packets to begin the identification and auhentication process.
+
+## Sending/Receiving Packets
+
+Packets are sent as binary data in a simple format composed of an 8-byte header and payload. The header consists of two 32-bit unsigned integers (little endian) representing the opcode and payload length. In some languages, you must convert them as they can be architecture specific.
+
+###### IPC Opcodes
+
+| Value | Name      | Description                                                                               |
+| ----- | --------- | ----------------------------------------------------------------------------------------- |
+| 0     | HANDSHAKE | The packet is a handshake to be sent immediately after connecting                         |
+| 1     | FRAME     | The packet includes a typical payload for communication with the client                   |
+| 2     | CLOSE     | Sent when the Discord client is asking you to leave, or you want to gracefully disconnect |
+| 3     | PING      | If the Discord client sends this to you, you should reply with a `PONG` of the same data  |
+| 4     | PONG      | See `PING`                                                                                |
+
+###### Example HANDSHAKE packet
+
+```plaintext
+00000000  28000000 7B2276223A312C22 (trimmed)
+^^^^^^^^  ^^^^^^^^ ^^^^^^^^^^^^^^^^
+OPCODE 0   Length     JSON Data
+HANDSHAKE 40bytes  { " v " : 1 , "
+```
+
+###### Example Send Packet Function
+
+```js
+const sendPacket = (opcode, data) => {
+  const payload = Buffer.from(JSON.stringify(data));
+  const header = Buffer.alloc(8);
+  header.writeUInt32LE(opcode, 0);
+  header.writeUInt32LE(payload.length, 4);
+
+  ipc.write(Buffer.concat([header, payload]));
+};
+```
+
+### Authorization, and Authentication
+
+After connecting to the ICP socket, you should immediately send a handshake packet to the client. The client will respond with a `FRAME` packet containing the `READY` event. This event will contain the user's information and the client's version. Upon successful reception of this event, you can send an `AUTHORIZE` command to obtain an [OAuth2 code, which can then be exchanged for an access token](/topics/oauth2#access-token-exchange-example). Once authenticated, you can call RPC commands on behalf of the user!
+
+###### Handshake Structure
+
+| Field     | Type    | Description                                                       |
+| --------- | ------- | ----------------------------------------------------------------- |
+| v         | integer | The RPC version, current only `1`                                 |
+| client_id | string  | The client ID of the Discord application connecting to the socket |
+
+###### Example Ready Event
+
+```json
+{
+  "cmd": "DISPATCH",
+  "data": {
+    "v": 1,
+    "config": {
+      "cdn_host": "cdn.discordapp.com",
+      "api_endpoint": "//canary.discord.com/api",
+      "environment": "production"
+    },
+    "user": {
+      "id": "246877849162743818",
+      "username": "jay_taelien",
+      "discriminator": "0",
+      "global_name": "Jay",
+      "avatar": "91b7bc37e924f78625f7ea582fdbac5d",
+      "bot": false,
+      "flags": 16544,
+      "premium_type": 2
+    }
+  },
+  "evt": "READY",
+  "nonce": null
+}
+```
+
+###### RPC Authorize Example
+
+```json
+{
+  "nonce": "f48f6176-4afb-4c03-b1b8-d960861f5216",
+  "args": {
+    "client_id": "192741864418312192",
+    "scopes": ["rpc", "identify"]
+  },
+  "cmd": "AUTHORIZE"
+}
+```
+
+###### RPC Authenticate Example
+
+```json
+{
+  "nonce": "5bb10a43-1fdc-4391-9512-0c8f4aa203d4",
+  "args": {
+    "access_token": "CZhtkLDpNYXgPH9Ml6shqh2OwykChw"
+  },
+  "cmd": "AUTHENTICATE"
+}
+```
+
+### Packet Payloads
+
+Packet payloads are JSON objects containing the command you want to send to the Discord client. Incoming packets will need to be correctly parsed to obtain the JSON response.
+
+###### Outgoing Payload Structure
+
+| Field    | Type   | Description                                                                                          |
+| -------- | ------ | ---------------------------------------------------------------------------------------------------- |
+| cmd      | string | The command indicating the action of the request                                                     |
+| args     | object | The arguments coinciding with the command of the request                                             |
+| nonce    | string | A unique identifier (UUID) given to a command that will be echoed back to you upon a successful send |
+| evt? ^1^ | string | The event the app is subscribing to                                                                  |
+
+^1^ Only required when `cmd` is `SUBSCRIBE` or `UNSUBSCRIBE`.
+
+<Alert type="info">
+  The Discord IPC will echo back every command you send as a response. Use this as a lock-step feature to avoid flooding
+  messages. This can be used to validate messages such as the Presence or Subscribes.
+</Alert>
+
+###### Incoming Payload Structure
+
+| Field     | Type    | Description                                                                             |
+| --------- | ------- | --------------------------------------------------------------------------------------- |
+| cmd       | string  | The echoed command indicating the action of the response                                |
+| data      | ?object | The response data of the command                                                        |
+| nonce ^1^ | ?string | The unique identifier (UUID) of the requested command                                   |
+| evt ^2^   | ?string | The event coinciding with the incoming command, usually present on a `DISPATCH` command |
+
+^1^ Only not null in responses to commands
+
+^2^ Only not null in subscribed events, errors, and (un)subscribing events
+
+## RPC Commands and Events
+
+###### RPC Commands
+
+Commands are the means in which an app can interface with the client.
+
+| Name                                             | Description                                                     |
+| ------------------------------------------------ | --------------------------------------------------------------- |
+| DISPATCH                                         | Event dispatch                                                  |
+| AUTHORIZE                                        | Used to authorize a new client with your app                    |
+| AUTHENTICATE                                     | Used to authenticate an existing client with your app           |
+| GET_GUILD                                        | Used to retrieve guild information from the client              |
+| GET_GUILDS                                       | Used to retrieve a list of guilds from the client               |
+| GET_CHANNEL                                      | Used to retrieve channel information from the client            |
+| GET_CHANNELS                                     | Used to retrieve a list of channels for a guild from the client |
+| GET_CHANNEL_PERMISSIONS                          | Used to retrieve the permission settings for a given channel    |
+| CREATE_CHANNEL_INVITE                            | Used to create an invite link for a given channel               |
+| GET_RELATIONSHIPS                                | Used to retrieve the friend list and relationship statuses      |
+| GET_USER                                         | Used to retrieve information about a specific user              |
+| SUBSCRIBE                                        | Used to subscribe to an RPC event                               |
+| UNSUBSCRIBE                                      | Used to unsubscribe from an RPC event                           |
+| SET_USER_VOICE_SETTINGS                          | Used to change voice settings of users in voice channels        |
+| SET_USER_VOICE_SETTINGS_2                        | (Unknown)                                                       |
+| PUSH_TO_TALK                                     | Used to enable or disable push-to-talk functionality            |
+| SELECT_VOICE_CHANNEL                             | Used to join or leave a voice channel, group DM, or DM          |
+| GET_SELECTED_VOICE_CHANNEL                       | Used to get the current voice channel the client is in          |
+| SELECT_TEXT_CHANNEL                              | Used to join or leave a text channel, group DM, or DM           |
+| GET_VOICE_SETTINGS                               | Used to retrieve the client's voice settings                    |
+| SET_VOICE_SETTINGS                               | Used to set the client's voice settings                         |
+| SET_VOICE_SETTINGS_2                             | (Unknown)                                                       |
+| SET_ACTIVITY                                     | Used to update a user's Rich Presence                           |
+| SEND_ACTIVITY_JOIN_INVITE                        | Used to consent to a Rich Presence Ask to Join request          |
+| CLOSE_ACTIVITY_JOIN_REQUEST                      | Used to reject a Rich Presence Ask to Join request              |
+| ACTIVITY_INVITE_USER                             | Used to send an invite to another user for an activity          |
+| ACCEPT_ACTIVITY_INVITE                           | Used to accept an activity invite                               |
+| OPEN_INVITE_DIALOG                               | (Unknown)                                                       |
+| OPEN_SHARE_MOMENT_DIALOG                         | (Unknown)                                                       |
+| SHARE_INTERACTION                                | (Unknown)                                                       |
+| INITIATE_IMAGE_UPLOAD                            | (Unknown)                                                       |
+| SHARE_LINK                                       | (Unknown)                                                       |
+| INVITE_BROWSER                                   | (Unknown)                                                       |
+| DEEP_LINK                                        | (Unknown)                                                       |
+| CONNECTIONS_CALLBACK                             | (Unknown)                                                       |
+| BILLING_POPUP_BRIDGE_CALLBACK                    | (Unknown)                                                       |
+| BRAINTREE_POPUP_BRIDGE_CALLBACK                  | (Unknown)                                                       |
+| GIFT_CODE_BROWSER                                | (Unknown)                                                       |
+| GUILD_TEMPLATE_BROWSER                           | (Unknown)                                                       |
+| OPEN_MESSAGE                                     | Used to open a specific message or DM                           |
+| OVERLAY                                          | Used to interact with the Discord overlay                       |
+| BROWSER_HANDOFF                                  | (Unknown)                                                       |
+| SET_CERTIFIED_DEVICES                            | Used to send info about certified hardware devices              |
+| GET_IMAGE                                        | Used to fetch a user's profile picture                          |
+| SET_OVERLAY_LOCKED                               | (Unknown)                                                       |
+| OPEN_OVERLAY_ACTIVITY_INVITE                     | (Unknown)                                                       |
+| OPEN_OVERLAY_GUILD_INVITE                        | (Unknown)                                                       |
+| OPEN_OVERLAY_VOICE_SETTINGS                      | Opens the overlay settings for voice configuration              |
+| VALIDATE_APPLICATION                             | (Unknown)                                                       |
+| GET_ENTITLEMENT_TICKET                           | (Unknown)                                                       |
+| GET_APPLICATION_TICKET                           | (Unknown)                                                       |
+| START_PURCHASE                                   | Initiates a purchase transaction                                |
+| START_PREMIUM_PURCHASE                           | Initiates a premium subscription purchase                       |
+| GET_SKUS                                         | Retrieves a list of purchasable SKUs                            |
+| GET_ENTITLEMENTS                                 | Retrieves a list of owned entitlements                          |
+| GET_SKUS_EMBEDDED                                | Retrieves a list of purchasable SKUs in an embedded context     |
+| GET_ENTITLEMENTS_EMBEDDED                        | Retrieves owned entitlements in an embedded context             |
+| GET_NETWORKING_CONFIG                            | (Unknown)                                                       |
+| NETWORKING_SYSTEM_METRICS                        | (Unknown)                                                       |
+| NETWORKING_PEER_METRICS                          | (Unknown)                                                       |
+| NETWORKING_CREATE_TOKEN                          | (Unknown)                                                       |
+| USER_SETTINGS_GET_LOCALE                         | Retrieves the client’s locale, i.e. `en-US`                     |
+| SEND_GENERIC_EVENT **(deprecated)**              | (Unknown)                                                       |
+| SEND_ANALYTICS_EVENT ^1^                         | (Unknown)                                                       |
+| OPEN_EXTERNAL_LINK ^1^                           | Opens a given URL in the default web browser                    |
+| CAPTURE_LOG ^1^                                  | (Unknown)                                                       |
+| ENCOURAGE_HW_ACCELERATION ^1^                    | Suggests enabling hardware acceleration                         |
+| SET_ORIENTATION_LOCK_STATE                       | Locks or unlocks screen orientation                             |
+| GET_PLATFORM_BEHAVIORS                           | Retrieves platform-specific behaviors                           |
+| GET_SOUNDBOARD_SOUNDS                            | Retrieves available soundboard sounds                           |
+| PLAY_SOUNDBOARD_SOUND                            | Plays a soundboard sound                                        |
+| TOGGLE_VIDEO                                     | Enables or disables video in a call                             |
+| TOGGLE_SCREENSHARE                               | Enables or disables screensharing                               |
+| GET_ACTIVITY_INSTANCE_CONNECTED_PARTICIPANTS ^1^ | Retrieves users connected to a specific activity session        |
+| GET_PROVIDER_ACCESS_TOKEN ^1^                    | (Unknown)                                                       |
+| MAYBE_GET_PROVIDER_ACCESS_TOKEN ^1^              | (Unknown)                                                       |
+| NAVIGATE_TO_CONNECTIONS ^1^                      | (Unknown)                                                       |
+| INVITE_USER_EMBEDDED                             | (Unknown)                                                       |
+
+^1^ Not available from IPC transport
+
+###### RPC Events
+
+Events are payloads sent over the socket to a client that correspond to events in Discord.
+
+| Name                                       | Description                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| READY                                      | Non-subscription event sent immediately after connecting, contains server information      |
+| ERROR                                      | Non-subscription event sent when there is an error, including command responses            |
+| CURRENT_USER_UPDATE                        | (Unknown)                                                                                  |
+| CURRENT_GUILD_MEMBER_UPDATE                | (Unknown)                                                                                  |
+| GUILD_STATUS                               | Sent when a subscribed server's state changes                                              |
+| GUILD_CREATE                               | Sent when a guild is created/joined on the client                                          |
+| CHANNEL_CREATE                             | Sent when a channel is created/joined on the client                                        |
+| RELATIONSHIP_UPDATE                        | Sent when a user's relationships update                                                    |
+| VOICE_CHANNEL_SELECT                       | Sent when the client joins a voice channel                                                 |
+| VOICE_STATE_CREATE                         | Sent when a user joins a subscribed voice channel                                          |
+| VOICE_STATE_DELETE                         | Sent when a user parts a subscribed voice channel                                          |
+| VOICE_STATE_UPDATE                         | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)  |
+| VOICE_SETTINGS_UPDATE                      | Sent when the client's voice settings update                                               |
+| VOICE_SETTINGS_UPDATE_2                    | (Unknown)                                                                                  |
+| VOICE_CONNECTION_STATUS                    | Sent when the client's voice connection status changes                                     |
+| SPEAKING_START                             | Sent when a user in a subscribed voice channel speaks                                      |
+| SPEAKING_STOP                              | Sent when a user in a subscribed voice channel stops speaking                              |
+| GAME_JOIN                                  | (Unknown)                                                                                  |
+| GAME_SPECTATE                              | (Unknown)                                                                                  |
+| ACTIVITY_JOIN                              | Sent when the user clicks a Rich Presence join invite in chat to join a game               |
+| ACTIVITY_JOIN_REQUEST                      | Sent when the user receives a Rich Presence Ask to Join request                            |
+| ACTIVITY_SPECTATE                          | Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game       |
+| ACTIVITY_INVITE                            | (Unknown)                                                                                  |
+| ACTIVITY_PIP_MODE_UPDATE                   | (Unknown)                                                                                  |
+| ACTIVITY_LAYOUT_MODE_UPDATE                | (Unknown)                                                                                  |
+| THERMAL_STATE_UPDATE                       | (Unknown)                                                                                  |
+| ORIENTATION_UPDATE                         | For mobile devices, indicates a change in orientation of the screen                        |
+| ACTIVITY_INSTANCE_PARTICIPANTS_UPDATE      | (Unknown)                                                                                  |
+| NOTIFICATION_CREATE                        | Sent when the client receives a notification (mention or new message in eligible channels) |
+| MESSAGE_CREATE                             | Sent when a message is created in a subscribed text channel                                |
+| MESSAGE_UPDATE                             | Sent when a message is updated in a subscribed text channel                                |
+| MESSAGE_DELETE                             | Sent when a message is deleted in a subscribed text channel                                |
+| OVERLAY                                    | (Unknown)                                                                                  |
+| OVERLAY_UPDATE                             | (Unknown)                                                                                  |
+| ENTITLEMENT_CREATE                         | (Unknown)                                                                                  |
+| ENTITLEMENT_DELETE                         | (Unknown)                                                                                  |
+| VOICE_CHANNEL_EFFECT_SEND                  | (Unknown)                                                                                  |
+| VOICE_CHANNEL_EFFECT_RECENT_EMOJI          | (Unknown)                                                                                  |
+| VOICE_CHANNEL_EFFECT_TOGGLE_ANIMATION_TYPE | (Unknown)                                                                                  |
+| SCREENSHARE_STATE_UPDATE                   | (Unknown)                                                                                  |
+| VIDEO_STATE_UPDATE                         | (Unknown)                                                                                  |
+
+## Errors
+
+###### Critical Errors
+
+Critical errors (such as protocol or handshake) will be sent as a `CLOSE` packet, with a JSON object containing a numeric code and human-friendly message.
+
+| Code | Name              |
+| ---- | ----------------- |
+| 1000 | CLOSE_NORMAL      |
+| 1003 | CLOSE_UNSUPPORTED |
+| 1006 | CLOSE_ABNORMAL    |
+| 4000 | INVALID_CLIENTID  |
+| 4001 | INVALID_ORIGIN    |
+| 4002 | RATELIMITED       |
+| 4003 | TOKEN_REVOKED     |
+| 4004 | INVALID_VERSION   |
+| 4005 | INVALID_ENCODING  |
+
+###### Non-critical Errors
+
+Non-critical errors will be sent as a regular response, but with an evt of `ERROR` and the data being an object with a numeric code, and human friendly message
+
+| Code | Name                               |
+| ---- | ---------------------------------- |
+| 4006 | INVALID_PERMISSIONS                |
+| 4007 | INVALID_CLIENTID                   |
+| 4008 | INVALID_ORIGIN                     |
+| 4009 | INVALID_TOKEN                      |
+| 4010 | INVALID_USER                       |
+| 4011 | INVALID_INVITE                     |
+| 4012 | INVALID_ACTIVITY_JOIN_REQUEST      |
+| 4013 | INVALID_LOBBY                      |
+| 4014 | INVALID_LOBBY_SECRET               |
+| 4015 | INVALID_ENTITLEMENT                |
+| 4016 | INVALID_GIFT_CODE                  |
+| 5000 | OAUTH2_ERROR                       |
+| 5001 | SELECT_CHANNEL_TIMED_OUT           |
+| 5002 | GET_GUILD_TIMED_OUT                |
+| 5003 | SELECT_VOICE_FORCE_REQUIRED        |
+| 5004 | CAPTURE_SHORTCUT_ALREADY_LISTENING |
+| 5005 | INVALID_ACTIVITY_SECRET            |
+| 5006 | NO_ELIGIBLE_ACTIVITY               |
+| 5008 | PURCHASE_CANCELED                  |
+| 5009 | PURCHASE_ERROR                     |
+| 5010 | UNAUTHORIZED_FOR_ACHIEVEMENT       |
+| 5011 | RATE_LIMITED                       |
+
+###### Example Error
+
+```json
+{
+  "code": 4000,
+  "message": "Invalid Client ID"
+}
+```
