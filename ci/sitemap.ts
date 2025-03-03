@@ -83,7 +83,13 @@ for (const file of files) {
   const sectionList = navigationLinks[section];
 
   sectionList.items![link] ??= {
-    name: parsed.data.name ?? parsed.content.trim().split("\n").find((line) => line.startsWith("#"))?.replace("# ", ""),
+    name:
+      parsed.data.name ??
+      parsed.content
+        .trim()
+        .split("\n")
+        .find((line) => line.startsWith("#"))
+        ?.replace("# ", ""),
     link: `/${file}`,
     subLinks: [],
     sort: parsed.data.sort ?? 99999,

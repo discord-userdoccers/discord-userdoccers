@@ -169,7 +169,7 @@ Further complicating things, some optional fields may be omitted if their value 
 
 | Value       | Name                                   | Description                                                                                                                                                | Public  |
 | ----------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| ~~1 << 1~~  | ~~EMBEDDED_RELEASED~~                  | ~~Embedded application is released to the public~~ (see [release phases](#embedded-activity-release-phase))                                                | ~~Yes~~ |
+| 1 << 1      | EMBEDDED_RELEASED                      | Embedded application is released to the public (see also [release phases](#embedded-activity-release-phase))                                               | Yes     |
 | 1 << 2      | MANAGED_EMOJI                          | Application can create managed emoji                                                                                                                       | No      |
 | 1 << 3      | EMBEDDED_IAP                           | Embedded application can use in-app purchases                                                                                                              | Yes     |
 | 1 << 4      | GROUP_DM_CREATE                        | Application can create group DMs without limit                                                                                                             | No      |
@@ -178,6 +178,7 @@ Further complicating things, some optional fields may be omitted if their value 
 | 1 << 7      | GAME_PROFILE_DISABLED                  | Application has its game profile page disabled                                                                                                             | Yes     |
 | 1 << 8      | PUBLIC_OAUTH2_CLIENT                   | Application's OAuth2 credentials are public                                                                                                                | Yes     |
 | 1 << 9      | CONTEXTLESS_ACTIVITY                   | Embedded application's activity can be launched without a context                                                                                          | Yes     |
+| 1 << 10     | SOCIAL_LAYER_INTEGRATION_LIMITED       | Application has limited access to the social layer SDK                                                                                                     | Yes     |
 | ~~1 << 8~~  | ~~ALLOW_ASSETS~~                       | ~~Application can use activity assets~~                                                                                                                    | ~~No~~  |
 | ~~1 << 9~~  | ~~ALLOW_ACTIVITY_ACTION_SPECTATE~~     | ~~Application can enable spectating activities~~                                                                                                           | ~~No~~  |
 | ~~1 << 10~~ | ~~ALLOW_ACTIVITY_ACTION_JOIN_REQUEST~~ | ~~Application can enable activity join requests~~                                                                                                          | ~~No~~  |
@@ -478,6 +479,7 @@ The values of this enum are currently unknown. Help us by figuring them out and 
     "default_orientation_lock_state": 2,
     "tablet_default_orientation_lock_state": 1,
     "requires_age_gate": false,
+    "legacy_responsive_aspect_ratio": false,
     "premium_tier_requirement": null,
     "free_period_starts_at": null,
     "free_period_ends_at": null,
@@ -625,6 +627,7 @@ Mapped URLs are available at `<application_id>.discordsays.com/.proxy/<prefix>`.
 | default_orientation_lock_state            | integer                                                                                               | The default [orientation lock state](#embedded-activity-orientation-lock-state-type) for the activity on mobile  |
 | tablet_default_orientation_lock_state     | integer                                                                                               | The default [orientation lock state](#embedded-activity-orientation-lock-state-type) for the activity on tablets |
 | requires_age_gate                         | boolean                                                                                               | Whether the activity is age gated                                                                                |
+| legacy_responsive_aspect_ratio            | boolean                                                                                               | Whether the activity uses a responsive aspect ratio instead of a dynamic aspect ratio                            |
 | premium_tier_requirement **(deprecated)** | ?integer                                                                                              | The minimum [guild premium tier](/resources/guild#premium-tier) required to use the activity, if any             |
 | free_period_starts_at **(deprecated)**    | ?ISO8601 timestamp                                                                                    | When the current free period for the activity starts, if any                                                     |
 | free_period_ends_at **(deprecated)**      | ?ISO8601 timestamp                                                                                    | When the current free period for the activity ends, if any                                                       |
@@ -686,6 +689,7 @@ Mapped URLs are available at `<application_id>.discordsays.com/.proxy/<prefix>`.
   "default_orientation_lock_state": 2,
   "tablet_default_orientation_lock_state": 1,
   "requires_age_gate": false,
+  "legacy_responsive_aspect_ratio": false,
   "premium_tier_requirement": null,
   "free_period_starts_at": null,
   "free_period_ends_at": null,
@@ -891,6 +895,7 @@ Returns a list of [application](#application-object) objects that the current us
         "default_orientation_lock_state": 1,
         "tablet_default_orientation_lock_state": 1,
         "requires_age_gate": false,
+        "legacy_responsive_aspect_ratio": false,
         "premium_tier_requirement": null,
         "free_period_starts_at": null,
         "free_period_ends_at": null,
@@ -1293,27 +1298,43 @@ Returns a list of [detectable application](#detectable-application-structure) ob
 
 ###### Detectable Application Structure
 
-| Field                       | Type                                                                   | Description                                                                                                                                                                     |
-| --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id                          | snowflake                                                              | The ID of the application                                                                                                                                                       |
-| name                        | string                                                                 | The name of the application                                                                                                                                                     |
-| aliases?                    | array[string]                                                          | Other names the application's game is associated with                                                                                                                           |
-| executables?                | array[[application executable](#application-executable-object) object] | The unique executables of the application's game                                                                                                                                |
-| hook                        | boolean                                                                | Whether the Discord client is allowed to hook into the application's game directly                                                                                              |
-| overlay?                    | boolean                                                                | Whether the application's game supports the [Discord overlay](https://support.discord.com/hc/en-us/articles/217659737-Game-Overlay-101) (default false)                         |
-| overlay_methods?            | integer                                                                | The [methods of overlaying](#overlay-method-flags) that the application's game supports                                                                                         |
-| overlay_warn?               | boolean                                                                | Whether the [Discord overlay](https://support.discord.com/hc/en-us/articles/217659737-Game-Overlay-101) is known to be problematic with this application's game (default false) |
-| overlay_compatibility_hook? | boolean                                                                | Whether to use the compatibility hook for the overlay (default false)                                                                                                           |
+| Field                      | Type                                                                   | Description                                                                                                                                                                     |
+| -------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                         | snowflake                                                              | The ID of the application                                                                                                                                                       |
+| name                       | string                                                                 | The name of the application                                                                                                                                                     |
+| aliases                    | array[string]                                                          | Other names the application's game is associated with                                                                                                                           |
+| executables                | array[[application executable](#application-executable-object) object] | The unique executables of the application's game                                                                                                                                |
+| themes                     | array[string]                                                          | The themes of the application's game                                                                                                                                            |
+| hook                       | boolean                                                                | Whether the Discord client is allowed to hook into the application's game directly                                                                                              |
+| overlay                    | boolean                                                                | Whether the application's game supports the [Discord overlay](https://support.discord.com/hc/en-us/articles/217659737-Game-Overlay-101) (default false)                         |
+| overlay_methods            | ?integer                                                               | The [methods of overlaying](#overlay-method-flags) that the application's game supports                                                                                         |
+| overlay_warn               | boolean                                                                | Whether the [Discord overlay](https://support.discord.com/hc/en-us/articles/217659737-Game-Overlay-101) is known to be problematic with this application's game (default false) |
+| overlay_compatibility_hook | boolean                                                                | Whether to use the compatibility hook for the overlay (default false)                                                                                                           |
 
 ###### Example Detectable Application
 
 ```json
 {
-  "aliases": ["PUBG"],
+  "aliases": ["PUBG: BATTLEGROUNDS", "PUBG"],
   "executables": [
     {
       "is_launcher": false,
+      "name": "win64/tslgame_be.exe",
+      "os": "win32"
+    },
+    {
+      "is_launcher": false,
+      "name": "win64/tslgame.exe",
+      "os": "win32"
+    },
+    {
+      "is_launcher": false,
       "name": "tslgame.exe",
+      "os": "win32"
+    },
+    {
+      "is_launcher": false,
+      "name": "win64/tslgame_uc.exe",
       "os": "win32"
     },
     {
@@ -1326,7 +1347,10 @@ Returns a list of [detectable application](#detectable-application-structure) ob
   "id": "356873622985506820",
   "name": "PLAYERUNKNOWN'S BATTLEGROUNDS",
   "overlay": true,
-  "overlay_compatibility_hook": true
+  "overlay_compatibility_hook": true,
+  "overlay_methods": null,
+  "overlay_warn": false,
+  "themes": ["Action", "Warfare"]
 }
 ```
 
@@ -1376,12 +1400,12 @@ Returns an object representing additional safety disclosures for the application
 
 ###### Application Disclosure Type
 
-| Value | Name                             | Description                                      |
-| ----- | -------------------------------- | ------------------------------------------------ |
-| 0     | UNSPECIFIED_DISCLOSURE           | Unspecified disclosure                           |
-| 1     | IP_LOCATION                      | Application may access the user's IP address     |
-| 2     | DISPLAYS_ADVERTISEMENTS          | Application may display advertisements           |
-| 3     | PARTNER_SDK_DATA_SHARING_MESSAGE | Application's game utilizes the social layer SDK |
+| Value | Name                             | Description                                                                                                  |
+| ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 0     | UNSPECIFIED_DISCLOSURE           | Unspecified disclosure                                                                                       |
+| 1     | IP_LOCATION                      | Application may access the user's IP address                                                                 |
+| 2     | DISPLAYS_ADVERTISEMENTS          | Application may display advertisements                                                                       |
+| 3     | PARTNER_SDK_DATA_SHARING_MESSAGE | Application's game uses the social layer SDK's messaging features, which surface in-game messages on Discord |
 
 ###### Example Response
 
