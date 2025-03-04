@@ -1,19 +1,82 @@
-# Discord IPC Protocol
+# Discord IPC
 
-The Discord IPC transport is used by external applications to communicate with locally running Discord clients, and is one of two transports that can be used to communicate with a locally running client.
+Discord contains multiple methods of inter-process communication to send messages to locally running Discord clients via two transports, allowing the remote execution of specific commands to interface with the client. This powers functions you may be familiar with, like clicking an invite link in the browser prompting the running Discord client to open with the invite modal.
 
-By sending packets through a Discord IPC pipe, you can programmatically control your local Discord client, like joining voice channels, retrieving guild or user information, and more. A Discord application from the [Developer Portal](https://discord.com/developers/applications) is required.
+## WebSocket Transport
 
-<Alert type="warn">
+All Discord clients have an RPC server running that allows control over local Discord clients. The local RPC server runs on localhost (`127.0.0.1`) and is set up to process WebSocket connections and proxy API requests.
 
-Not all commands can be utilized via the IPC transport. However, authorization for the WebSocket transport is
-extremely limited.
+### Connecting
 
-</Alert>
+For WebSocket connections, the connection is always in the form of `ws://127.0.0.1:PORT/?v=VERSION`, where `VERSION` is the version of the RPC server. When establishing a WebSocket connection, Discord verifies the Origin header on connection to prevent spoofing. In almost all cases, you will be instantly disconnected if the Origin does not match `https://discord.com`.
 
-## Connecting
+###### RPC Server Ports
+
+The port range for Discord's local RPC server is [`6463`, `6472`]. Since the RPC server runs locally, there's a chance it might not be able to obtain its preferred port when it tries to bind to one. For this reason, the local RPC server will pick one port out of a range of these 10 ports, trying sequentially until it can bind to one.
+
+### Usage
+
+Upon certain events, like clicking an invite link from a browser, Discord will open a WebSocket connection to the local RPC server. This connection is used to send commands to the client via JSON WebSocket messages. In this case, Discord would send the `INVITE_BROWSER` command.
+
+###### Example Invite Browser Payload
+
+```json
+{
+  "cmd": "INVITE_BROWSER",
+  "args": {
+    "code": "fortnite"
+  },
+  "nonce": "5c283c7d-524a-4090-b04b-ea0fb023e44c"
+}
+```
+
+###### Example Invite Browser Response
+
+The local client will receive and use the information from this response to display the invite modal.
+
+```json
+{
+  "cmd": "INVITE_BROWSER",
+  "data": {
+    "invite": {
+      "type": 0,
+      "code": "fortnite",
+      "expires_at": null,
+      "flags": 2,
+      "guild": {
+        "id": "322850917248663552",
+        "name": "Official Fortnite",
+        "splash": "36d97e5280417b1d25780c0fc0598224",
+        "banner": "df5efad2248597e5e039bd2a6e1dcd7d",
+        "description": "The Official Fortnite Discord Server! Join to follow news & updates, LFG, and chat about Fortnite Battle Royale.",
+        "icon": "cf4a480be58c0ff7ce0b06f81a72a305",
+        "features": [ ... ],
+        "verification_level": 3,
+        "vanity_url_code": "fortnite",
+        "nsfw_level": 0,
+        "nsfw": false,
+        "premium_subscription_count": 560
+      },
+      "guild_id": "322850917248663552",
+      "channel": { "id": "339171072832176138", "type": 5, "name": "announcements" },
+      "approximate_member_count": 1204836,
+      "approximate_presence_count": 268807,
+      "is_nickname_changeable": true
+    },
+    "code": "fortnite"
+  },
+  "evt": null,
+  "nonce": "5c283c7d-524a-4090-b04b-ea0fb023e44c"
+}
+```
+
+## Native IPC Transport
+
+### Connecting Manually
 
 Discord can be on any pipe ranging from `discord-ipc-0` to `discord-ipc-9`. It is a good idea to try and connect to each one and keeping the first one you successfully connect to. For multiple clients (e.g. Stable and Canary), you might want to add a feature to manually select the pipe so you can more easily debug.
+
+By sending packets through the native Discord IPC pipe, you can programmatically control your local Discord client, like joining voice channels, retrieving guild or user information, and more. A Discord application from the [Developer Portal](https://discord.com/developers/applications) is required.
 
 <Alert type="info">
 
@@ -24,7 +87,14 @@ indicated by the `XDG_RUNTIME_DIR`, `TMPDIR`, `TMP` or `TEMP` envvars. If none o
 
 Once connected to the ICP socket, you can start sending the packets to begin the identification and authentication process.
 
-## Sending and Receiving Packets
+<Alert type="warn">
+
+Not all commands can be sent via the native IPC transport. However, authorization for the WebSocket transport is
+extremely limited and mainly utilized by Discord itself.
+
+</Alert>
+
+### Sending and Receiving Packets
 
 Packets are sent as binary data in a simple format composed of an 8-byte header and payload. The header consists of two 32-bit unsigned integers (little endian) representing the opcode and payload length. In some languages, you must convert them as they can be architecture specific.
 
@@ -68,7 +138,7 @@ After connecting to the ICP socket, you should immediately send a handshake pack
 
 | Field     | Type    | Description                                                       |
 | --------- | ------- | ----------------------------------------------------------------- |
-| v         | integer | The RPC version, current only `1`                                 |
+| v         | integer | The RPC version, currently only `1`                               |
 | client_id | string  | The client ID of the Discord application connecting to the socket |
 
 ###### Example Ready Event
@@ -245,8 +315,11 @@ Commands are the means in which an app can interface with the client.
 | MAYBE_GET_PROVIDER_ACCESS_TOKEN ^1^              | Used for the Amazon Music activity so it can get the access token from Amazon connection       |
 | NAVIGATE_TO_CONNECTIONS ^1^                      | Used for Amazon Music, opens the connections page in settings                                  |
 | INVITE_USER_EMBEDDED                             | (Unknown)                                                                                      |
+| INVITE_BROWSER ^2^                               | Used to open an invite modal for a guild invite in the client                                  |
 
-^1^ Not available from IPC transport
+^1^ Used by Activities, not available from native IPC transport
+
+^2^ Used by the WebSocket transport
 
 ###### RPC Events
 
