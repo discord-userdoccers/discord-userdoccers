@@ -544,6 +544,51 @@ This object is more verbose than needed as it is used internally by Discord empl
 | RUNNING   | The backend is currently processing |
 | EXTRACTED | The backend has been processed      |
 
+### User Survey Object
+
+A user survey.
+
+###### User Survey Structure
+
+| Field              | Type                      | Description                                                              |
+| ------------------ | ------------------------- | ------------------------------------------------------------------------ |
+| id                 | snowflake                 | The ID of the survey                                                     |
+| key                | snowflake                 | The ID of the survey                                                     |
+| prompt             | string                    | The title of the survey                                                  |
+| cta                | string                    | The call-to-action text                                                  |
+| url                | string                    | The URL to the survey                                                    |
+| guild_requirements | array[string]             | [User requirements](#survey-requirement-type) for the survey to be shown |
+| guild_size         | array[?integer, ?integer] | The guild member count requirements (min, max)                           |
+| guild_permissions  | array[string]             | The [guild permissions bitwise value](/topics/permissions) requirements  |
+
+###### Survey Requirement Type
+
+| Value             | Description                                                                 | Field               |
+| ----------------- | --------------------------------------------------------------------------- | ------------------- |
+| IS_OWNER          | The user must be the owner of a guild                                       | -                   |
+| IS_ADMIN          | The user must have the `ADMINISTRATOR` permission in any guild              | -                   |
+| IS_COMMUNITY      | The user must be in a guild with the [`COMMUNITY` feature](#guild-features) | -                   |
+| GUILD_SIZE        | The user must be in a guild with a member count in a given range            | `guild_size`        |
+| GUILD_SIZE_ALL    | All guilds the user is in must have a member count in a given range         | `guild_size`        |
+| IS_HUB            | The user must be in a guild with the [`HUB` feature](#guild-features)       | -                   |
+| IS_VIEWING        | The user must be currently viewing a guild                                  | -                   |
+| GUILD_PERMISSIONS | The user must have the given permissions in any guild                       | `guild_permissions` |
+
+###### Example User Survey
+
+```json
+{
+  "id": "1301267751645483122",
+  "key": "1301267751645483122",
+  "prompt": "Share your experience with Discord",
+  "cta": "Take the survey!",
+  "url": "https://discord.sjc1.qualtrics.com/jfe/form/SV_123456",
+  "guild_requirements": [],
+  "guild_size": [null, null],
+  "guild_permissions": []
+}
+```
+
 ### Connection Object
 
 The connection object that the user has attached.
@@ -1451,6 +1496,45 @@ See [the official support page](https://support.discord.com/hc/en-us/articles/36
 | Messages   | All user messages                            |
 | Programs   | Official Discord programs (e.g. partner)     |
 | Servers    | All guilds the user is currently a member of |
+
+<RouteHeader method="GET" url="/users/@me/survey">
+  Get User Survey
+</RouteHeader>
+
+Returns the current user's active survey.
+
+<Alert type="info">
+
+The active survey should be cached and refetched at most once per day.
+
+</Alert>
+
+###### Query String Params
+
+| Field                | Type      | Description                                                                 |
+| -------------------- | --------- | --------------------------------------------------------------------------- |
+| disable_auto_seen?   | boolean   | Whether to prevent automatically marking the survey as seen (default false) |
+| survey_override? ^1^ | snowflake | The ID of the survey to return                                              |
+
+^1^ Only usable by Discord employees.
+
+###### Response Body
+
+| Field  | Type                                       | Description                      |
+| ------ | ------------------------------------------ | -------------------------------- |
+| survey | ?[user survey](#user-survey-object) object | The user's active survey, if any |
+
+<RouteHeader method="POST" url="/users/@me/survey/{survey.id}/seen">
+  Acknowledge User Survey
+</RouteHeader>
+
+Marks a user survey as seen. Returns a 204 empty response on success.
+
+<Alert type="info">
+
+When a survey is marked as seen, it will not be shown to the user again.
+
+</Alert>
 
 <RouteHeader method="GET" url="/users/@me/notes">
   Get User Notes
