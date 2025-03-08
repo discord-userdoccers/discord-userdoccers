@@ -74,6 +74,101 @@ Returns an array of [voice region](#voice-region-object) objects that can be use
 
 Returns a list of [voice region](#voice-region-object) objects that can be used when setting a [voice channel's `rtc_region`](/resources/channel#channel-object). Unlike the similar [Get Voice Regions](#get-voice-regions) route, this returns VIP servers when the guild is VIP-enabled.
 
+<RouteHeader method="PUT" url="/voice/public-keys">
+  Upload Voice Public Key
+</RouteHeader>
+
+Uploads a persistent public key used for voice encryption. Returns a 204 empty response on success.
+
+<Collapsible title="More Information" description="How do I generate and use this key?" icon="question">
+
+This key is used for persistent keypair signatures in the DAVE protocol. For further details, see the [whitepaper](https://daveprotocol.com/#persistent-signature-keypairs).
+
+Generating a keypair and signature can be done with the following Python pseudocode:
+
+```python
+import base64
+import requests
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+
+API_ENDPOINT = 'https://discord.com/api/v9'
+private_key = ec.generate_private_key(ec.SECP256R1())
+public_key = private_key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.CompressedPoint)
+
+# https://datatracker.ietf.org/doc/html/rfc9000#name-variable-length-integer-enc
+def encode_quic_varint(data):
+    length = len(data)
+    if length < 2**6:
+        return bytes([length]) + data
+    elif length < 2**14:
+        return bytes([(1 << 6) | (length >> 8), length & 0xFF]) + data
+    elif length < 2**30:
+        return bytes([(2 << 6) | (length >> 24), (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]) + data
+    else:
+        return bytes([(3 << 6) | (length >> 56), (length >> 48) & 0xFF, (length >> 40) & 0xFF, (length >> 32) & 0xFF, (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]) + data
+
+# https://datatracker.ietf.org/doc/html/rfc9420/#name-signing
+def sign_with_label(private_key, label, content) -> bytes:
+    label_bytes = b'MLS 1.0 ' + label.encode('ascii')
+    sign_content = encode_quic_varint(label_bytes) + encode_quic_varint(content)
+    signature = private_key.sign(sign_content, ec.ECDSA(hashes.SHA256()))
+    return signature
+
+# The session ID is the static_client_session_id value from the READY payload
+session_id = '00000000-0000-0000-0000-000000000000'.encode('ascii')
+signature = sign_with_label(private_key, "DiscordSelfSignature", session_id + b':' + public_key)
+
+data = {
+    'key_version': 1,
+    'public_key': 'data:application/octet-stream;base64,' + base64.b64encode(public_key).decode('utf-8'),
+    'signature': 'data:application/octet-stream;base64,' + base64.b64encode(signature).decode('utf-8'),
+}
+headers = {
+    'authorization': 'token',
+    # Rest of headers here
+}
+
+r = requests.put('%s/voice/public-keys' % API_ENDPOINT, json=data, headers=headers)
+r.raise_for_status()
+```
+
+</Collapsible>
+
+###### JSON Params
+
+| Field       | Type                            | Description                                                                                                                                        |
+| ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| key_version | integer                         | The version of the persistent key protocol (currently 1)                                                                                           |
+| public_key  | [cdn data](/reference#cdn-data) | The X9.62 P256 public key data                                                                                                                     |
+| signature   | [cdn data](/reference#cdn-data) | An MLS style self-signature of the public key data with application label `DiscordSelfSignature` and content `static_client_session_id:public_key` |
+
+<RouteHeader method="POST" url="/voice/{user.id}/match-public-key">
+  Verify Voice Public Key
+</RouteHeader>
+
+Verifies a user's persistent public key for voice encryption against their uploaded ones.
+
+<Collapsible title="More Information" description="Where do I get this key?" icon="question">
+
+This key is used by another user to encrypt voice data. For further details, see the [whitepaper](https://daveprotocol.com/#persistent-verification).
+
+</Collapsible>
+
+###### JSON Params
+
+| Field       | Type                            | Description                                              |
+| ----------- | ------------------------------- | -------------------------------------------------------- |
+| key_version | integer                         | The version of the persistent key protocol (currently 1) |
+| public_key  | [cdn data](/reference#cdn-data) | The X9.62 P256 public key data                           |
+
+###### Response Body
+
+| Field    | Type    | Description                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------- |
+| is_match | boolean | Whether the public key matches one of the user's uploaded persistent public keys |
+
 <RouteHeader method="GET" url="/voice-filters/catalog">
   Get Voice Filters Catalog
 </RouteHeader>
