@@ -140,15 +140,15 @@ A 2-point gradient with a `primary` and `secondary` color.
 
 ###### Quest Task Event Name
 
-| Value               | Description                                                                                                                                           |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| STREAM_ON_DESKTOP   | The user must play and stream the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session)) |
-| PLAY_ON_DESKTOP     | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))            |
-| PLAY_ON_DESKTOP_V2  | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))            |
-| PLAY_ON_XBOX        | The user must play the game on Xbox for a certain duration                                                                                            |
-| PLAY_ON_PLAYSTATION | The user must play the game on PlayStation for a certain duration                                                                                     |
-| WATCH_VIDEO         | The user must watch a video for a certain duration                                                                                                    |
-| PLAY_ACTIVITY       | The user must play the embedded activity for a certain duration                                                                                       |
+| Value               | Description                                                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| STREAM_ON_DESKTOP   | The user must play and stream the game on desktop to at least one other user for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session)) |
+| PLAY_ON_DESKTOP     | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))                                       |
+| PLAY_ON_DESKTOP_V2  | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))                                       |
+| PLAY_ON_XBOX        | The user must play the game on Xbox for a certain duration                                                                                                                       |
+| PLAY_ON_PLAYSTATION | The user must play the game on PlayStation for a certain duration                                                                                                                |
+| WATCH_VIDEO         | The user must watch a video for a certain duration                                                                                                                               |
+| PLAY_ACTIVITY       | The user must play the embedded activity for a certain duration                                                                                                                  |
 
 ###### Quest Rewards Config Structure
 
@@ -491,7 +491,7 @@ An object that holds the quest's reward code.
 | platform   | string            | The [platform this redeem code applies to](#quest-platform-type)                                                                                                   |
 | user_id    | snowflake         | The ID of the user who this code belongs to                                                                                                                        |
 | claimed_at | ISO8601 timestamp | When the user claimed the quest's reward                                                                                                                           |
-| tier       | integer           | Which reward tier the code belongs to, if the quest's [`assignment_method`](#quest-rewards-config-structure) is set to [`TIERED`](#quest-reward-assignment-method) |
+| tier       | ?integer          | Which reward tier the code belongs to, if the quest's [`assignment_method`](#quest-rewards-config-structure) is set to [`TIERED`](#quest-reward-assignment-method) |
 
 ###### Example Quest Reward Code
 
@@ -510,19 +510,33 @@ An object that holds the quest's reward code.
 
 Claimed rewards for the quest.
 
-##### Quest Claimed Reward Structure
+###### Quest Claimed Reward Structure
 
-| Field        | Type                                                       | Description                                                    |
-| ------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| claimed_at   | ISO8601 timestamp                                          | When the reward was claimed                                    |
-| entitlements | array[entitlement object]                                  | The entitlements the user received                             |
-| errors       | array[[JSON error](/topics/opcodes-and-status-codes#json)] | An array of errors that have occured while claiming the reward |
+| Field                           | Type                                                                                                 | Description                                       |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| claimed_at                      | ISO8601 timestamp                                                                                    | When the reward was claimed                       |
+| entitlement_expiration_metadata | map[snowflake, [entitlement expiration metadata](#entitlement-expiration-metadata-structure) object] | The expiration metadata for the entitlements      |
+| entitlements                    | array[entitlement object]                                                                            | The entitlements the user received                |
+| errors                          | array[[JSON error](/topics/opcodes-and-status-codes#json)]                                           | The errors that occured while claiming the reward |
 
-##### Example Quest Claimed Reward
+###### Entitlement Expiration Metadata Structure
+
+| Field      | Type    | Description                                                                        |
+| ---------- | ------- | ---------------------------------------------------------------------------------- |
+| extended   | boolean | Whether the entitlement expiration has been extended due to a premium subscription |
+| extendable | boolean | Whether the entitlement expiration can be extended due to a premium subscription   |
+
+###### Example Quest Claimed Reward
 
 ```json
 {
   "claimed_at": "2024-04-17T23:30:41.000321+00:00",
+  "entitlement_expiration_metadata": {
+    "1230299425620885624": {
+      "extended": false,
+      "extendable": true
+    }
+  },
   "entitlements": [
     {
       "id": "1230299425620885624",
@@ -530,6 +544,8 @@ Claimed rewards for the quest.
       "application_id": "1242265603276800000",
       "user_id": "222069018507345921",
       "deleted": false,
+      "starts_at": null,
+      "ends_at": null,
       "type": 10,
       "tenant_metadata": {},
       "gift_code_flags": 0,
@@ -543,10 +559,56 @@ Claimed rewards for the quest.
 ## Endpoints
 
 <RouteHeader method="GET" url="/quests/@me">
-  Get Available Quests
+  Get Current Quests
 </RouteHeader>
 
-Returns a list of all available [quests](#quest-object).
+Returns information on the current [quests](#quest-object) for the current user.
+
+###### Response Body
+
+| Field           | Type                                 | Description                                    |
+| --------------- | ------------------------------------ | ---------------------------------------------- |
+| quests          | array[[quest](#quest-object) object] | The current quests for the user                |
+| excluded_quests | array[[quest](#quest-object) object] | The quests that the user cannot participate in |
+
+<RouteHeader method="GET" url="/quests/@me/claimed">
+  Get Claimed Quests
+</RouteHeader>
+
+Returns information on the [claimed quests](#claimed-quest-object) for the current user.
+
+###### Response Body
+
+| Field  | Type                                                 | Description                     |
+| ------ | ---------------------------------------------------- | ------------------------------- |
+| quests | array[[claimed quest](#claimed-quest-object) object] | The claimed quests for the user |
+
+<RouteHeader method="GET" url="/quests/decision">
+  Get Quest Placement
+</RouteHeader>
+
+Returns the quest that should be shown to the user in a specific placement.
+
+###### Query Params
+
+| Field                        | Type    | Description                                                            |
+| ---------------------------- | ------- | ---------------------------------------------------------------------- |
+| placement                    | integer | The [quest placement area](#quest-placement-area) to get the quest for |
+| client_heartbeat_session_id? | string  | A client-generated UUID unique to the current session                  |
+
+###### Quest Placement Area
+
+| Value | Name                       | Description              |
+| ----- | -------------------------- | ------------------------ |
+| 1     | DESKTOP_ACCOUNT_PANEL_AREA | Account panel on desktop |
+| 2     | MOBILE_HOME_DOCK_AREA      | Home dock on mobile      |
+
+###### Response Body
+
+| Field      | Type                           | Description                   |
+| ---------- | ------------------------------ | ----------------------------- |
+| request_id | string                         | The decision ID               |
+| quest      | ?[quest](#quest-object) object | The quest to show to the user |
 
 <RouteHeader method="POST" url="/quests/{quest.id}/enroll">
   Accept Quest
@@ -564,7 +626,7 @@ Accepts a quest and returns a [quest user status](#quest-user-status-object) obj
   Claim Quest Reward
 </RouteHeader>
 
-Claims the quest's rewards, setting the `completed_at` and `claimed_at` fields of the [quest user status](#quest-user-status-object) to the current timestamp, and returns the [claimed rewards](#quest-claimed-reward-object).
+Claims the quest's rewards, setting the `completed_at` and `claimed_at` fields of the [quest user status](#quest-user-status-object) to the current timestamp. Returns a [quest claimed reward](#quest-claimed-reward-object) object on success.
 
 ###### JSON Params
 
@@ -573,40 +635,28 @@ Claims the quest's rewards, setting the `completed_at` and `claimed_at` fields o
 | location | integer | The [content location](#quest-content-type) where the action was initiated |
 | platform | string  | The [platform](#quest-platform-type) to claim the reward for               |
 
-<RouteHeader method="POST" url="/quests/{quest.id}/reward-code">
+<RouteHeader method="GET" url="/quests/{quest.id}/reward-code">
   Get Quest Reward Code
 </RouteHeader>
 
-Retrieves the reward code for the specified platform and returns a [quest reward code](#quest-reward-code-object) object.
-
-###### JSON Params
-
-| Field    | Type    | Description                                                                |
-| -------- | ------- | -------------------------------------------------------------------------- |
-| location | integer | The [content location](#quest-content-type) where the action was initiated |
-| platform | string  | The [platform](#quest-platform-type) to retrieve the code for              |
+Retrieves the reward code for the specified platform. Returns a [quest reward code](#quest-reward-code-object) object on success.
 
 <RouteHeader method="POST" url="/quests/{quest.id}/heartbeat">
   Send Quest Heartbeat
 </RouteHeader>
 
-Tells the server to update the `last_stream_heartbeat` and `stream_progress_seconds` fields. Used for keeping track of how long the stream has been running for, and for checking if the user has met the [stream duration requirement](#quest-config-structure). Returns a [quest user status](#quest-user-status-object) object.
+Tells the server to update the `value` and `heartbeat` fields of the current task. Used for keeping track of how long the stream has been running for, and for checking if the user has met the [task duration requirement](#quest-task-structure).
+Returns a [quest user status](#quest-user-status-object) object on success.
 
 <Alert type="info">
 
-The `stream_progress_seconds` field is incremented by the amount of seconds since the last heartbeat request, up to 2 minutes at once.
-
-</Alert>
-
-<Alert type="info">
-
-The voice channel that hosts the stream must have at least one other participant to be eligible for quest progress.
+The `value` field within the [quest task progress](#quest-task-progress-structure) object is incremented by the amount of seconds since the last heartbeat request, up to 2 minutes at once.
 
 </Alert>
 
 <Alert type="warn">
 
-Quests may only be completed from desktop clients. If the requesting user-agent does not include electron version info (e.g. `Electron/28.2.10`), the request will fail with a 401 unauthorized error.
+Heartbeated quest tasks may only be completed from desktop clients. If the requesting user-agent does not include electron version info (e.g. `Electron/28.2.10`), the request will fail with a 401 unauthorized error.
 
 </Alert>
 
@@ -616,6 +666,73 @@ Quests may only be completed from desktop clients. If the requesting user-agent 
 | ---------- | ------- | ----------------------------------------------------------------------------------------------------- |
 | stream_key | string  | The encoded key of the stream (e.g `guild:169256939211980800:1050497861969793164:222069018507345921`) |
 | terminal?  | boolean | Whether this is the last heartbeat in the current stream's sequence                                   |
+
+<RouteHeader method="POST" url="/quests/{quest.id}/video-progress">
+  Send Quest Video Progress
+</RouteHeader>
+
+Tells the server to update the `value` field of the current video task. Used for keeping track of how long the video has been watched for, and for checking if the user has met the [task duration requirement](#quest-task-structure).
+Returns a [quest user status](#quest-user-status-object) object on success.
+
+###### JSON Params
+
+| Field     | Type    | Description                                     |
+| --------- | ------- | ----------------------------------------------- |
+| timestamp | integer | How far into the video the user is (in seconds) |
+
+<RouteHeader method="POST" url="/quests/{quest.id}/console/start">
+  Start Console Quest
+</RouteHeader>
+
+Starts completing a quest on console.
+
+###### Query Params
+
+| Field    | Type    | Description                                          |
+| -------- | ------- | ---------------------------------------------------- |
+| preview? | boolean | Whether the quest is in preview mode (default false) |
+
+###### Response Body
+
+| Field             | Type                                                           | Description                                       |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------------------- |
+| started           | boolean                                                        | Whether the quest was successfully started        |
+| quest_user_status | ?[quest user status](#quest-user-status-object) object         | The user's quest status                           |
+| error_hints       | ?array[string]                                                 | The errors that occurred while starting the quest |
+| error_hints_v2    | ?array[[quest error hint](#quest-error-hint-structure) object] | The errors that occurred while starting the quest |
+
+###### Quest Error Hint Structure
+
+| Field                  | Type      | Description                                                                                    |
+| ---------------------- | --------- | ---------------------------------------------------------------------------------------------- |
+| type                   | string    | The type of error                                                                              |
+| message                | string    | The error message                                                                              |
+| connected_account_id   | snowflake | The ID of the [connection](/resources/user#connection-object) the console account is linked to |
+| connected_account_type | string    | The type of [connection](/resources/user#connection-object) the console account is linked to   |
+
+###### Example Response
+
+```json
+{
+  "started": false,
+  "quest_user_status": null,
+  "error_hints": ["Xbox account DiscordGamer seems to be offline."],
+  "error_hints_v2": [
+    {
+      "type": "no_game_offline",
+      "message": "Xbox account DiscordGamer seems to be offline.",
+      "connected_account_id": "3076467402341699",
+      "connected_account_type": "xbox"
+    }
+  ]
+}
+```
+
+<RouteHeader method="POST" url="/quests/{quest.id}/console/stop">
+  Stop Console Quest
+</RouteHeader>
+
+Stops completing a quest on console. Returns a 204 empty response on success.
 
 <RouteHeader method="POST" url="/quests/{quest.id}/preview/complete">
   Complete Quest
