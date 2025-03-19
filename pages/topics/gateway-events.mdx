@@ -283,6 +283,25 @@ Sent when a client wants to request that the Gateway pings a misbehaving voice s
 }
 ```
 
+#### Lobby Voice States
+
+Sent by the client to update user's voice states in multiple lobbies. Fires a [Lobby Voice State Update](#lobby-voice-state-update) and optionally [Lobby Voice Server Update](#lobby-voice-server-update) Gateway event.
+
+The inner `d` key is array of following objects:
+
+###### Update Lobby Voice State Structure
+
+| Field              | Type          | Description                                                                         |
+| ------------------ | ------------- | ----------------------------------------------------------------------------------- |
+| lobby_id           | snowflake     | The ID of the lobby                                                                 |
+| self_mute          | boolean       | Whether the client is muted                                                         |
+| self_deaf          | boolean       | Whether the client is deafened                                                      |
+| self_video?        | boolean       | Whether the client is streaming video to the channel                                |
+| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
+| preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the lobby   |
+
+{/* TODO: it seems gateway completely ignores preferred_region and preferred_regions, but sent by SDK??? Maybe remove? */}
+
 #### Create Stream
 
 Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
@@ -786,6 +805,17 @@ These events directly correspond with a specific action or state change that has
 | [Relationship Remove](#relationship-remove)                                         | User had a relationship removed                                                                 |
 | [Game Relationship Add](#game-relationship-add)                                     | User had a game relationship added                                                              |
 | [Game Relationship Remove](#game-relationship-remove)                               | User had a game relationship removed                                                            |
+| [Lobby Create](#lobby-create)                                                       | Lobby was created                                                                               |
+| [Lobby Update](#lobby-update)                                                       | Lobby was updated                                                                               |
+| [Lobby Delete](#lobby-delete)                                                       | Lobby was deleted                                                                               |
+| [Lobby Member Add](#lobby-member-add)                                               | User was added to a lobby                                                                       |
+| [Lobby Member Update](#lobby-member-update)                                         | Lobby member was updated                                                                        |
+| [Lobby Member Remove](#lobby-member-remove)                                         | User was removed from a lobby                                                                   |
+| [Lobby Message Create](#lobby-message-create)                                       | Message was created in a lobby                                                                  |
+| [Lobby Message Update](#lobby-message-update)                                       | Message was updated in a lobby                                                                  |
+| [Lobby Message Delete](#lobby-message-delete)                                       | Message was deleted in a lobby                                                                  |
+| [Lobby Voice State Update](#lobby-voice-state-update)                               | User joined, left, or moved from a lobby                                                        |
+| [Lobby Voice Server Update](#lobby-voice-server-update)                             | Lobby voice connection server was updated                                                       |
 | [Saved Message Create](#saved-message-create)                                       | Message was bookmarked                                                                          |
 | [Saved Message Delete](#saved-message-delete)                                       | Bookmarked message was deleted                                                                  |
 | [Sessions Replace](#sessions-replace)                                               | User session list was updated                                                                   |
@@ -857,6 +887,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | api_code_version ^1^                   | integer                                                                                                                    | The API code version, used when re-identifying with client state v2                                                                                                                                                                                                    |
 | experiments ^1^                        | array[[user experiment](/topics/experiments#user-experiments) object]                                                      | User experiment rollouts for the user                                                                                                                                                                                                                                  |
 | guild_experiments ^1^                  | array[[guild experiment](/topics/experiments#guild-experiments) object]                                                    | Guild experiment rollouts for the user                                                                                                                                                                                                                                 |
+| lobbies? ^10^ ^11^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -875,6 +906,10 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 ^8^ The tutorial state is cleared after a period of inactivity. A `null` tutorial means no indicators will be shown.
 
 ^9^ The field will be a [versioned array](#versioned-structure) if the `VERSIONED_USER_GUILD_SETTINGS` [Gateway capability](/topics/gateway#gateway-capabilities) is enabled. Otherwise, it will be a regular array.
+
+^10^ The field is only available in OAuth2 context.
+
+^11^ Requires the `AUTO_LOBBY_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities).
 
 ###### Session Type
 
@@ -2131,6 +2166,148 @@ Sent when a game relationship is removed, relevant to the current user.
 | since          | ISO8601 timestamp | When the user requested a relationship                                              |
 | dm_access_type | integer           | The [DM access level](/resources/relationships#dm-access-type) for the relationship |
 | user_id        | snowflake         | The ID of the current user                                                          |
+
+### Lobbies
+
+#### Gateway Lobby Object
+
+[Lobby](/resources/lobby#lobby-object) objects received over the Gateway have extended attributes that are not provided in the REST API.
+
+###### Gateway Lobby Structure
+
+| Field        | Type                                                                  | Description                                                                          |
+| ------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| voice_states | array[[lobby voice state](/resources/voice#lobby-voice-state) object] | The voice states of the users already in the lobby                                   |
+| region       | string                                                                | The [voice region](/resources/voice#voice-region-object) ID the lobby is hosted from |
+| metadata     | ?string \| map[string, string]                                        | The metadata of the lobby, might be serialized as JSON string                        |
+
+###### Lobby Deletion Reason
+
+| Value   | Description          |
+| ------- | -------------------- |
+| removed | The user was removed |
+
+###### Lobby Message Object Extra Fields
+
+| Field           | Type                                                                | Description                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| channel_type    | integer                                                             | The [type of channel](/resources/channel#channel-type) this message was sent in                                                                |
+| guild_id? ^1^   | snowflake                                                           | The ID of the guild the message was sent in                                                                                                    |
+| member? ^1^ ^2^ | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author                                                                                                    |
+| mentions ^1^    | array[partial [user](/resources/user#user-object) object]           | Users specifically mentioned in the message, with an extra [`member`](/resources/guild#guild-member-object) key representing guild member data |
+| metadata?       | object                                                              | Custom metadata for the message (max 25 keys, 1024 characters per key and value)                                                               |
+
+#### Lobby Create
+
+Sent when a lobby is updated. The inner payload is a [lobby](/resources/lobby#lobby-object) object.
+
+#### Lobby Update
+
+Sent when a lobby is updated. The inner payload is a [lobby](/resources/lobby#lobby-object) object.
+
+#### Lobby Delete
+
+Sent when a lobby is deleted, or user was removed from lobby.
+
+###### Lobby Delete Structure
+
+| Field  | Type      | Description                                         |
+| ------ | --------- | --------------------------------------------------- |
+| id     | snowflake | The ID of the lobby                                 |
+| reason | string    | The [lobby deletion reason](#lobby-deletion-reason) |
+
+#### Lobby Member Add
+
+Sent when an user joins a lobby.
+
+###### Lobby Member Add Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The added member                                 |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Member Update
+
+Sent when a lobby member is updated.
+
+###### Lobby Member Update Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The updated member                               |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Member Remove
+
+Sent when a lobby member is removed.
+
+###### Lobby Member Remove Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The removed member                               |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Message Create
+
+Sent when a lobby message is created. The inner payload is a [lobby message](/resources/message#message-object) object with the [extra structure](#lobby-message-object-extra-fields) above.
+
+#### Lobby Message Update
+
+Sent when a lobby message is updated. The inner payload is a [lobby message](/resources/message#message-object) object with the [extra structure](#lobby-message-object-extra-fields) above.
+
+<Alert type="warn">
+
+The value for `tts` will always be `false` in message updates.
+
+</Alert>
+
+#### Lobby Message Delete
+
+Sent when a lobby message is deleted.
+
+###### Message Delete Structure
+
+| Field    | Type      | Description           |
+| -------- | --------- | --------------------- |
+| id       | snowflake | The ID of the message |
+| lobby_id | snowflake | The ID of the lobby   |
+
+#### Lobby Voice State Update
+
+Sent when someone joins/leaves/moves lobbies. Inner payload is a [lobby voice state](/resources/voice#lobby-voice-state-object) object.
+
+#### Lobby Voice Server Update
+
+Sent when a lobby's voice server is updated. This is sent when initially connecting to voice, and when the current voice instance fails over to a new server.
+
+<Alert type="warn">
+
+A `null` endpoint means that the voice server allocated has gone away and is trying to be reallocated. You should attempt to disconnect from the currently connected voice server, and not attempt to reconnect until a new voice server is allocated.
+
+</Alert>
+
+###### Lobby Voice Server Update Structure
+
+| Field    | Type      | Description                               |
+| -------- | --------- | ----------------------------------------- |
+| token    | string    | The voice connection token                |
+| lobby_id | snowflake | The lobby this voice server update is for |
+| endpoint | ?string   | The voice server host                     |
+
+###### Example Lobby Voice Server Update Payload
+
+```json
+{
+  "token": "66d29164ee8cd919",
+  "lobby_id": "41771983423143937",
+  "endpoint": "smart.loyal.discord.media:443"
+}
+```
 
 ### Saved Messages
 

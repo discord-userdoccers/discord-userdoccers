@@ -1,0 +1,282 @@
+# Lobbies
+
+### Lobby Object
+
+Represents a lobby within Discord.
+
+###### Lobby Structure
+
+| Field           | Type                                                | Description                                       |
+| --------------- | --------------------------------------------------- | ------------------------------------------------- |
+| id              | snowflake                                           | The ID of the lobby                               |
+| application_id  | snowflake                                           | The ID of the application that created the lobby  |
+| metadata        | ?map[string, string]                                | The metadata of the lobby (max total length 1000) |
+| members         | array[[lobby member](#lobby-member-object) object]  | The members of the lobby                          |
+| linked_channel? | [channel](/resources/channel#channel-object) object | The guild channel linked to the lobby             |
+
+###### Example Lobby Object
+
+```json
+{
+  "id": "1350184413060661332",
+  "application_id": "891436243903728565",
+  "metadata": {
+    "topic": "balls"
+  },
+  "members": [
+    {
+      "id": "852892297661906993",
+      "metadata": null,
+      "flags": 1
+    }
+  ]
+}
+```
+
+### Lobby Member Object
+
+Represents a member of a lobby.
+
+###### Lobby Member Structure
+
+| Field         | Type                 | Description                                        |
+| ------------- | -------------------- | -------------------------------------------------- |
+| id            | snowflake            | The ID of the user                                 |
+| metadata?     | ?map[string, string] | The metadata of the lobby member                   |
+| flags?        | integer              | The [lobby member's flags](#lobby-member-flags)    |
+| connected ^1^ | boolean              | Whether the member is connected to call in a lobby |
+
+^1^ This field is provided only if object was received over the Gateway.
+
+###### Lobby Member Flags
+
+| Value  | Name           | Description                                          |
+| ------ | -------------- | ---------------------------------------------------- |
+| 1 << 0 | CAN_LINK_LOBBY | This lobby member can link a text channel to a lobby |
+
+###### Lobby Member Add Structure
+
+| Field     | Type                 | Description                                              |
+| --------- | -------------------- | -------------------------------------------------------- |
+| id        | snowflake            | The ID of the user                                       |
+| metadata? | ?map[string, string] | The metadata of the lobby member (max total length 1000) |
+| flags?    | integer              | The [lobby member's flags](#lobby-member-flags)          |
+
+### Lobby Message Object
+
+A message sent in a lobby within Discord.
+
+{/* TODO: Should this be documented as superset of a normal Message object? */}
+
+###### Lobby Message Structure
+
+| Field                         | Type                                                                                               | Description                                                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| id                            | snowflake                                                                                          | The ID of the message                                                                                                                     |
+| channel_id                    | snowflake                                                                                          | The ID of the channel the message was sent in                                                                                             |
+| lobby_id                      | snowflake                                                                                          | The ID of the lobby the message was sent in                                                                                               |
+| author ^1^                    | partial [user](/resources/user#user-object) object                                                 | The author of the message                                                                                                                 |
+| content ^2^                   | string                                                                                             | Contents of the message                                                                                                                   |
+| timestamp                     | ISO8601 timestamp                                                                                  | When this message was sent                                                                                                                |
+| edited_timestamp              | ?ISO8601 timestamp                                                                                 | When this message was last edited                                                                                                         |
+| tts                           | boolean                                                                                            | Whether this message will be read out by TTS                                                                                              |
+| mention_everyone              | boolean                                                                                            | Whether this message mentions everyone                                                                                                    |
+| mentions                      | array[partial [user](/resources/user#user-object) object]                                          | Users specifically mentioned in the message                                                                                               |
+| mention_roles                 | array[snowflake]                                                                                   | Roles specifically mentioned in this message                                                                                              |
+| mention_channels? ^3^         | array[partial [channel](/resources/channel#channel-object) object]                                 | Channels specifically mentioned in this message                                                                                           |
+| attachments ^2^               | array[[attachment](/resources/message#attachment-object) object]                                   | The attached files                                                                                                                        |
+| embeds ^2^                    | array[[embed](/resources/message#embed-object) object]                                             | Content embedded in the message                                                                                                           |
+| reactions?                    | array[[reaction](/resources/message#reaction-object) object]                                       | Reactions on the message                                                                                                                  |
+| nonce?                        | integer \| string                                                                                  | The message's nonce, used for message deduplication                                                                                       |
+| pinned                        | boolean                                                                                            | Whether this message is pinned                                                                                                            |
+| webhook_id?                   | snowflake                                                                                          | The ID of the webhook that send the message                                                                                               |
+| type                          | integer                                                                                            | The [type of message](#message-type)                                                                                                      |
+| activity?                     | [message activity](/resources/message#message-activity-object) object                              | The rich presence activity the author is inviting users to                                                                                |
+| application?                  | [integration application](/resources/integration#integration-application-object) object            | The application of the message's rich presence activity                                                                                   |
+| application_id?               | snowflake                                                                                          | The ID of the application; only sent for interaction responses and messages created by social layer SDK                                   |
+| flags                         | integer                                                                                            | The [message's flags](#message-flags)                                                                                                     |
+| message_reference? ^4^        | [message reference](/resources/message#message-reference-object) object                            | The source of a crosspost, snapshot, channel follow add, pin, or reply message                                                            |
+| referenced_message? ^5^ ^4^   | ?[message object](/resources/message#message-object)                                               | The message associated with the `message_reference`                                                                                       |
+| message_snapshots? ^4^        | array[[message snapshot](/resources/message#message-snapshot-object) object]                       | The partial message snapshot associated with the `message_reference`                                                                      |
+| interaction? **(deprecated)** | [message interaction](/interactions/receiving-and-responding#message-interaction-structure) object | The interaction the message is responding to                                                                                              |
+| interaction_metadata?         | [message interaction metadata](/resources/message#message-interaction-metadata-object) object      | The interaction the message originated from                                                                                               |
+| thread?                       | [channel](/resources/channel#channel-object) object                                                | The thread that was started from this message, with the [`member`](/resources/channel#channel-object) key representing thread member data |
+| role_subscription_data?       | [message role subscription](/resources/message#message-role-subscription-object) object            | The role subscription purchase or renewal that prompted this message                                                                      |
+| purchase_notification?        | [message purchase notification](/resources/message#message-purchase-notification-object) object    | The guild purchase that prompted this message                                                                                             |
+| components ^2^                | array[[message component](/interactions/message-components#component-object) object]               | The message's components (e.g. buttons, select menus)                                                                                     |
+| sticker_items?                | array[[sticker item](/resources/sticker#sticker-item-object) object]                               | The message's sticker items                                                                                                               |
+| stickers?                     | array[[sticker](/resources/sticker#sticker-object) object]                                         | Extra rich information for the message's sticker items; only available in some contexts                                                   |
+| poll? ^2^                     | [poll](/resources/message#poll-object) object                                                      | A poll!                                                                                                                                   |
+| soundboard_sounds?            | array[[soundboard sound](/resources/soundboard/#soundboard-sound-object) object]                   | The message's soundboard sounds                                                                                                           |
+| potions?                      | array[[potion](/resources/message#potion-object) object]                                           | Potions applied to the message                                                                                                            |
+
+^1^ The `author` object follows the structure of the user object, but may not be a valid user in the case where the message is generated by a webhook; you can recognize this by checking for the `webhook_id` key on the message object. In these cases, the below notice about the additional `member` keys does not apply as webhooks are not guild members.
+
+^2^ Users must configure (or, in the case of bots, be approved for) the [`MESSAGE_CONTENT` intent](/topics/gateway#message-content-intent) to receive non-empty values for these fields in most situations.
+
+^3^ Not all channel mentions in a message will appear in `mention_channels`. Only textual channels that are visible to everyone in a lurkable guild will ever be included. Only crossposted messages (via Channel Following) currently include `mention_channels` at all. If no mentions in the message meet these requirements, this field will not be sent.
+
+^4^ See the [message reference types](#message-reference-type) for more information on which message references have which fields.
+
+^5^ This field is only returned for messages with a `type` of `REPLY`, `THREAD_STARTER_MESSAGE`, or `CONTEXT_MENU_COMMAND`. If the message is one of these but the `referenced_message` field is not present, the backend did not attempt to fetch the message, so its state is unknown. If the field exists but is `null`, the referenced message was deleted.
+
+### Partial Lobby Message Object
+
+###### Partial Lobby Message Structure
+
+| Field          | Type                                                       | Description                                             |
+| -------------- | ---------------------------------------------------------- | ------------------------------------------------------- |
+| id             | snowflake                                                  | The ID of the message                                   |
+| lobby_id       | snowflake                                                  | The ID of the lobby the message was sent in             |
+| channel_id ^1^ | snowflake                                                  | The ID of the channel the message was sent in           |
+| type           | integer                                                    | The [type of message](/resources/message#message-type)  |
+| content        | string                                                     | Contents of the message                                 |
+| author         | partial [user](/resources/user#partial-user-object) object | The author of the message                               |
+| flags          | integer                                                    | The [message's flags](/resources/message#message-flags) |
+| application_id | snowflake                                                  | The ID of the application                               |
+
+^1^ If lobby has no channel linked, this will equal to ID of the lobby.
+
+## Endpoints
+
+<RouteHeader method="POST" url="/lobbies">
+  Create Lobby
+</RouteHeader>
+
+Creates a new lobby. Returns a [lobby](#lobby-object) object on success. Fires a [Lobby Create](/topics/gateway-events#lobby-create) Gateway event.
+
+### JSON Params
+
+| Field                 | Type                                               | Description                                                                                |
+| --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| metadata?             | ?map[string, string]                               | The metadata of the lobby (max total length 1000)                                          |
+| members?              | array[[lobby member](#lobby-member-object) object] | The users to create lobby with (max 25)                                                    |
+| idle_timeout_seconds? | integer                                            | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
+
+<RouteHeader method="PUT" url="/lobbies">
+  Join or Create Lobby
+</RouteHeader>
+
+Joins existing lobby or creates a new lobby. Returns a [lobby](#lobby-object) object on success. May fire a [Lobby Create](/topics/gateway-events#lobby-create) Gateway event.
+
+### JSON Params
+
+| Field                 | Type                 | Description                                                                                |
+| --------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| secret                | string               | The lobby secret                                                                           |
+| lobby_metadata        | ?map[string, string] | The metadata of the lobby (max total length 1000)                                          |
+| member_metadata       | ?map[string, string] | The metadata of the lobby member (max total length 1000)                                   |
+| idle_timeout_seconds? | integer              | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
+
+<RouteHeader method="GET" url="/lobbies/{lobby.id}">
+  Get Lobby
+</RouteHeader>
+
+Returns a [lobby](#lobby-object) object for the given lobby ID. User must be a member of the lobby.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="PATCH" url="/lobbies/{lobby.id}">
+  Modify Lobby
+</RouteHeader>
+
+Modifies a lobby's settings. Application must be creator of the lobby. Returns the updated [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+### JSON Params
+
+| Field                 | Type                                               | Description                                                                                |
+| --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| metadata?             | ?map[string, string]                               | The metadata of the lobby (max total length 1000)                                          |
+| members?              | array[[lobby member](#lobby-member-object) object] | The users to create lobby with (max 25)                                                    |
+| idle_timeout_seconds? | integer                                            | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
+
+<RouteHeader method="DELETE" url="/lobbies/{lobby.id}">
+  Delete Lobby
+</RouteHeader>
+
+Deletes a lobby. Application must be creator of the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="PUT" url="/lobbies/{lobby.id}/members/{user.id}">
+  Add Lobby Member
+</RouteHeader>
+
+Adds a member to the lobby. Returns the [lobby member](#lobby-member-object) object. Fires a [Lobby Member Add](/topics/gateway-events#lobby-member-add) or [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event.
+
+<Alert type="note">
+
+If user is already a member of the lobby, this will update provided fields and fire [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event instead.
+
+</Alert>
+
+### JSON Params
+
+| Field     | Type                 | Description                                              |
+| --------- | -------------------- | -------------------------------------------------------- |
+| metadata? | ?map[string, string] | The metadata of the lobby member (max total length 1000) |
+| flags?    | integer              | The [lobby member's flags](#lobby-member-flags)          |
+
+<RouteHeader method="DELETE" url="/lobbies/{lobby.id}/members/{user.id}">
+  Remove Lobby Member
+</RouteHeader>
+
+Removes a member from the lobby. Returns a 204 empty response on success. Fires a [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
+
+{/* TODO: do we clarify whether this returns 204 even if provided user is not member of lobby? */}
+
+<RouteHeader method="DELETE" url="/lobbies/{lobby.id}/members/@me" supportsOAuth2="lobbies.write">
+  Leave Lobby
+</RouteHeader>
+
+Removes the current user from the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) and [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
+DELETE /lobbies/{lobby.id#DOCS_RESOURCES_LOBBY/lobby-object}/members/@me
+
+{/* TODO: do we clarify whether this returns 204 even if provided user is not member of lobby? */}
+
+<RouteHeader method="PATCH" url="/lobbies/{lobby.id}/channel-linking" supportsOAuth2="lobbies.write">
+  Set Linked Channel
+</RouteHeader>
+
+Links or unlinks a channel to the lobby. Returns a [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) and [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+The application must be a creator of the lobby, or user must have `CAN_LINK_LOBBY` flag.
+
+### JSON params
+
+| Field       | Type      | Description                                |
+| ----------- | --------- | ------------------------------------------ |
+| channel_id? | snowflake | The ID of the channel to link to the lobby |
+
+<RouteHeader method="POST" url="/lobbies/{lobby.id}/messages" supportsOAuth2="lobbies.write">
+  Create Lobby Message
+</RouteHeader>
+
+Posts a message to a text-based channel. Returns a partial [lobby message](#partial-lobby-message-object) object on success. Fires a [Lobby Message Create](/topics/gateway-events#lobby-message-create) and [Message Create](/topics/gateway-events#message-create) Gateway event.
+Functionally identical to the [Create Message](/resources/message#create-message) endpoint, but is used for lobbies in an OAuth2 context and has some additional parameters. Check there for more information.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `lobbies.write` scope.
+
+</Alert>
+
+###### Extra JSON Params
+
+| Field     | Type   | Description                                                                      |
+| --------- | ------ | -------------------------------------------------------------------------------- |
+| metadata? | object | Custom metadata for the message (max 25 keys, 1024 characters per key and value) |
