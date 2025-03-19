@@ -8,7 +8,7 @@ Multiple user settings protos are supported, each with a different purpose.
 Protobufs are a binary format, so you'll need to decode them before you can read them. If you want to learn more about them, a good start is Google's [official documentation](https://protobuf.dev/). All protobufs transmitted in the API are encoded in base64.
 
 The types documented below follow standard protobuf types (e.g. `uint32`, `bool`, `fixed64`, etc.). Some values are wrapped in containes such as `StringValue` or `BoolValue`.
-These are wrappers that allow the value to be `null` or unset, but must be unwrapped to access the value. They are provided by `wrappers.proto` and `timestamp.proto`.
+These are wrappers that allow the value to be `null` or unset, but must be unwrapped to access the value. They are provided by the `google.protobuf.wrappers` and `google.protobuf.timestamp` packages.
 
 The order of the documented structures below is the same order used in the wire format.
 
@@ -23,6 +23,16 @@ All protobuf definitions used by Discord are available in [this repository](http
 | 1     | PRELOADED     | General Discord user settings, sent in the [Ready](/topics/gateway-events#ready) event | [Preloaded User Settings](#preloaded-user-settings-object) |
 | 2     | FRECENCY      | Frecency and favorites storage, used for low-priority, lazy-loaded settings            | [Frecency User Settings](#frecency-user-settings-object)   |
 | 3     | TEST_SETTINGS | Unknown                                                                                | Unknown                                                    |
+
+###### Versions Structure
+
+| Field              | Type   | Description                                  |
+| ------------------ | ------ | -------------------------------------------- |
+| client_version     | uint32 | The client migration version                 |
+| server_version ^1^ | uint32 | The server migration version (currently `0`) |
+| data_version ^1^   | uint32 | The incremental data version                 |
+
+^1^ Should not be modified by clients.
 
 ### Preloaded User Settings Object
 
@@ -55,16 +65,6 @@ Serialized as `discord_protos.discord_users.v1.PreloadedUserSettings`.
 | safety_settings        | [safety settings](#safety-settings-structure) object                   | User safety settings                                                           |
 | icymi_settings         | [ICYMI settings](#icymi-settings-structure) object                     | ICYMI (In Case You Missed It) feed settings                                    |
 | applications           | [all application settings](#all-application-settings-structure) object | Application-specific settings                                                  |
-
-###### Versions Structure
-
-| Field              | Type   | Description                                  |
-| ------------------ | ------ | -------------------------------------------- |
-| client_version     | uint32 | The client migration version                 |
-| server_version ^1^ | uint32 | The server migration version (currently `0`) |
-| data_version ^1^   | uint32 | The incremental data version                 |
-
-^1^ Should not be modified by clients.
 
 ###### Inbox Settings Structure
 
@@ -470,7 +470,7 @@ This may also be a snowflake to represent a specific guild in the soundboard sou
 | status?              | StringValue                               | The [overall status](/resources/presence#status-type) of the user, used to sync presence across clients (default `unknown`) |
 | custom_status?       | [Custom Status](#custom-status-structure) | The overall custom status of the user, used to sync presence across clients                                                 |
 | show_current_game?   | BoolValue                                 | Whether to display the currently active game in user presence (default true)                                                |
-| status_expires_at_ms | fixed64                                   | Timestamp (in milliseconds) of when the status expires                                                                      |
+| status_expires_at_ms | fixed64                                   | Unix timestamp (in milliseconds) of when the status expires                                                                 |
 
 ###### Custom Status Structure
 
@@ -692,6 +692,128 @@ This may also be a snowflake to represent a specific guild in the soundboard sou
 | Field       | Type | Description                                                  |
 | ----------- | ---- | ------------------------------------------------------------ |
 | dm_disabled | bool | Whether DMs are disabled for the application (default false) |
+
+### Frecency User Settings Object
+
+Serialized as `discord_protos.discord_users.v1.FrecencyUserSettings`.
+
+###### Frecency User Settings Structure
+
+| Field                        | Type                                                                           | Description                                   |
+| ---------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------- |
+| versions                     | [versions](#versions-structure) object                                         | Version information for the protocol and data |
+| favorite_gifs                | [favorite gifs](#favorite-gifs-structure) object                               | Favorite GIFs storage                         |
+| favorite_stickers            | [favorite stickers](#favorite-stickers-structure) object                       | Favorite stickers storage                     |
+| sticker_frecency             | [sticker frecency](#sticker-frecency-structure) object                         | Sticker frecency storage                      |
+| favorite_emojis              | [favorite emojis](#favorite-emojis-structure) object                           | Favorite emojis settings                      |
+| emoji_frecency               | [emoji frecency](#emoji-frecency-structure) object                             | Emoji frecency storage                        |
+| application_command_frecency | [application command frecency](#application-command-frecency-structure) object | Application command frecency storage          |
+| favorite_soundboard_sounds   | [favorite soundboard sounds](#favorite-soundboard-sounds-structure) object     | Favorite soundboard sounds storage            |
+| application_frecency         | [application frecency](#application-frecency-structure) object                 | Application frecency storage                  |
+| heard_sound_frecency         | [heard sound frecency](#heard-sound-frecency-structure) object                 | Heard soundboard sound frecency storage       |
+| played_sound_frecency        | [played sound frecency](#played-sound-frecency-structure) object               | Played soundboard sound frecency storage      |
+| guild_and_channel_frecency   | [guild and channel frecency](#guild-and-channel-frecency-structure) object     | Guild and channel frecency storage            |
+| emoji_reaction_frecency      | [emoji reaction frecency](#emoji-reaction-frecency-structure) object           | Emoji reaction frecency storage               |
+
+###### Frecency Item Structure
+
+| Field       | Type          | Description                                                            |
+| ----------- | ------------- | ---------------------------------------------------------------------- |
+| total_uses  | uint32        | Total uses of the item                                                 |
+| recent_uses | array[uint64] | Unix timestamps (in milliseconds) representing recent uses of the item |
+| frecency    | int32         | Frecency score of the item, or `-1` if not applicable                  |
+| score       | int32         | Score of the item                                                      |
+
+###### Favorite GIFs Structure
+
+| Field        | Type                                                        | Description                                   |
+| ------------ | ----------------------------------------------------------- | --------------------------------------------- |
+| gifs         | map[string, [favorite GIF](#favorite-gif-structure) object] | Map of GIF URLs to favorite GIFs              |
+| hide_tooltip | bool                                                        | Whether to hide the tooltip for favorite GIFs |
+
+###### Favorite GIF Structure
+
+| Field  | Type                       | Description                              |
+| ------ | -------------------------- | ---------------------------------------- |
+| format | [GIF type](#gif-type) enum | The type of the GIF (`IMAGE` or `VIDEO`) |
+| src    | string                     | The media URL of the GIF                 |
+| width  | uint32                     | The width of the GIF                     |
+| height | uint32                     | The height of the GIF                    |
+| order  | uint32                     | Order of the GIF in the list             |
+
+###### GIF Type
+
+| Value | Name  | Description   |
+| ----- | ----- | ------------- |
+| 0     | NONE  | Default unset |
+| 1     | IMAGE | Image GIF     |
+| 2     | VIDEO | Video GIF     |
+
+###### Favorite Stickers Structure
+
+| Field       | Type           | Description                             |
+| ----------- | -------------- | --------------------------------------- |
+| sticker_ids | array[fixed64] | The IDs of the user's favorite stickers |
+
+###### Sticker Frecency Structure
+
+| Field    | Type                                                           | Description                   |
+| -------- | -------------------------------------------------------------- | ----------------------------- |
+| stickers | map[fixed64, [frecency item](#frecency-item-structure) object] | Map of sticker frecency items |
+
+###### Favorite Emojis Structure
+
+| Field  | Type          | Description                                                                                         |
+| ------ | ------------- | --------------------------------------------------------------------------------------------------- |
+| emojis | array[string] | The user's favorite emoji, represented as snowflake IDs or friendly names (e.g. `skull_crossbones`) |
+
+###### Emoji Frecency Structure
+
+| Field  | Type                                                          | Description                                                                                   |
+| ------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| emojis | map[string, [frecency item](#frecency-item-structure) object] | Frecenct used emoji, represented as snowflake IDs or friendly names (e.g. `skull_crossbones`) |
+
+###### Application Command Frecency Structure
+
+| Field                | Type                                                          | Description                                                                                                                                                                                    |
+| -------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| application_commands | map[string, [frecency item](#frecency-item-structure) object] | Frecent application commands, represented as snowflake command IDs with optional null-joined command names and colon-joined guild IDs (e.g. `1221148400637050941\u0000set:550327071407079444`) |
+
+###### Favorite Soundboard Sounds Structure
+
+| Field     | Type           | Description                                      |
+| --------- | -------------- | ------------------------------------------------ |
+| sound_ids | array[fixed64] | The IDs of the user's favorite soundboard sounds |
+
+###### Application Frecency Structure
+
+| Field        | Type                                                          | Description                                        |
+| ------------ | ------------------------------------------------------------- | -------------------------------------------------- |
+| applications | map[string, [frecency item](#frecency-item-structure) object] | Frecent applications, represented as snowflake IDs |
+
+###### Heard Sound Frecency Structure
+
+| Field        | Type                                                          | Description                                                   |
+| ------------ | ------------------------------------------------------------- | ------------------------------------------------------------- |
+| heard_sounds | map[string, [frecency item](#frecency-item-structure) object] | Frecent heard soundboard sounds, represented as snowflake IDs |
+
+###### Played Sound Frecency Structure
+
+| Field         | Type                                                          | Description                                                    |
+| ------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| played_sounds | map[string, [frecency item](#frecency-item-structure) object] | Frecent played soundboard sounds, represented as snowflake IDs |
+
+###### Guild and Channel Frecency Structure
+
+| Field              | Type                                                           | Description            |
+| ------------------ | -------------------------------------------------------------- | ---------------------- |
+| guild_and_channels | map[fixed64, [frecency item](#frecency-item-structure) object] | Frecent guild channels |
+
+###### Emoji Reaction Frecency Structure
+
+| Field  | Type                                                          | Description                                                                                      |
+| ------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| emojis | map[string, [frecency item](#frecency-item-structure) object] | Frecent used reactions, represented as snowflake IDs or friendly names (e.g. `skull_crossbones`) |
 
 ## Endpoints
 
