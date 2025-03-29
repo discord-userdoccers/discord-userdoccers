@@ -56,29 +56,30 @@ Gateway event payloads have a common structure, but the contents of the associat
 
 Send events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by a client to Discord through a Gateway connection.
 
-| Name                                                    | Description                                                       |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| [Identify](#identify)                                   | Trigger the initial handshake with the Gateway                    |
-| [Resume](#resume)                                       | Resume a dropped Gateway connection                               |
-| [Heartbeat](#heartbeat)                                 | Maintain an active Gateway connection                             |
-| [Update Presence](#update-presence)                     | Update the client's presence                                      |
-| [Update Voice State](#update-voice-state)               | Join, move, or disconnect the client from a voice channel or call |
-| [Ping Voice Server](#ping-voice-server)                 | Ping the Discord voice servers                                    |
-| [Create Stream](#create-stream)                         | Create a stream for the client (Go Live)                          |
-| [Watch Stream](#watch-stream)                           | Watch a user's stream                                             |
-| [Set Stream Paused](#set-stream-paused)                 | Pause/resume a client stream                                      |
-| [Delete Stream](#delete-stream)                         | End a client stream                                               |
-| [Ping Stream Server](#ping-stream-server)               | Ping a user's stream voice server                                 |
-| [Request Guild Members](#request-guild-members)         | Request members for one or more guilds                            |
-| [Request Call Connect](#request-call-connect)           | Request a private channels's pre-existing call information        |
-| Update Guild Subscriptions                              | Update subscriptions for a guild                                  |
-| Request Forum Unreads                                   | Request thread-only channel unread counts                         |
-| [Remote Command](<#remote-command-(send)>)              | Send a message to another Gateway session                         |
-| Request Deleted Entity IDs                              | Request deleted entity IDs not matching a given hash for a guild  |
-| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                  |
-| [Request Last Messages](#request-last-messages)         | Request last messages for a guild's channels                      |
-| [Search Recent Members](#search-recent-members)         | Request recently-joined members for a guild                       |
-| [Request Channel Statuses](#request-channel-statuses)   | Request voice channel statuses for a guild                        |
+| Name                                                          | Description                                                       |
+| ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [Identify](#identify)                                         | Trigger the initial handshake with the Gateway                    |
+| [Resume](#resume)                                             | Resume a dropped Gateway connection                               |
+| [Heartbeat](#heartbeat)                                       | Maintain an active Gateway connection                             |
+| [Update Presence](#update-presence)                           | Update the client's presence                                      |
+| [Update Voice State](#update-voice-state)                     | Join, move, or disconnect the client from a voice channel or call |
+| [Ping Voice Server](#ping-voice-server)                       | Ping the Discord voice servers                                    |
+| [Create Stream](#create-stream)                               | Create a stream for the client (Go Live)                          |
+| [Watch Stream](#watch-stream)                                 | Watch a user's stream                                             |
+| [Set Stream Paused](#set-stream-paused)                       | Pause/resume a client stream                                      |
+| [Delete Stream](#delete-stream)                               | End a client stream                                               |
+| [Ping Stream Server](#ping-stream-server)                     | Ping a user's stream voice server                                 |
+| [Request Guild Members](#request-guild-members)               | Request members for one or more guilds                            |
+| [Request Call Connect](#request-call-connect)                 | Request a private channels's pre-existing call information        |
+| Update Guild Subscriptions                                    | Update subscriptions for a guild                                  |
+| Request Forum Unreads                                         | Request thread-only channel unread counts                         |
+| [Remote Command](<#remote-command-(send)>)                    | Send a message to another Gateway session                         |
+| Request Deleted Entity IDs                                    | Request deleted entity IDs not matching a given hash for a guild  |
+| [Request Soundboard Sounds](#request-soundboard-sounds)       | Request soundboard sounds for one or more guilds                  |
+| [Request Last Messages](#request-last-messages)               | Request last messages for a guild's channels                      |
+| [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
+| [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
+| [Request Channel Member Count](#request-channel-member-count) | Request the number of members that can view a channel             |
 
 #### Identify
 
@@ -592,6 +593,17 @@ Used to request the voice channel statuses for a guild. Fires a [Channel Statuse
 }
 ```
 
+#### Request Channel Member Count
+
+Used to request the number of members that can view a guild channel, as well as how many are online at the given time. Fires a [Channel Member Count Update](#channel-member-count-update) Gateway event with the requested count.
+
+###### Request Channel Member Count Structure
+
+| Field      | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| guild_id   | snowflake | The ID of the guild   |
+| channel_id | snowflake | The ID of the channel |
+
 ## Receive Events
 
 Received events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by Discord to a client through a Gateway connection. Most received events correspond to dispatch events that happen relevant to the current user and the guilds it is a member of.
@@ -710,6 +722,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Delete](#channel-delete)                                                   | Channel was deleted                                                                             |
 | [Channel Statuses](#channel-statuses)                                               | Response to [Request Channel Statuses](#request-channel-statuses)                               |
 | [Voice Channel Status Update](#voice-channel-status-update)                         | Voice channel status was updated                                                                |
+| [Channel Member Count Update](#channel-member-count-update)                         | Response to [Request Channel Member Count](#request-channel-member-count)                       |
 | [Channel Pins Update](#channel-pins-update)                                         | Message was pinned or unpinned                                                                  |
 | [Channel Recipient Add](#channel-recipient-add)                                     | User joined a group DM channel                                                                  |
 | [Channel Recipient Remove](#channel-recipient-remove)                               | User was removed from a group DM channel                                                        |
@@ -1176,6 +1189,19 @@ Sent when a voice channel's status is updated.
 | id       | snowflake | The ID of the voice channel                          |
 | guild_id | snowflake | The ID of the guild                                  |
 | status   | ?string   | The status of the voice channel (max 500 characters) |
+
+#### Channel Member Count Update
+
+Sent in response to [Request Channel Member Count](#request-channel-member-count). Contains the number of members that can currently see the channel.
+
+##### Channel Member Count Update Structure
+
+| Field          | Type      | Description                                                                  |
+| -------------- | --------- | ---------------------------------------------------------------------------- |
+| guild_id       | snowflake | The ID of the guild                                                          |
+| channel_id     | snowflake | The ID of the channel                                                        |
+| member_count   | integer   | The number of members that can currently see the channel                     |
+| presence_count | integer   | The number of members that can currently see the channel and are not offline |
 
 #### Channel Pins Update
 
