@@ -104,23 +104,30 @@ User experiments are subject to the same functionality and filters as guild expe
 
 This object is represented as an array of the following fields:
 
-| Field             | Type    | Description                                                                                               |
-| ----------------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| hash              | integer | 32-bit unsigned Murmur3 hash of the experiment's name                                                     |
-| revision          | integer | Current version of the rollout                                                                            |
-| bucket            | integer | The requesting user or fingerprint's assigned experiment bucket                                           |
-| override          | integer | Whether the user or fingerprint has an override for the experiment (`-1` for false, `0` for true)         |
-| population        | integer | The internal population group the requesting user or fingerprint is in                                    |
-| hash_result       | integer | The calculated [rollout position](#rollout-positions) to use, prioritized over local calculations         |
-| aa_mode ^1^       | integer | The experiment's A/A testing mode, represented as an integer-casted boolean                               |
-| trigger_debugging | integer | Whether the experiment's analytics trigger debugging is enabled, represented as an integer-casted boolean |
+| Field                | Type     | Description                                                                                               |
+| -------------------- | -------- | --------------------------------------------------------------------------------------------------------- |
+| hash                 | integer  | 32-bit unsigned Murmur3 hash of the experiment's name                                                     |
+| revision             | integer  | Current version of the rollout                                                                            |
+| bucket               | integer  | The requesting user or fingerprint's assigned experiment bucket                                           |
+| override             | integer  | Whether the user or fingerprint has an override for the experiment (`-1` for false, `0` for true)         |
+| population           | integer  | The internal population group the requesting user or fingerprint is in                                    |
+| hash_result          | integer  | The calculated [rollout position](#rollout-positions) to use, prioritized over local calculations         |
+| aa_mode ^1^          | integer  | The experiment's A/A testing mode, represented as an integer-casted boolean                               |
+| trigger_debugging    | integer  | Whether the experiment's analytics trigger debugging is enabled, represented as an integer-casted boolean |
+| holdout_name ^2^     | ?string  | A human-readable experiment name (formatted as `year-month_name`) that disables the experiment            |
+| holdout_revision ^2^ | ?integer | The revision of the holdout experiment                                                                    |
+| holdout_bucket ^2^   | ?integer | The requesting user or fingerprint's assigned bucket for the holdout experiment                           |
 
 ^1^ The bucket for A/A tested experiments should always be None (`-1`) unless an override is present for the resource.
+
+^2^ Holdout information is only present if the user or fingerprint has an assigned bucket for the holdout experiment.
+Therefore, if holdout experiment information is present and the population bucket is set to None (`-1`), the experiment has been disabled by the holdout.
+As user experiments are opaque, no client handling is required for this field. Just follow the `population` field as usual.
 
 ###### Example User Experiment
 
 ```json
-[4130837190, 0, 10, -1, 0, 1932, 0, 0]
+[826493636, 3, -1, -1, 0, 203, 0, 1, "2025-02_user_profile_editing", 2, 0]
 ```
 
 ### Guild Experiments
@@ -141,7 +148,7 @@ This object is represented as an array of the following fields:
 | overrides ^2^           | array[[experiment bucket override](#experiment-bucket-override-object) object] | Specific bucket overrides for the experiment                                                                                        |
 | overrides_formatted ^2^ | array[array[[experiment population](#experiment-population-object) object]]    | Populations of overrides for the experiment                                                                                         |
 | holdout_name ^3^        | ?string                                                                        | A human-readable experiment name (formatted as `year-month_name`) that disables the experiment                                      |
-| holdout_bucket ^3^      | ?integer                                                                       | The bucket required by the holdout experiment to disable the experiment                                                             |
+| holdout_bucket ^3^      | ?integer                                                                       | The holdout experiment bucket that disables the experiment                                                                          |
 | aa_mode ^2^             | integer                                                                        | The experiment's A/A testing mode, represented as an integer-casted boolean                                                         |
 | trigger_debugging       | integer                                                                        | Whether the experiment's analytics trigger debugging is enabled, represented as an integer-casted boolean                           |
 

@@ -652,23 +652,28 @@ The media proxy caches link embeds for 30 minutes.
 
 ###### Embed Structure
 
-| Field         | Type                                                | Description                                                                           |
-| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| title?        | string                                              | The title of the embed (max 256 characters)                                           |
-| type?         | string                                              | The [type of embed](#embed-type) (always `rich` for sent embeds)                      |
-| description?  | string                                              | The description of the embed (max 4096 characters)                                    |
-| url?          | string                                              | The URL of the embed (max 2048 characters)                                            |
-| timestamp?    | ISO8601 timestamp                                   | Timestamp of embed content                                                            |
-| color?        | integer                                             | The color of the embed encoded as an integer representation of hexadecimal color code |
-| footer?       | [embed footer](#embed-footer-structure) object      | Embed footer information                                                              |
-| image?        | [embed image](#embed-image-structure) object        | Embed image information                                                               |
-| thumbnail?    | [embed image](#embed-image-structure) object        | Embed thumbnail information                                                           |
-| video?        | [embed video](#embed-video-structure) object        | Embed video information                                                               |
-| provider?     | [embed provider](#embed-provider-structure) object  | Embed provider information                                                            |
-| author?       | [embed author](#embed-author-structure) object      | Embed author information                                                              |
-| fields?       | array[[embed field](#embed-field-structure) object] | The fields of the embed (max 25)                                                      |
-| reference_id? | snowflake                                           | The ID of the message this embed was generated from                                   |
-| flags?        | integer                                             | The [embed's flags](#embed-flags)                                                     |
+| Field                         | Type                                                | Description                                                                           |
+| ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| title?                        | string                                              | The title of the embed (max 256 characters)                                           |
+| type? ^1^                     | string                                              | The [type of embed](#embed-type) (always `rich` for sent embeds)                      |
+| description?                  | string                                              | The description of the embed (max 4096 characters)                                    |
+| url?                          | string                                              | The URL of the embed (max 2048 characters)                                            |
+| timestamp?                    | ISO8601 timestamp                                   | Timestamp of embed content                                                            |
+| color?                        | integer                                             | The color of the embed encoded as an integer representation of hexadecimal color code |
+| footer?                       | [embed footer](#embed-footer-structure) object      | Embed footer information                                                              |
+| image?                        | [embed media](#embed-media-structure) object        | Embed image information                                                               |
+| thumbnail?                    | [embed media](#embed-media-structure) object        | Embed thumbnail information                                                           |
+| video? ^1^                    | [embed media](#embed-media-structure) object        | Embed video information                                                               |
+| provider? ^1^                 | [embed provider](#embed-provider-structure) object  | Embed provider information                                                            |
+| author?                       | [embed author](#embed-author-structure) object      | Embed author information                                                              |
+| fields?                       | array[[embed field](#embed-field-structure) object] | The fields of the embed (max 25)                                                      |
+| reference_id? ^1^             | snowflake                                           | The ID of the message this embed was generated from                                   |
+| content_scan_version? ^1^ ^2^ | integer                                             | The version of the explicit content scan filter this embed was scanned with           |
+| flags? ^1^                    | integer                                             | The [embed's flags](#embed-flags)                                                     |
+
+^1^ These fields cannot be specified in a rich embed.
+
+^2^ This field will be missing if the embed has not yet been scanned. In this case, a scan can be triggered with the [Scan Explicit Media](#scan-explicit-media) endpoint. If the field is present and set to `0`, the embed is not eligible for a scan (e.g. it is a textual embed without media).
 
 ###### Embed Type
 
@@ -702,31 +707,20 @@ Most embed types are "loosely defined" and, for the most part, are not used by o
 | 1 << 4 | CONTAINS_EXPLICIT_MEDIA | Embed was flagged as [sensitive content](https://support.discord.com/hc/en-us/articles/18210995019671) |
 | 1 << 5 | CONTENT_INVENTORY_ENTRY | Embed is a legacy content inventory reply                                                              |
 
-###### Embed Image Structure
+###### Embed Media Structure
 
-| Field                    | Type    | Description                                                                                                   |
-| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
-| url                      | string  | Source URL of image (only supports http(s) and attachments) (max 2048 characters)                             |
-| proxy_url? ^1^           | string  | A proxied URL of the image                                                                                    |
-| height? ^1^              | integer | Height of image                                                                                               |
-| width? ^1^               | integer | Width of image                                                                                                |
-| flags? ^1^               | integer | The [image's attachment flags](#attachment-flags)                                                             |
-| placeholder_version? ^1^ | integer | The attachment placeholder protocol version (currently 1)                                                     |
-| placeholder? ^1^         | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the image, to display before it is loaded |
+| Field                      | Type    | Description                                                                                                   |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| url                        | string  | Source URL of media (only supports http(s) and attachments) (max 2048 characters)                             |
+| proxy_url? ^1^             | string  | A proxied URL of the media                                                                                    |
+| height? ^1^                | integer | Height of media                                                                                               |
+| width? ^1^                 | integer | Width of media                                                                                                |
+| flags? ^1^                 | integer | The [media's attachment flags](#attachment-flags)                                                             |
+| content_scan_metadata? ^1^ | string  | The content scan metadata for the media                                                                       |
+| placeholder_version? ^1^   | integer | The attachment placeholder protocol version (currently 1)                                                     |
+| placeholder? ^1^           | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the media, to display before it is loaded |
 
 ^1^ This field is received only and cannot be set.
-
-###### Embed Video Structure
-
-| Field                | Type    | Description                                                                                                   |
-| -------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| url                  | string  | Source URL of video                                                                                           |
-| proxy_url?           | string  | A proxied URL of the video                                                                                    |
-| height?              | integer | Height of video                                                                                               |
-| width?               | integer | Width of video                                                                                                |
-| flags?               | integer | The [video's attachment flags](#attachment-flags)                                                             |
-| placeholder_version? | integer | The attachment placeholder protocol version (currently 1)                                                     |
-| placeholder?         | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the video, to display before it is loaded |
 
 ###### Embed Provider Structure
 
@@ -764,6 +758,19 @@ Most embed types are "loosely defined" and, for the most part, are not used by o
 | value   | string  | The value of the field (max 1024 characters)             |
 | inline? | boolean | Whether this field should display inline (default false) |
 
+###### Content Scan Metadata Structure
+
+| Field   | Type    | Description                                                                 |
+| ------- | ------- | --------------------------------------------------------------------------- |
+| flags   | integer | The [content scan flags](#content-scan-flags) of the media                  |
+| version | integer | The version of the explicit content scan filter this media was scanned with |
+
+###### Content Scan Flags
+
+| Value  | Name     | Description                               |
+| ------ | -------- | ----------------------------------------- |
+| 1 << 0 | EXPLICIT | The media was flagged as explicit content |
+
 ### Attachment Object
 
 ###### Attachment Structure
@@ -787,21 +794,22 @@ When sending/editing messages, only `id` is required. `filename` is also require
 | proxy_url ^2^ ^4^             | string                                                                  | A proxied url of the file                                                                                                                                                                     |
 | height? ^2^                   | ?integer                                                                | Height of image                                                                                                                                                                               |
 | width? ^2^                    | ?integer                                                                | Width of image                                                                                                                                                                                |
+| content_scan_version? ^2^ ^5^ | integer                                                                 | The version of the explicit content scan filter this attachment was scanned with                                                                                                              |
 | placeholder_version? ^2^      | integer                                                                 | The attachment placeholder protocol version (currently 1)                                                                                                                                     |
 | placeholder? ^2^              | string                                                                  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the attachment, to display before it is loaded                                                                            |
 | ephemeral? ^1^ ^2^            | boolean                                                                 | Whether this attachment is ephemeral                                                                                                                                                          |
 | duration_secs?                | float                                                                   | Duration of the audio file (if [voice message](#voice-messages))                                                                                                                              |
 | waveform?                     | string                                                                  | Base64 encoded bytearray representing a sampled waveform (if [voice message](#voice-messages))                                                                                                |
-| flags? ^5^                    | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                                                                   |
-| is_clip? ^5^ ^6^ ^7^          | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)                                                      |
-| is_thumbnail? ^5^             | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                                                                                |
-| is_remix? ^5^                 | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment                                                  |
-| is_spoiler? ^5^               | boolean                                                                 | Whether this attachment is a spoiler                                                                                                                                                          |
-| clip_created_at? ^6^          | ISO8601 timestamp                                                       | When the clip was created                                                                                                                                                                     |
-| clip_participant_ids? ^6^ ^7^ | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                                                                             |
-| clip_participants? ^7^        | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                                                                        |
-| application_id? ^7^           | snowflake                                                               | The ID of the application the clip was taken in                                                                                                                                               |
-| application? ^7^              | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                                                                         |
+| flags? ^6^                    | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                                                                   |
+| is_clip? ^6^ ^7^ ^8^          | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)                                                      |
+| is_thumbnail? ^6^             | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                                                                                |
+| is_remix? ^6^                 | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment                                                  |
+| is_spoiler? ^6^               | boolean                                                                 | Whether this attachment is a spoiler                                                                                                                                                          |
+| clip_created_at? ^8^          | ISO8601 timestamp                                                       | When the clip was created                                                                                                                                                                     |
+| clip_participant_ids? ^7^ ^8^ | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                                                                             |
+| clip_participants? ^8^        | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                                                                        |
+| application_id? ^8^           | snowflake                                                               | The ID of the application the clip was taken in                                                                                                                                               |
+| application? ^8^              | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                                                                         |
 
 ^1^ Ephemeral attachments will automatically be removed after a set period of time. Ephemeral attachments on messages are guaranteed to be available as long as the message itself exists.
 
@@ -811,11 +819,13 @@ When sending/editing messages, only `id` is required. `filename` is also require
 
 ^4^ The proxy URL only supports attachments with a defined `width` and `height`, such as images and videos. For all other attachments, the proxy returns a 415 unsupported media type error.
 
-^5^ The `flags` field is received only and cannot be set directly. To set flags, use the `is_clip`, `is_thumbnail`, `is_remix`, and `is_spoiler` send-only fields.
+^5^ This field will be missing if the attachment has not yet been scanned. In this case, a scan can be triggered with the [Explicit Content Scan](#explicit-content-scan) endpoint. If the field is present and set to `0`, the attachment is not eligible for a scan.
 
-^6^ When sending a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
+^6^ The `flags` field is received only and cannot be set directly. To set flags, use the `is_clip`, `is_thumbnail`, `is_remix`, and `is_spoiler` send-only fields.
 
-^7^ The `clip_participant_ids` and `application_id` fields are send-only. You will receive the `clip_participants` and `application` fields back when retrieving the [message](#message-object).
+^7^ When sending a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
+
+^8^ The `clip_participant_ids` and `application_id` fields are send-only. You will receive the `clip_participants` and `application` fields back when retrieving the [message](#message-object).
 
 ###### Attachment Flags
 
@@ -1652,6 +1662,89 @@ Refreshes the URLs of attachments that were uploaded to Discord's CDN. The provi
   ]
 }
 ```
+
+<RouteHeader method="PATCH" url="/channels/{channel.id}/explicit-media">
+  Scan Explicit Media
+</RouteHeader>
+
+Scans for explicit media in a list of messages. Returns a 204 empty response on success. Fires multiple [Message Update](/topics/gateway-events#message-update) Gateway events.
+
+This endpoint should be used by users with explicit content filtering enabled to scan for explicit media on messages that have embeds or attachments with a missing or outdated `content_filter_version`. Invalid message IDs are ignored.
+
+<Alert type="info">
+
+The latest explicit content filter version is provided in the [`explicit_content_scan_version` field of the Ready event](/topics/gateway-events#ready).
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type             | Description                    |
+| ----------- | ---------------- | ------------------------------ |
+| message_ids | array[snowflake] | The message IDs to scan (1-75) |
+
+/messages/explicit-media
+
+<RouteHeader method="PATCH" url="/messages/explicit-media">
+  Bulk Scan Explicit Media
+</RouteHeader>
+
+Scans for explicit media in a list of messages in multiple channels. Returns a 204 empty response on success. Fires multiple [Message Update](/topics/gateway-events#message-update) Gateway events.
+
+Similar to [Scan Explicit Media](#scan-explicit-media), but allows scanning messages in multiple channels at once. Invalid channel and message IDs are ignored.
+
+###### JSON Params
+
+| Field    | Type                                                            | Description                  |
+| -------- | --------------------------------------------------------------- | ---------------------------- |
+| messages | array[[bulk scan message](#bulk-scan-message-structure) object] | The messages to scan (1-100) |
+
+###### Bulk Scan Message Structure
+
+| Field      | Type      | Description                             |
+| ---------- | --------- | --------------------------------------- |
+| channel_id | snowflake | The ID of the channel the message is in |
+| message_id | snowflake | The ID of the message to scan           |
+
+<RouteHeader method="POST" url="/attachments/sender-report-false-positive">
+  Report Sent Explicit Content False Positive
+</RouteHeader>
+
+Reports an explicit content false positive for a list of uploaded attachments. Returns a 204 empty response on success.
+
+This endpoint should be used after the user attempts to send an message containing attachments but receives a 400 bad request with a [`20009` JSON error code](/topics/opcodes-and-status-codes#json-error-codes).
+
+<Alert type="info">
+
+The error structure for `20009` will contain an additional `attachments` key with [attachment](#attachment-object) objects for each attachment that was flagged as explicit content.
+
+</Alert>
+
+###### JSON Params
+
+| Field          | Type             | Description                                                                      |
+| -------------- | ---------------- | -------------------------------------------------------------------------------- |
+| channel_id     | snowflake        | The ID of the channel the message is in                                          |
+| message_id     | snowflake        | A locally-generated ID representing the message                                  |
+| attachment_ids | array[snowflake] | The IDs of the attachments that were flagged as explicit content (max 100)       |
+| filenames      | array[string]    | The filenames of the attachments that were flagged as explicit content (max 100) |
+
+<RouteHeader method="POST" url="/attachments/report-false-positive">
+  Report Explicit Content False Positive
+</RouteHeader>
+
+Reports an explicit content false positive for a message. Returns a 204 empty response on success.
+
+This endpoint should be used upon viewing a message that was flagged as explicit content but was determined to be a false positive.
+
+##### JSON Params
+
+| Field          | Type             | Description                                                                                                                              |
+| -------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| channel_id     | snowflake        | The ID of the channel the message is in                                                                                                  |
+| message_id     | snowflake        | The ID of the message that was flagged as explicit content                                                                               |
+| attachment_ids | array[snowflake] | The IDs of the attachments that were flagged as explicit content (max 100)                                                               |
+| embed_ids      | array[string]    | Locally generated IDs representing the embeds that were flagged as explicit content, in the format `lodash.uniqueId("embed_")` (max 100) |
 
 <RouteHeader method="POST" url="/channels/{channel.id}/messages/{message.id}/ack">
   Acknowledge Message
