@@ -39,16 +39,14 @@ Represents a member of a lobby.
 
 ###### Lobby Member Structure
 
-| Field             | Type                 | Description                                              |
-| ----------------- | -------------------- | -------------------------------------------------------- |
-| id                | snowflake            | The ID of the user                                       |
-| metadata?         | ?map[string, string] | The metadata of the lobby member (max total length 1000) |
-| flags?            | integer              | The [lobby member's flags](#lobby-member-flags)          |
-| connected ^1^ ^2^ | boolean              | Whether the member is connected to call in a lobby       |
+| Field         | Type                 | Description                                              |
+| ------------- | -------------------- | -------------------------------------------------------- |
+| id            | snowflake            | The ID of the user                                       |
+| metadata?     | ?map[string, string] | The metadata of the lobby member (max total length 1000) |
+| flags?        | integer              | The [lobby member's flags](#lobby-member-flags)          |
+| connected ^1^ | boolean              | Whether the member is connected to a call in lobby       |
 
-^1^ This field can be only received.
-
-^2^ This field is provided only if object was received over the Gateway.
+^1^ Only included in guild objects returned [over the Gateway](/topics/gateway-events#lobbies).
 
 ###### Lobby Member Flags
 
@@ -157,7 +155,7 @@ Joins existing lobby or creates a new lobby. Returns a [lobby](#lobby-object) ob
 
 | Field                 | Type                 | Description                                                                                |
 | --------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
-| secret                | string               | The lobby secret                                                                           |
+| secret                | string               | The lobby secret (max 250)                                                                 |
 | lobby_metadata        | ?map[string, string] | The metadata of the lobby (max total length 1000)                                          |
 | member_metadata       | ?map[string, string] | The metadata of the lobby member (max total length 1000)                                   |
 | idle_timeout_seconds? | integer              | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
@@ -178,7 +176,7 @@ This endpoint is not usable by user accounts.
   Modify Lobby
 </RouteHeader>
 
-Modifies a lobby's settings. Application must be creator of the lobby. Returns the updated [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) Gateway event.
+Modifies a lobby's settings. Application must be the creator of the lobby. Returns the updated [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) Gateway event.
 
 <Alert type="warn">
 
@@ -198,7 +196,7 @@ This endpoint is not usable by user accounts.
   Delete Lobby
 </RouteHeader>
 
-Deletes a lobby. Application must be creator of the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) Gateway event.
+Deletes a lobby. Application must be the creator of the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) Gateway event.
 
 <Alert type="warn">
 
@@ -214,7 +212,7 @@ Adds a member to the lobby. Returns the [lobby member](#lobby-member-object) obj
 
 <Alert type="note">
 
-If user is already a member of the lobby, this will update provided fields and fire [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event instead.
+If the user is already a member of the lobby, this will update the provided fields and fire a [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event instead.
 
 </Alert>
 
@@ -231,15 +229,11 @@ If user is already a member of the lobby, this will update provided fields and f
 
 Removes a member from the lobby. Returns a 204 empty response on success. Fires a [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
 
-{/* TODO: do we clarify whether this returns 204 even if provided user is not member of lobby? */}
-
 <RouteHeader method="DELETE" url="/lobbies/{lobby.id}/members/@me" supportsOAuth2="lobbies.write">
   Leave Lobby
 </RouteHeader>
 
 Removes the current user from the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) and [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
-
-{/* TODO: do we clarify whether this returns 204 even if provided user is not member of lobby? */}
 
 <RouteHeader method="PATCH" url="/lobbies/{lobby.id}/channel-linking" supportsOAuth2="lobbies.write">
   Set Linked Channel
@@ -247,7 +241,7 @@ Removes the current user from the lobby. Returns a 204 empty response on success
 
 Links or unlinks a channel to the lobby. Returns a [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) and [Channel Update](/topics/gateway-events#channel-update) Gateway event.
 
-The application must be a creator of the lobby, or user must have `CAN_LINK_LOBBY` flag.
+The application must be the creator of the lobby, or the member must have the [`CAN_LINK_LOBBY` flag](#lobby-member-flags).
 
 ### JSON params
 
@@ -259,7 +253,7 @@ The application must be a creator of the lobby, or user must have `CAN_LINK_LOBB
   Create Lobby Message
 </RouteHeader>
 
-Posts a message to a text-based channel. Returns a partial [lobby message](#partial-lobby-message-object) object on success. Fires a [Lobby Message Create](/topics/gateway-events#lobby-message-create) and [Message Create](/topics/gateway-events#message-create) Gateway event.
+Posts a message to a lobby. Returns a partial [lobby message](#partial-lobby-message-object) object on success. Fires a [Lobby Message Create](/topics/gateway-events#lobby-message-create) and [Message Create](/topics/gateway-events#message-create) Gateway event.
 Functionally identical to the [Create Message](/resources/message#create-message) endpoint, but is used for lobbies in an OAuth2 context and has some additional parameters. Check there for more information.
 
 <Alert type="warn">
