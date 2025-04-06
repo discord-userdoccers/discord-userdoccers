@@ -286,7 +286,7 @@ Sent when a client wants to request that the Gateway pings a misbehaving voice s
 
 #### Create Stream
 
-Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
+Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission in the given channel. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
 
 ###### Create Stream Structure
 
@@ -313,7 +313,7 @@ Sent by the client to create a stream in a given voice channel. Requires the `ST
 
 ### Watch Stream
 
-Sent by the client to start watching a user's stream. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
+Sent by the client to start watching a user's stream. User must be connected to the associated voice channel. Fires either a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) or a [Stream Delete](#stream-delete) Gateway event.
 
 ###### Watch Stream Structure
 
@@ -334,7 +334,7 @@ Sent by the client to start watching a user's stream. Fires a [Stream Create](#s
 
 #### Set Stream Paused
 
-Sent by the client to pause or resume their stream. Fires a [Stream Server Update](#stream-server-update) Gateway event.
+Sent by the client to pause or resume their stream. User must be the owner of the stream. Fires a [Stream Server Update](#stream-server-update) Gateway event.
 
 ###### Set Stream Paused Structure
 
@@ -399,7 +399,9 @@ Sent when a client wants to request that the Gateway pings a misbehaving stream 
 
 #### Request Guild Members
 
-Used to request all members for a guild or a list of guilds. When initially connecting, if you don't have the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), or if the guild is over 75k members, it will only send members who are in voice, plus the member for you (the connecting user). Otherwise, if a guild has over `large_threshold` members (value in the [Gateway Identify](#identify)), it will only send members who are online, have a role, have a nickname, or are in a voice channel, and if it has under `large_threshold` members, it will send all members. If a client wishes to receive additional members, they need to explicitly request them via this operation. Fires multiple [Guild Members Chunk](#guild-members-chunk) events with up to 1000 members per chunk until all members that match the request have been sent.
+Used to request all members for a guild or a list of guilds. When initially connecting, if you don't have the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), or if the guild is over 75k members, it will only send members who are in voice, plus the member for you (the connecting user).
+Otherwise, if a guild has over `large_threshold` members (value in the [Gateway Identify](#identify)), it will only send members who are online, have a role, have a nickname, or are in a voice channel, and if it has under `large_threshold` members, it will send all members.
+If a client wishes to receive additional members, they need to explicitly request them via this operation. Fires multiple [Guild Members Chunk](#guild-members-chunk) events with up to 1000 members per chunk until all members that match the request have been sent.
 
 Due to our privacy and infrastructural concerns with this feature, there are some limitations that apply:
 
@@ -519,7 +521,7 @@ Used to request soundboard sounds for a list of guilds. Fires a [Soundboard Soun
 
 #### Request Last Messages
 
-Used to request the last messages (indicated by the [`last_message_id` field](/resources/channel#channel-object)) from channels. Fires a [Last Messages](#last-messages) Gateway event with up to 100 messages that match the request.
+Used to request the last messages (indicated by the [`last_message_id` field](/resources/channel#channel-object)) from channels. User must be a member of the guild. Fires a [Last Messages](#last-messages) Gateway event with up to 100 messages that match the request.
 
 ###### Request Last Messages Structure
 
@@ -542,7 +544,7 @@ Used to request the last messages (indicated by the [`last_message_id` field](/r
 
 #### Search Recent Members
 
-Used to search the 10,000 most recently joined members in a guild. Fires a [Guild Members Chunk](#guild-members-chunk) Gateway event with up to 1000 members that match the request.
+Used to search the 10,000 most recently joined members in a guild. User must be a member of the guild. Fires a [Guild Members Chunk](#guild-members-chunk) Gateway event with up to 1000 members that match the request.
 
 ###### Search Recent Members Structure
 
@@ -595,7 +597,7 @@ Used to request the voice channel statuses for a guild. Fires a [Channel Statuse
 
 #### Request Channel Member Count
 
-Used to request the number of members that can view a guild channel, as well as how many are online at the given time. Fires a [Channel Member Count Update](#channel-member-count-update) Gateway event with the requested count.
+Used to request the number of members that can view a guild channel, as well as how many are online at the given time. Requires the `VIEW_CHANNEL` permission in the given channel. Fires a [Channel Member Count Update](#channel-member-count-update) Gateway event with the requested count.
 
 ###### Request Channel Member Count Structure
 
@@ -603,6 +605,18 @@ Used to request the number of members that can view a guild channel, as well as 
 | ---------- | --------- | --------------------- |
 | guild_id   | snowflake | The ID of the guild   |
 | channel_id | snowflake | The ID of the channel |
+
+###### Example Request Channel Member Count
+
+```json
+{
+  "op": 39,
+  "d": {
+    "guild_id": "957057010334048288",
+    "channel_id": "1145501524013895733"
+  }
+}
+```
 
 ## Receive Events
 
@@ -2304,13 +2318,15 @@ Sent when a stream is deleted, or becomes unavailable due to an outage.
 
 ###### Stream Delete Reason
 
-| Value                     | Description                                           |
-| ------------------------- | ----------------------------------------------------- |
-| user_requested            | The user requested to end the stream                  |
-| stream_ended              | The client was disconnected because the stream ended  |
-| stream_full               | The client attempted to join a full stream            |
-| unauthorized              | The client is not authorized to view the stream       |
-| safety_guild_rate_limited | The stream was rate limited due to guild restrictions |
+| Value                     | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| user_requested            | The user requested to end the stream                   |
+| stream_ended              | The client was disconnected because the stream ended   |
+| stream_full               | The client attempted to join a full stream             |
+| unauthorized              | The client is not authorized to view the stream        |
+| safety_guild_rate_limited | The stream was rate limited due to guild restrictions  |
+| parse_failed              | Parsing the stream key failed                          |
+| invalid_channel           | The provided channel is not valid for this stream type |
 
 ###### Example Stream Delete
 
