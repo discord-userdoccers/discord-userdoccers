@@ -823,11 +823,27 @@ Ensure you use the proper content type (e.g. `image/jpeg`, `image/png`, `image/g
 
 ## Uploading Files
 
+<Collapsible title="Upload Limits" description="How are file upload limits calculated?" icon="list">
+
+The file upload size limit applies to each file in a request. The default limit is **10 MiB** for all users, but may be higher depending on their [premium type](https://support.discord.com/hc/en-us/articles/115000435108)
+or the target guild's [premium tier](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-FAQ), whichever is higher. The table below summarizes the raised limits:
+
 <Alert type="info">
 
-A file upload size limit applies to _all_ files in a request (rather than each individual file). While the limit depends on the [**premium tier (boost level)**](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-FAQ-#h_419c3bd5-addd-4989-b7cf-c7957ef92583) of a guild, it is 10 MiB by default.
+Note that Cloudflare enforces a maximum request size of less than **200 MiB**. Exceeding this limit will fail with a 413 payload too large.
+To upload files larger than **200 MiB**, you must utilize [Google Cloud uploads](#uploading-to-google-cloud).
 
 </Alert>
+
+| Resource                                            | Tier     | Limit       |
+| --------------------------------------------------- | -------- | ----------- |
+| [User premium type](/resources/user#premium-type)   | `TIER_1` | **50 MiB**  |
+| [User premium type](/resources/user#premium-type)   | `TIER_2` | **500 MiB** |
+| [User premium type](/resources/user#premium-type)   | `TIER_3` | **50 MiB**  |
+| [Guild premium tier](/resources/guild#premium-tier) | `TIER_2` | **50 MiB**  |
+| [Guild premium tier](/resources/guild#premium-tier) | `TIER_3` | **100 MiB** |
+
+</Collapsible>
 
 Some endpoints support file attachments, indicated by the `files[n]` parameter. To add file(s), the standard `application/json` body must be replaced by a `multipart/form-data` body. The JSON message body can optionally be provided using the `payload_json` parameter.
 
@@ -901,7 +917,8 @@ Content-Type: image/gif
 
 ###### Using Attachments within Embeds
 
-You can upload attachments when creating a message and use those attachments within your embed. To do this, you will want to upload files as part of your `multipart/form-data` body. Make sure that you're uploading files which contain a filename, as you will need to reference it in your payload.
+You can upload attachments when creating a message and use those attachments within your embed. To do this, you will want to upload files as part of your `multipart/form-data` body.
+Make sure that you're uploading files which contain a filename, as you will need to reference it in your payload. Note that filenames are normalized by Discord, so sending exotic characters in the filename may lead to unexpected results.
 
 <Alert type="warn">
 
@@ -929,7 +946,7 @@ For example:
 
 You can upload large attachments quickly directly to Discord's Google Cloud storage bucket, using the [Create Attachments](/resources/message#create-attachments) endpoint to generate upload URLs, and sending each generated URL a `PUT` request with the intended attachment as the body.
 
-When using Google Cloud uploads, the file upload size limit applies to individual files, rather than the entire request.
+This allows you to sidestep the Discord request size limit of **200 MiB** and upload up a file up to **500 MiB** directly to Google Cloud. Note that [file size limits](#uploading-files) will still apply when sending the attachment in a message.
 
 An example implementation in Python pseudocode would be:
 
@@ -943,7 +960,7 @@ headers = {
     "Authorization": "Bot <bot_token>"
 }
 
-filename = "index.js"
+filename = "cat.png"
 size = os.stat(filename).st_size
 
 json = {
