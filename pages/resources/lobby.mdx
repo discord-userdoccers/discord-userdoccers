@@ -41,18 +41,20 @@ Represents a member of a lobby.
 
 | Field         | Type                 | Description                                                                       |
 | ------------- | -------------------- | --------------------------------------------------------------------------------- |
-| id            | snowflake            | The ID of the user                                                                |
+| id ^1^        | snowflake            | The ID of the user                                                                |
 | metadata?     | ?map[string, string] | The metadata of the lobby member (max 25 keys, 1024 characters per key and value) |
 | flags?        | integer              | The [lobby member's flags](#lobby-member-flags)                                   |
-| connected ^1^ | boolean              | Whether the member is connected to a call in lobby                                |
+| connected ^2^ | boolean              | Whether the member is connected to a call in lobby                                |
 
-^1^ Only included in lobby objects returned [over the Gateway](/topics/gateway-events#lobbies).
+^1^ Not included when returned [over the Gateway](/topics/gateway-events#lobbies).
+
+^2^ Only included in lobby objects returned [over the Gateway](/topics/gateway-events#lobbies).
 
 ###### Lobby Member Flags
 
-| Value  | Name           | Description                                     |
-| ------ | -------------- | ----------------------------------------------- |
-| 1 << 0 | CAN_LINK_LOBBY | Lobby member can link a text channel to a lobby |
+| Value  | Name           | Description                                       |
+| ------ | -------------- | ------------------------------------------------- |
+| 1 << 0 | CAN_LINK_LOBBY | Lobby member can link a text channel to the lobby |
 
 ## Endpoints
 
@@ -64,26 +66,26 @@ Creates a new lobby. Returns a [lobby](#lobby-object) object on success. Fires a
 
 ### JSON Params
 
-| Field                 | Type                                               | Description                                                                                |
-| --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| metadata?             | ?map[string, string]                               | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                 |
-| members?              | array[[lobby member](#lobby-member-object) object] | The users to create lobby with (max 25)                                                    |
-| idle_timeout_seconds? | integer                                            | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
+| Field                 | Type                                               | Description                                                                                                       |
+| --------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| metadata?             | ?map[string, string]                               | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                                        |
+| members?              | array[[lobby member](#lobby-member-object) object] | The members of the lobby (max 25)                                                                                 |
+| idle_timeout_seconds? | integer                                            | How long to wait (in seconds) before shutting down a lobby after it becomes idle (min 5, max 604800, default 300) |
 
 <RouteHeader method="PUT" url="/lobbies">
   Join or Create Lobby
 </RouteHeader>
 
-Joins existing lobby or creates a new lobby. Returns a [lobby](#lobby-object) object on success. May fire a [Lobby Create](/topics/gateway-events#lobby-create) Gateway event.
+Joins an existing lobby or creates a new lobby. Returns a [lobby](#lobby-object) object on success. May fire a [Lobby Create](/topics/gateway-events#lobby-create) or [Lobby Member Add](/topics/gateway-events#lobby-member-add) Gateway event.
 
 ### JSON Params
 
-| Field                 | Type                 | Description                                                                                |
-| --------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
-| secret                | string               | The lobby secret (max 250 characters)                                                      |
-| lobby_metadata        | ?map[string, string] | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                 |
-| member_metadata       | ?map[string, string] | The metadata of the lobby member (max 25 keys, 1024 characters per key and value)          |
-| idle_timeout_seconds? | integer              | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
+| Field                 | Type                 | Description                                                                                                       |
+| --------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| secret                | string               | The lobby secret (max 250 characters)                                                                             |
+| lobby_metadata        | ?map[string, string] | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                                        |
+| member_metadata       | ?map[string, string] | The metadata of the lobby member (max 25 keys, 1024 characters per key and value)                                 |
+| idle_timeout_seconds? | integer              | How long to wait (in seconds) before shutting down a lobby after it becomes idle (min 5, max 604800, default 300) |
 
 <RouteHeader method="GET" url="/lobbies/{lobby.id}">
   Get Lobby
@@ -111,11 +113,11 @@ This endpoint is not usable by user accounts.
 
 ### JSON Params
 
-| Field                 | Type                                               | Description                                                                                |
-| --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| metadata?             | ?map[string, string]                               | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                 |
-| members?              | array[[lobby member](#lobby-member-object) object] | The users to create lobby with (max 25)                                                    |
-| idle_timeout_seconds? | integer                                            | The seconds to wait before shutting down a lobby after it becomes idle (min 5, max 604800) |
+| Field                 | Type                                               | Description                                                                                          |
+| --------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| metadata?             | ?map[string, string]                               | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                           |
+| members?              | array[[lobby member](#lobby-member-object) object] | The members of the lobby (max 25)                                                                    |
+| idle_timeout_seconds? | integer                                            | How long to wait (in seconds) before shutting down a lobby after it becomes idle (min 5, max 604800) |
 
 <RouteHeader method="DELETE" url="/lobbies/{lobby.id}">
   Delete Lobby
@@ -137,7 +139,7 @@ Adds a member to the lobby. Returns the [lobby member](#lobby-member-object) obj
 
 <Alert type="note">
 
-If the user is already a member of the lobby, this will modify the provided fields and fire a [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event instead.
+If the user is already a member of the lobby, this will replace the provided fields and fire a [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event instead.
 
 </Alert>
 
@@ -161,14 +163,13 @@ Removes a member from the lobby. Returns a 204 empty response on success. Fires 
 Removes the current user from the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) and [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
 
 <RouteHeader method="PATCH" url="/lobbies/{lobby.id}/channel-linking" supportsOAuth2="lobbies.write">
-  Set Linked Channel
+  Modify Lobby Linked Channel
 </RouteHeader>
 
 Links or unlinks a channel to the lobby. Returns a [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) and [Channel Update](/topics/gateway-events#channel-update) Gateway event.
-
 The application must be the creator of the lobby or the member must have the [`CAN_LINK_LOBBY` flag](#lobby-member-flags).
 
-### JSON params
+### JSON Params
 
 | Field       | Type      | Description                                |
 | ----------- | --------- | ------------------------------------------ |
