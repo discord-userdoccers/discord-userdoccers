@@ -302,7 +302,8 @@ export abstract class TypeGenerator {
             const heading = headings[cellId];
 
             switch (heading) {
-              case "VALUE": {
+              case "VALUE":
+              case "EVENT": {
                 content.value = cell.innerText;
                 break;
               }
@@ -328,6 +329,46 @@ export abstract class TypeGenerator {
             content.name = content.value;
             content.value = `"${content.value.split(/\s/)[0]}"`;
           }
+
+          enumType.contents.push(content as BitfieldContents);
+        }
+
+        return this.handleEnum(enumType);
+      }
+      // Events
+      case "EVENT": {
+        const enumType: EnumData = {
+          title,
+          description,
+          contents: [],
+        };
+
+        for (const row of rowCells) {
+          const content: Partial<BitfieldContents> = {};
+
+          row.forEach((cell, cellId) => {
+            const heading = headings[cellId];
+
+            switch (heading) {
+              case "EVENT": {
+                content.name = cell.innerText;
+                break;
+              }
+              case "VALUE": {
+                content.value = cell.innerText;
+                break;
+              }
+              case "DESCRIPTION": {
+                content.description = this.parseDocumentation([cell]);
+                break;
+              }
+              default: {
+                if (!content.otherColumns) content.otherColumns = {};
+
+                content.otherColumns[heading] = cell.innerText;
+              }
+            }
+          });
 
           enumType.contents.push(content as BitfieldContents);
         }
