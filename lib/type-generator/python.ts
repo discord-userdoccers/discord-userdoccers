@@ -23,8 +23,6 @@ const TYPE_MAP: [string | RegExp, string][] = [
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
   let output = "";
 
-  console.log({ description, otherColumns });
-
   if (description.length === 1 && Object.entries(otherColumns).length === 0) {
     output += `\t#: ${description[0]}\n`;
   } else if (description.length || Object.entries(otherColumns).length) {
