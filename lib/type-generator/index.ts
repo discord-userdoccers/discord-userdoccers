@@ -387,7 +387,7 @@ export abstract class TypeGenerator {
   protected static parseType(
     key: string | null,
     typeName: string,
-    typeMap: Record<string, string> = {},
+    typeMap: [string | RegExp, string][] = [],
     origNullableStr?: (inner: string, isNullable: boolean, isUndefinable: boolean) => string,
   ): string {
     typeName = typeName.trim();
@@ -401,12 +401,18 @@ export abstract class TypeGenerator {
     const nullableStr = (inner: string) =>
       (isNullable || isUndefinable) && origNullableStr ? origNullableStr(inner, isNullable, isUndefinable) : inner;
 
-    if (typeName in typeMap) {
-      typeName = typeMap[typeName];
-    }
+    const mapping = typeMap.find(([key]) => {
+      if (key instanceof RegExp) {
+        return key.exec(typeName)
+      }
+      else if (typeof key === "string") {
+        return key === typeName;
+      }
+    });
 
-    // This will be suffixed to the end of any type we return, e.g. `${T}${nullableStr}`
-    // const nullableStr = () => isNullable ? " | null" : "";
+    if (mapping) {
+      typeName = mapping[1];
+    }
 
     // If the type ends with ` object`, convert it to camel case.
     // e.g. `some thing goes here object` becomes `SomeThingGoesHere`.

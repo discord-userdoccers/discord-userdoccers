@@ -9,14 +9,16 @@ const trimBySpace = (val: string) => {
 
   return trimmed;
 };
-const TYPE_MAP: Record<string, string> = {
-  "integer": "int",
-  "string": "str",
-  "boolean": "bool",
-  "snowflake": "Snowflake",
-  "ISO8601 timestamp": "str",
-  "file contents": "bytes",
-};
+const TYPE_MAP: [string | RegExp, string][] = [
+  ["string", "str"],
+  ["boolean", "bool"],
+  ["snowflake", "Snowflake"],
+  ["ISO8601 timestamp", "str"],
+  ["file contents", "bytes"],
+  [/^binary data/i, "bytes"],
+  // Handles most numeric types.
+  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "int"]
+];
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
   let output = "";

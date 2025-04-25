@@ -2,12 +2,13 @@ import { BitfieldData, EnumData, StructData, TypeGenerator } from ".";
 
 const trimBySpace = (val: string) => val.split(/\s/)[0];
 
-const TYPE_MAP: Record<string, string> = {
-  "integer": "number",
-  "snowflake": "Snowflake",
-  "ISO8601 timestamp": "string",
-  "file contents": "UInt8Array",
-};
+const TYPE_MAP: [string | RegExp, string][] = [
+  ["snowflake", "Snowflake"],
+  ["ISO8601 timestamp", "string"],
+  ["file contents", "UInt8Array"],
+  [/^binary data/i, "Uint8Array"],
+  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "number"]
+];
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
   let output = "";
