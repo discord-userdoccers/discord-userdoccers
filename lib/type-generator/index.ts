@@ -67,12 +67,12 @@ export abstract class TypeGenerator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected static parseTypeArray(key: string, typeName: string): string {
+  protected static parseTypeArray(key: string | null, typeName: string): string {
     throw new Error("Not implemented");
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected static parseTypeMap(key: string, typeName: string): string {
+  protected static parseTypeMap(key: string | null, typeName: string): string {
     throw new Error("Not implemented");
   }
 
@@ -173,10 +173,14 @@ export abstract class TypeGenerator {
     // Convert any title to CamelCase.
     // If the string is empty, we want to use our fallback.
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-    const title = (titleElement?.innerText.trim() || "unknown name")
+    let title = (titleElement?.innerText.trim() || "unknown name")
       .split(/[\s_-]/)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join("");
+
+    if (title.endsWith("Structure")) {
+      title = title.replace(/Structure$/, "");
+    }
 
     const rows = [...rootElement.querySelectorAll("tr")];
 
@@ -340,14 +344,16 @@ export abstract class TypeGenerator {
    * @returns The parsed type name
    */
   protected static parseType(
-    key: string,
+    key: string | null,
     typeName: string,
     typeMap: Record<string, string> = {},
     origNullableStr?: (inner: string, isNullable: boolean, isUndefinable: boolean) => string,
   ): string {
     typeName = typeName.trim();
 
-    const isUndefinable = key.trim().endsWith("?");
+    console.log(key, typeName);
+
+    const isUndefinable = key?.trim().endsWith("?") ?? false;
 
     // If the type starts with a `?`, it's nullable, so we mark the boolean and strip the ? from the type name.
     const isNullable = typeName.startsWith("?");
@@ -377,6 +383,7 @@ export abstract class TypeGenerator {
 
     // If the type is an array, grab the inner type and parse that, then return it.
     if (typeName.startsWith("array[")) {
+      console.log({ key, typeName, isNullable, isUndefinable, res: nullableStr(this.parseTypeArray(key, typeName)) });
       return nullableStr(this.parseTypeArray(key, typeName));
     }
 

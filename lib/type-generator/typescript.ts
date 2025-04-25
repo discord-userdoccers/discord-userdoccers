@@ -36,7 +36,7 @@ const nullableStr = (inner: string, isNullable: boolean, isUndefinable: boolean)
 };
 
 export class TypescriptGenerator extends TypeGenerator {
-  protected static override parseTypeArray(key: string, typeName: string): string {
+  protected static override parseTypeArray(key: string | null, typeName: string): string {
     const match = /array\[(.*?)\]/.exec(typeName);
 
     if (match?.[1]) {
@@ -46,7 +46,7 @@ export class TypescriptGenerator extends TypeGenerator {
     return typeName;
   }
 
-  protected static override parseTypeMap(key: string, typeName: string): string {
+  protected static override parseTypeMap(key: string | null, typeName: string): string {
     const match = /map\[(.*?),(.*?)\]/.exec(typeName);
 
     if (match?.[2]) {
@@ -82,7 +82,7 @@ export class TypescriptGenerator extends TypeGenerator {
 
     for (const row of data.contents) {
       output += writeDocs(row.description, row.otherColumns);
-      output += `\t${trimBySpace(row.field)}: ${this.parseType(row.field, row.type, TYPE_MAP, nullableStr)};\n`;
+      output += `\t${trimBySpace(row.field)}: ${this.parseType(row.field.split(/\s/)[0], row.type, TYPE_MAP, nullableStr)};\n`;
     }
 
     output += "}\n";
@@ -111,7 +111,7 @@ export class TypescriptGenerator extends TypeGenerator {
 
     for (const row of data.contents) {
       output += writeDocs(row.description, row.otherColumns);
-      output += `\t${trimBySpace(row.name)} = ${this.parseType(row.name, row.value, TYPE_MAP, nullableStr)},\n`;
+      output += `\t${trimBySpace(row.name)} = ${this.parseType(row.name.split(/\s/)[0], row.value, TYPE_MAP, nullableStr)},\n`;
     }
 
     output += "}\n";
