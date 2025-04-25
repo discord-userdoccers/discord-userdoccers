@@ -13,6 +13,7 @@ const TYPE_MAP: Record<string, string> = {
   "integer": "int",
   "string": "str",
   "boolean": "bool",
+  "snowflake": "Snowflake",
   "ISO8601 timestamp": "string",
 };
 
