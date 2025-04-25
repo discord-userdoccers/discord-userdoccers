@@ -6,6 +6,7 @@ const TYPE_MAP: Record<string, string> = {
   "integer": "number",
   "snowflake": "Snowflake",
   "ISO8601 timestamp": "string",
+  "file contents": "UInt8Array",
 };
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {

@@ -15,6 +15,7 @@ const TYPE_MAP: Record<string, string> = {
   "boolean": "bool",
   "snowflake": "Snowflake",
   "ISO8601 timestamp": "str",
+  "file contents": "bytes",
 };
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
