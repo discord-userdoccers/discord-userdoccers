@@ -10,9 +10,10 @@ const trimBySpace = (val: string) => {
   return trimmed;
 };
 const TYPE_MAP: Record<string, string> = {
-  integer: "int",
-  string: "str",
-  boolean: "bool",
+  "integer": "int",
+  "string": "str",
+  "boolean": "bool",
+  "ISO8601 timestamp": "string",
 };
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {

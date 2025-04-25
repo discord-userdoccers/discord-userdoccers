@@ -3,7 +3,8 @@ import { BitfieldData, EnumData, StructData, TypeGenerator } from ".";
 const trimBySpace = (val: string) => val.split(/\s/)[0];
 
 const TYPE_MAP: Record<string, string> = {
-  integer: "number",
+  "integer": "number",
+  "ISO8601 timestamp": "string",
 };
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
