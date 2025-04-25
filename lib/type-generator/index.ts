@@ -351,8 +351,6 @@ export abstract class TypeGenerator {
   ): string {
     typeName = typeName.trim();
 
-    console.log(key, typeName);
-
     const isUndefinable = key?.trim().endsWith("?") ?? false;
 
     // If the type starts with a `?`, it's nullable, so we mark the boolean and strip the ? from the type name.
@@ -383,7 +381,6 @@ export abstract class TypeGenerator {
 
     // If the type is an array, grab the inner type and parse that, then return it.
     if (typeName.startsWith("array[")) {
-      console.log({ key, typeName, isNullable, isUndefinable, res: nullableStr(this.parseTypeArray(key, typeName)) });
       return nullableStr(this.parseTypeArray(key, typeName));
     }
 
