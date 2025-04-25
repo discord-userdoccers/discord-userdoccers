@@ -17,13 +17,13 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["file contents", "bytes"],
   [/^binary data/i, "bytes"],
   // Handles most numeric types.
-  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "int"]
+  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "int"],
 ];
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
   let output = "";
 
-  console.log({ description, otherColumns })
+  console.log({ description, otherColumns });
 
   if (description.length === 1 && Object.entries(otherColumns).length === 0) {
     output += `\t#: ${description[0]}\n`;

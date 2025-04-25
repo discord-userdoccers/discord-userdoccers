@@ -407,9 +407,8 @@ export abstract class TypeGenerator {
 
     const mapping = typeMap.find(([key]) => {
       if (key instanceof RegExp) {
-        return key.exec(typeName)
-      }
-      else if (typeof key === "string") {
+        return key.exec(typeName);
+      } else if (typeof key === "string") {
         return key === typeName;
       }
     });

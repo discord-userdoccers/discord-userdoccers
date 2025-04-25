@@ -8,7 +8,7 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["file contents", "UInt8Array"],
   [/^binary data/i, "Uint8Array"],
   // Handles most numeric types.
-  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "number"]
+  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "number"],
 ];
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
