@@ -17,5 +17,9 @@ interface AlertProps {
 }
 
 export default function Alert({ type, children, style }: AlertProps) {
-  return <aside className={getClasses(type)} style={style}>{children}</aside>;
+  return (
+    <aside className={getClasses(type)} style={style}>
+      {children}
+    </aside>
+  );
 }
