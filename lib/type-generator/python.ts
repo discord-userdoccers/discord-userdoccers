@@ -39,8 +39,17 @@ function writeDocs(description: string[], otherColumns: Record<string, string> =
   return output;
 }
 
-const nullableStr = (inner: string, isUndefinable: boolean) =>
-  isUndefinable ? `NotRequired[${inner}]` : `${inner} | None`;
+const nullableStr = (inner: string, isNullable: boolean, isUndefinable: boolean) => {
+  if (isNullable && isUndefinable) {
+    return `NotRequired[${inner} | None]`;
+  } else if (isNullable) {
+    return `${inner} | None`;
+  } else if (isUndefinable) {
+    return `NotRequired[${inner}]`;
+  }
+
+  return inner;
+};
 
 export class PythonGenerator extends TypeGenerator {
   protected static override parseTypeArray(key: string, typeName: string): string {

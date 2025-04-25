@@ -6,6 +6,7 @@ import { TypescriptGenerator } from "../../lib/type-generator/typescript";
 import Chevron from "../icons/Chevron";
 import CopyIcon from "../icons/Copy";
 import Python from "../icons/Python";
+import TickIcon from "../icons/Tick";
 import TypeScript from "../icons/TypeScript";
 
 const cn = (...c: string[]) => c.join(" ");
@@ -16,6 +17,16 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 
   const [isDropdownOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [showCopyIcon, setShowCopyIcon] = useState(false);
+
+  useEffect(() => {
+    if (showCopyIcon) {
+      setTimeout(() => {
+        setShowCopyIcon(false);
+      }, 1000);
+    }
+  }, [showCopyIcon]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,6 +65,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
           })
           .then(() => {
             showSuccessToast("Copied code to clipboard.");
+            setShowCopyIcon(true);
           });
       })();
     } else {
@@ -68,7 +80,12 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 
   return (
     <div className="relative flex flex-row-reverse items-center gap-1">
-      <CopyIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
+      {showCopyIcon && (
+        <TickIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
+      )}
+      {!showCopyIcon && (
+        <CopyIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
+      )}
 
       <div className="relative" ref={dropdownRef}>
         <button

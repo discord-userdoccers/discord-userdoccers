@@ -170,8 +170,6 @@ export abstract class TypeGenerator {
 
     const description = TypeGenerator.parseDocumentation(intermediateElements);
 
-    console.log(titleElement);
-
     // Convert any title to CamelCase.
     // If the string is empty, we want to use our fallback.
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -345,7 +343,7 @@ export abstract class TypeGenerator {
     key: string,
     typeName: string,
     typeMap: Record<string, string> = {},
-    origNullableStr?: (inner: string, isUndefinable: boolean) => string,
+    origNullableStr?: (inner: string, isNullable: boolean, isUndefinable: boolean) => string,
   ): string {
     typeName = typeName.trim();
 
@@ -356,7 +354,7 @@ export abstract class TypeGenerator {
     typeName = isNullable ? typeName.slice(1) : typeName;
 
     const nullableStr = (inner: string) =>
-      isNullable && origNullableStr ? origNullableStr(inner, isUndefinable) : inner;
+      (isNullable || isUndefinable) && origNullableStr ? origNullableStr(inner, isNullable, isUndefinable) : inner;
 
     if (typeName in typeMap) {
       typeName = typeMap[typeName];

@@ -29,7 +29,11 @@ function writeDocs(description: string[], otherColumns: Record<string, string> =
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const nullableStr = (inner: string, isUndefinable: boolean) => `${inner} | null`;
+const nullableStr = (inner: string, isNullable: boolean, isUndefinable: boolean) => {
+  if (isNullable) return `${inner} | null`;
+
+  return inner;
+};
 
 export class TypescriptGenerator extends TypeGenerator {
   protected static override parseTypeArray(key: string, typeName: string): string {
