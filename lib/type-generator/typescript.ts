@@ -7,27 +7,28 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["ISO8601 timestamp", "string"],
   ["file contents", "UInt8Array"],
   [/^binary data/i, "Uint8Array"],
+  // Handles most numeric types.
   [/^(signed|unsigned)?\s?(byte|short|integer)/i, "number"]
 ];
 
 function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
   let output = "";
 
+  if (description.length || Object.entries(otherColumns).length) output += "\t/**\n";
+
   if (description.length) {
-    output += "\t/**\n";
     for (const line of description) {
       output += `\t * ${line}\n`;
     }
-
-    if (Object.entries(otherColumns).length > 0) {
-      output += `\t *\n`;
-      for (const [k, v] of Object.entries(otherColumns)) {
-        output += `\t * @property ${k} - ${v}\n`;
-      }
-    }
-
-    output += "\t */\n";
   }
+
+  if (Object.entries(otherColumns).length > 0) {
+    if (description.length) output += `\t *\n`;
+    for (const [k, v] of Object.entries(otherColumns)) {
+      output += `\t * @property ${k} - ${v}\n`;
+    }
+  }
+  if (description.length || Object.entries(otherColumns).length) output += "\t */\n";
 
   return output;
 }

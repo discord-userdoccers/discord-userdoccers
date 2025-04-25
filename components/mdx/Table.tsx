@@ -79,7 +79,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   }
 
   return (
-    <div className="relative flex flex-row-reverse items-center gap-1">
+    <div className="relative flex opacity-0 group-hover:opacity-100 opacity-transition duration-300 flex-row-reverse items-center gap-1">
       {showCopyIcon && (
         <TickIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
       )}
@@ -151,7 +151,7 @@ export function Table(props: JSX.IntrinsicElements["table"]) {
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
-    <div className="relative mt-0 max-w-full overflow-auto">
+    <div className="relative mt-0 max-w-full overflow-auto group">
       <table
         ref={tableRef}
         className="w-full border-collapse overflow-hidden break-words rounded-md rounded-t-none align-middle text-sm"

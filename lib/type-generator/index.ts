@@ -235,6 +235,7 @@ export abstract class TypeGenerator {
             }
           });
 
+          if (!content.description) content.description = [];
           if (!content.type) content.type = `"${content.field}"`;
 
           struct.contents.push(content as StructContents);
@@ -283,6 +284,7 @@ export abstract class TypeGenerator {
               }
             });
 
+            if (!content.description) content.description = [];
             bitfield.contents.push(content as BitfieldContents);
           }
 
@@ -330,6 +332,7 @@ export abstract class TypeGenerator {
             content.value = `"${content.value.split(/\s/)[0]}"`;
           }
 
+          if (!content.description) content.description = [];
           enumType.contents.push(content as BitfieldContents);
         }
 
@@ -370,6 +373,7 @@ export abstract class TypeGenerator {
             }
           });
 
+          if (!content.description) content.description = [];
           enumType.contents.push(content as BitfieldContents);
         }
 
