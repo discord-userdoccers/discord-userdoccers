@@ -24,12 +24,12 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef])
+  }, [dropdownRef]);
 
   function tryCopyCodeToClipboard() {
     if (!props.tableRef.current) return;
@@ -38,7 +38,6 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 
     if (selectedLanguage === "Python") {
       code = PythonGenerator.parseDOM(props.tableRef.current);
-
     }
 
     if (selectedLanguage === "TypeScript") {
@@ -46,9 +45,9 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
     }
 
     if (code) {
-
       (async () => {
-        await navigator.clipboard.writeText(code)
+        await navigator.clipboard
+          .writeText(code)
           .catch((err) => {
             console.error(err);
             showErrorToast("Failed to copy code to clipboard. Check console for details.");
@@ -57,26 +56,25 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
             showSuccessToast("Copied code to clipboard.");
           });
       })();
-
     } else {
       showErrorToast("Failed to generate code for this table. Check console for details.");
       console.error(
         "Failed to generate code for this table.",
         "It could be that this table isn't showing an actual struct or enum.",
-        "If this is supposed to work, open an issue on GitHub!"
+        "If this is supposed to work, open an issue on GitHub!",
       );
     }
   }
 
   return (
     <div className="relative flex flex-row-reverse items-center gap-1">
-      <CopyIcon className="h-5 w-5 my-auto cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
+      <CopyIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
 
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           className={cn(
-            "pl-2 pr-1.5 py-1 rounded-md text-xs font-mono bg-white dark:bg-black text-text-light dark:text-text-dark cursor-pointer select-none flex gap-1",
+            "flex cursor-pointer select-none gap-1 rounded-md bg-white py-1 pl-2 pr-1.5 font-mono text-xs text-text-light dark:bg-black dark:text-text-dark",
             "flex items-center gap-1",
           )}
           onClick={() => setIsOpen(!isDropdownOpen)}
@@ -87,18 +85,21 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 
           <span>{selectedLanguage}</span>
 
-          <Chevron className="text-white w-3 h-4" />
+          <Chevron className="h-4 w-3 text-white" />
         </button>
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-1 w-32 rounded-md shadow-lg z-10 ">
+          <div className="absolute right-0 z-10 mt-1 w-32 rounded-md shadow-lg">
             <div role="menu" aria-orientation="vertical" aria-labelledby="options-menu-button">
               <button
-                onClick={() => { setSelectedLanguage("Python"); setIsOpen(false); }}
+                onClick={() => {
+                  setSelectedLanguage("Python");
+                  setIsOpen(false);
+                }}
                 className={cn(
-                  'block w-full text-left px-4 py-2 text-xs font-mono cursor-pointer select-none rounded-t-md',
-                  'flex items-center gap-2',
-                  'bg-theme-light-sidebar dark:bg-theme-dark-sidebar',
-                  'hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover'
+                  "block w-full cursor-pointer select-none rounded-t-md px-4 py-2 text-left font-mono text-xs",
+                  "flex items-center gap-2",
+                  "bg-theme-light-sidebar dark:bg-theme-dark-sidebar",
+                  "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
                 )}
                 role="menuitem"
               >
@@ -106,12 +107,15 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
                 Python
               </button>
               <button
-                onClick={() => { setSelectedLanguage("TypeScript"); setIsOpen(false); }}
+                onClick={() => {
+                  setSelectedLanguage("TypeScript");
+                  setIsOpen(false);
+                }}
                 className={cn(
-                  'block w-full text-left px-4 py-2 text-xs font-mono cursor-pointer select-none rounded-b-md',
-                  'flex items-center gap-2',
-                  'bg-theme-light-sidebar dark:bg-theme-dark-sidebar',
-                  'hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover'
+                  "block w-full cursor-pointer select-none rounded-b-md px-4 py-2 text-left font-mono text-xs",
+                  "flex items-center gap-2",
+                  "bg-theme-light-sidebar dark:bg-theme-dark-sidebar",
+                  "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
                 )}
                 role="menuitem"
               >
@@ -130,12 +134,13 @@ export function Table(props: JSX.IntrinsicElements["table"]) {
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
-    <div className="max-w-full overflow-auto mt-0 relative max-w-full">
-      <table ref={tableRef}
+    <div className="relative mt-0 max-w-full overflow-auto">
+      <table
+        ref={tableRef}
         className="w-full border-collapse overflow-hidden break-words rounded-md rounded-t-none align-middle text-sm"
         {...props}
       />
-      <div className="absolute top-0 right-0 px-2 p-2">
+      <div className="absolute right-0 top-0 p-2 px-2">
         <CopyBar tableRef={tableRef} />
       </div>
     </div>
