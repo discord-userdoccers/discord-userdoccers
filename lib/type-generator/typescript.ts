@@ -1,6 +1,4 @@
-import { BitfieldData, EnumData, StructData, TypeGenerator } from ".";
-
-const trimBySpace = (val: string) => val.split(/\s/)[0];
+import { TableType, Tokenizer, TypeInfo } from "./tokenizer";
 
 const TYPE_MAP: [string | RegExp, string][] = [
   ["snowflake", "Snowflake"],
@@ -11,148 +9,141 @@ const TYPE_MAP: [string | RegExp, string][] = [
   [/^(signed|unsigned)?\s?(byte|short|integer)/i, "number"],
 ];
 
-function writeDocs(description: string[], otherColumns: Record<string, string> = {}): string {
-  let output = "";
+export class TypescriptGenerator {
+  public readonly tokenizer: Tokenizer;
 
-  if (description.length || Object.entries(otherColumns).length) output += "\t/**\n";
-
-  if (description.length) {
-    for (const line of description) {
-      output += `\t * ${line}\n`;
-    }
+  public constructor(rootElement: HTMLTableElement) {
+    this.tokenizer = new Tokenizer(rootElement);
   }
 
-  if (Object.entries(otherColumns).length > 0) {
-    if (description.length) output += `\t *\n`;
-    for (const [k, v] of Object.entries(otherColumns)) {
-      output += `\t * @property ${k} - ${v}\n`;
+  public generateCode() {
+    const layout = this.tokenizer.getLayout();
+    if (!layout) throw new Error("Invalid layout received.");
+
+    const title = this.typeToString(layout.title);
+    const description = layout.description?.multiline ?? [];
+
+    const properties = [];
+
+    for (const property of layout.contents) {
+      let isEnum = layout.type === TableType.Enum;
+      const field = this.typeToString(property.field, !isEnum);
+
+      const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
+
+      let type = this.typeToString(property.type, isEnum);
+      if (!isEnum) type = this.typeMapper(type);
+
+      const description = property.description ? this.typeToString(property.description) : "";
+
+      const otherColumns = [];
+      for (const column of property.otherColumns) {
+        otherColumns.push([this.typeToString(column[0]), this.typeToString(column[1])]);
+      }
+
+      properties.push({
+        field,
+        type,
+        description,
+        otherColumns,
+        isDeprecated,
+      });
     }
-  }
-  if (description.length || Object.entries(otherColumns).length) output += "\t */\n";
 
-  return output;
-}
+    let output = "";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const nullableStr = (inner: string, isNullable: boolean, isUndefinable: boolean) => {
-  if (isNullable) return `${inner} | null`;
-
-  return inner;
-};
-
-export class TypescriptGenerator extends TypeGenerator {
-  protected static override parseTypeArray(key: string | null, typeName: string): string {
-    const match = /array\[(.*?)\]/.exec(typeName);
-
-    if (match?.[1]) {
-      return `${this.parseType(key, match[1], TYPE_MAP, nullableStr)}[]`;
+    if (description) {
+      output += "/**\n";
+      description.forEach((line, i) => {
+        output += ` * ${line}\n`;
+        if (i < description.length - 1) output += ` *\n`;
+      });
+      output += " */\n";
     }
 
-    return typeName;
+    if (layout.type === TableType.Struct) {
+      output += `export interface ${title} {\n`;
+    } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
+      output += `export enum ${title} {\n`;
+    } else if (layout.type === TableType.Bitfield) {
+      // TODO: Should I Object.freeze()?
+      output += `const ${title} = {\n`;
+    }
+
+    for (const property of properties) {
+      if (property.description || property.otherColumns.length) {
+        output += `\t/**\n`;
+
+        if (property.description) output += `\t * ${property.description}\n`;
+        if (property.description && property.otherColumns.length) {
+          output += `\t *\n`; // add an extra newline for spacing.
+        }
+        for (const [key, value] of property.otherColumns) {
+          output += `\t * ${key}: ${value}\n`;
+        }
+        if (property.isDeprecated) {
+          output += `\t * @deprecated\n`;
+        }
+        output += `\t */\n`;
+      }
+
+      if (layout.type === TableType.Struct) {
+        output += `\t${property.field}: ${property.type};\n`;
+      } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
+        output += `\t${property.field} = ${property.type},\n`;
+      } else if (layout.type === TableType.Bitfield) {
+        let [left, right] = property.type.split("<<").map((s) => s.trim());
+        output += `\t${property.field}: ${left}n << ${right}n,\n`;
+      }
+    }
+
+    if (layout.type === TableType.Struct || layout.type === TableType.Enum || layout.type === TableType.Event) {
+      output += `}\n`;
+    } else if (layout.type === TableType.Bitfield) {
+      output += `} as const;\n`;
+    }
+
+    output += "\n";
+
+    return output;
   }
 
-  protected static override parseTypeMap(key: string | null, typeName: string): string {
-    const match = /map\[(.*?),(.*?)\]/.exec(typeName);
+  private typeMapper(input: string): string {
+    for (const [k, v] of TYPE_MAP) {
+      if (k instanceof RegExp) {
+        if (input.match(k)) {
+          return v;
+        }
+      }
+      if (input === k) {
+        return v;
+      }
+    }
+    return input;
+  }
 
-    if (match?.[2]) {
-      const [keyType, valueType] = match.slice(1).map((t) => t.trim());
-
-      const left = this.parseType(key, keyType, TYPE_MAP, nullableStr);
-      const right = this.parseType(key, valueType, TYPE_MAP, nullableStr);
-
+  private typeToString(type: TypeInfo, onlyFirstWord = false): string {
+    if (type.array) {
+      const inner = this.typeToString(type.array[0]);
+      return `${inner}[]`;
+    }
+    if (type.map) {
+      const left = this.typeToString(type.map[0]);
+      const right = this.typeToString(type.map[1]);
       return `Record<${left}, ${right}>`;
     }
-
-    return typeName;
-  }
-
-  protected static override handleStruct(data: StructData): string {
-    let output = "";
-
-    if (data.description) {
-      output += "/**\n";
-
-      const len = data.description.length;
-      data.description.forEach((line, i) => {
-        output += ` * ${line}\n`;
-        if (i < len - 1) {
-          output += ` *\n`;
-        }
-      });
-
-      output += " */\n";
+    if (type.multiline) {
+      return type.multiline.join("\n");
     }
-
-    output += `export interface ${data.title} {\n`;
-
-    for (const row of data.contents) {
-      output += writeDocs(row.description, row.otherColumns);
-      output += `\t${trimBySpace(row.field)}: ${this.parseType(row.field.split(/\s/)[0], row.type, TYPE_MAP, nullableStr)};\n`;
+    if (type.type && type.optional) {
+      return `${this.typeMapper(type.type)} | null`;
     }
-
-    output += "}\n";
-
-    return output;
-  }
-
-  protected static override handleEnum(data: EnumData): string {
-    let output = "";
-
-    if (data.description) {
-      output += "/**\n";
-
-      const len = data.description.length;
-      data.description.forEach((line, i) => {
-        output += ` * ${line}\n`;
-        if (i < len - 1) {
-          output += ` *\n`;
-        }
-      });
-
-      output += " */\n";
+    if (type.type && onlyFirstWord) {
+      return type.type.split(" ")[0];
     }
-
-    output += `export enum ${data.title} {\n`;
-
-    for (const row of data.contents) {
-      output += writeDocs(row.description, row.otherColumns);
-      output += `\t${trimBySpace(row.name)} = ${this.parseType(row.name.split(/\s/)[0], row.value, TYPE_MAP, nullableStr)},\n`;
+    if (type.type) {
+      return type.type;
     }
-
-    output += "}\n";
-
-    return output;
-  }
-
-  protected static override handleBitfield(data: BitfieldData): string {
-    let output = "";
-
-    if (data.description) {
-      output += "/**\n";
-
-      const len = data.description.length;
-      data.description.forEach((line, i) => {
-        output += ` * ${line}\n`;
-        if (i < len - 1) {
-          output += ` *\n`;
-        }
-      });
-
-      output += " */\n";
-    }
-
-    output += `const ${data.title} = {\n`;
-
-    for (const row of data.contents) {
-      output += writeDocs(row.description, row.otherColumns);
-
-      const [left, right] = row.value.split("<<").map((x) => x.trim());
-
-      output += `\t${trimBySpace(row.name)}: ${left}n << ${right}n,\n`;
-    }
-
-    output += "} as const;\n";
-
-    return output;
+    throw new Error("Invalid TypeInfo provided.");
   }
 }

@@ -8,6 +8,7 @@ import CopyIcon from "../icons/Copy";
 import Python from "../icons/Python";
 import TickIcon from "../icons/Tick";
 import TypeScript from "../icons/TypeScript";
+import { NodeType, TableHeadNode, Tokenizer, TypeInfo } from "../../lib/type-generator/tokenizer";
 
 const cn = (...c: string[]) => c.join(" ");
 
@@ -46,15 +47,12 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
     if (!props.tableRef.current) return;
 
     let code;
-
     if (selectedLanguage === "Python") {
-      code = PythonGenerator.parseDOM(props.tableRef.current);
+      code = new PythonGenerator(props.tableRef.current).generateCode();
     }
-
     if (selectedLanguage === "TypeScript") {
-      code = TypescriptGenerator.parseDOM(props.tableRef.current);
+      code = new TypescriptGenerator(props.tableRef.current).generateCode();
     }
-
     if (code) {
       (async () => {
         await navigator.clipboard
