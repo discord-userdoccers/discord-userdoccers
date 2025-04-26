@@ -529,7 +529,7 @@ export class Tokenizer {
       document.body.removeChild(elem);
     }
 
-    return [new TypeInfo([title]), new TypeInfo(description.reverse(), true)];
+    return [new TypeInfo([title]), new TypeInfo(description, true)];
   }
 
   public getAST(): TableRootNode {
