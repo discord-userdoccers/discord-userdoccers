@@ -94,14 +94,6 @@ export class TableRootNode extends BaseNode {
     this.title = title;
   }
 
-  // Example custom method for TableRootNode
-  public getColumnCount(): number {
-    const firstRow = this.children.find(
-      (child) => child.type === NodeType.TableHead || child.type === NodeType.TableBody,
-    )?.children[0] as TableRowNode | undefined;
-    return firstRow ? firstRow.children.filter((child) => child.type === NodeType.TableCell).length : 0;
-  }
-
   public getHead(): TableHeadNode | undefined {
     return this.children.find((child) => child.type === NodeType.TableHead) as TableHeadNode | undefined;
   }
@@ -151,11 +143,6 @@ export class TableRowNode extends BaseNode {
     this.elem = elem;
   }
 
-  // Example custom method for TableRowNode
-  public getCellCount(): number {
-    return this.children.filter((child) => child.type === NodeType.TableCell).length;
-  }
-
   public getCells(): TableCellNode[] {
     return this.children.filter((child) => child.type === NodeType.TableCell) as TableCellNode[];
   }
@@ -171,7 +158,6 @@ export class TableCellNode extends BaseNode {
     this.elem = elem;
   }
 
-  // Example custom method for TableCellNode
   public getTextContent(): string {
     return this.elem.textContent ?? "";
   }
@@ -244,7 +230,6 @@ export class DOMLiteralNode extends BaseNode {
     super(NodeType.DOMLiteral, elem, parent, children);
   }
 
-  // Example custom method for DOMLiteralNode
   public getStringContent(): string {
     return this.elem.textContent ?? "";
   }
@@ -268,7 +253,6 @@ export class DOMNode extends BaseNode {
     super(NodeType.DOM, elem, parent, children);
   }
 
-  // Example custom method for DOMNode
   public getTagName(): string {
     return this.elem.tagName.toLowerCase();
   }
@@ -492,10 +476,10 @@ export class Tokenizer {
 
     let title = titleElement?.textContent
       ? titleElement.textContent
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join("")
-        .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join("")
+          .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
       : "UnknownStruct";
 
     if (title.endsWith("Structure")) {
