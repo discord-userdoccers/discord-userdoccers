@@ -113,7 +113,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
                 className={cn(
                   "block w-full cursor-pointer select-none rounded-t-md px-4 py-2 text-left font-mono text-xs",
                   "flex items-center gap-2",
-                  "bg-theme-light-sidebar dark:bg-theme-dark-sidebar",
+                  "bg-white dark:bg-theme-dark-sidebar",
                   "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
                 )}
                 role="menuitem"
@@ -129,7 +129,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
                 className={cn(
                   "block w-full cursor-pointer select-none rounded-b-md px-4 py-2 text-left font-mono text-xs",
                   "flex items-center gap-2",
-                  "bg-theme-light-sidebar dark:bg-theme-dark-sidebar",
+                  "bg-white dark:bg-theme-dark-sidebar",
                   "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
                 )}
                 role="menuitem"
