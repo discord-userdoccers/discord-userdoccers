@@ -122,9 +122,9 @@ export class TypescriptGenerator {
     return input;
   }
 
-  private typeToString(type: TypeInfo, onlyFirstWord = false): string {
+  private typeToString(type: TypeInfo, onlyFirstWord = false, isInArray = false): string {
     if (type.array) {
-      const inner = this.typeToString(type.array[0]);
+      const inner = this.typeToString(type.array[0], onlyFirstWord, true);
       return `${this.typeMapper(inner)}[]`;
     }
     if (type.map) {
@@ -136,7 +136,11 @@ export class TypescriptGenerator {
       return type.multiline.join("\n");
     }
     if (type.type && type.optional) {
-      return `${this.typeMapper(type.type)} | null`;
+      const t = this.typeMapper(type.type);
+      if (isInArray) {
+        return `(${t} | null)`;
+      }
+      return `${t} | null`;
     }
     if (type.type && onlyFirstWord) {
       return type.type.split(" ")[0];
