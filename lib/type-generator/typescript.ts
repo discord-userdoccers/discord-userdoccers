@@ -26,7 +26,7 @@ export class TypescriptGenerator {
     const properties = [];
 
     for (const property of layout.contents) {
-      let isEnum = layout.type === TableType.Enum;
+      const isEnum = layout.type === TableType.Enum;
       const field = this.typeToString(property.field, !isEnum);
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
@@ -52,7 +52,7 @@ export class TypescriptGenerator {
 
     let output = "";
 
-    if (description) {
+    if (description.length) {
       output += "/**\n";
       description.forEach((line, i) => {
         output += ` * ${line}\n`;
@@ -65,7 +65,7 @@ export class TypescriptGenerator {
       output += `export interface ${title} {\n`;
     } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
       output += `export enum ${title} {\n`;
-    } else if (layout.type === TableType.Bitfield) {
+    } else {
       // TODO: Should I Object.freeze()?
       output += `const ${title} = {\n`;
     }
@@ -91,15 +91,15 @@ export class TypescriptGenerator {
         output += `\t${property.field}: ${property.type};\n`;
       } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
         output += `\t${property.field} = ${property.type},\n`;
-      } else if (layout.type === TableType.Bitfield) {
-        let [left, right] = property.type.split("<<").map((s) => s.trim());
+      } else {
+        const [left, right] = property.type.split("<<").map((s) => s.trim());
         output += `\t${property.field}: ${left}n << ${right}n,\n`;
       }
     }
 
     if (layout.type === TableType.Struct || layout.type === TableType.Enum || layout.type === TableType.Event) {
       output += `}\n`;
-    } else if (layout.type === TableType.Bitfield) {
+    } else {
       output += `} as const;\n`;
     }
 

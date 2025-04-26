@@ -1,14 +1,5 @@
 import { TableType, Tokenizer, TypeInfo } from "./tokenizer";
 
-const trimBySpace = (val: string) => {
-  const trimmed = val.split(/\s/)[0];
-
-  if (trimmed.endsWith("?")) {
-    return trimmed.slice(0, -1);
-  }
-
-  return trimmed;
-};
 const TYPE_MAP: [string | RegExp, string][] = [
   ["string", "str"],
   ["boolean", "bool"],
@@ -37,7 +28,7 @@ export class PythonGenerator {
     const properties = [];
 
     for (const property of layout.contents) {
-      let isEnum = layout.type === TableType.Enum;
+      const isEnum = layout.type === TableType.Enum;
       let field = this.typeToString(property.field, !isEnum);
       const isUndefinable = field.endsWith("?");
       if (isUndefinable) field = this.stripQuestionMark(field);
@@ -66,7 +57,7 @@ export class PythonGenerator {
 
     let output = "";
 
-    if (description) {
+    if (description.length) {
       output += `"""\n`;
       description.forEach((line, i) => {
         output += `${line}\n`;
@@ -79,7 +70,7 @@ export class PythonGenerator {
       output += `class ${title}(TypedDict):\n`;
     } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
       output += `class ${title}(Enum):\n`;
-    } else if (layout.type === TableType.Bitfield) {
+    } else {
       // TODO: Should I Object.freeze()?
       output += `class ${title}(Flag):\n`;
     }
@@ -102,16 +93,16 @@ export class PythonGenerator {
         }
         output += `\t"""\n`;
       } else if (property.otherColumns.length) {
-        let [key, value] = property.otherColumns[0];
+        const [key, value] = property.otherColumns[0];
         output += `\t#: ${key}: ${value}\n`;
       }
 
       if (layout.type === TableType.Struct) {
-        let type = property.isUndefinable ? `NotRequired[${property.type}]` : property.type;
+        const type = property.isUndefinable ? `NotRequired[${property.type}]` : property.type;
         output += `\t${property.field}: ${type}\n`;
       } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
         output += `\t${property.field} = ${property.type}\n`;
-      } else if (layout.type === TableType.Bitfield) {
+      } else {
         output += `\t${property.field} = ${property.type}\n`;
       }
     }

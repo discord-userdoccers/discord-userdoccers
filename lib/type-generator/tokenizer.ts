@@ -320,7 +320,7 @@ export class Tokenizer {
     const tHeadRows = tHead.getRows()[0].getCells();
 
     const headings = tHeadRows.map((x) => x.getTextContent().toLowerCase());
-    if (!headings) throw new Error("Failed to get table headings");
+    if (!headings.length) throw new Error("Failed to get table headings");
 
     const [title, description] = this.parseTitleAndDescription();
 
@@ -481,7 +481,7 @@ export class Tokenizer {
   }
 
   private parseTitleAndDescription(): [TypeInfo, TypeInfo] {
-    let rootElement = this.root;
+    const rootElement = this.root;
     const intermediateElements: HTMLElement[] = [];
 
     let titleElement = rootElement.parentElement;
@@ -492,21 +492,21 @@ export class Tokenizer {
 
     let title = titleElement?.textContent
       ? titleElement.textContent
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join("")
-          .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join("")
+        .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
       : "UnknownStruct";
 
     if (title.endsWith("Structure")) {
       title = title.slice(0, -"Structure".length);
     }
 
-    let description: string[] = [];
+    const description: string[] = [];
 
     for (const el of intermediateElements) {
-      let elem = el.cloneNode(true) as HTMLElement;
-      let links = elem.querySelectorAll("a");
+      const elem = el.cloneNode(true) as HTMLElement;
+      const links = elem.querySelectorAll("a");
 
       links.forEach((link) => {
         const url = link.href;
