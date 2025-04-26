@@ -100,7 +100,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 
           <span>{selectedLanguage}</span>
 
-          <Chevron className="h-4 w-3 text-white" />
+          <Chevron className="h-4 w-3 text-black dark:text-white" />
         </button>
         {isDropdownOpen && (
           <div className="absolute right-0 z-10 mt-1 w-32 rounded-md shadow-lg">
