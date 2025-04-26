@@ -145,9 +145,10 @@ export class TypescriptGenerator {
     if (type.type && onlyFirstWord) {
       return type.type.split(" ")[0];
     }
-    if (type.type) {
+    if (typeof type.type === "string") {
       return type.type;
     }
+
     throw new Error("Invalid TypeInfo provided.");
   }
 }
