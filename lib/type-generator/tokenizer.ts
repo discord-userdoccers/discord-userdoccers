@@ -492,10 +492,10 @@ export class Tokenizer {
 
     let title = titleElement?.textContent
       ? titleElement.textContent
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join("")
-        .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join("")
+          .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
       : "UnknownStruct";
 
     if (title.endsWith("Structure")) {
