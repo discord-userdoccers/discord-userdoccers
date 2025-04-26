@@ -139,18 +139,18 @@ export class PythonGenerator {
   private typeToString(type: TypeInfo, onlyFirstWord = false): string {
     if (type.array) {
       const inner = this.typeToString(type.array[0]);
-      return `list[${inner}]`;
+      return `list[${this.typeMapper(inner)}]`;
     }
     if (type.map) {
       const left = this.typeToString(type.map[0]);
       const right = this.typeToString(type.map[1]);
-      return `dict[${left}, ${right}]`;
+      return `dict[${this.typeMapper(left)}, ${this.typeMapper(right)}]`;
     }
     if (type.multiline) {
       return type.multiline.join("\n");
     }
     if (type.type && type.optional) {
-      return `${type.type} | None`;
+      return `${this.typeMapper(type.type)} | None`;
     }
     if (type.type && onlyFirstWord) {
       return type.type.split(" ")[0];

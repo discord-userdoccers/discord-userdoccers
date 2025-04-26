@@ -125,12 +125,12 @@ export class TypescriptGenerator {
   private typeToString(type: TypeInfo, onlyFirstWord = false): string {
     if (type.array) {
       const inner = this.typeToString(type.array[0]);
-      return `${inner}[]`;
+      return `${this.typeMapper(inner)}[]`;
     }
     if (type.map) {
       const left = this.typeToString(type.map[0]);
       const right = this.typeToString(type.map[1]);
-      return `Record<${left}, ${right}>`;
+      return `Record<${this.typeMapper(left)}, ${this.typeMapper(right)}>`;
     }
     if (type.multiline) {
       return type.multiline.join("\n");
