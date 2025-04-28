@@ -130,7 +130,10 @@ export class TypescriptGenerator {
         return `${inner}[]`;
       } else if (type.array.length > 1) {
         // tuples in userdoccers are defined as array[T1, T2, ...]
-        const inner = type.array.map((i) => this.typeToString(i, onlyFirstWord, true)).map((i) => this.typeMapper(i)).join(", ");
+        const inner = type.array
+          .map((i) => this.typeToString(i, onlyFirstWord, true))
+          .map((i) => this.typeMapper(i))
+          .join(", ");
         return `[${inner}]`;
       }
     }

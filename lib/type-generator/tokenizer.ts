@@ -47,7 +47,7 @@ export class TypeInfo {
 
       if (parts.length > 1) {
         // tuples in userdoccers are defined as array[T1, T2, ...]
-        this.array = parts.map(part => new TypeInfo(part.trim().split(" ")));
+        this.array = parts.map((part) => new TypeInfo(part.trim().split(" ")));
         this.type = undefined;
       } else {
         // arrays in userdoccers are defined as array[T]
@@ -486,10 +486,10 @@ export class Tokenizer {
 
     let title = titleElement?.textContent
       ? titleElement.textContent
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join("")
-        .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join("")
+          .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
       : "UnknownStruct";
 
     if (title.endsWith("Structure")) {

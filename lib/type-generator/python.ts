@@ -144,7 +144,10 @@ export class PythonGenerator {
         return `list[${inner}]`;
       } else if (type.array.length > 1) {
         // tuples in userdoccers are defined as array[T1, T2, ...]
-        const inner = type.array.map((i) => this.typeToString(i)).map((i) => this.typeMapper(i)).join(", ");
+        const inner = type.array
+          .map((i) => this.typeToString(i))
+          .map((i) => this.typeMapper(i))
+          .join(", ");
         return `tuple[${inner}]`;
       }
     }
