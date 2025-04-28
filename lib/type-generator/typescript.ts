@@ -3,6 +3,7 @@ import { TableType, Tokenizer, TypeInfo } from "./tokenizer";
 const TYPE_MAP: [string | RegExp, string][] = [
   ["snowflake", "Snowflake"],
   ["ISO8601 timestamp", "string"],
+  ["ISO8601 date", "string"],
   ["file contents", "UInt8Array"],
   [/^binary data/i, "Uint8Array"],
   // Handles most numeric types.
@@ -31,6 +32,9 @@ export class TypescriptGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
+      if (property.type.type && !isEnum) {
+        property.type = new TypeInfo([this.typeMapper(property.type.type)]);
+      }
       let type = this.typeToString(property.type, !isEnum);
       if (!isEnum) type = this.typeMapper(type);
 

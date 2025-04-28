@@ -5,6 +5,7 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["boolean", "bool"],
   ["snowflake", "Snowflake"],
   ["ISO8601 timestamp", "str"],
+  ["ISO8601 date", "str"],
   ["file contents", "bytes"],
   [/^binary data/i, "bytes"],
   // Handles most numeric types.
@@ -35,6 +36,9 @@ export class PythonGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
+      if (property.type.type && !isEnum) {
+        property.type = new TypeInfo([this.typeMapper(property.type.type)]);
+      }
       let type = this.typeToString(property.type, !isEnum);
       if (!isEnum) type = this.typeMapper(type);
 
