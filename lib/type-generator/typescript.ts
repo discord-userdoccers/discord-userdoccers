@@ -31,7 +31,7 @@ export class TypescriptGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
-      let type = this.typeToString(property.type, isEnum);
+      let type = this.typeToString(property.type, !isEnum);
       if (!isEnum) type = this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";

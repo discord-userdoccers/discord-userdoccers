@@ -35,7 +35,7 @@ export class PythonGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
-      let type = this.typeToString(property.type, isEnum);
+      let type = this.typeToString(property.type, !isEnum);
       if (!isEnum) type = this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";
@@ -83,18 +83,22 @@ export class PythonGenerator {
         for (const [key, value] of property.otherColumns) {
           output += `\t${key}: ${value}\n`;
         }
+        if (property.isDeprecated) output += `\t(deprecated)\n`;
         output += `\t"""\n`;
       } else if (property.description) {
-        output += `\t#: ${property.description}\n`;
+        const deprecatedStr = property.isDeprecated ? " (deprecated)" : "";
+        output += `\t#: ${property.description}${deprecatedStr}\n`;
       } else if (property.otherColumns.length > 1) {
         output += `\t"""\n`;
         for (const [key, value] of property.otherColumns) {
           output += `\t${key}: ${value}\n`;
         }
+        if (property.isDeprecated) output += `\t(deprecated)\n`;
         output += `\t"""\n`;
       } else if (property.otherColumns.length) {
         const [key, value] = property.otherColumns[0];
-        output += `\t#: ${key}: ${value}\n`;
+        const deprecatedStr = property.isDeprecated ? " (deprecated)" : "";
+        output += `\t#: ${key}: ${value}${deprecatedStr}\n`;
       }
 
       if (layout.type === TableType.Struct) {
