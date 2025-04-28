@@ -13,7 +13,7 @@ export class TypeInfo {
   public readonly type?: string;
   public readonly multiline?: string[];
   public readonly map?: [TypeInfo, TypeInfo];
-  public readonly array?: [TypeInfo];
+  public readonly array?: TypeInfo[];
 
   public constructor(inner: string[], multiline = false) {
     this.optional = false;
@@ -40,11 +40,21 @@ export class TypeInfo {
     }
 
     // If type is array, recurse down the array.
-    let match = /^array\[(.+)]$/.exec(inner.join(" "));
+    let match = /^array\[(.*)\]$/.exec(inner.join(" "));
     if (match?.[1]) {
-      const innerType = new TypeInfo(match[1].trim().split(" "));
-      this.array = [innerType];
-      this.type = undefined;
+      const innerContent = match[1].trim();
+      const parts = innerContent.split(/,(?![^\[]*\])/);
+
+      if (parts.length > 1) {
+        // tuples in userdoccers are defined as array[T1, T2, ...]
+        this.array = parts.map(part => new TypeInfo(part.trim().split(" ")));
+        this.type = undefined;
+      } else {
+        // arrays in userdoccers are defined as array[T]
+        const innerType = new TypeInfo(parts[0].trim().split(" "));
+        this.array = [innerType];
+        this.type = undefined;
+      }
     }
 
     // If the type is map, recurse down the map.
@@ -476,10 +486,10 @@ export class Tokenizer {
 
     let title = titleElement?.textContent
       ? titleElement.textContent
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join("")
-          .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join("")
+        .split("(")[0] // if the title is `some thing (here)` it should be SomeThing
       : "UnknownStruct";
 
     if (title.endsWith("Structure")) {

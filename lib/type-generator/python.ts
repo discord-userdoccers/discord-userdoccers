@@ -138,8 +138,15 @@ export class PythonGenerator {
 
   private typeToString(type: TypeInfo, onlyFirstWord = false): string {
     if (type.array) {
-      const inner = this.typeToString(type.array[0]);
-      return `list[${this.typeMapper(inner)}]`;
+      if (type.array.length === 1) {
+        // arrays in userdoccers are defined as array[T]
+        const inner = this.typeToString(type.array[0]);
+        return `list[${inner}]`;
+      } else if (type.array.length > 1) {
+        // tuples in userdoccers are defined as array[T1, T2, ...]
+        const inner = type.array.map((i) => this.typeToString(i)).map((i) => this.typeMapper(i)).join(", ");
+        return `tuple[${inner}]`;
+      }
     }
     if (type.map) {
       const left = this.typeToString(type.map[0]);
