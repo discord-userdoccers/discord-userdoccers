@@ -5,6 +5,7 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["boolean", "bool"],
   ["snowflake", "Snowflake"],
   ["ISO8601 timestamp", "str"],
+  ["ISO8601 date", "str"],
   ["file contents", "bytes"],
   [/^binary data/i, "bytes"],
   // Handles most numeric types.

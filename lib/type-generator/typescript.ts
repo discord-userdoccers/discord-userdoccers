@@ -3,6 +3,7 @@ import { TableType, Tokenizer, TypeInfo } from "./tokenizer";
 const TYPE_MAP: [string | RegExp, string][] = [
   ["snowflake", "Snowflake"],
   ["ISO8601 timestamp", "string"],
+  ["ISO8601 date", "string"],
   ["file contents", "UInt8Array"],
   [/^binary data/i, "Uint8Array"],
   // Handles most numeric types.
