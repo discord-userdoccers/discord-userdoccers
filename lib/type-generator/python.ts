@@ -35,6 +35,9 @@ export class PythonGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
+      if (property.type.type && !isEnum) {
+        property.type = new TypeInfo([this.typeMapper(property.type.type)]);
+      }
       let type = this.typeToString(property.type, !isEnum);
       if (!isEnum) type = this.typeMapper(type);
 
