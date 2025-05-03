@@ -1,6 +1,7 @@
 import createMDX from "@next/mdx";
 import supersub from "remark-supersub";
 import frontmatter from "./lib/frontmatter.mjs";
+import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -27,7 +28,7 @@ const config = {
         source: "/_github",
         destination: "https://github.com/discord-userdoccers/discord-userdoccers",
         permanent: true,
-      }
+      },
     ];
   },
 };
@@ -38,5 +39,9 @@ const withMDX = createMDX({
     rehypePlugins: [],
   },
 });
+
+if (process.env.NODE_ENV === "development") {
+  await setupDevPlatform();
+}
 
 export default withMDX(config);
