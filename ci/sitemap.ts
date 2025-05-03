@@ -37,7 +37,7 @@ const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename
 
 // SITEMAP
 
-const BASE_DOMAIN = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "docs.discord.food";
+const BASE_DOMAIN = process.env.CF_PAGES_URL ?? "docs.discord.food";
 // add domain
 const createLink = (url: string) => `https://${BASE_DOMAIN}/${url}`;
 
