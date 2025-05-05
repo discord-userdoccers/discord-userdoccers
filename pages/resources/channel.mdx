@@ -10,7 +10,7 @@ A guild or private channel within Discord.
 
 | Field                               | Type                                                               | Description                                                                                                                                                                                  |
 | ----------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id                                  | snowflake                                                          | The ID of the channel                                                                                                                                                                        |
+| id ^8^                              | snowflake                                                          | The ID of the channel                                                                                                                                                                        |
 | type                                | integer                                                            | The [type of channel](#channel-type)                                                                                                                                                         |
 | guild_id?                           | snowflake                                                          | The ID of the guild the channel is in                                                                                                                                                        |
 | position?                           | integer                                                            | Sorting position of the channel                                                                                                                                                              |
@@ -59,6 +59,7 @@ A guild or private channel within Discord.
 | status? ^6^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
 | hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming entitlement expires for the voice channel                                                                                                                              |
 | hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming entitlement to the voice channel                                                                                                             |
+| linked_lobby?                       | ?[linked lobby](#linked-lobby-object) object                       | The lobby linked to the channel                                                                                                                                                              |
 
 ^1^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
 
@@ -73,6 +74,8 @@ A guild or private channel within Discord.
 ^6^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
 
 ^7^ Only included in [Gateway events](/topics/gateway-events#channels) and when fetched from the [Get Private Channels](#get-private-channels) endpoint.
+
+^8^ For ephemeral DM channels, the ID of the channel always will equal to ID of the other recipient.
 
 ###### Partial Channel Structure
 
@@ -442,6 +445,69 @@ The [threads](/topics/threads) topic has some more information.
 }
 ```
 
+###### Example Ephemeral DM Channel
+
+```json
+{
+  "flags": 0,
+  "id": "1001086404203389018",
+  "last_message_id": "1356768681543209051",
+  "recipients": [
+    {
+      "avatar": "c78ef8fb1db15a3d5f1b4c057856c5c9",
+      "avatar_decoration_data": {
+        "asset": "a_e72e44eeea89e92dc02c9bec8b02d158",
+        "expires_at": null,
+        "sku_id": "1245087724265013299"
+      },
+      "clan": {
+        "badge": "6cdb13f9bdba1234e711a7c24dce1f51",
+        "identity_enabled": true,
+        "identity_guild_id": "1241115476021481582",
+        "tag": "BUG"
+      },
+      "discriminator": "0",
+      "global_name": "Dolfies",
+      "id": "852892297661906993",
+      "primary_guild": {
+        "badge": "6cdb13f9bdba1234e711a7c24dce1f51",
+        "identity_enabled": true,
+        "identity_guild_id": "1241115476021481582",
+        "tag": "BUG"
+      },
+      "public_flags": 136,
+      "username": "dolfies"
+    },
+    {
+      "avatar": "f6c0363fbab45668fcf8f88fea56db9c",
+      "avatar_decoration_data": {
+        "asset": "a_89cd445201a0c6c64d46876503d0e90e",
+        "expires_at": null,
+        "sku_id": "1226939756617793606"
+      },
+      "clan": {
+        "badge": "226a800b1b7782e556dd190804332720",
+        "identity_enabled": true,
+        "identity_guild_id": "1270810315558228078",
+        "tag": "wawa"
+      },
+      "discriminator": "0",
+      "global_name": "Dziurwa💕",
+      "id": "1001086404203389018",
+      "primary_guild": {
+        "badge": "226a800b1b7782e556dd190804332720",
+        "identity_enabled": true,
+        "identity_guild_id": "1270810315558228078",
+        "tag": "wawa"
+      },
+      "public_flags": 4210944,
+      "username": ".dziurwa"
+    }
+  ],
+  "type": 18
+}
+```
+
 ###### Example Partial Channel
 
 ```json
@@ -587,6 +653,19 @@ An object that represents a tag that is able to be applied to a thread in a `GUI
 | emoji_name ^1^ | ?string    | The unicode character of the emoji                                                                            |
 
 ^1^ At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+### Linked Lobby Object
+
+A lobby linked to a channel.
+
+###### Linked Lobby Structure
+
+| Field          | Type              | Description                          |
+| -------------- | ----------------- | ------------------------------------ |
+| application_id | snowflake         | The ID of the application            |
+| lobby_id       | snowflake         | The ID of the lobby                  |
+| linked_by      | snowflake         | The ID of the user who linked lobby  |
+| linked_at      | ISO8601 timestamp | When the lobby was linked to channel |
 
 ## Endpoints
 
@@ -1522,3 +1601,9 @@ Replaces a tag in the thread-only channel. Requires the `MANAGE_CHANNELS` permis
 </RouteHeader>
 
 Deletes a tag in the thread-only channel. Requires the `MANAGE_CHANNELS` permission. Returns a [channel](#channel-object) object on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/linked-lobby">
+  Remove Lobby Link
+</RouteHeader>
+
+Unlinks lobby from the channel. Requires the `MANAGE_CHANNELS` permission. Returns a [channel](#channel-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) and [Channel Update](/topics/gateway-events#channel-update) Gateway event.
