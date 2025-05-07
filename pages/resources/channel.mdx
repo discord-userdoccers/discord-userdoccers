@@ -51,6 +51,7 @@ A guild or private channel within Discord.
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object               | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                            |
 | default_forum_layout?               | integer                                                            | The default [layout](#forum-layout-type) of a thread-only channel                                                                                                                            |
 | default_sort_order?                 | ?integer                                                           | The default [sort order](#sort-order-type) of a thread-only channel's threads (default `LATEST_ACTIVITY`)                                                                                    |
+| default_tag_setting?                | string                                                             | The default [tag search setting](#search-tag-setting) for a thread-only channel                                                                                                              |
 | icon_emoji?                         | ?[icon emoji](#icon-emoji-object) object                           | The emoji to show next to the channel name in channels list                                                                                                                                  |
 | is_message_request?                 | boolean                                                            | Whether the DM is a message request                                                                                                                                                          |
 | is_message_request_timestamp?       | ?ISO8601 timestamp                                                 | When the message request was created                                                                                                                                                         |
@@ -196,8 +197,15 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 
 | Value | Name            | Description                                                      |
 | ----- | --------------- | ---------------------------------------------------------------- |
-| 0     | LATEST_ACTIVITY | Sort by the most recent message in the thread                    |
+| 0     | LATEST_ACTIVITY | Sort by the most recently active threads                         |
 | 1     | CREATION_TIME   | Sort by when the thread was created (from most recent to oldest) |
+
+###### Search Tag Setting
+
+| Value      | Description                                                        |
+| ---------- | ------------------------------------------------------------------ |
+| match_some | Threads with any of the selected tags will be shown in the results |
+| match_all  | Threads with all of the selected tags will be shown in the results |
 
 ###### Example Guild Category Channel
 
@@ -334,7 +342,8 @@ Users can post or publish messages in this type of channel if they have the prop
   "default_auto_archive_duration": 10080,
   "default_thread_rate_limit_per_user": 0,
   "default_sort_order": null,
-  "default_forum_layout": 0
+  "default_forum_layout": 0,
+  "default_tag_setting": "match_some"
 }
 ```
 
@@ -702,6 +711,7 @@ These limits are summarized in the following table by [premium tier](/resources/
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object                | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                    | Forum, Media                           |
 | default_forum_layout?               | ?integer                                                            | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                  |
 | default_sort_order?                 | ?integer                                                            | The default [sort order](#sort-order-type) of a thread-only channel's threads                                                                                                        | Forum, Media                           |
+| default_tag_setting?                | ?string                                                             | The default [tag setting](#search-tag-setting) of a thread-only channel (default `match_some`)                                                                                       | Forum, Media                           |
 
 ^1^ For stage channels, bitrate can only be set up to **64 kbps**. See the bitrate limits section above for more information.
 
@@ -776,8 +786,9 @@ If modifying a thread and setting `archived` to `false`, when `locked` is also `
 | available_tags? ^2^                 | array[partial [tag](#forum-tag-object) object]                      | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                                                       |
 | applied_tags?                       | array[snowflake]                                                    | The IDs of tags that are applied to a thread in a thread-only channel (max 5)                                                                                                        | Thread                                                             |
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object                | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                    | Forum, Media                                                       |
-| default_forum_layout?               | integer                                                             | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                                              |
+| default_forum_layout?               | ?integer                                                            | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                                              |
 | default_sort_order?                 | ?integer                                                            | The default [sort order](#sort-order-type) of a thread-only channel's threads                                                                                                        | Forum, Media                                                       |
+| default_tag_setting?                | ?string                                                             | The default [tag setting](#search-tag-setting) of a thread-only channel (default `match_some`)                                                                                       | Forum, Media                                                       |
 | icon_emoji?                         | ?[icon emoji](#icon-emoji-object) object                            | The emoji to show next to the channel name in channels list                                                                                                                          | Text, News, Voice, Stage, Forum                                    |
 | theme_color?                        | ?integer                                                            | The background color of the channel icon emoji encoded as an integer representation of hexadecimal color code                                                                        | Text, News, Voice, Stage, Forum                                    |
 
@@ -1246,19 +1257,19 @@ Returns threads in the channel that match the search parameters. Requires the `R
 
 ###### Query String Params
 
-| Field        | Type             | Description                                                                                     |
-| ------------ | ---------------- | ----------------------------------------------------------------------------------------------- |
-| name?        | string           | Search query to look for matching threads (max 100 characters)                                  |
-| slop?        | integer          | Max number of words to skip between matching tokens in the search query (max 100, default 2)    |
-| tag?         | array[snowflake] | The tag IDs to filter results by (max 20)                                                       |
-| tag_setting? | string           | How to restrict the returned threads by tag (`match_some` or `match_all`, default `match_some`) |
-| archived?    | boolean          | Whether to restrict the search to only active or archived threads (default both)                |
-| sort_by?     | string           | The [sorting algorithm](#thread-sort-type) to use                                               |
-| sort_order?  | string           | The direction to sort (`asc` or `desc`, default `desc`)                                         |
-| limit?       | integer          | Max number of threads to return (1-25, default 25)                                              |
-| offset?      | integer          | Number of threads to skip before returning results (max 9975)                                   |
-| max_id?      | snowflake        | Get threads before this thread ID                                                               |
-| min_id?      | snowflake        | Get threads after this thread ID                                                                |
+| Field        | Type             | Description                                                                                  |
+| ------------ | ---------------- | -------------------------------------------------------------------------------------------- |
+| name?        | string           | Search query to look for matching threads (max 100 characters)                               |
+| slop?        | integer          | Max number of words to skip between matching tokens in the search query (max 100, default 2) |
+| tag?         | array[snowflake] | The tag IDs to filter results by (max 20)                                                    |
+| tag_setting? | string           | [How to restrict](#search-tag-setting) the returned threads by tag (default `match_some`)    |
+| archived?    | boolean          | Whether to restrict the search to only active or archived threads (default both)             |
+| sort_by?     | string           | The [sorting algorithm](#thread-sort-type) to use                                            |
+| sort_order?  | string           | The direction to sort (`asc` or `desc`, default `desc`)                                      |
+| limit?       | integer          | Max number of threads to return (1-25, default 25)                                           |
+| offset?      | integer          | Number of threads to skip before returning results (max 9975)                                |
+| max_id?      | snowflake        | Get threads before this thread ID                                                            |
+| min_id?      | snowflake        | Get threads after this thread ID                                                             |
 
 ###### Thread Sort Type
 
