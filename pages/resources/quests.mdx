@@ -8,13 +8,13 @@ A sponsored quest.
 
 ###### Quest Structure
 
-| Field                | Type                                                   | Description                                                           |
-| -------------------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
-| id                   | snowflake                                              | The ID of the quest                                                   |
-| config               | [quest config](#quest-config-object) object            | The configuration and metadata for the quest                          |
-| user_status          | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                    |
-| targeted_content ^1^ | ?array[integer]                                        | The [content areas where the quest can be shown](#quest-content-type) |
-| preview              | boolean                                                | Whether the quest is unreleased and in preview for Discord employees  |
+| Field                                 | Type                                                   | Description                                                           |
+| ------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------- |
+| id                                    | snowflake                                              | The ID of the quest                                                   |
+| config                                | [quest config](#quest-config-object) object            | The configuration and metadata for the quest                          |
+| user_status                           | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                    |
+| targeted_content **(deprecated)** ^1^ | ?array[integer]                                        | The [content areas where the quest can be shown](#quest-content-type) |
+| preview                               | boolean                                                | Whether the quest is unreleased and in preview for Discord employees  |
 
 ^1^ Some quest content areas may be dismissed using the [Dismiss Quest Content](#dismiss-quest-content) endpoint.
 
@@ -34,12 +34,11 @@ The config structure has multiple distinct versions with different field sets. O
 
 | Field           | Type                                                           | Description                                                |
 | --------------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
-| config_version  | integer                                                        | [Quest configuration version](#quest-config-version)       |
 | id              | snowflake                                                      | The ID of the quest                                        |
+| config_version  | integer                                                        | [Quest configuration version](#quest-config-version)       |
 | starts_at       | ISO8601 timestamp                                              | When the quest period starts                               |
 | expires_at      | ISO8601 timestamp                                              | When the quest period ends                                 |
 | features        | array[integer]                                                 | The [quest features](#quest-feature) enabled for the quest |
-| experiments     | [quest rollout](#quest-rollout-structure) object               | The rollout experiments for the quest                      |
 | application     | [quest application](#quest-application-structure) object       | The application metadata for the quest                     |
 | assets          | [quest assets](#quest-assets-structure) object                 | Object that holds the quest's assets                       |
 | colors          | [quest gradient](#quest-gradient-structure) object             | The accent colors for the quest                            |
@@ -47,14 +46,6 @@ The config structure has multiple distinct versions with different field sets. O
 | task_config     | [quest task config](#quest-task-config-structure) object       | The task configuration for the quest                       |
 | rewards_config  | [quest rewards config](#quest-rewards-config-structure) object | Specifies rewards for the quest (e.g. collectibles)        |
 | video_metadata? | [quest video metadata](#quest-video-metadata-structure) object | The configuration for the video quest                      |
-
-###### Quest Rollout Structure
-
-| Field     | Type    | Description                                                               |
-| --------- | ------- | ------------------------------------------------------------------------- |
-| rollout   | ?string | The name of the experiment that controls the quest's rollout              |
-| targeting | ?string | The name of the experiment that controls the quest's targeting            |
-| preview   | ?string | The name of the experiment that controls the quest's preview availability |
 
 ###### Quest Application Structure
 
@@ -96,13 +87,13 @@ A 2-point gradient with a `primary` and `secondary` color.
 
 ###### Quest Task Config Structure
 
-| Field                     | Type                                                    | Description                                                                                   |
-| ------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| type                      | integer                                                 | The [type of task configuration](#quest-task-config-type)                                     |
-| join_operator ^1^         | string                                                  | The eligibility operator used to join multiple tasks (`and` or `or`)                          |
-| enrollment_url?           | string                                                  | The third-party link to the quest tasks enrollment page                                       |
-| developer_application_id? | snowflake                                               | The ID of the developer application for the quest tasks integration                           |
-| tasks                     | map[string, [quest task](#quest-task-structure) object] | The tasks required to complete the quest, keyed by their [event name](#quest-task-event-name) |
+| Field                     | Type                                                    | Description                                                                               |
+| ------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| type                      | integer                                                 | The [type of task configuration](#quest-task-config-type)                                 |
+| join_operator ^1^         | string                                                  | The eligibility operator used to join multiple tasks (`and` or `or`)                      |
+| tasks                     | map[string, [quest task](#quest-task-structure) object] | Tasks required to complete the quest, keyed by their [event name](#quest-task-event-name) |
+| enrollment_url?           | string                                                  | A link to the third-party quest tasks enrollment page                                     |
+| developer_application_id? | snowflake                                               | The ID of the embedded activity for the third-party task                                  |
 
 ^1^ For a task to be considered complete, the user must complete either all tasks (when `join_operator` is `and`) or at least one task (when `join_operator` is `or`).
 
@@ -111,9 +102,12 @@ A 2-point gradient with a `primary` and `secondary` color.
 | Field         | Type          | Description                                      |
 | ------------- | ------------- | ------------------------------------------------ |
 | event_name    | string        | The [type of task event](#quest-task-event-name) |
-| target        | integer       | The required duration (in seconds)               |
-| external_ids? | array[string] | The IDs of the games on third-party platforms    |
+| target ^1^    | integer       | The required value                               |
+| external_ids? | array[string] | IDs of the target game on console platforms      |
+| title?        | string        | The third-party task title                       |
 | description?  | string        | The third-party task description                 |
+
+^1^ While this is an opaque value, for duration-based tasks, this will be a duration in seconds.
 
 ###### Quest Task Config Type
 
@@ -133,6 +127,9 @@ A 2-point gradient with a `primary` and `secondary` color.
 | PLAY_ON_PLAYSTATION | The user must play the game on PlayStation for a certain duration                                                                                                                |
 | WATCH_VIDEO         | The user must watch a video for a certain duration                                                                                                                               |
 | PLAY_ACTIVITY       | The user must play the embedded activity for a certain duration                                                                                                                  |
+| progress ^1^        | The user must complete a certain number of tasks in an embedded activity                                                                                                         |
+
+^1^ Completion of this task is tracked by the embedded activity itself.
 
 ###### Quest Rewards Config Structure
 
@@ -487,32 +484,34 @@ The user's quest progression.
 
 ###### Quest User Status Structure
 
-| Field                        | Type                                                                      | Description                                                                                                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| user_id                      | snowflake                                                                 | The ID of the user                                                                                                                                           |
-| quest_id                     | snowflake                                                                 | The ID of the quest                                                                                                                                          |
-| enrolled_at                  | ISO8601 timestamp                                                         | When the user accepted the quest                                                                                                                             |
-| completed_at                 | ?ISO8601 timestamp                                                        | When the user completed the quest                                                                                                                            |
-| claimed_at                   | ?ISO8601 timestamp                                                        | When the user claimed the quest's reward                                                                                                                     |
-| claimed_tier                 | ?integer                                                                  | Which reward tier the user has claimed, if the quest's [`assignment_method`](#quest-rewards-config-structure) is [`TIERED`](#quest-reward-assignment-method) |
-| last_stream_heartbeat_at ^1^ | ?ISO8601 timestamp                                                        | When the last heartbeat was received                                                                                                                         |
-| stream_progress_seconds ^1^  | ISO8601 timestamp                                                         | Duration (in seconds) the user has streamed the game for since the quest was accepted                                                                        |
-| dismissed_quest_content      | integer                                                                   | The [content areas the user has dismissed](#dismissible-quest-content-flags) for the quest                                                                   |
-| progress                     | map[string, [quest task progress](#quest-task-progress-structure) object] | The user's progress for each task in the quest, keyed by their [event name](#quest-task-event-name)                                                          |
+| Field                         | Type                                                                      | Description                                                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| user_id                       | snowflake                                                                 | The ID of the user                                                                                                                                           |
+| quest_id?                     | snowflake                                                                 | The ID of the quest                                                                                                                                          |
+| enrolled_at                   | ?ISO8601 timestamp                                                        | When the user accepted the quest                                                                                                                             |
+| completed_at                  | ?ISO8601 timestamp                                                        | When the user completed the quest                                                                                                                            |
+| claimed_at                    | ?ISO8601 timestamp                                                        | When the user claimed the quest's reward                                                                                                                     |
+| claimed_tier?                 | ?integer                                                                  | Which reward tier the user has claimed, if the quest's [`assignment_method`](#quest-rewards-config-structure) is [`TIERED`](#quest-reward-assignment-method) |
+| last_stream_heartbeat_at? ^1^ | ?ISO8601 timestamp                                                        | When the last heartbeat was received                                                                                                                         |
+| stream_progress_seconds? ^1^  | ISO8601 timestamp                                                         | Duration (in seconds) the user has streamed the game for since the quest was accepted                                                                        |
+| dismissed_quest_content?      | integer                                                                   | The [content areas the user has dismissed](#dismissible-quest-content-flags) for the quest                                                                   |
+| progress                      | map[string, [quest task progress](#quest-task-progress-structure) object] | The user's progress for each task in the quest, keyed by their [event name](#quest-task-event-name)                                                          |
 
 ^1^ These fields are only used for quest config version 1, where the event is always `STREAM_ON_DESKTOP`.
 
 ###### Quest Task Progress Structure
 
-| Field         | Type                                                            | Description                                      |
-| ------------- | --------------------------------------------------------------- | ------------------------------------------------ |
-| event_name    | string                                                          | The [type of task event](#quest-task-event-name) |
-| value         | integer                                                         | The completed duration (in seconds)              |
-| updated_at    | ISO8601 timestamp                                               | When the task was last updated                   |
-| completed_at  | ?ISO8601 timestamp                                              | When the task was completed                      |
-| heartbeat ^1^ | ?[quest task heartbeat](#quest-task-heartbeat-structure) object | The task's heartbeat data                        |
+| Field          | Type                                                            | Description                                      |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------------ |
+| event_name     | string                                                          | The [type of task event](#quest-task-event-name) |
+| value ^1^      | integer                                                         | The current task value                           |
+| updated_at     | ISO8601 timestamp                                               | When the task was last updated                   |
+| completed_at   | ?ISO8601 timestamp                                              | When the task was completed                      |
+| heartbeat? ^2^ | ?[quest task heartbeat](#quest-task-heartbeat-structure) object | The task's heartbeat data                        |
 
-^1^ Heartbeats are only present for events `STREAM_ON_DESKTOP`, `PLAY_ON_DESKTOP`, `PLAY_ON_DESKTOP_V2`, and `PLAY_ACTIVITY`.
+^1^ While this is an opaque value, for duration-based tasks, this will be a duration in seconds. To complete the task, this value must match the `target` value.
+
+^2^ Heartbeats are only present for events `STREAM_ON_DESKTOP`, `PLAY_ON_DESKTOP`, `PLAY_ON_DESKTOP_V2`, and `PLAY_ACTIVITY`.
 
 ###### Quest Task Heartbeat Structure
 
@@ -600,10 +599,11 @@ Returns information on the current [quests](#quest-object) for the current user.
 
 ###### Response Body
 
-| Field           | Type                                         | Description                                    |
-| --------------- | -------------------------------------------- | ---------------------------------------------- |
-| quests          | array[[quest](#quest-object) object]         | The current quests for the user                |
-| excluded_quests | array[partial [quest](#quest-object) object] | The quests that the user cannot participate in |
+| Field                          | Type                                         | Description                                    |
+| ------------------------------ | -------------------------------------------- | ---------------------------------------------- |
+| quests                         | array[[quest](#quest-object) object]         | The current quests for the user                |
+| excluded_quests                | array[partial [quest](#quest-object) object] | The quests that the user cannot participate in |
+| quest_enrollment_blocked_until | ?ISO8601 timestamp                           | When the user can enroll in quests again       |
 
 <RouteHeader method="GET" url="/quests/@me/claimed">
   Get Claimed Quests
@@ -617,7 +617,7 @@ Returns information on the [claimed quests](#claimed-quest-object) for the curre
 | ------ | ---------------------------------------------------- | ------------------------------- |
 | quests | array[[claimed quest](#claimed-quest-object) object] | The claimed quests for the user |
 
-<RouteHeader method="GET" url="/quests/{quest.id}">
+<RouteHeader method="GET" url="/quests/{quest.id}" unauthenticated>
   Get Quest Config
 </RouteHeader>
 
@@ -627,14 +627,16 @@ Returns a [quest config](#quest-config-object) object for the specified quest. Q
   Get Quest Placement
 </RouteHeader>
 
-Returns the quest that should be shown to the user in a specific placement.
+Returns the sponsored quest that should be shown to the user in a specific placement.
 
 ###### Query Params
 
-| Field                        | Type    | Description                                                            |
-| ---------------------------- | ------- | ---------------------------------------------------------------------- |
-| placement                    | integer | The [quest placement area](#quest-placement-area) to get the quest for |
-| client_heartbeat_session_id? | string  | A client-generated UUID unique to the current session                  |
+| Field                            | Type    | Description                                                                    |
+| -------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| placement                        | integer | The [quest placement area](#quest-placement-area) to get the quest for         |
+| client_heartbeat_session_id? ^1^ | string  | A client-generated UUID representing the current persisted analytics heartbeat |
+
+^1^ This value is also sent in the [client properties](/reference#client-properties).
 
 ###### Quest Placement Area
 
@@ -645,10 +647,22 @@ Returns the quest that should be shown to the user in a specific placement.
 
 ###### Response Body
 
-| Field      | Type                           | Description                   |
-| ---------- | ------------------------------ | ----------------------------- |
-| request_id | string                         | The decision ID               |
-| quest      | ?[quest](#quest-object) object | The quest to show to the user |
+| Field          | Type                                                            | Description                                           |
+| -------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+| request_id     | string                                                          | The advertisement decision ID                         |
+| quest          | ?[quest](#quest-object) object                                  | The quest to show to the user                         |
+| ad_identifiers | ?[quest ad identifiers](#quest-ad-identifiers-structure) object | The advertisement identifiers for the delivered quest |
+
+###### Quest Ad Identifiers Structure
+
+| Field         | Type      | Description                          |
+| ------------- | --------- | ------------------------------------ |
+| campaign_id   | snowflake | The ID of the advertisement campaign |
+| adset_id      | snowflake | The ID of the advertisement set      |
+| ad_id         | snowflake | The ID of the advertisement          |
+| creative_id   | snowflake | The ID of the advertisement creative |
+| creative_type | integer   | The type of advertisement creative   |
+| quest_id      | snowflake | The ID of the delivered quest        |
 
 <RouteHeader method="POST" url="/quests/{quest.id}/enroll">
   Accept Quest
