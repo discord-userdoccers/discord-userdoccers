@@ -88,7 +88,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
           onClick={() => setIsOpen(!isDropdownOpen)}
           title="Select language to copy"
         >
-          {Icon && <Icon className="h-4" />}
+          <Icon className="h-4" />
           <span>{selectedLanguage}</span>
           <Chevron className="h-4 w-3 text-black dark:text-white" />
         </button>
@@ -114,7 +114,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
                     )}
                     role="menuitem"
                   >
-                    {OptionIcon && <OptionIcon className="h-5" />}
+                    <OptionIcon className="h-5" />
                     {language.label}
                   </button>
                 );
