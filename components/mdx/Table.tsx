@@ -43,9 +43,10 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
     const table = props.tableRef.current;
     const generator = LANGUAGE_CONFIG[selectedLanguage].generator;
 
-    if (table && generator) {
-      const code = generator(table);
-      navigator.clipboard
+    if (table) {
+      const code: string = generator(table);
+      (async () => {
+      await navigator.clipboard
         .writeText(code)
         .catch((err) => {
           console.error(err);
@@ -55,6 +56,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
           showSuccessToast("Copied code to clipboard.");
           setShowCopyIcon(true);
         });
+      })();
     } else {
       showErrorToast("Failed to generate code for this table. Check console for details.");
       console.error(
