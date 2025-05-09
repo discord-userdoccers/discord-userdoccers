@@ -46,16 +46,16 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
     if (table) {
       const code: string = generator(table);
       (async () => {
-      await navigator.clipboard
-        .writeText(code)
-        .catch((err) => {
-          console.error(err);
-          showErrorToast("Failed to copy code to clipboard. Check console for details.");
-        })
-        .then(() => {
-          showSuccessToast("Copied code to clipboard.");
-          setShowCopyIcon(true);
-        });
+        await navigator.clipboard
+          .writeText(code)
+          .catch((err) => {
+            console.error(err);
+            showErrorToast("Failed to copy code to clipboard. Check console for details.");
+          })
+          .then(() => {
+            showSuccessToast("Copied code to clipboard.");
+            setShowCopyIcon(true);
+          });
       })();
     } else {
       showErrorToast("Failed to generate code for this table. Check console for details.");
