@@ -108,20 +108,20 @@ export class RustGenerator {
 
     if (type.array) {
       if (type.array.length === 1) {
-        const inner = this.typeToString(type.array[0], onlyFirstWord, true, isUndefinable);
+        const inner = this.typeToString(type.array[0], onlyFirstWord, true, false);
         stringType = `Vec<${inner}>`;
       } else if (type.array.length > 1) {
         const inner = type.array
-          .map((i) => this.typeMapper(this.typeToString(i, onlyFirstWord, true, isUndefinable)))
+          .map((i) => this.typeMapper(this.typeToString(i, onlyFirstWord, true, false)))
           .join(", ");
         stringType = `(${inner})`;
       }
     } else if (type.map) {
-      const left = this.typeMapper(this.typeToString(type.map[0], onlyFirstWord, false, isUndefinable));
-      const right = this.typeMapper(this.typeToString(type.map[1], onlyFirstWord, false, isUndefinable));
+      const left = this.typeMapper(this.typeToString(type.map[0], onlyFirstWord, false, false));
+      const right = this.typeMapper(this.typeToString(type.map[1], onlyFirstWord, false, false));
       stringType = `HashMap<${left}, ${right}>`;
     } else if (type.type && type.optional) {
-      const t = this.typeMapper(this.typeToString(type, onlyFirstWord, isInArray, isUndefinable));
+      const t = this.typeMapper(this.typeToString(new TypeInfo([type.type]), onlyFirstWord, isInArray, false));
       stringType = `Option<${t}>`;
     } else if (type.multiline) {
       stringType = type.multiline.join("\n");
