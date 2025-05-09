@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, Dispatch, SetStateAction, crea
 
 import { ToastContainer, ToastOptions, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Language } from "@lib/type-generator/languageConfig";
 
 // Define default options, now with Tailwind classes
 const defaultOptions: ToastOptions = {
@@ -124,22 +125,17 @@ function useLocalStorage<T>(key: string, initialValue: T): [StoreValue<T>, SetSt
   return [storedValue, setValue];
 }
 
-export type SupportedLanguages = "TypeScript" | "Python";
-
 // Create a context for the language selection
 interface CodegenLanguageContextProps {
-  selectedLanguage: SupportedLanguages;
-  setSelectedLanguage: (language: SupportedLanguages) => void;
+  selectedLanguage: Language;
+  setSelectedLanguage: (language: Language) => void;
 }
 
 const CodegenLanguageContext = React.createContext<CodegenLanguageContextProps | undefined>(undefined);
 
 // Create a provider component
 export const CodegenLanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedLanguage, setSelectedLanguage] = useLocalStorage<SupportedLanguages>(
-    "selected-codegen-language",
-    "Python",
-  );
+  const [selectedLanguage, setSelectedLanguage] = useLocalStorage<Language>("selected-codegen-language", "Python");
 
   const contextValue = {
     selectedLanguage,
