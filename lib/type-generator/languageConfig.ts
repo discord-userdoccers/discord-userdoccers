@@ -1,9 +1,7 @@
 import Python from "@components/icons/Python";
-import Rust from "@components/icons/Rust";
 import TypeScript from "@components/icons/TypeScript";
 
 import { PythonGenerator } from "@lib/type-generator/python";
-import { RustGenerator } from "@lib/type-generator/rust";
 import { TypescriptGenerator } from "@lib/type-generator/typescript";
 
 export const LANGUAGE_CONFIG = {
@@ -16,11 +14,6 @@ export const LANGUAGE_CONFIG = {
     label: "TypeScript",
     icon: TypeScript,
     generator: (ref: HTMLTableElement) => new TypescriptGenerator(ref).generateCode(),
-  },
-  Rust: {
-    label: "Rust",
-    icon: Rust,
-    generator: (ref: HTMLTableElement) => new RustGenerator(ref).generateCode(),
   },
 } as const;
 
