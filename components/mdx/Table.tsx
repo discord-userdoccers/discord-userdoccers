@@ -1,13 +1,10 @@
-import React, { RefObject, useEffect, useRef, useState } from "react";
-import { PythonGenerator } from "../../lib/type-generator/python";
-import { useCodegenLanguage, useToast } from "../../lib/type-generator/store";
-import { TypescriptGenerator } from "../../lib/type-generator/typescript";
+import { RefObject, useEffect, useRef, useState } from "react";
 
-import Chevron from "../icons/Chevron";
-import CopyIcon from "../icons/Copy";
-import Python from "../icons/Python";
-import TickIcon from "../icons/Tick";
-import TypeScript from "../icons/TypeScript";
+import Chevron from "@components/icons/Chevron";
+import CopyIcon from "@components/icons/Copy";
+import TickIcon from "@components/icons/Tick";
+import { Language, LANGUAGE_CONFIG } from "@lib/type-generator/languageConfig";
+import { useCodegenLanguage, useToast } from "@lib/type-generator/store";
 
 const cn = (...c: string[]) => c.join(" ");
 
@@ -43,29 +40,21 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   }, [dropdownRef]);
 
   function tryCopyCodeToClipboard() {
-    if (!props.tableRef.current) return;
+    const table = props.tableRef.current;
+    const generator = LANGUAGE_CONFIG[selectedLanguage].generator;
 
-    let code;
-    if (selectedLanguage === "Python") {
-      code = new PythonGenerator(props.tableRef.current).generateCode();
-    }
-    if (selectedLanguage === "TypeScript") {
-      code = new TypescriptGenerator(props.tableRef.current).generateCode();
-    }
-
-    if (code) {
-      (async () => {
-        await navigator.clipboard
-          .writeText(code)
-          .catch((err) => {
-            console.error(err);
-            showErrorToast("Failed to copy code to clipboard. Check console for details.");
-          })
-          .then(() => {
-            showSuccessToast("Copied code to clipboard.");
-            setShowCopyIcon(true);
-          });
-      })();
+    if (table && generator) {
+      const code = generator(table);
+      navigator.clipboard
+        .writeText(code)
+        .catch((err) => {
+          console.error(err);
+          showErrorToast("Failed to copy code to clipboard. Check console for details.");
+        })
+        .then(() => {
+          showSuccessToast("Copied code to clipboard.");
+          setShowCopyIcon(true);
+        });
     } else {
       showErrorToast("Failed to generate code for this table. Check console for details.");
       console.error(
@@ -75,6 +64,8 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
       );
     }
   }
+
+  const Icon = LANGUAGE_CONFIG[selectedLanguage].icon;
 
   return (
     <div className="opacity-transition relative flex flex-row-reverse items-center gap-1 opacity-0 duration-300 group-hover:opacity-100">
@@ -95,48 +86,37 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
           onClick={() => setIsOpen(!isDropdownOpen)}
           title="Select language to copy"
         >
-          {selectedLanguage === "Python" && <Python className="h-4" />}
-          {selectedLanguage === "TypeScript" && <TypeScript className="h-4" />}
-
+          {Icon && <Icon className="h-4" />}
           <span>{selectedLanguage}</span>
-
           <Chevron className="h-4 w-3 text-black dark:text-white" />
         </button>
+
         {isDropdownOpen && (
           <div className="absolute right-0 z-10 mt-1 w-32 rounded-md shadow-lg">
-            <div role="menu" aria-orientation="vertical" aria-labelledby="options-menu-button">
-              <button
-                onClick={() => {
-                  setSelectedLanguage("Python");
-                  setIsOpen(false);
-                }}
-                className={cn(
-                  "block w-full cursor-pointer select-none rounded-t-md px-4 py-2 text-left font-mono text-xs",
-                  "flex items-center gap-2",
-                  "bg-white dark:bg-theme-dark-sidebar",
-                  "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
-                )}
-                role="menuitem"
-              >
-                <Python className="h-5" />
-                Python
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedLanguage("TypeScript");
-                  setIsOpen(false);
-                }}
-                className={cn(
-                  "block w-full cursor-pointer select-none rounded-b-md px-4 py-2 text-left font-mono text-xs",
-                  "flex items-center gap-2",
-                  "bg-white dark:bg-theme-dark-sidebar",
-                  "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
-                )}
-                role="menuitem"
-              >
-                <TypeScript className="h-5" />
-                TypeScript
-              </button>
+            <div role="menu" aria-orientation="vertical">
+              {Object.entries(LANGUAGE_CONFIG).map(([key, language], i, arr) => {
+                const OptionIcon = language.icon;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setSelectedLanguage(key as Language);
+                      setIsOpen(false);
+                    }}
+                    className={cn(
+                      "block w-full cursor-pointer select-none px-4 py-2 text-left font-mono text-xs",
+                      "flex items-center gap-2",
+                      "bg-white dark:bg-theme-dark-sidebar",
+                      "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
+                      i === 0 ? "rounded-t-md" : i === arr.length - 1 ? "rounded-b-md" : "",
+                    )}
+                    role="menuitem"
+                  >
+                    {OptionIcon && <OptionIcon className="h-5" />}
+                    {language.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
