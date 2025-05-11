@@ -69,34 +69,27 @@ export class RustGenerator {
 
     if (layout.type === TableType.Struct) {
       output += `pub struct ${title} {\n`;
-      for (const prop of properties) {
-        if (prop.description) output += `\t/// ${prop.description}\n`;
-        if (prop.isDeprecated) output += `\t#[deprecated]\n`;
-        if (prop.isUndefinable) output += `\t#[serde(skip_serializing_if = "Option::is_none")]\n`;
-        output += `\tpub ${prop.field}: ${prop.type},\n`;
-      }
-      output += `}\n`;
-    } else if (layout.type === TableType.Enum) {
+    } else {
       output += `pub enum ${title} {\n`;
-      for (const prop of properties) {
-        if (prop.description) output += `\t/// ${prop.description}\n`;
-        if (prop.isDeprecated) output += `\t#[deprecated]\n`;
-        if (prop.type) {
-          output += `\t${prop.field} = ${prop.type},\n`;
-        } else {
-          output += `\t${prop.field},\n`;
-        }
-      }
-      output += `}\n`;
-    } else if (layout.type === TableType.Event) {
-      output += `pub enum ${title} {\n`;
-      for (const prop of properties) {
-        if (prop.description) output += `\t/// ${prop.description}\n`;
-        output += `\t${prop.field}(${prop.type}),\n`;
-      }
-      output += `}\n`;
     }
 
+    for (const property of properties) {
+      if (property.description) output += `\t/// ${property.description}\n`;
+      if (property.isDeprecated) output += `\t#[deprecated]\n`;
+
+      if (layout.type === TableType.Struct) {
+        if (property.isUndefinable) output += `\t#[serde(skip_serializing_if = "Option::is_none")]\n`;
+        output += `\tpub ${property.field}: ${property.type},\n`;
+      } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
+        if (property.type) {
+          output += `\t${property.field} = ${property.type},\n`;
+        } else {
+          output += `\t${property.field},\n`;
+        }
+      } else {
+          output += `\t${property.field} = ${property.type},\n`;
+      }
+    }
     return output;
   }
 
