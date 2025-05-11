@@ -74,6 +74,10 @@ export class RustGenerator {
       output += `bitflags! {\n`;
       output += `\tpub struct ${title}: u64 {\n`;
       prefix = '\t\t'
+    } else if (layout.type === TableType.Enum && properties[0].type) {
+      output += `#[derive(Serialize_repr, Deserialize_repr)]\n`
+      output += `#[repr(u8)]\n`
+      output += `pub enum ${title} {\n`;
     } else {
       output += `pub enum ${title} {\n`;
     }
