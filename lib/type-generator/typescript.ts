@@ -35,7 +35,8 @@ export class TypescriptGenerator {
       if (property.type.type && !isEnum) {
         property.type = new TypeInfo([this.typeMapper(property.type.type)]);
       }
-      let type = this.typeToString(property.type, true);
+      const onlyFirstWord = (isEnum && !property.type.type?.includes("<<"));
+      let type = this.typeToString(property.type, onlyFirstWord);
       if (!isEnum) type = this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";
