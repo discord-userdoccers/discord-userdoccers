@@ -32,12 +32,12 @@ export class TypescriptGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
-      if (property.type.type && !isEnum) {
+      if (property.type?.type && !isEnum) {
         property.type = new TypeInfo([this.typeMapper(property.type.type)]);
       }
-      const onlyFirstWord = isEnum && !property.type.type?.includes("<<");
-      let type = this.typeToString(property.type, onlyFirstWord);
-      if (!isEnum) type = this.typeMapper(type);
+      const onlyFirstWord = isEnum && layout.type !== TableType.Bitfield;
+      let type = property.type && this.typeToString(property.type, onlyFirstWord);
+      if (!isEnum) type = type && this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";
 
@@ -95,9 +95,13 @@ export class TypescriptGenerator {
       if (layout.type === TableType.Struct) {
         output += `\t${property.field}: ${property.type};\n`;
       } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
-        output += `\t${property.field} = ${property.type},\n`;
+        if (property.type) {
+          output += `\t${property.field} = ${property.type},\n`;
+        } else {
+          output += `\t${property.field},\n`;
+        }
       } else {
-        const [left, right] = property.type.split("<<").map((s) => s.trim());
+        const [left, right] = property.type?.split("<<").map((s) => s.trim()) ?? [];
         output += `\t${property.field}: ${left}n << ${right}n,\n`;
       }
     }
