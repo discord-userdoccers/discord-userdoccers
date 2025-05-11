@@ -376,17 +376,17 @@ export class Tokenizer {
             break;
           }
           case TableType.Enum:
-            if (isValueless) {
-              if (columnName === "value") {
-                field = cell.getTypeInfo();
-              } else if (columnName === "description") {
-                description = cell.getTypeInfo();
-              } else {
-                const header = tHeadRows[i].getTypeInfo();
-                const content = cell.getTypeInfo();
-                if (header && content) otherColumns.push([header, content]);
-              }
+            if (columnName === "description") {
+              description = cell.getTypeInfo();
             } else {
+              const header = tHeadRows[i].getTypeInfo();
+              const content = cell.getTypeInfo();
+              if (header && content) otherColumns.push([header, content]);
+            }
+
+            if (isValueless && columnName === "value") {
+              field = cell.getTypeInfo();
+            } else if (!isValueless) {
               if (columnName === "value") {
                 type = cell.getTypeInfo();
                 if (type?.type?.includes("<<")) {
@@ -394,12 +394,6 @@ export class Tokenizer {
                 }
               } else if (columnName === "name") {
                 field = cell.getTypeInfo();
-              } else if (columnName === "description") {
-                description = cell.getTypeInfo();
-              } else {
-                const header = tHeadRows[i].getTypeInfo();
-                const content = cell.getTypeInfo();
-                if (header && content) otherColumns.push([header, content]);
               }
             }
             break;
@@ -422,8 +416,6 @@ export class Tokenizer {
           }
         }
       });
-
-      console.log(struct);
 
       if (field) {
         struct.contents.push({
