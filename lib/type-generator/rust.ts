@@ -67,28 +67,37 @@ export class RustGenerator {
       });
     }
 
+    let prefix = '\t';
     if (layout.type === TableType.Struct) {
       output += `pub struct ${title} {\n`;
+    } else if (layout.type === TableType. Bitfield) {
+      output += `bitflags! {\n`;
+      output += `\tpub struct ${title}: u64 {\n`;
+      prefix = '\t\t'
     } else {
       output += `pub enum ${title} {\n`;
     }
 
     for (const property of properties) {
-      if (property.description) output += `\t/// ${property.description}\n`;
-      if (property.isDeprecated) output += `\t#[deprecated]\n`;
+      if (property.description) output += `${prefix}/// ${property.description}\n`;
+      if (property.isDeprecated) output += `${prefix}#[deprecated]\n`;
 
       if (layout.type === TableType.Struct) {
-        if (property.isUndefinable) output += `\t#[serde(skip_serializing_if = "Option::is_none")]\n`;
-        output += `\tpub ${property.field}: ${property.type},\n`;
+        if (property.isUndefinable) output += `${prefix}#[serde(skip_serializing_if = "Option::is_none")]\n`;
+        output += `${prefix}pub ${property.field}: ${property.type},\n`;
       } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
         if (property.type) {
-          output += `\t${property.field} = ${property.type},\n`;
+          output += `${prefix}${property.field} = ${property.type},\n`;
         } else {
-          output += `\t${property.field},\n`;
+          output += `${prefix}${property.field},\n`;
         }
       } else {
-        output += `\t${property.field} = ${property.type},\n`;
+        output += `${prefix}const ${property.field} = ${property.type};\n`;
       }
+    }
+
+    if (layout.type === TableType.Bitfield) {
+      output += `\t}\n`;
     }
 
     output += `}\n`;
