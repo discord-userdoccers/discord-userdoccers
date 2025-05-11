@@ -36,12 +36,12 @@ export class RustGenerator {
       const isUndefinable = field.endsWith("?");
       if (isUndefinable) field = this.stripQuestionMark(field);
 
-      if (property.type.type && !isEnum) {
+      if (property.type?.type && !isEnum) {
         property.type = new TypeInfo([this.typeMapper(property.type.type)]);
       }
-      const onlyFirstWord = isEnum && !property.type.type?.includes("<<");
-      let type = this.typeToString(property.type, onlyFirstWord);
-      if (!isEnum) type = this.typeMapper(type);
+      const onlyFirstWord = isEnum && layout.type !== TableType.Bitfield;
+      let type = property.type && this.typeToString(property.type, onlyFirstWord);
+      if (!isEnum) type = type && this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";
 
