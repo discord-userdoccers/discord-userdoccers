@@ -33,6 +33,7 @@ export class RustGenerator {
       let field = this.typeToString(property.field, !isEnum);
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
       const isUndefinable = field.endsWith("?");
+      if (isUndefinable) field = this.stripQuestionMark(field);
 
       if (property.type.type && !isEnum) {
         property.type = new TypeInfo([this.typeMapper(property.type.type)]);
@@ -47,7 +48,6 @@ export class RustGenerator {
       // these two keywords are the only ones ive seen used in the docs
       if (field === "type" || field === "unsafe") field = `r#${field}`;
 
-      if (isUndefinable) field = this.stripQuestionMark(field);
 
       properties.push({
         field,
@@ -106,25 +106,26 @@ export class RustGenerator {
     return input;
   }
 
-  private typeToString(type: TypeInfo, onlyFirstWord = false, isInArray = false, isUndefinable = false): string {
+  private typeToString(type: TypeInfo, onlyFirstWord = false, isUndefinable = false): string {
     let stringType: string = "";
 
     if (type.array) {
       if (type.array.length === 1) {
-        const inner = this.typeToString(type.array[0], onlyFirstWord, true, false);
+        const inner = this.typeMapper(this.typeToString(type.array[0], onlyFirstWord));
         stringType = `Vec<${inner}>`;
       } else if (type.array.length > 1) {
         const inner = type.array
-          .map((i) => this.typeMapper(this.typeToString(i, onlyFirstWord, true, false)))
+          .map((i) => this.typeToString(i, onlyFirstWord))
+          .map((i) => this.typeMapper(i))
           .join(", ");
         stringType = `(${inner})`;
       }
     } else if (type.map) {
-      const left = this.typeMapper(this.typeToString(type.map[0], onlyFirstWord, false, false));
-      const right = this.typeMapper(this.typeToString(type.map[1], onlyFirstWord, false, false));
+      const left = this.typeMapper(this.typeToString(type.map[0], onlyFirstWord));
+      const right = this.typeMapper(this.typeToString(type.map[1], onlyFirstWord));
       stringType = `HashMap<${left}, ${right}>`;
     } else if (type.type && type.optional) {
-      const t = this.typeMapper(this.typeToString(type, onlyFirstWord, isInArray, false));
+      const t = this.typeMapper(this.typeToString(type, onlyFirstWord));
       stringType = `Option<${t}>`;
     } else if (type.multiline) {
       stringType = type.multiline.join("\n");
