@@ -125,26 +125,17 @@ export class RustGenerator {
       const left = this.typeMapper(this.typeToString(type.map[0], onlyFirstWord));
       const right = this.typeMapper(this.typeToString(type.map[1], onlyFirstWord));
       stringType = `HashMap<${left}, ${right}>`;
-    } else if (type.type && type.optional) {
-      const t = this.typeMapper(this.typeToString(type, onlyFirstWord));
-      stringType = `Option<${t}>`;
     } else if (type.multiline) {
       stringType = type.multiline.join("\n");
     } else if (type.type) {
       const mappedType = this.typeMapper(type.type);
-      if (onlyFirstWord) {
-        stringType = mappedType.split(" ")[0];
-      } else {
-        stringType = mappedType;
-      }
-    }
-
-    if (!stringType) {
+      stringType = onlyFirstWord ? mappedType.split(" ")[0] : mappedType;
+    } else {
       throw new Error("Invalid TypeInfo provided.");
     }
 
-    if (isUndefinable && !type.optional && !stringType.startsWith("Option<")) {
-      return `Option<${stringType}>`;
+    if (type.optional || (isUndefinable && !stringType.startsWith("Option<"))) {
+      stringType = `Option<${stringType}>`;
     }
 
     return stringType;
