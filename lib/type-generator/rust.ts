@@ -2,6 +2,7 @@ import { TableType, Tokenizer, TypeInfo } from "./tokenizer";
 
 const TYPE_MAP: [string | RegExp, string][] = [
   ["string", "String"],
+  ["str", "String"],
   ["snowflake", "Snowflake"],
   ["ISO8601 timestamp", "Timestamp"],
   ["ISO8601 date", "Timestamp"],
