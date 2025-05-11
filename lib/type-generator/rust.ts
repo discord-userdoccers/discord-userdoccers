@@ -81,7 +81,11 @@ export class RustGenerator {
       for (const prop of properties) {
         if (prop.description) output += `\t/// ${prop.description}\n`;
         if (prop.isDeprecated) output += `\t#[deprecated]\n`;
-        output += `\t${prop.field},\n`;
+        if (prop.type) {
+          output += `\t${prop.field} = ${prop.type},\n`;
+        } else {
+          output += `\t${prop.field},\n`;
+        }
       }
       output += `}\n`;
     } else if (layout.type === TableType.Event) {
