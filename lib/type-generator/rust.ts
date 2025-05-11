@@ -39,7 +39,7 @@ export class RustGenerator {
       if (property.type.type && !isEnum) {
         property.type = new TypeInfo([this.typeMapper(property.type.type)]);
       }
-      const onlyFirstWord = (isEnum && !property.type.type?.includes("<<"));
+      const onlyFirstWord = isEnum && !property.type.type?.includes("<<");
       let type = this.typeToString(property.type, onlyFirstWord);
       if (!isEnum) type = this.typeMapper(type);
 
@@ -48,7 +48,6 @@ export class RustGenerator {
       // cant use keywords for field names in rust
       // these two keywords are the only ones ive seen used in the docs
       if (field === "type" || field === "unsafe") field = `r#${field}`;
-
 
       properties.push({
         field,
