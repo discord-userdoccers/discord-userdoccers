@@ -67,16 +67,16 @@ export class RustGenerator {
       });
     }
 
-    let prefix = '\t';
+    let prefix = "\t";
     if (layout.type === TableType.Struct) {
       output += `pub struct ${title} {\n`;
-    } else if (layout.type === TableType. Bitfield) {
+    } else if (layout.type === TableType.Bitfield) {
       output += `bitflags! {\n`;
       output += `\tpub struct ${title}: u64 {\n`;
-      prefix = '\t\t'
+      prefix = "\t\t";
     } else if (layout.type === TableType.Enum && properties[0].type) {
-      output += `#[derive(Serialize_repr, Deserialize_repr)]\n`
-      output += `#[repr(u8)]\n`
+      output += `#[derive(Serialize_repr, Deserialize_repr)]\n`;
+      output += `#[repr(u8)]\n`;
       output += `pub enum ${title} {\n`;
     } else {
       output += `pub enum ${title} {\n`;
