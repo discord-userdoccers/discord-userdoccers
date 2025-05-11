@@ -122,7 +122,7 @@ export class RustGenerator {
       const right = this.typeMapper(this.typeToString(type.map[1], onlyFirstWord, false, false));
       stringType = `HashMap<${left}, ${right}>`;
     } else if (type.type && type.optional) {
-      const t = this.typeMapper(this.typeToString(new TypeInfo([type.type]), onlyFirstWord, isInArray, false));
+      const t = this.typeMapper(this.typeToString(type, onlyFirstWord, isInArray, false));
       stringType = `Option<${t}>`;
     } else if (type.multiline) {
       stringType = type.multiline.join("\n");
