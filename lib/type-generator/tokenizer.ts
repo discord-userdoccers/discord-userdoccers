@@ -284,7 +284,7 @@ export interface StructData {
 
 export interface StructContents {
   field: TypeInfo;
-  type: TypeInfo;
+  type: TypeInfo | undefined;
   description?: TypeInfo;
   otherColumns: [TypeInfo, TypeInfo][];
 }
@@ -325,10 +325,15 @@ export class Tokenizer {
       contents: [],
     };
 
+    let isValueless = false;
+
     if (headings[0] === "field" && headings[1] === "type") {
       struct.type = TableType.Struct;
-    } else if (headings[0] === "value" && headings[1] === "name") {
+    } else if (headings[0] === "value") {
       struct.type = TableType.Enum;
+      if (!headings.includes("name")) {
+        isValueless = true;
+      }
     } else if (headings[0] === "event" && headings[1] === "value") {
       struct.type = TableType.Event;
     }
@@ -371,6 +376,27 @@ export class Tokenizer {
             break;
           }
           case TableType.Enum:
+            if (columnName === "description") {
+              description = cell.getTypeInfo();
+            } else {
+              const header = tHeadRows[i].getTypeInfo();
+              const content = cell.getTypeInfo();
+              if (header && content) otherColumns.push([header, content]);
+            }
+
+            if (isValueless && columnName === "value") {
+              field = cell.getTypeInfo();
+            } else if (!isValueless) {
+              if (columnName === "value") {
+                type = cell.getTypeInfo();
+                if (type?.type?.includes("<<")) {
+                  struct.type = TableType.Bitfield;
+                }
+              } else if (columnName === "name") {
+                field = cell.getTypeInfo();
+              }
+            }
+            break;
           case TableType.Bitfield: {
             if (columnName === "value") {
               type = cell.getTypeInfo();
@@ -391,7 +417,7 @@ export class Tokenizer {
         }
       });
 
-      if (field && type) {
+      if (field) {
         struct.contents.push({
           field,
           type,
