@@ -19,7 +19,7 @@ export const LANGUAGE_CONFIG = {
   },
   Rust: {
     label: "Rust",
-    icon: Rust,
+    icon: (props: React.SVGProps<SVGSVGElement>) => <Rust {...props} fill="#d34516" />,
     generator: (ref: HTMLTableElement) => new RustGenerator(ref).generateCode(),
   },
 } as const;
