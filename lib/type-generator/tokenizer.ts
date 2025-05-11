@@ -327,7 +327,7 @@ export class Tokenizer {
 
     if (headings[0] === "field" && headings[1] === "type") {
       struct.type = TableType.Struct;
-    } else if (headings[0] === "value" && headings[1] === "name") {
+    } else if (headings[0] === "value") {
       struct.type = TableType.Enum;
     } else if (headings[0] === "event" && headings[1] === "value") {
       struct.type = TableType.Event;
