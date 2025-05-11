@@ -87,7 +87,7 @@ export class RustGenerator {
           output += `\t${property.field},\n`;
         }
       } else {
-          output += `\t${property.field} = ${property.type},\n`;
+        output += `\t${property.field} = ${property.type},\n`;
       }
     }
     return output;
