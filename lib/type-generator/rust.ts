@@ -90,6 +90,9 @@ export class RustGenerator {
         output += `\t${property.field} = ${property.type},\n`;
       }
     }
+    
+    output += `}\n`;
+
     return output;
   }
 
