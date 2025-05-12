@@ -1,6 +1,7 @@
 import createMDX from "@next/mdx";
 import supersub from "remark-supersub";
 import frontmatter from "./lib/frontmatter.mjs";
+import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -10,9 +11,9 @@ const config = {
   swcMinify: true,
   env: {
     BASE_DOMAIN:
-      process.env.NODE_ENV === "production"
-        ? (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "docs.discord.sex")
-        : (process.env.VERCEL_URL ?? "localhost:3000"),
+      process.env.CF_PAGES_URL ?? (process.env.NODE_ENV === "production"
+        ? "docs.discord.food"
+        : "localhost:3000"),
   },
   // eslint-disable-next-line @typescript-eslint/require-await -- required for Next.js
   async redirects() {
@@ -27,7 +28,7 @@ const config = {
         source: "/_github",
         destination: "https://github.com/discord-userdoccers/discord-userdoccers",
         permanent: true,
-      }
+      },
     ];
   },
 };
@@ -38,5 +39,9 @@ const withMDX = createMDX({
     rehypePlugins: [],
   },
 });
+
+if (process.env.NODE_ENV === "development") {
+  await setupDevPlatform();
+}
 
 export default withMDX(config);
