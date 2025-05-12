@@ -40,7 +40,7 @@ export class RustGenerator {
         property.type = new TypeInfo([this.typeMapper(property.type.type)]);
       }
       const onlyFirstWord = isEnum && layout.type !== TableType.Bitfield;
-      let type = property.type && this.typeToString(property.type, onlyFirstWord);
+      let type = property.type && this.typeToString(property.type, onlyFirstWord, isUndefinable);
       if (!isEnum) type = type && this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";
