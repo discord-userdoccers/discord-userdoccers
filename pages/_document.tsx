@@ -13,7 +13,9 @@ export default function Document() {
 
         <link rel="preconnect" href={ALGOLIA_HOST} crossOrigin="anonymous" />
 
-        <script src="/docsearch.js" data-algolia-host={ALGOLIA_HOST}></script>
+        {/* {process.env.BRANCH !== "production" ? (
+          <script src="/docsearch.js" data-algolia-host={ALGOLIA_HOST}></script>
+        ) : null} */}
       </Head>
       <body>
         <Main />
