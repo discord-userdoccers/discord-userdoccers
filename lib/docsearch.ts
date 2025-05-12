@@ -1,3 +1,6 @@
+type XMLHttpRequestOpenArguments = Parameters<XMLHttpRequest["open"]>;
+type XMLHttpRequestSendArguments = Parameters<XMLHttpRequest["send"]>;
+
 export default (() => {
   if (typeof global.XMLHttpRequest != "undefined") {
     const { host: targetHost, pathname: targetPath } = new URL(
@@ -11,7 +14,7 @@ export default (() => {
       const { host, pathname } = new URL(url);
       (this as any).__is_docsearch_query = method === "POST" && host === targetHost && pathname === targetPath;
 
-      return originalOpen.apply(this, arguments as any);
+      return originalOpen.apply(this, arguments as unknown as XMLHttpRequestOpenArguments);
     };
 
     global.XMLHttpRequest.prototype.send = function (body) {
@@ -44,7 +47,7 @@ export default (() => {
         }
       });
 
-      return originalSend.apply(this, arguments as any);
+      return originalSend.apply(this, arguments as unknown as XMLHttpRequestSendArguments);
     };
   }
 })();
