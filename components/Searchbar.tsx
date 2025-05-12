@@ -13,7 +13,19 @@ export default function Searchbar() {
       apiKey={config.apiKey}
       indexName={config.index}
       placeholder="Search documentation"
-      transformItems={(items) => items.map((hit) => ({ ...hit, url: new URL(hit.url).pathname }))}
+      transformItems={(items) =>
+        items.map((hit) => {
+          const url = new URL(hit.url);
+          url.host = location.host;
+          hit.url = url.toString();
+
+          const urlWithoutAnchor = new URL(hit.url_without_anchor);
+          urlWithoutAnchor.host = location.host;
+          hit.url_without_anchor = urlWithoutAnchor.toString();
+
+          return hit;
+        })
+      }
       insights
     />
   );
