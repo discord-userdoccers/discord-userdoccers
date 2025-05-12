@@ -1,5 +1,4 @@
-type XMLHttpRequestOpenArguments = Parameters<XMLHttpRequest["open"]>;
-type XMLHttpRequestSendArguments = Parameters<XMLHttpRequest["send"]>;
+type XMLHttpRequestOpen = (this: XMLHttpRequest, ...args: Parameters<XMLHttpRequest["open"]>) => void;
 
 export default (() => {
   if (typeof global.XMLHttpRequest != "undefined") {
@@ -10,44 +9,44 @@ export default (() => {
     const originalOpen = global.XMLHttpRequest.prototype.open;
     const originalSend = global.XMLHttpRequest.prototype.send;
 
-    global.XMLHttpRequest.prototype.open = function (method, url) {
+    function open(this: XMLHttpRequest, ...args: Parameters<XMLHttpRequestOpen>) {
+      const [method, url] = args;
+
       const { host, pathname } = new URL(url);
+
       (this as any).__is_docsearch_query = method === "POST" && host === targetHost && pathname === targetPath;
 
-      return originalOpen.apply(this, arguments as unknown as XMLHttpRequestOpenArguments);
-    };
+      return originalOpen.apply(this, args);
+    }
 
-    global.XMLHttpRequest.prototype.send = function (body) {
-      const xhr = this;
+    function send(this: XMLHttpRequest, ...args: Parameters<XMLHttpRequest["send"]>) {
+      this.addEventListener("readystatechange", () => {
+        if (this.readyState === 4) {
+          if ((this as any).__is_docsearch_query) {
+            const originalResponse = this.responseText;
 
-      const modifyResponse = () => {
-        if ((xhr as any).__is_docsearch_query) {
-          const originalResponse = xhr.responseText;
+            Object.defineProperty(this, "responseText", {
+              get: () => {
+                const response = JSON.parse(originalResponse);
 
-          Object.defineProperty(xhr, "responseText", {
-            get: () => {
-              const response = JSON.parse(originalResponse);
-
-              for (const result of response.results) {
-                for (const hit of result.hits) {
-                  hit.url = new URL(hit.url).pathname;
+                for (const result of response.results) {
+                  for (const hit of result.hits) {
+                    hit.url = new URL(hit.url as string).pathname;
+                  }
                 }
-              }
 
-              return JSON.stringify(response);
-            },
-            configurable: true,
-          });
-        }
-      };
-
-      this.addEventListener("readystatechange", function () {
-        if (xhr.readyState === 4) {
-          modifyResponse();
+                return JSON.stringify(response);
+              },
+              configurable: true,
+            });
+          }
         }
       });
 
-      return originalSend.apply(this, arguments as unknown as XMLHttpRequestSendArguments);
-    };
+      return originalSend.apply(this, args);
+    }
+
+    (global.XMLHttpRequest.prototype.open as XMLHttpRequestOpen) = open;
+    global.XMLHttpRequest.prototype.send = send;
   }
 })();
