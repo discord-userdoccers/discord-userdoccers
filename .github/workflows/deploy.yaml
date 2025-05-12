@@ -1,0 +1,70 @@
+name: Deploy
+
+on:
+  push:
+  pull_request_target:
+
+# Runs do not need to be concurrent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    permissions:
+      deployments: write
+
+    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+
+    runs-on: ubuntu-latest
+    name: Deploy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: 'pnpm'
+
+      - name: Install and Build Artifacts
+        run: |
+          # Prevent supply chain attack by setting up CI before pulling PR
+          pnpm install
+          pnpm build:cionly
+
+          # Pull the PR branch if necessary
+          if [ "${{ github.event_name }}" == "pull_request_target" ]; then
+            git fetch origin "pull/${{ github.event.number }}/head:pull/${{ github.event.number }}/head"
+            git switch "pull/${{ github.event.number }}/head"
+          fi
+
+          pnpm build:cf
+
+      - name: Deploy Site
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy --branch ${{ github.event_name == 'pull_request_target' && format('pr-{0}', github.event.number) || github.ref_name }}
+
+      - name: Notify Deployment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+          PROJECT_NAME: "discord-userdoccers"
+          DEPLOYMENT_ENVIRONMENT: ${{ steps.deploy.outputs.pages-environment }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+
+          DEPLOYMENT_DESCRIPTION: ${{ github.event_name == 'push' &&  github.event.head_commit.message || github.event.pull_request.title }}
+        run: node dist/ci/deploy.js
