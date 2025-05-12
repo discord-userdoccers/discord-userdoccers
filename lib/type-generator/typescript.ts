@@ -32,6 +32,9 @@ export class TypescriptGenerator {
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
+      if (property.type?.type && !isEnum) {
+        property.type = new TypeInfo([this.typeMapper(`${property.type.optional ? "?" : ""}${property.type.type}`)]);
+      }
       const onlyFirstWord = isEnum && layout.type !== TableType.Bitfield;
       let type = property.type && this.typeToString(property.type, onlyFirstWord);
       if (!isEnum) type = type && this.typeMapper(type);
