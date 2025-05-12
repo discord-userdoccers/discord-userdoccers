@@ -19,9 +19,11 @@ export default function Searchbar() {
           url.host = location.host;
           hit.url = url.toString();
 
-          const urlWithoutAnchor = new URL(hit.url_without_anchor);
-          urlWithoutAnchor.host = location.host;
-          hit.url_without_anchor = urlWithoutAnchor.toString();
+          if (hit.url_without_anchor) {
+            const urlWithoutAnchor = new URL(hit.url_without_anchor);
+            urlWithoutAnchor.host = location.host;
+            hit.url_without_anchor = urlWithoutAnchor.toString();
+          }
 
           return hit;
         })
