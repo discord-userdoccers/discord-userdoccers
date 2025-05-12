@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-css-tags, @next/next/no-sync-scripts */
 import { Head, Html, Main, NextScript } from "next/document";
 
+import "../lib/docsearch";
+
 export default function Document() {
   return (
     <Html lang="en">
