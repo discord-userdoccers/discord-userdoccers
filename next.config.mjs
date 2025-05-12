@@ -12,7 +12,6 @@ const config = {
   env: {
     BASE_DOMAIN:
       process.env.CF_PAGES_URL ?? (process.env.NODE_ENV === "production" ? "docs.discord.food" : "localhost:3000"),
-    // BRANCH: process.env.CF_PAGES_BRANCH ?? process.env.NODE_ENV,
   },
   // eslint-disable-next-line @typescript-eslint/require-await -- required for Next.js
   async redirects() {

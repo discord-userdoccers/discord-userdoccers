@@ -13,8 +13,8 @@ export default function Searchbar() {
       apiKey={config.apiKey}
       indexName={config.index}
       placeholder="Search documentation"
-      insights
       transformItems={(items) => items.map((hit) => ({ ...hit, url: new URL(hit.url).pathname }))}
+      insights
     />
   );
 }
