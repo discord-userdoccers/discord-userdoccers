@@ -348,7 +348,7 @@ export class Tokenizer {
         const columnName = tHeadRows[i].getTextContent().toLowerCase();
         switch (struct.type) {
           case TableType.Struct: {
-            if (columnName === "field") {
+            if (columnName === "field" || columnName === "name") {
               field = cell.getTypeInfo();
             } else if (columnName === "type") {
               type = cell.getTypeInfo();
