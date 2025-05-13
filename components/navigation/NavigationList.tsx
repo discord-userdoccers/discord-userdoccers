@@ -26,23 +26,25 @@ export default function NavigationList() {
       {(data as any as NavigationData[]).map((section) => (
         <NavigationSection title={section.name ?? undefined} key={section.section}>
           {section.name === null ? SearchItem : null}
-          {Object.values(section.pages).map((page) => (
-            <NavigationLink
-              href={page.link}
-              subLinks={
-                page.subLinks.length === 0
-                  ? null
-                  : page.subLinks.map((subLink) => (
-                      <NavigationSubLink href={subLink.link} key={subLink.link}>
-                        {subLink.name}
-                      </NavigationSubLink>
-                    ))
-              }
-              key={page.link}
-            >
-              {page.name}
-            </NavigationLink>
-          ))}
+          {Object.values(section.pages)
+            .toSorted((a, b) => a.name.localeCompare(b.name))
+            .map((page) => (
+              <NavigationLink
+                href={page.link}
+                subLinks={
+                  page.subLinks.length === 0
+                    ? null
+                    : page.subLinks.map((subLink) => (
+                        <NavigationSubLink href={subLink.link} key={subLink.link}>
+                          {subLink.name}
+                        </NavigationSubLink>
+                      ))
+                }
+                key={page.link}
+              >
+                {page.name}
+              </NavigationLink>
+            ))}
         </NavigationSection>
       ))}
     </>
