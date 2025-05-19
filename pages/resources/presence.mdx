@@ -6,13 +6,18 @@ A user's presence is their current status and activity. Presences are usually pe
 
 ###### Presence Structure
 
-| Field         | Type                                               | Description                                                              |
-| ------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
-| user          | partial [user](/resources/user#user-object) object | The user whose presence is being updated                                 |
-| guild_id?     | snowflake                                          | ID of the guild the presence was updated in, if this is a guild presence |
-| status        | string                                             | The [status](#status-type) of the user                                   |
-| activities    | array[[activity](#activity-object) object]         | The current activities the user is partaking in                          |
-| client_status | [client status](#client-status-object) object      | The platform-dependent status of the user                                |
+| Field                     | Type                                               | Description                                                              |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| user                      | partial [user](/resources/user#user-object) object | The user whose presence is being updated                                 |
+| guild_id?                 | snowflake                                          | ID of the guild the presence was updated in, if this is a guild presence |
+| status                    | string                                             | The [status](#status-type) of the user                                   |
+| activities                | array[[activity](#activity-object) object]         | The current activities the user is partaking in                          |
+| hidden_activities ^1^ ^2^ | array[[activity](#activity-object) object]         | Activities that are hidden from the public                               |
+| client_status             | [client status](#client-status-object) object      | The platform-dependent status of the user                                |
+
+^1^ Activities are hidden when a user is invisible or has their [`show_current_game` privacy setting](/resources/user-settings-proto#status-settings-structure) disabled. Some exceptions apply, such as the Spotify activity, which is always shown.
+
+^2^ To subscribe to hidden activities for a user, see the [Update Activity Subscriptions](#update-activity-subscriptions) endpoint.
 
 ### Session Object
 
@@ -29,15 +34,18 @@ The overall presence will always have unknown values for `client_info`.
 
 ###### Session Structure
 
-| Field          | Type                                         | Description                                           |
-| -------------- | -------------------------------------------- | ----------------------------------------------------- |
-| session_id ^1^ | string                                       | The ID of the session                                 |
-| client_info    | [client info](#client-info-structure) object | Information about the client that spawned the session |
-| status         | string                                       | The [status](#status-type) of the session             |
-| activities     | array[[activity](#activity-object) object]   | The current activities the session is partaking in    |
-| active?        | boolean                                      | Unknown                                               |
+| Field                 | Type                                         | Description                                           |
+| --------------------- | -------------------------------------------- | ----------------------------------------------------- |
+| session_id ^1^        | string                                       | The ID of the session                                 |
+| client_info           | [client info](#client-info-structure) object | Information about the client that spawned the session |
+| status                | string                                       | The [status](#status-type) of the session             |
+| activities            | array[[activity](#activity-object) object]   | The current activities the session is partaking in    |
+| hidden_activities ^2^ | array[[activity](#activity-object) object]   | Activities that are hidden from the public            |
+| active?               | boolean                                      | Unknown                                               |
 
 ^1^ [Headless sessions](#create-headless-session) will have a session ID beginning with `h:`.
+
+^2^ Activities are hidden when a user is invisible or has their [`show_current_game` privacy setting](/resources/user-settings-proto#status-settings-structure) disabled. Some exceptions apply, such as the Spotify activity, which is always shown.
 
 ###### Client Info Structure
 
@@ -605,3 +613,25 @@ The `SPECTATE` actity action type is deprecated and will be removed in the futur
 ```json
 { "secret": "025ed05c71f639de8bfaa0d679d7c94b2fdce12f" }
 ```
+
+<RouteHeader method="POST" url="/users/@me/activities/subscribe" supportsOAuth2="activities.read">
+  Update Activity Subscriptions
+</RouteHeader>
+
+Updates the current user's subscribed hidden activities. Returns a 204 empty response on success. Fires multiple [Presence Update](/topics/gateway-events#presence-update) Gateway events.
+
+##### JSON Params
+
+| Field         | Type                                                                    | Description                                             |
+| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| subscriptions | array[[activity subscription](#activity-subscription-structure) object] | The hidden activities the user is subscribed to (1-100) |
+
+###### Activity Subscription Structure
+
+| Field          | Type      | Description                                                |
+| -------------- | --------- | ---------------------------------------------------------- |
+| user_id        | snowflake | The ID of the user to subscribe to                         |
+| application_id | snowflake | The ID of the application representing the game            |
+| party_id       | snowflake | The ID of the party the user is in                         |
+| message_id     | snowflake | The ID of the message containing the rich presence invite  |
+| channel_id     | snowflake | The ID of the channel the rich presence invite was sent in |
