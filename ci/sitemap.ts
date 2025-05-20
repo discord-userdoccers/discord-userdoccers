@@ -134,7 +134,9 @@ for (const file of files) {
 
 // Probably not the best way to do this but it's fine, just converts the object into an array
 for (const section in navigationLinks) {
-  navigationLinks[section].pages = Object.values(navigationLinks[section].items!).sort((a, b) => a.sort - b.sort);
+  const pages = Object.values(navigationLinks[section].items!);
+  pages.sort((a, b) => (a.sort === b.sort ? a.name.localeCompare(b.name) : a.sort - b.sort));
+  navigationLinks[section].pages = pages;
   delete navigationLinks[section].items;
 }
 
