@@ -6,20 +6,12 @@ This document serves as a comprehensive reference for all available components. 
 - **Content Components** - For displaying static text, images, and files (Text Display, Media Gallery, Thumbnails)
 - **Interactive Components** - For user interactions (Buttons, Select Menus, Text Input)
 
-To use these components, you need to send the [message flag](/resources/message#message-flags) `1 << 15` (`IS_COMPONENTS_V2`) which can be sent on a per-message basis. This enables the new components system with the following changes:
+To use these components, you need to send the [`IS_COMPONENTS_V2` message flag](/resources/message#message-flags), which can be sent on a per-message basis. Once a message has been sent with this flag, it can't be removed from the message. This enables the new components system with the following changes:
 
 - The `content` and `embeds` fields will no longer work but you'll be able to use [Text Display](#text-display) and [Container](#container) as replacements
-- Attachments won't show by default - they must be exposed through components
+- Attachments won't show by default—they must be exposed through components
 - The `poll` and `stickers` fields are disabled
-- Messages currently allow up to 10 top-level components and 30 total components
-
-<Alert type="info">
-
-[Legacy component behavior](#legacy-message-component-behavior) will continue to work but provide less flexibility and control over the message layout.
-
-</Alert>
-
----
+- Messages allow up to 40 total components
 
 ## What is a Component
 
@@ -27,30 +19,57 @@ Components allow you to style and structure your messages, modals, and interacti
 
 Components are a field on the [message object](/resources/message#message-object) and in modals. You can use them when creating messages or responding to an interaction, like an [application command](/interactions/application-commands).
 
+## Legacy Message Component Behavior
+
+Before the introduction of the `IS_COMPONENTS_V2` flag, message components were sent in conjunction with message content. This means that you could send a message using a subset of the available components without setting the `IS_COMPONENTS_V2` flag, and the components would be included in the message content along with `content` and `embeds`.
+
+Bots using this Legacy Message Component behavior will continue to work as expected, but it is recommended to use the new `IS_COMPONENTS_V2` flag for new bots or features as they offer more options for layout and customization.
+
+###### Legacy Message Component Example
+
+```json
+{
+  "content": "This is a message with legacy components",
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 1,
+          "label": "Click Me",
+          "custom_id": "click_me_1"
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### Component Object
 
-###### Component Types
+###### Component Type
 
-| Type   | Name                                                | Description                                                | Style       | Usage          |
-| ------ | --------------------------------------------------- | ---------------------------------------------------------- | ----------- | -------------- |
-| 1      | [Action Row](#action-row)                           | A container for other components                           | Layout      | Message, Modal |
-| 2      | [Button](#button)                                   | A button object                                            | Interactive | Message        |
-| 3      | [String Select](#string-select)                     | Select menu for picking from defined text options          | Interactive | Message        |
-| 4      | [Text Input](#text-input)                           | Text input object                                          | Interactive | Modal          |
-| 5      | [User Select](#user-select)                         | Select menu for users                                      | Interactive | Message        |
-| 6      | [Role Select](#role-select)                         | Select menu for roles                                      | Interactive | Message        |
-| 7      | [Mentionable Select](#mentionable-select)           | Select menu for mentionables (users *and* roles)           | Interactive | Message        |
-| 8      | [Channel Select](#channel-select)                   | Select menu for channels                                   | Interactive | Message        |
-| 9 ^1^  | [Section](#section)                                 | Container to display text alongside an accessory component | Layout      | Message        |
-| 10 ^1^ | [Text Display](#text-display)                       | Markdown text                                              | Content     | Message        |
-| 11 ^1^ | [Thumbnail](#thumbnail)                             | Small image that can be used as an accessory               | Content     | Message        |
-| 12 ^1^ | [Media Gallery](#media-gallery)                     | Display images and other media                             | Content     | Message        |
-| 13 ^1^ | [File](#file)                                       | Displays an attached file                                  | Content     | Message        |
-| 14 ^1^ | [Separator](#separator)                             | Component to add vertical padding between other components | Layout      | Message        |
-| 16 ^2^ | [Content Inventory Entry](#content-inventory-entry) | Displays an activity feed entry                            | Content     | Message        |
-| 17 ^1^ | [Container](#container)                             | Container that visually groups a set of components         | Layout      | Message        |
+| Value  | Name                                                    | Description                                                | Style       | Usage          |
+| ------ | ------------------------------------------------------- | ---------------------------------------------------------- | ----------- | -------------- |
+| 1      | [ACTION_ROW](#action-row)                               | A container for other components                           | Layout      | Message, Modal |
+| 2      | [BUTTON](#button)                                       | A button object                                            | Interactive | Message        |
+| 3      | [STRING_SELECT](#string-select)                         | Select menu for picking from defined text options          | Interactive | Message        |
+| 4      | [TEXT_INPUT](#text-input)                               | Text input object                                          | Interactive | Modal          |
+| 5      | [USER_SELECT](#user-select)                             | Select menu for users                                      | Interactive | Message        |
+| 6      | [ROLE_SELECT](#role-select)                             | Select menu for roles                                      | Interactive | Message        |
+| 7      | [MENTIONABLE_SELECT](#mentionable-select)               | Select menu for mentionables (users *and* roles)           | Interactive | Message        |
+| 8      | [CHANNEL_SELECT](#channel-select)                       | Select menu for channels                                   | Interactive | Message        |
+| 9      | [SECTION](#section) ^1^                                 | Container to display text alongside an accessory component | Layout      | Message        |
+| 10     | [TEXT_DISPLAY](#text-display) ^1^                       | Markdown text                                              | Content     | Message        |
+| 11     | [THUMBNAIL](#thumbnail) ^1^                             | Small image that can be used as an accessory               | Content     | Message        |
+| 12     | [MEDIA_GALLERY](#media-gallery) ^1^                     | Display images and other media                             | Content     | Message        |
+| 13     | [FILE](#file) ^1^                                       | Displays an attached file                                  | Content     | Message        |
+| 14     | [SEPARATOR](#separator) ^1^                             | Component to add vertical padding between other components | Layout      | Message        |
+| 16     | [CONTENT_INVENTORY_ENTRY](#content-inventory-entry) ^2^ | Displays an activity feed entry                            | Content     | Message        |
+| 17     | [CONTAINER](#container) ^1^                             | Container that visually groups a set of components         | Layout      | Message        |
 
-^1^ Requires [message flag](/resources/message#message-flags) `1 << 15` (`IS_COMPONENTS_V2`).
+^1^ Requires the [`IS_COMPONENTS_V2` message flag](/resources/message#message-flags).
 
 ^2^ Not usable by bots.
 
@@ -60,7 +79,7 @@ All components have the following fields:
 
 | Field | Type    | Description                                                 |
 | ----- | ------- | ----------------------------------------------------------- |
-| type  | integer | The [type](#component-types) of the component               |
+| type  | integer | The [type](#component-type) of the component                |
 | id?   | integer | 32 bit integer used as an optional identifier for component |
 
 The `id` field is optional and is used to identify components in the response from an interaction that aren't interactive components. The `id` must be unique within the message and is generated sequentially if left empty. Generation of `id`s won't use another `id` that exists in the message if you have one defined for another component.
@@ -75,7 +94,7 @@ Additionally, interactive components like buttons and selects must have a `custo
 | --------- | ------ | ------------------------------------------------ |
 | custom_id | string | Developer-defined identifier, max 100 characters |
 
-## Action Row
+### Action Row
 
 An Action Row is a top-level layout component used in messages and modals.
 
@@ -87,11 +106,11 @@ Action Rows can contain:
 
 ###### Action Row Structure
 
-| Field      | Type                                           | Description                                                                                     |
-| ---------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| type       | integer                                        | `1` for action row component                                                                    |
-| id?        | integer                                        | Optional identifier for component                                                               |
-| components | array of [component objects](#component-types) | Up to 5 interactive [button](#button) components or a single [select](#string-select) component |
+| Field      | Type                                        | Description                                                                         |
+| ---------- | ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| type       | integer                                     | `1` for action row components                                                       |
+| id?        | integer                                     | An optional identifier for the component                                            |
+| components | array[[component](#component-type) object]  | Up to 5 [button](#button) components or a single [select](#string-select) component |
 
 ###### Example
 
@@ -125,7 +144,7 @@ Action Rows can contain:
 }
 ```
 
-## Button
+### Button
 
 A Button is an interactive component that can only be used in messages. It creates clickable elements that users can interact with, sending an [interaction](/interactions/receiving-and-responding#interaction-object) to your app when clicked.
 
@@ -133,17 +152,17 @@ Buttons must be placed inside an [Action Row](#action-row) or a [Section](#secti
 
 ###### Button Structure
 
-| Field     | Type                                           | Description                                                                       |
-| --------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
-| type      | integer                                        | `2` for a button                                                                  |
-| id?       | integer                                        | Optional identifier for component                                                 |
-| style     | integer                                        | A [button style](#button-styles)                                                  |
-| label?    | string                                         | Text that appears on the button; max 80 characters                                |
-| emoji?    | partial [emoji](/resources/emoji#emoji-object) | `name`, `id`, and `animated`                                                      |
-| custom_id | string                                         | Developer-defined identifier for the button; max 100 characters                   |
-| sku_id?   | snowflake                                      | Identifier for a purchasable SKU, only available when using premium-style buttons |
-| url?      | string                                         | URL for link-style buttons                                                        |
-| disabled? | boolean                                        | Whether the button is disabled (defaults to `false`)                              |
+| Field     | Type                                                  | Description                                                                       |
+| --------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| type      | integer                                               | `2` for a button                                                                  |
+| id?       | integer                                               | An optional identifier for the component                                          |
+| style     | integer                                               | A [button style](#button-style)                                                   |
+| label?    | string                                                | Text that appears on the button (max 80 characters)                               |
+| emoji?    | partial [emoji](/resources/emoji#emoji-object) object | The emoji that appears on the button                                              |
+| custom_id | string                                                | Developer-defined identifier for the button (max 100 characters)                  |
+| sku_id?   | snowflake                                             | Identifier for a purchasable SKU, only available when using premium-style buttons |
+| url?      | string                                                | URL for link-style buttons                                                        |
+| disabled? | boolean                                               | Whether the button is disabled (default false)                                    |
 
 Buttons come in various styles to convey different types of actions. These styles also define what fields are valid for a button.
 
@@ -153,16 +172,16 @@ Buttons come in various styles to convey different types of actions. These style
 - Premium buttons **must** contain a `sku_id`, and cannot have a `custom_id`, `label`, `url`, or `emoji`.
 - Premium buttons do not send an [interaction](/interactions/receiving-and-responding#interaction-object) to your app when clicked
 
-###### Button Styles
+###### Button Style
 
-| Name      | Value | Action                                                         | Required Field |
-| --------- | ----- | -------------------------------------------------------------- | -------------- |
-| Primary   | 1     | The most important or recommended action in a group of options | `custom_id`    |
-| Secondary | 2     | Alternative or supporting actions                              | `custom_id`    |
-| Success   | 3     | Positive confirmation or completion actions                    | `custom_id`    |
-| Danger    | 4     | An action with irreversible consequences                       | `custom_id`    |
-| Link      | 5     | Navigates to a URL                                             | `url`          |
-| Premium   | 6     | Purchase                                                       | `sku_id`       |
+| Value | Name      | Action                                                         | Required Field |
+| ----- | --------- | -------------------------------------------------------------- | -------------- |
+| 1     | PRIMARY   | The most important or recommended action in a group of options | `custom_id`    |
+| 2     | SECONDARY | Alternative or supporting actions                              | `custom_id`    |
+| 3     | SUCCESS   | Positive confirmation or completion actions                    | `custom_id`    |
+| 4     | DANGER    | An action with irreversible consequences                       | `custom_id`    |
+| 5     | LINK      | Navigates to a URL                                             | `url`          |
+| 6     | PREMIUM   | Purchase                                                       | `sku_id`       |
 
 ###### Example
 
@@ -261,7 +280,7 @@ Buttons come in various styles to convey different types of actions. These style
 }
 ```
 
-### Button Design Guidelines
+#### Button Design Guidelines
 
 ###### General Button Content
 
@@ -273,12 +292,6 @@ Buttons come in various styles to convey different types of actions. These style
 - Maintain consistency in language and tone across buttons.
 - Anticipate the need for translation and test for expansion or contraction in different languages.
 
-###### Multiple Buttons
-
-Use different button styles to create a hierarchy. Use only one `Primary` button per group.
-
-If there are multiple buttons of equal significance, use the `Secondary` button style for all buttons.
-
 ###### Premium Buttons
 
 Premium buttons will automatically have the following:
@@ -287,7 +300,7 @@ Premium buttons will automatically have the following:
 - SKU name
 - SKU price
 
-## String Select
+### String Select
 
 A String Select is an interactive component that allows users to select one or more provided `options` in a message.
 
@@ -297,26 +310,26 @@ String Selects must be placed inside an [Action Row](#action-row) and are only a
 
 ###### String Select Structure
 
-| Field        | Type                                                | Description                                                                |
-| ------------ | --------------------------------------------------- | -------------------------------------------------------------------------- |
-| type         | integer                                             | `3` for string select                                                      |
-| id?          | integer                                             | Optional identifier for component                                          |
-| custom_id    | string                                              | ID for the select menu; max 100 characters                                 |
-| options      | array of [select options](#select-option-structure) | Specified choices in a select menu; max 25                                 |
-| placeholder? | string                                              | Placeholder text if nothing is selected or default; max 150 characters     |
-| min_values?  | integer                                             | Minimum number of items that must be chosen (defaults to 1); min 0, max 25 |
-| max_values?  | integer                                             | Maximum number of items that can be chosen (defaults to 1); max 25         |
-| disabled?    | boolean                                             | Whether select menu is disabled (defaults to `false`)                      |
+| Field        | Type                                                | Description                                                             |
+| ------------ | --------------------------------------------------- | ----------------------------------------------------------------------- |
+| type         | integer                                             | `3` for string select                                                   |
+| id?          | integer                                             | An optional identifier for the component                                |
+| custom_id    | string                                              | ID for the select menu (max 100 characters)                             |
+| options      | array[[select options](#select-option-structure)]   | Specified choices in a select menu (max 25)                             |
+| placeholder? | string                                              | Placeholder text if nothing is selected or default (max 150 characters) |
+| min_values?  | integer                                             | Minimum number of items that must be chosen (min 0, max 25, default 1)  |
+| max_values?  | integer                                             | Maximum number of items that can be chosen (max 25, default 1)          |
+| disabled?    | boolean                                             | Whether select menu is disabled (default false)                         |
 
 ###### Select Option Structure
 
-| Field        | Type                                                  | Description                                              |
-| ------------ | ----------------------------------------------------- | -------------------------------------------------------- |
-| label        | string                                                | User-facing name of the option; max 100 characters       |
-| value        | string                                                | Dev-defined value of the option; max 100 characters      |
-| description? | string                                                | Additional description of the option; max 100 characters |
-| emoji?       | partial [emoji](/resources/emoji#emoji-object) object | `id`, `name`, and `animated`                             |
-| default?     | boolean                                               | Will show this option as selected by default             |
+| Field        | Type                                                  | Description                                               |
+| ------------ | ----------------------------------------------------- | --------------------------------------------------------- |
+| label        | string                                                | User-facing name of the option (max 100 characters)       |
+| value        | string                                                | Dev-defined value of the option (max 100 characters)      |
+| description? | string                                                | Additional description of the option (max 100 characters) |
+| emoji?       | partial [emoji](/resources/emoji#emoji-object) object | Emoji to show next to the name                            |
+| default?     | boolean                                               | Will show this option as selected by default              |
 
 ###### Example
 
@@ -478,7 +491,7 @@ String Selects must be placed inside an [Action Row](#action-row) and are only a
 
 ###### Select Menu Resolved Object
 
-The `resolved` object is included in interaction payloads for user, role, mentionable, and channel select menu components. `resolved` contains a nested object with additional details about the selected options with the key of the resource type—`users`, `roles`, `channels`, and `members`.
+The `resolved` object is included in interaction payloads for user, role, mentionable, and channel select menu components. `resolved` contains a nested object with additional details about the selected options.
 
 <Alert type="info">
 
@@ -486,7 +499,14 @@ The `resolved` object is included in interaction payloads for user, role, mentio
 
 </Alert>
 
-###### Example Resolved Object
+| Field     | Type                                                                                | Description       |
+| --------- | ----------------------------------------------------------------------------------- | ----------------- |
+| channels? | map[snowflake, partial [channel](/resources/channel#channel-object) object]         | Selected channels |
+| roles?    | map[snowflake, partial [role](/resources/guild#role-object) object]                 | Selected roles    |
+| users?    | map[snowflake, partial [user](/resources/user#user-object) object]                  | Selected users    |
+| members?  | map[snowflake, partial [guild member](/resources/guild#guild-member-object) object] | Selected members  |
+
+###### Example Select Menu Resolved
 
 A sample `data` object (a subset of the interaction payload) for a channel select menu component:
 
@@ -510,7 +530,7 @@ A sample `data` object (a subset of the interaction payload) for a channel selec
 }
 ```
 
-## Text Input
+### Text Input
 
 Text Input is an interactive component that allows users to enter free-form text responses in modals. It supports both short, single-line inputs and longer, multi-line paragraph inputs.
 
@@ -520,25 +540,25 @@ When defining a text input component, you can set attributes to customize the be
 
 ###### Text Input Structure
 
-| Field        | Type    | Description                                                          |
-| ------------ | ------- | -------------------------------------------------------------------- |
-| type         | integer | `4` for a text input                                                 |
-| id?          | integer | Optional identifier for component                                    |
-| custom_id    | string  | Developer-defined identifier for the input; max 100 characters       |
-| style        | integer | The [Text Input Style](#text-input-styles)                           |
-| label        | string  | Label for this component; max 45 characters                          |
-| min_length?  | integer | Minimum input length for a text input; min 0, max 4000               |
-| max_length?  | integer | Maximum input length for a text input; min 1, max 4000               |
-| required?    | boolean | Whether this component is required to be filled (defaults to `true`) |
-| value?       | string  | Pre-filled value for this component; max 4000 characters             |
-| placeholder? | string  | Custom placeholder text if the input is empty; max 100 characters    |
+| Field        | Type    | Description                                                        |
+| ------------ | ------- | ------------------------------------------------------------------ |
+| type         | integer | `4` for a text input                                               |
+| id?          | integer | An optional identifier for the component                           |
+| custom_id    | string  | Developer-defined identifier for the input (max 100 characters)    |
+| style        | integer | The [text input style](#text-input-style)                          |
+| label        | string  | Label for this component (max 45 characters)                       |
+| min_length?  | integer | Minimum input length for a text input (min 0, max 4000)            |
+| max_length?  | integer | Maximum input length for a text input (min 1, max 4000)            |
+| required?    | boolean | Whether this component is required to be filled (default true)     |
+| value?       | string  | Pre-filled value for this component (max 4000 characters)          |
+| placeholder? | string  | Custom placeholder text if the input is empty (max 100 characters) |
 
-###### Text Input Styles
+###### Text Input Style
 
-| Name      | Value | Description       |
-| --------- | ----- | ----------------- |
-| Short     | 1     | Single-line input |
-| Paragraph | 2     | Multi-line input  |
+| Value | Name      | Description       |
+| ----- | --------- | ----------------- |
+| 1     | SMALL     | Single-line input |
+| 2     | PARAGRAPH | Multi-line input  |
 
 ###### Example
 
@@ -629,7 +649,7 @@ When defining a text input component, you can set attributes to customize the be
 }
 ```
 
-## User Select
+### User Select
 
 A User Select is an interactive component that allows users to select one or more users in a message. Options are automatically populated based on the server's available users.
 
@@ -639,23 +659,23 @@ User Selects must be placed inside an [Action Row](#action-row) and are only ava
 
 ###### User Select Structure
 
-| Field           | Type                                                              | Description                                                                                                                                              |
-| --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type            | integer                                                           | `5` for user select                                                                                                                                      |
-| id?             | integer                                                           | Optional identifier for component                                                                                                                        |
-| custom_id       | string                                                            | ID for the select menu; max 100 characters                                                                                                               |
-| placeholder?    | string                                                            | Placeholder text if nothing is selected; max 150 characters                                                                                              |
-| default_values? | array of [default value objects](#select-default-value-structure) | List of default values for auto-populated select menu components; number of default values must be in the range defined by `min_values` and `max_values` |
-| min_values?     | integer                                                           | Minimum number of items that must be chosen (defaults to 1); min 0, max 25                                                                               |
-| max_values?     | integer                                                           | Maximum number of items that can be chosen (defaults to 1); max 25                                                                                       |
-| disabled?       | boolean                                                           | Whether select menu is disabled (defaults to `false`)                                                                                                    |
+| Field           | Type                                                           | Description                                                            |
+| --------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| type            | integer                                                        | `5` for user select                                                    |
+| id?             | integer                                                        | An optional identifier for the component                               |
+| custom_id       | string                                                         | ID for the select menu (max 100 characters)                            |
+| placeholder?    | string                                                         | Placeholder text if nothing is selected (max 150 characters)           |
+| default_values? | array[[default value](#select-default-value-structure) object] | List of default values for auto-populated select menu components       |
+| min_values?     | integer                                                        | Minimum number of items that must be chosen (min 0, max 25, default 1) |
+| max_values?     | integer                                                        | Maximum number of items that can be chosen (max 25, default 1)         |
+| disabled?       | boolean                                                        | Whether select menu is disabled (default false)                        |
 
 ###### Select Default Value Structure
 
-| Field | Type      | Description                                                                   |
-| ----- | --------- | ----------------------------------------------------------------------------- |
-| id    | snowflake | ID of a user, role, or channel                                                |
-| type  | string    | Type of value that `id` represents. Either `"user"`, `"role"`, or `"channel"` |
+| Field | Type      | Description                          |
+| ----- | --------- | ------------------------------------ |
+| id    | snowflake | ID of a user, role, or channel       |
+| type  | string    | Type of value associated with the ID |
 
 ###### Example
 
@@ -680,7 +700,7 @@ User Selects must be placed inside an [Action Row](#action-row) and are only ava
 
 Check out the [String Select interaction](#string-select-interaction) to see the structure of the Select interaction object and resolved object.
 
-## Role Select
+### Role Select
 
 A Role Select is an interactive component that allows users to select one or more roles in a message. Options are automatically populated based on the server's available roles.
 
@@ -690,16 +710,16 @@ Role Selects must be placed inside an [Action Row](#action-row) and are only ava
 
 ###### Role Select Structure
 
-| Field           | Type                                                              | Description                                                                                                                                              |
-| --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type            | integer                                                           | `6` for role select                                                                                                                                      |
-| id?             | integer                                                           | Optional identifier for component                                                                                                                        |
-| custom_id       | string                                                            | ID for the select menu; max 100 characters                                                                                                               |
-| placeholder?    | string                                                            | Placeholder text if nothing is selected; max 150 characters                                                                                              |
-| default_values? | array of [default value objects](#select-default-value-structure) | List of default values for auto-populated select menu components; number of default values must be in the range defined by `min_values` and `max_values` |
-| min_values?     | integer                                                           | Minimum number of items that must be chosen (defaults to 1); min 0, max 25                                                                               |
-| max_values?     | integer                                                           | Maximum number of items that can be chosen (defaults to 1); max 25                                                                                       |
-| disabled?       | boolean                                                           | Whether select menu is disabled (defaults to `false`)                                                                                                    |
+| Field           | Type                                                           | Description                                                            |
+| --------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| type            | integer                                                        | `6` for role select                                                    |
+| id?             | integer                                                        | An optional identifier for the component                               |
+| custom_id       | string                                                         | ID for the select menu (max 100 characters)                            |
+| placeholder?    | string                                                         | Placeholder text if nothing is selected (max 150 characters)           |
+| default_values? | array[[default value](#select-default-value-structure) object] | List of default values for auto-populated select menu components       |
+| min_values?     | integer                                                        | Minimum number of items that must be chosen (min 0, max 25, default 1) |
+| max_values?     | integer                                                        | Maximum number of items that can be chosen (max 25, default 1)         |
+| disabled?       | boolean                                                        | Whether select menu is disabled (default false)                        |
 
 ###### Example
 
@@ -726,7 +746,7 @@ Role Selects must be placed inside an [Action Row](#action-row) and are only ava
 
 Check out the [String Select interaction](#string-select-interaction) to see the structure of the Select interaction object and resolved object.
 
-## Mentionable Select
+### Mentionable Select
 
 A Mentionable Select is an interactive component that allows users to select one or more mentionables in a message. Options are automatically populated based on available mentionables in the server.
 
@@ -736,16 +756,16 @@ Mentionable Selects must be placed inside an [Action Row](#action-row) and are o
 
 ###### Mentionable Select Structure
 
-| Field           | Type                                                              | Description                                                                                                                                              |
-| --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type            | integer                                                           | `7` for mentionable select                                                                                                                               |
-| id?             | integer                                                           | Optional identifier for component                                                                                                                        |
-| custom_id       | string                                                            | ID for the select menu; max 100 characters                                                                                                               |
-| placeholder?    | string                                                            | Placeholder text if nothing is selected; max 150 characters                                                                                              |
-| default_values? | array of [default value objects](#select-default-value-structure) | List of default values for auto-populated select menu components; number of default values must be in the range defined by `min_values` and `max_values` |
-| min_values?     | integer                                                           | Minimum number of items that must be chosen (defaults to 1); min 0, max 25                                                                               |
-| max_values?     | integer                                                           | Maximum number of items that can be chosen (defaults to 1); max 25                                                                                       |
-| disabled?       | boolean                                                           | Whether select menu is disabled (defaults to `false`)                                                                                                    |
+| Field           | Type                                                           | Description                                                            |
+| --------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| type            | integer                                                        | `7` for mentionable select                                             |
+| id?             | integer                                                        | An optional identifier for the component                               |
+| custom_id       | string                                                         | ID for the select menu (max 100 characters)                            |
+| placeholder?    | string                                                         | Placeholder text if nothing is selected (max 150 characters)           |
+| default_values? | array[[default value](#select-default-value-structure) object] | List of default values for auto-populated select menu components       |
+| min_values?     | integer                                                        | Minimum number of items that must be chosen (min 0, max 25, default 1) |
+| max_values?     | integer                                                        | Maximum number of items that can be chosen (max 25, default 1)         |
+| disabled?       | boolean                                                        | Whether select menu is disabled (default false)                        |
 
 ###### Example
 
@@ -770,7 +790,7 @@ Mentionable Selects must be placed inside an [Action Row](#action-row) and are o
 
 Check out the [String Select interaction](#string-select-interaction) to see the structure of the Select interaction object and resolved object.
 
-## Channel Select
+### Channel Select
 
 A Channel Select is an interactive component that allows users to select one or more channels in a message. Options are automatically populated based on available channels in the server and can be filtered by channel types.
 
@@ -780,17 +800,17 @@ Channel Selects must be placed inside an [Action Row](#action-row) and are only 
 
 ###### Channel Select Structure
 
-| Field           | Type                                                              | Description                                                                                                                                              |
-| --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type            | integer                                                           | `8` for channel select                                                                                                                                   |
-| id?             | integer                                                           | Optional identifier for component                                                                                                                        |
-| custom_id       | string                                                            | ID for the select menu; max 100 characters                                                                                                               |
-| channel_types?  | array of [channel types](/resources/channel#channel-type)         | List of channel types to include in the channel select component                                                                                         |
-| placeholder?    | string                                                            | Placeholder text if nothing is selected; max 150 characters                                                                                              |
-| default_values? | array of [default value objects](#select-default-value-structure) | List of default values for auto-populated select menu components; number of default values must be in the range defined by `min_values` and `max_values` |
-| min_values?     | integer                                                           | Minimum number of items that must be chosen (defaults to 1); min 0, max 25                                                                               |
-| max_values?     | integer                                                           | Maximum number of items that can be chosen (defaults to 1); max 25                                                                                       |
-| disabled?       | boolean                                                           | Whether select menu is disabled (defaults to `false`)                                                                                                    |
+| Field           | Type                                                           | Description                                                                                 |
+| --------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| type            | integer                                                        | `8` for channel select                                                                      |
+| id?             | integer                                                        | An optional identifier for the component                                                    |
+| custom_id       | string                                                         | ID for the select menu (max 100 characters)                                                 |
+| channel_types?  | array[integer]                                                 | [Channel types](/resources/channel#channel-type) to include in the channel select component |
+| placeholder?    | string                                                         | Placeholder text if nothing is selected; max 150 characters                                 |
+| default_values? | array[[default value](#select-default-value-structure) object] | List of default values for auto-populated select menu components                            |
+| min_values?     | integer                                                        | Minimum number of items that must be chosen (min 0, max 25, default 1)                      |
+| max_values?     | integer                                                        | Maximum number of items that can be chosen (max 25, default 1)                              |
+| disabled?       | boolean                                                        | Whether select menu is disabled (default false)                                             |
 
 ###### Example
 
@@ -816,7 +836,7 @@ Channel Selects must be placed inside an [Action Row](#action-row) and are only 
 
 Check out the [String Select interaction](#string-select-interaction) to see the structure of the Select interaction object and resolved object.
 
-## Section
+### Section
 
 A Section is a top-level layout component that allows you to join text contextually with an accessory.
 
@@ -824,18 +844,14 @@ Sections are only available in messages.
 
 ###### Section Structure
 
-| Field      | Type                                                              | Description                                                                                       |
-| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| type       | integer                                                           | `9` for section component                                                                         |
-| id?        | integer                                                           | Optional identifier for component                                                                 |
-| components | array of [text display components](#text-display)                 | One to three text components                                                                      |
-| accessory  | [thumbnail component](#thumbnail) or [button components](#button) | A thumbnail or a button component, with a future possibility of adding more compatible components |
+| Field      | Type                                                   | Description                              |
+| ---------- | ------------------------------------------------------ | ---------------------------------------- |
+| type       | integer                                                | `9` for section component                |
+| id?        | integer                                                | An optional identifier for the component |
+| components | array[[text display](#text-display) component]         | One to three text components ^1^         |
+| accessory  | [thumbnail](#thumbnail) or [button](#button) component | A thumbnail or a button component ^1^    |
 
-<Alert type="info">
-
-Don't hardcode `components` to contain only text components. Other components may be added in the future. Similarly, `accessory` may be expanded to include other components in the future.
-
-</Alert>
+^1^ May be expanded to include other component types in the future
 
 ###### Example
 
@@ -869,7 +885,7 @@ Don't hardcode `components` to contain only text components. Other components ma
 }
 ```
 
-## Text Display
+### Text Display
 
 A Text Display is a top-level content component that allows you to add text to your message formatted with markdown and mention users and roles. This is similar to the `content` field of a message, but allows you to add multiple text components, controlling the layout of your message.
 
@@ -880,7 +896,7 @@ Text Displays are only available in messages.
 | Field   | Type    | Description                                      |
 | ------- | ------- | ------------------------------------------------ |
 | type    | integer | `10` for text display                            |
-| id?     | integer | Optional identifier for component                |
+| id?     | integer | An optional identifier for the component         |
 | content | string  | Text that will be displayed similar to a message |
 
 ###### Example
@@ -904,13 +920,13 @@ Thumbnails are only available in messages as an accessory in a [section](#sectio
 
 ###### Thumbnail Structure
 
-| Field        | Type                                                  | Description                                                                     |
-| ------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
-| type         | integer                                               | `11` for thumbnail component                                                    |
-| id?          | integer                                               | Optional identifier for component                                               |
-| media        | [unfurled media item](#unfurled-media-item-structure) | A url or attachment                                                             |
-| description? | string                                                | Alt text for the media                                                          |
-| spoiler?     | boolean                                               | Whether the thumbnail should be a spoiler (or blurred out). Defaults to `false` |
+| Field        | Type                                                         | Description                                               |
+| ------------ | ------------------------------------------------------------ | --------------------------------------------------------- |
+| type         | integer                                                      | `11` for thumbnail component                              |
+| id?          | integer                                                      | An optional identifier for the component                  |
+| media        | [unfurled media item](#unfurled-media-item-structure) object | A url or attachment                                       |
+| description? | string                                                       | Alt text for the media                                    |
+| spoiler?     | boolean                                                      | Whether the thumbnail should be spoilered (default false) |
 
 ###### Example
 
@@ -924,19 +940,19 @@ Media Galleries are only available in messages.
 
 ###### Media Gallery Structure
 
-| Field | Type                                                          | Description                       |
-| ----- | ------------------------------------------------------------- | --------------------------------- |
-| type  | integer                                                       | `12` for media gallery component  |
-| id?   | integer                                                       | Optional identifier for component |
-| items | array of [media gallery items](#media-gallery-item-structure) | Maximum of 10 items               |
+| Field | Type                                                              | Description                       |
+| ----- | ----------------------------------------------------------------- | --------------------------------- |
+| type  | integer                                                           | `12` for media gallery component  |
+| id?   | integer                                                           | Optional identifier for component |
+| items | array[[media gallery item](#media-gallery-item-structure) object] | Maximum of 10 items               |
 
 ###### Media Gallery Item Structure
 
-| Field        | Type                                                  | Description                                                                 |
-| ------------ | ----------------------------------------------------- | --------------------------------------------------------------------------- |
-| media        | [unfurled media item](#unfurled-media-item-structure) | A url or attachment                                                         |
-| description? | string                                                | Alt text for the media                                                      |
-| spoiler?     | boolean                                               | Whether the media should be a spoiler (or blurred out). Defaults to `false` |
+| Field        | Type                                                         | Description                                             |
+| ------------ | ------------------------------------------------------------ | ------------------------------------------------------- |
+| media        | [unfurled media item](#unfurled-media-item-structure) object | A url or attachment                                     |
+| description? | string                                                       | Alt text for the media                                  |
+| spoiler?     | boolean                                                      | Whether the media should be a spoilered (default false) |
 
 ###### Example
 
@@ -970,16 +986,18 @@ Media Galleries are only available in messages.
 
 ## File
 
-A File is a top-level component that allows you to display an [uploaded file](#uploading-a-file) as an attachment to the message and reference it in the component. Each file component can only display 1 attached file, but you can upload multiple files and add them to different file components within your payload. This is similar to the `embeds` field of a message but allows you to control the layout of your message by using this anywhere as a component. Files are only available in messages.
+A File is a top-level component that allows you to display an [uploaded file](#uploading-a-file) as an attachment to the message and reference it in the component. Each file component can only display 1 attached file, but you can upload multiple files and add them to different file components within your payload.
+
+Files are only available in messages.
 
 ###### File Structure
 
-| Field    | Type                                                  | Description                                                                                                                      |
-| -------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| type     | integer                                               | `13` for a file component                                                                                                        |
-| id?      | integer                                               | Optional identifier for component                                                                                                |
-| file     | [unfurled media item](#unfurled-media-item-structure) | This unfurled media item is unique in that it **only** supports attachment references using the `attachment://<filename>` syntax |
-| spoiler? | boolean                                               | Whether the media should be a spoiler (or blurred out). Defaults to `false`                                                      |
+| Field    | Type                                                         | Description                                             |
+| -------- | ------------------------------------------------------------ | ------------------------------------------------------- |
+| type     | integer                                                      | `13` for a file component                               |
+| id?      | integer                                                      | An optional identifier for the component                |
+| file     | [unfurled media item](#unfurled-media-item-structure) object | Only supports `attachment://<filename>` URLs            |
+| spoiler? | boolean                                                      | Whether the media should be a spoilered (default false) |
 
 ###### Example
 
@@ -1022,12 +1040,19 @@ Separators are only available in messages.
 
 ###### Separator Structure
 
-| Field    | Type    | Description                                                                               |
-| -------- | ------- | ----------------------------------------------------------------------------------------- |
-| type     | integer | `14` for separator component                                                              |
-| id?      | integer | Optional identifier for component                                                         |
-| divider? | boolean | Whether a visual divider should be displayed in the component. Defaults to `true`         |
-| spacing? | integer | Size of separator padding - `1` for small padding, `2` for large padding. Defaults to `1` |
+| Field    | Type    | Description                                                                  |
+| -------- | ------- | ---------------------------------------------------------------------------- |
+| type     | integer | `14` for separator component                                                 |
+| id?      | integer | An optional identifier for the component                                     |
+| divider? | boolean | Whether a visual divider should be displayed in the component (default true) |
+| spacing? | integer | Size of separator padding (default 1)                                        |
+
+###### Separator Spacing Type
+
+| Value | Name  | Description                                         |
+| ----- | ----- | --------------------------------------------------- |
+| 1     | SMALL | 8px gap between elements, 16px with divider hidden  |
+| 2     | LARGE | 16px gap between elements, 32px with divider hidden |
 
 ###### Example
 
@@ -1060,8 +1085,8 @@ A Content Inventory Entry is a top-level component that displays an activity fee
 | Field                   | Type                                                              | Description                                |
 | ----------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
 | type                    | integer                                                           | `16` for Content Inventory entry component |
-| id?                     | integer                                                           | Optional identifier for component          |
-| content_inventory_entry | [Content Inventory entry](#content-inventory-entry-object) object | Content Inventory entry data               |
+| id?                     | integer                                                           | An optional identifier for the component   |
+| content_inventory_entry | [content inventory entry](#content-inventory-entry-object) object | Content inventory entry data               |
 
 ###### Content Inventory Entry Object
 
@@ -1069,10 +1094,10 @@ A Content Inventory Entry is a top-level component that displays an activity fee
 | ------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | id            | string                                                                    | ID of the entry as a snowflake when sent in guild, string of numbers when DM'd |
 | author_id     | snowflake                                                                 | ID of the user this entry is for                                               |
-| author_type   | integer                                                                   |                                                                                |
-| content_type  | integer                                                                   | [Content type](#content-inventory-content-types)                               |
-| traits        | array[[Content Inventory trait](#content-inventory-trait-object)] object  | Controls info such as streak, marathon and time                                |
-| extra         | [Content Inventory metadata](#content-inventory-metadata-object) object   | Metadata, such as game or song                                                 |
+| author_type   | integer                                                                   | The [type of author](#content-inventory-author-type) that created this entry   |
+| content_type  | integer                                                                   | [Content type](#content-inventory-content-type)                                |
+| traits        | array[[content inventory trait](#content-inventory-trait-object) object]  | Controls info such as streak, marathon and time                                |
+| extra         | [content inventory metadata](#content-inventory-metadata-object) object   | Metadata, such as a game or song                                               |
 | participants? | array[snowflake]                                                          | IDs of all users involved with this entry                                      |
 | expires_at?   | ISO8601 timestamp                                                         | When this entry "expires"                                                      |
 | ended_at?     | ISO8601 timestamp                                                         | When this entry ended                                                          |
@@ -1081,86 +1106,107 @@ A Content Inventory Entry is a top-level component that displays an activity fee
 | guild_id?     | snowflake                                                                 | Guild ID this entry happened in                                                |
 | channel_id?   | snowflake                                                                 | Channel ID this entry happened in                                              |
 | session_id?   | snowflake                                                                 | Session ID of this entry                                                       |
-| signature     | [Content Inventory signature](#content-inventory-signature-object) object | Signature metadata for validation                                              |
+| signature     | [content inventory signature](#content-inventory-signature-object) object | Signature metadata for validation                                              |
 
-###### Content Inventory Content Types
+###### Content Inventory Author Type
 
-| Value | Description       |
-| ----- | ----------------- |
-| `0`   | Unspecificed      |
-| `1`   | Played Game       |
-| `2`   | Watched Media     |
-| `3`   | Top Game          |
-| `4`   | Listened Media    |
-| `5`   | Listened Session  |
-| `6`   | Top Artist        |
-| `7`   | Custom Status     |
-| `8`   | Launched Activity |
-| `9`   | Leaderboard       |
+| Value | Name                    |
+| ----- | ----------------------- |
+| 0     | AUTHOR_TYPE_UNSPECIFIED |
+| 1     | USER                    |
+
+###### Content Inventory Content Type
+
+| Value | Name                     |
+| ----- | ------------------------ |
+| 0     | CONTENT_TYPE_UNSPECIFIED |
+| 1     | PLAYED_GAME              |
+| 2     | WATCHED_MEDIA            |
+| 3     | TOP_GAME                 |
+| 4     | LISTENED_MEDIA           |
+| 5     | LISTENED_SESSION         |
+| 6     | TOP_ARTIST               |
+| 7     | CUSTOM_STATUS            |
+| 8     | LAUNCHED_ACTIVITY        |
+| 9     | LEADERBOARD              |
 
 ###### Content Inventory Trait Object
 
-| Field                    | Type              | Description                                                               |
-| ------------------------ | ----------------- | ------------------------------------------------------------------------- |
-| type                     | integer           | [Trait type](#content-inventory-trait-types)                              |
-| first_time?              | boolean           | Shows the "New player" text (only type `1`)                               |
-| duration_seconds?        | integer           | Total time elapsed during this entry (only type `2`)                      |
-| is_live?                 | boolean           | Entry is still ongoing (only type `3`)                                    |
-| range?                   | integer           | Time range (`0` unspecified, `1` week) (only type `4`)                    |
-| resurrected_last_played? | ISO8601 timestamp | Timestamp of when the game for this entry was last played (only type `5`) |
-| marathon?                | boolean           | Shows the "#h marathon" text (only type `6`)                              |
-| streak_count_days?       | integer           | Number of days for the streak text (only type `8`)                        |
-| trending?                | integer           | Trending type (`0` unspecified, `1` global) (only type `9`)               |
-| count?                   | integer           | Total Count (only types `10`, `11`, `12`)                                 |
+| Field                    | Type              | Description                                                                                 |
+| ------------------------ | ----------------- | ------------------------------------------------------------------------------------------- |
+| type                     | integer           | [Trait type](#content-inventory-trait-type)                                                 |
+| first_time?              | boolean           | Shows the "New player" text (only `FIRST_TIME`)                                             |
+| duration_seconds?        | integer           | Total time elapsed during this entry (only `DURATION_SECONDS`)                              |
+| is_live?                 | boolean           | Entry is still ongoing (only `IS_LIVE`)                                                     |
+| range?                   | integer           | [Time range](#content-inventory-aggregate-range-type) (only `AGGREGATE_RANGE`)              |
+| resurrected_last_played? | ISO8601 timestamp | Timestamp of when the game for this entry was last played (only `RESURRECTED`)              |
+| marathon?                | boolean           | Shows the "#h marathon" text (only `MARATHON`)                                              |
+| streak_count_days?       | integer           | Number of days for the streak text (only `STREAK_DAYS`)                                     |
+| trending?                | integer           | [Trending type](#content-inventory-trending-type) (only `TRENDING_CONTENT`)                 |
+| count?                   | integer           | Total Count (only `TOP_ITEM_TOTAL_COUNT`, `TOP_PARENT_ITEM_TOTAL_COUNT`, `AGGREGATE_COUNT`) |
 
-###### Content Inventory Trait Types
+###### Content Inventory Trait Type
 
-| Value | Description                     |
-| ----- | ------------------------------- |
-| `0`   | Unspecificed                    |
-| `1`   | First time ("New Player")       |
-| `2`   | Duration                        |
-| `3`   | Is Live                         |
-| `4`   | Aggregate Range                 |
-| `5`   | Resurrected ("Returning after") |
-| `6`   | Marathon                        |
-| `7`   | New Release                     |
-| `8`   | Streak                          |
-| `9`   | Trending                        |
-| `10`  | Top Item Total Count            |
-| `11`  | Top Parent Item Total Count     |
-| `12`  | Aggregate Count                 |
+| Value | Name                        |
+| ----- | --------------------------- |
+| 0     | TRAIT_TYPE_UNSPECIFIED      |
+| 1     | FIRST_TIME                  |
+| 2     | DURATION_SECONDS            |
+| 3     | IS_LIVE                     |
+| 4     | AGGREGATE_RANGE             |
+| 5     | RESURRECTED                 |
+| 6     | MARATHON                    |
+| 7     | NEW_RELEASE                 |
+| 8     | STREAK_DAYS                 |
+| 9     | TRENDING_CONTENT            |
+| 10    | TOP_ITEM_TOTAL_COUNT        |
+| 11    | TOP_PARENT_ITEM_TOTAL_COUNT |
+| 12    | AGGREGATE_COUNT             |
+
+###### Content Inventory Aggregate Range Type
+
+| Value | Name                        |
+| ----- | --------------------------- |
+| 0     | AGGREGATE_RANGE_UNSPECIFIED |
+| 1     | WEEK                        |
+
+###### Content Inventory Trending Type
+
+| Value | Name                      |
+| ----- | ------------------------- |
+| 0     | TRENDING_TYPE_UNSPECIFIED |
+| 1     | GLOBAL                    |
 
 ###### Content Inventory Metadata Object
 
-| Field                     | Type                                                                     | Description                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| type                      | string                                                                   | [Metadata type](#content-inventory-metadata-types)                                                 |
-| game_name?                | string                                                                   | Name of the game (`played_game_extra` only)                                                        |
-| application_id?           | snowflake                                                                | ID of the associated application                                                                   |
-| platform?                 | integer                                                                  | [Platform type](#content-inventory-platform-types) (`played_game_extra` only)                      |
-| last_update?              | ISO8601 timestamp                                                        | When this entry was last updated                                                                   |
-| entries?                  | array[[metadata entry](#content-inventory-metadata-entry-object) object] | Entries (only one for the component)                                                               |
-| media?                    | [metadata entry](#content-inventory-metadata-entry-object) object        | Metadata object of type `listened_media_extra`                                                     |
-| provider?                 | integer                                                                  | (`0` unspecified, `1` spotify) (`listened_media_extra` only)                                       |
-| media_type?               | integer                                                                  | Type of this media (`0` top artist, `1` track) (`listened_media_extra` only)                       |
-| parent_title?             | string                                                                   | Title of this media's parent (album title when `media_type == 1`) (`listened_media_extra` only)    |
-| title?                    | string                                                                   | Title of this media (`listened_media_extra` only)                                                  |
-| image_url?                | string                                                                   | Image of this media (e.g. album art) (`listened_media_extra` only)                                 |
-| artist?                   | [artist](#content-inventory-artist-object) object                        | Top listened artist (`top_artist_extra` only)                                                      |
-| artists?                  | array[[artist](#content-inventory-artist-object) object]                 | Artists for this media (empty when `top_artist_extra` media) (`listened_media_extra` only)         |
-| external_id?              | string                                                                   | External platform ID for this media (e.g. Spotify track ID) (`listened_media_extra` only)          |
-| external_parent_id?       | string                                                                   | External platform ID for this media's parent (e.g. Spotify album ID) (`listened_media_extra` only) |
-| media_assets_large_image? | string                                                                   | Image of this media (e.g. movie poster) (`watched_media_extra` only)                               |
-| media_assets_small_image? | string                                                                   | Small image (e.g. platform logo) (`watched_media_extra` only)                                      |
-| media_assets_large_text?  | string                                                                   | Large text (e.g. season and episode of a show) (`watched_media_extra` only)                        |
-| media_assets_small_text?  | string                                                                   | Small text (e.g. platform name) (`watched_media_extra` only)                                       |
-| media_title?              | string                                                                   | Title of this media (`watched_media_extra` only)                                                   |
-| media_subtitle?           | string                                                                   | Subtitle of this media (`watched_media_extra` only)                                                |
-| url?                      | string                                                                   | URL of this media (`watched_media_extra` only)                                                     |
-| activity_name?            | string                                                                   | Name of the activity (`launched_activity_extra` only)                                              |
+| Field                     | Type                                                                     | Description                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| type                      | string                                                                   | [Metadata type](#content-inventory-metadata-type)                                                     |
+| game_name?                | string                                                                   | Name of the game (`played_game_extra` only)                                                           |
+| application_id?           | snowflake                                                                | ID of the associated application                                                                      |
+| platform?                 | integer                                                                  | [Platform type](#content-inventory-platform-type) (only `played_game_extra`)                          |
+| last_update?              | ISO8601 timestamp                                                        | When this entry was last updated                                                                      |
+| entries?                  | array[[metadata entry](#content-inventory-metadata-entry-object) object] | Entries (only one for the component)                                                                  |
+| media?                    | [metadata entry](#content-inventory-metadata-entry-object) object        | Metadata object of type `listened_media_extra`                                                        |
+| provider?                 | integer                                                                  | [Provider](#content-inventory-provider-type) of this media (only `listened_media_extra`)              |
+| media_type?               | integer                                                                  | [Media type](#content-inventory-media-type) (only `listened_media_extra`)                             |
+| parent_title?             | string                                                                   | Title of this media's parent (album title when `media_type` is `TRACK`) (only `listened_media_extra`) |
+| title?                    | string                                                                   | Title of this media (only `listened_media_extra`)                                                     |
+| image_url?                | string                                                                   | Image of this media (e.g. album art) (only `listened_media_extra`)                                    |
+| artist?                   | [artist](#content-inventory-artist-object) object                        | Top listened artist (only `top_artist_extra`)                                                         |
+| artists?                  | array[[artist](#content-inventory-artist-object) object]                 | Artists for this media (empty when `top_artist_extra`) (only `listened_media_extra`)                  |
+| external_id?              | string                                                                   | External platform ID for this media (e.g. Spotify track ID) (only `listened_media_extra`)             |
+| external_parent_id?       | string                                                                   | External platform ID for this media's parent (e.g. Spotify album ID) (only `listened_media_extra`)    |
+| media_assets_large_image? | string                                                                   | Image of this media (e.g. movie poster) (only `watched_media_extra`)                                  |
+| media_assets_small_image? | string                                                                   | Small image (e.g. platform logo) (only `watched_media_extra`)                                         |
+| media_assets_large_text?  | string                                                                   | Large text (e.g. season and episode of a show) (only `watched_media_extra`)                           |
+| media_assets_small_text?  | string                                                                   | Small text (e.g. platform name) (only `watched_media_extra`)                                          |
+| media_title?              | string                                                                   | Title of this media (only `watched_media_extra`)                                                      |
+| media_subtitle?           | string                                                                   | Subtitle of this media (only `watched_media_extra`)                                                   |
+| url?                      | string                                                                   | URL of this media (only `watched_media_extra`)                                                        |
+| activity_name?            | string                                                                   | Name of the activity (only `launched_activity_extra`)                                                 |
 
-###### Content Inventory Metadata Types
+###### Content Inventory Metadata Type
 
 | Value                     | Description                    |
 | ------------------------- | ------------------------------ |
@@ -1170,6 +1216,20 @@ A Content Inventory Entry is a top-level component that displays an activity fee
 | `top_artist_extra`        | Top artist (Spotify)           |
 | `watched_media_extra`     | Watched media (Crunchyroll)    |
 | `launched_activity_extra` | Discord Activity               |
+
+###### Content Inventory Provider Type
+
+| Value | Name                 |
+| ----- | -------------------- |
+| 0     | PROVIDER_UNSPECIFIED |
+| 1     | SPOTIFY              |
+
+###### Content Inventory Media Type
+
+| Value | Name       |
+| ----- | ---------- |
+| 0     | TOP_ARTIST |
+| 1     | TRACK      |
 
 ###### Content Inventory Metadata Entry Object
 
@@ -1186,18 +1246,18 @@ A Content Inventory Entry is a top-level component that displays an activity fee
 | external_id | string | External platform ID for this artist (e.g. Spotify artist ID) |
 | name        | string | Name of the artist                                            |
 
-###### Content Inventory Platform Types
+###### Content Inventory Platform Type
 
-| Value | Description |
+| Value | Name        |
 | ----- | ----------- |
-| `0`   | Desktop     |
-| `1`   | Xbox        |
-| `2`   | PlayStation |
-| `3`   | iOS         |
-| `4`   | Android     |
-| `5`   | Nintendo    |
-| `6`   | Linux       |
-| `7`   | macOS       |
+| 0     | DESKTOP     |
+| 1     | XBOX        |
+| 2     | PLAYSTATION |
+| 3     | IOS         |
+| 4     | ANDROID     |
+| 5     | NINTENDO    |
+| 6     | LINUX       |
+| 7     | MACOS       |
 
 ###### Content Inventory Signature Object
 
@@ -1263,7 +1323,7 @@ Containers are only available in messages.
 | Field         | Type                | Description                                                                                                                                                                                                                                                                                                                                           |
 | ------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | type          | integer             | `17` for container component                                                                                                                                                                                                                                                                                                                          |
-| id?           | integer             | Optional identifier for component                                                                                                                                                                                                                                                                                                                     |
+| id?           | integer             | An optional identifier for the component                                                                                                                                                                                                                                                                                                              |
 | components    | array of components | Up to 10 components of the type [action row](#action-row), [text display](#text-display), [section](#section), [media gallery](#media-gallery), [separator](#separator), or [file](#file) |
 | accent_color? | ?integer            | Color for the accent on the container as RGB from `0x000000` to `0xFFFFFF`                                                                                                                                                                                                                                                                            |
 | spoiler?      | boolean             | Whether the container should be a spoiler (or blurred out). Defaults to `false`.                                                                                                                                                                                                                                                                      |
@@ -1331,34 +1391,3 @@ Containers are only available in messages.
 | height?       | ?integer | The height of the media item. This field is ignored and provided by the API as part of the response                                              |
 | width?        | ?integer | The width of the media item. This field is ignored and provided by the API as part of the response                                               |
 | content_type? | string   | The [media type](https://en.wikipedia.org/wiki/Media_type) of the content. This field is ignored and provided by the API as part of the response |
-
-### Uploading a file
-
-To upload a file with your message, you'll need to send your payload as `multipart/form-data` (rather than `application/json`) and include your file with a valid filename in your payload. Details and examples for uploading files can be found in the [API Reference](/reference#uploading-files).
-
-## Legacy Message Component Behavior
-
-Before the introduction of the `IS_COMPONENTS_V2` flag, message components were sent in conjunction with message content. This means that you could send a message using a subset of the available components without setting the `IS_COMPONENTS_V2` flag, and the components would be included in the message content along with `content` and `embeds`.
-
-Apps using this Legacy Message Component behavior will continue to work as expected, but it is recommended to use the new `IS_COMPONENTS_V2` flag for new apps or features as they offer more options for layout and customization.
-
-Legacy Message Component Example
-
-```json
-{
-  "content": "This is a message with legacy components",
-  "components": [
-    {
-      "type": 1,
-      "components": [
-        {
-          "type": 2,
-          "style": 1,
-          "label": "Click Me",
-          "custom_id": "click_me_1"
-        }
-      ]
-    }
-  ]
-}
-```
