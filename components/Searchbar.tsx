@@ -17,12 +17,16 @@ export default function Searchbar() {
         items.map((hit) => {
           const url = new URL(hit.url);
           url.host = location.host;
+          url.protocol = location.protocol;
+          url.port = location.port;
           hit.url = url.toString();
 
           if (hit.url_without_anchor) {
-            const urlWithoutAnchor = new URL(hit.url_without_anchor);
-            urlWithoutAnchor.host = location.host;
-            hit.url_without_anchor = urlWithoutAnchor.toString();
+            const url = new URL(hit.url_without_anchor);
+            url.host = location.host;
+            url.protocol = location.protocol;
+            url.port = location.port;
+            hit.url_without_anchor = url.toString();
           }
 
           return hit;
