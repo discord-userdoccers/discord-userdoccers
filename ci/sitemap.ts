@@ -37,7 +37,7 @@ const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename
 
 // SITEMAP
 
-const BASE_DOMAIN = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "docs.discord.sex";
+const BASE_DOMAIN = process.env.CF_PAGES_URL ?? "docs.discord.food";
 // add domain
 const createLink = (url: string) => `https://${BASE_DOMAIN}/${url}`;
 
@@ -83,7 +83,13 @@ for (const file of files) {
   const sectionList = navigationLinks[section];
 
   sectionList.items![link] ??= {
-    name: parsed.data.name ?? parsed.content.trim().split("\n")[0].replace("# ", ""),
+    name:
+      parsed.data.name ??
+      parsed.content
+        .trim()
+        .split("\n")
+        .find((line) => line.startsWith("#"))
+        ?.replace("# ", ""),
     link: `/${file}`,
     subLinks: [],
     sort: parsed.data.sort ?? 99999,
@@ -128,7 +134,9 @@ for (const file of files) {
 
 // Probably not the best way to do this but it's fine, just converts the object into an array
 for (const section in navigationLinks) {
-  navigationLinks[section].pages = Object.values(navigationLinks[section].items!).sort((a, b) => a.sort - b.sort);
+  const pages = Object.values(navigationLinks[section].items!);
+  pages.sort((a, b) => (a.sort === b.sort ? a.name.localeCompare(b.name) : a.sort - b.sort));
+  navigationLinks[section].pages = pages;
   delete navigationLinks[section].items;
 }
 

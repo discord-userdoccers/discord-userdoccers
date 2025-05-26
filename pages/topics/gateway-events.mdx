@@ -56,29 +56,30 @@ Gateway event payloads have a common structure, but the contents of the associat
 
 Send events are Gateway events encapsulated in an [event payload](#gateway-payload-structure), and are sent by a client to Discord through a Gateway connection.
 
-| Name                                                    | Description                                                       |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| [Identify](#identify)                                   | Trigger the initial handshake with the Gateway                    |
-| [Resume](#resume)                                       | Resume a dropped Gateway connection                               |
-| [Heartbeat](#heartbeat)                                 | Maintain an active Gateway connection                             |
-| [Update Presence](#update-presence)                     | Update the client's presence                                      |
-| [Update Voice State](#update-voice-state)               | Join, move, or disconnect the client from a voice channel or call |
-| [Ping Voice Server](#ping-voice-server)                 | Ping the Discord voice servers                                    |
-| [Create Stream](#create-stream)                         | Create a stream for the client (Go Live)                          |
-| [Watch Stream](#watch-stream)                           | Watch a user's stream                                             |
-| [Set Stream Paused](#set-stream-paused)                 | Pause/resume a client stream                                      |
-| [Delete Stream](#delete-stream)                         | End a client stream                                               |
-| [Ping Stream Server](#ping-stream-server)               | Ping a user's stream voice server                                 |
-| [Request Guild Members](#request-guild-members)         | Request members for one or more guilds                            |
-| [Request Call Connect](#request-call-connect)           | Request a private channels's pre-existing call information        |
-| Update Guild Subscriptions                              | Update subscriptions for a guild                                  |
-| Request Forum Unreads                                   | Request thread-only channel unread counts                         |
-| [Remote Command](<#remote-command-(send)>)              | Send a message to another Gateway session                         |
-| Request Deleted Entity IDs                              | Request deleted entity IDs not matching a given hash for a guild  |
-| [Request Soundboard Sounds](#request-soundboard-sounds) | Request soundboard sounds for one or more guilds                  |
-| [Request Last Messages](#request-last-messages)         | Request last messages for a guild's channels                      |
-| [Search Recent Members](#search-recent-members)         | Request recently-joined members for a guild                       |
-| [Request Channel Statuses](#request-channel-statuses)   | Request voice channel statuses for a guild                        |
+| Name                                                          | Description                                                       |
+| ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [Identify](#identify)                                         | Trigger the initial handshake with the Gateway                    |
+| [Resume](#resume)                                             | Resume a dropped Gateway connection                               |
+| [Heartbeat](#heartbeat)                                       | Maintain an active Gateway connection                             |
+| [Update Presence](#update-presence)                           | Update the client's presence                                      |
+| [Update Voice State](#update-voice-state)                     | Join, move, or disconnect the client from a voice channel or call |
+| [Ping Voice Server](#ping-voice-server)                       | Ping the Discord voice servers                                    |
+| [Create Stream](#create-stream)                               | Create a stream for the client (Go Live)                          |
+| [Watch Stream](#watch-stream)                                 | Watch a user's stream                                             |
+| [Set Stream Paused](#set-stream-paused)                       | Pause/resume a client stream                                      |
+| [Delete Stream](#delete-stream)                               | End a client stream                                               |
+| [Ping Stream Server](#ping-stream-server)                     | Ping a user's stream voice server                                 |
+| [Request Guild Members](#request-guild-members)               | Request members for one or more guilds                            |
+| [Request Call Connect](#request-call-connect)                 | Request a private channels's pre-existing call information        |
+| Update Guild Subscriptions                                    | Update subscriptions for a guild                                  |
+| Request Forum Unreads                                         | Request thread-only channel unread counts                         |
+| [Remote Command](<#remote-command-(send)>)                    | Send a message to another Gateway session                         |
+| Request Deleted Entity IDs                                    | Request deleted entity IDs not matching a given hash for a guild  |
+| [Request Soundboard Sounds](#request-soundboard-sounds)       | Request soundboard sounds for one or more guilds                  |
+| [Request Last Messages](#request-last-messages)               | Request last messages for a guild's channels                      |
+| [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
+| [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
+| [Request Channel Member Count](#request-channel-member-count) | Request the number of members that can view a channel             |
 
 #### Identify
 
@@ -285,7 +286,7 @@ Sent when a client wants to request that the Gateway pings a misbehaving voice s
 
 #### Create Stream
 
-Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
+Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission in the given channel. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
 
 ###### Create Stream Structure
 
@@ -312,7 +313,7 @@ Sent by the client to create a stream in a given voice channel. Requires the `ST
 
 ### Watch Stream
 
-Sent by the client to start watching a user's stream. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
+Sent by the client to start watching a user's stream. User must be connected to the associated voice channel. Fires either a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) or a [Stream Delete](#stream-delete) Gateway event.
 
 ###### Watch Stream Structure
 
@@ -333,7 +334,7 @@ Sent by the client to start watching a user's stream. Fires a [Stream Create](#s
 
 #### Set Stream Paused
 
-Sent by the client to pause or resume their stream. Fires a [Stream Server Update](#stream-server-update) Gateway event.
+Sent by the client to pause or resume their stream. User must be the owner of the stream. Fires a [Stream Server Update](#stream-server-update) Gateway event.
 
 ###### Set Stream Paused Structure
 
@@ -398,7 +399,9 @@ Sent when a client wants to request that the Gateway pings a misbehaving stream 
 
 #### Request Guild Members
 
-Used to request all members for a guild or a list of guilds. When initially connecting, if you don't have the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), or if the guild is over 75k members, it will only send members who are in voice, plus the member for you (the connecting user). Otherwise, if a guild has over `large_threshold` members (value in the [Gateway Identify](#identify)), it will only send members who are online, have a role, have a nickname, or are in a voice channel, and if it has under `large_threshold` members, it will send all members. If a client wishes to receive additional members, they need to explicitly request them via this operation. Fires multiple [Guild Members Chunk](#guild-members-chunk) events with up to 1000 members per chunk until all members that match the request have been sent.
+Used to request all members for a guild or a list of guilds. When initially connecting, if you don't have the `GUILD_PRESENCES` [Gateway intent](/topics/gateway#gateway-intents), or if the guild is over 75k members, it will only send members who are in voice, plus the member for you (the connecting user).
+Otherwise, if a guild has over `large_threshold` members (value in the [Gateway Identify](#identify)), it will only send members who are online, have a role, have a nickname, or are in a voice channel, and if it has under `large_threshold` members, it will send all members.
+If a client wishes to receive additional members, they need to explicitly request them via this operation. Fires multiple [Guild Members Chunk](#guild-members-chunk) events with up to 1000 members per chunk until all members that match the request have been sent.
 
 Due to our privacy and infrastructural concerns with this feature, there are some limitations that apply:
 
@@ -518,7 +521,7 @@ Used to request soundboard sounds for a list of guilds. Fires a [Soundboard Soun
 
 #### Request Last Messages
 
-Used to request the last messages (indicated by the [`last_message_id` field](/resources/channel#channel-object)) from channels. Fires a [Last Messages](#last-messages) Gateway event with up to 100 messages that match the request.
+Used to request the last messages (indicated by the [`last_message_id` field](/resources/channel#channel-object)) from channels. User must be a member of the guild. Fires a [Last Messages](#last-messages) Gateway event with up to 100 messages that match the request.
 
 ###### Request Last Messages Structure
 
@@ -541,7 +544,7 @@ Used to request the last messages (indicated by the [`last_message_id` field](/r
 
 #### Search Recent Members
 
-Used to search the 10,000 most recently joined members in a guild. Fires a [Guild Members Chunk](#guild-members-chunk) Gateway event with up to 1000 members that match the request.
+Used to search the 10,000 most recently joined members in a guild. User must be a member of the guild. Fires a [Guild Members Chunk](#guild-members-chunk) Gateway event with up to 1000 members that match the request.
 
 ###### Search Recent Members Structure
 
@@ -588,6 +591,29 @@ Used to request the voice channel statuses for a guild. Fires a [Channel Statuse
   "op": 36,
   "d": {
     "guild_id": "957057010334048288"
+  }
+}
+```
+
+#### Request Channel Member Count
+
+Used to request the number of members that can view a guild channel, as well as how many are online at the given time. Requires the `VIEW_CHANNEL` permission in the given channel. Fires a [Channel Member Count Update](#channel-member-count-update) Gateway event with the requested count.
+
+###### Request Channel Member Count Structure
+
+| Field      | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| guild_id   | snowflake | The ID of the guild   |
+| channel_id | snowflake | The ID of the channel |
+
+###### Example Request Channel Member Count
+
+```json
+{
+  "op": 39,
+  "d": {
+    "guild_id": "957057010334048288",
+    "channel_id": "1145501524013895733"
   }
 }
 ```
@@ -671,6 +697,13 @@ Sent to indicate one of at least three different situations:
 
 The inner `d` key is a boolean that indicates whether the session may be resumable. See [Connecting](/topics/gateway#connecting) and [Resuming](/topics/gateway#resuming) for more information.
 
+<Alert type="info">
+
+Note that unless the Gateway closes the connection, this event does not signify that the client needs to start a new WebSocket conneciton.
+The client can continue using the existing connection when following the [Connecting](/topics/gateway#connecting) or [Resuming](/topics/gateway#resuming) flow.
+
+</Alert>
+
 ###### Example Invalid Session
 
 ```json
@@ -710,9 +743,11 @@ These events directly correspond with a specific action or state change that has
 | [Channel Delete](#channel-delete)                                                   | Channel was deleted                                                                             |
 | [Channel Statuses](#channel-statuses)                                               | Response to [Request Channel Statuses](#request-channel-statuses)                               |
 | [Voice Channel Status Update](#voice-channel-status-update)                         | Voice channel status was updated                                                                |
+| [Channel Member Count Update](#channel-member-count-update)                         | Response to [Request Channel Member Count](#request-channel-member-count)                       |
 | [Channel Pins Update](#channel-pins-update)                                         | Message was pinned or unpinned                                                                  |
 | [Channel Recipient Add](#channel-recipient-add)                                     | User joined a group DM channel                                                                  |
 | [Channel Recipient Remove](#channel-recipient-remove)                               | User was removed from a group DM channel                                                        |
+| [Console Command Update](#console-command-update)                                   | Console command was updated                                                                     |
 | [Conversation Summary Update](#conversation-summary-update)                         | Conversation summaries were updated for a text channel                                          |
 | [DM Settings Upsell Show](#dm-settings-upsell-show)                                 | DM privacy settings upsell modal was triggered                                                  |
 | [Thread Create](#thread-create)                                                     | Thread was created, also sent when being added to a private thread                              |
@@ -726,9 +761,13 @@ These events directly correspond with a specific action or state change that has
 | [Guild Create](#guild-create)                                                       | Guild became available or user joined a new guild                                               |
 | [Guild Update](#guild-update)                                                       | Guild was updated                                                                               |
 | [Guild Delete](#guild-delete)                                                       | Guild became unavailable, or user left/was removed from a guild                                 |
+| [Guild Applied Boosts Update](#guild-applied-boosts-update)                         | Premium guild subscription was created or updated                                               |
 | [Guild Audit Log Entry Create](#guild-audit-log-entry-create)                       | Guild audit log entry was created                                                               |
 | [Guild Ban Add](#guild-ban-add)                                                     | User was banned from a guild                                                                    |
 | [Guild Ban Remove](#guild-ban-remove)                                               | User was unbanned from a guild                                                                  |
+| [Guild Directory Entry Create](#guild-directory-entry-create)                       | Guild directory entry was created                                                               |
+| [Guild Directory Entry Update](#guild-directory-entry-update)                       | Guild directory entry was updated                                                               |
+| [Guild Directory Entry Delete](#guild-directory-entry-delete)                       | Guild directory entry was deleted                                                               |
 | [Guild Emojis Update](#guild-emojis-update)                                         | Guild emoji were updated                                                                        |
 | [Guild Stickers Update](#guild-stickers-update)                                     | Guild stickers were updated                                                                     |
 | [Guild Join Request Create](#guild-join-request-create)                             | Guild join request was created                                                                  |
@@ -774,13 +813,18 @@ These events directly correspond with a specific action or state change that has
 | [Message Reaction Remove Emoji](#message-reaction-remove-emoji)                     | All reactions for a given emoji were explicitly removed from a message                          |
 | [Recent Mention Delete](#recent-mention-delete)                                     | Recent message that mentioned the current user was acknowledged                                 |
 | [Last Messages](#last-messages)                                                     | Response to [Request Last Messages](#request-last-messages)                                     |
+| [Notification Settings Update](#notification-settings-update)                       | User notification settings were updated                                                         |
 | [OAuth2 Token Revoke](#oauth2-token-revoke)                                         | OAuth2 application was deauthorized                                                             |
 | [Presence Update](#presence-update)                                                 | User presence was updated                                                                       |
+| [Quests User Status Update](#quests-user-status-update)                             | User status in a quest was updated                                                              |
+| [Quests User Completion Update](#quests-user-completion-update)                     | User quest completion eligibility was updated                                                   |
 | [Relationship Add](#relationship-add)                                               | User had a relationship added                                                                   |
 | [Relationship Update](#relationship-update)                                         | User had a relationship updated                                                                 |
 | [Relationship Remove](#relationship-remove)                                         | User had a relationship removed                                                                 |
 | [Game Relationship Add](#game-relationship-add)                                     | User had a game relationship added                                                              |
 | [Game Relationship Remove](#game-relationship-remove)                               | User had a game relationship removed                                                            |
+| [Saved Message Create](#saved-message-create)                                       | Message was bookmarked                                                                          |
+| [Saved Message Delete](#saved-message-delete)                                       | Bookmarked message was deleted                                                                  |
 | [Sessions Replace](#sessions-replace)                                               | User session list was updated                                                                   |
 | [Stage Instance Create](#stage-instance-create)                                     | Stage instance was created                                                                      |
 | [Stage Instance Update](#stage-instance-update)                                     | Stage instance was updated                                                                      |
@@ -815,8 +859,9 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | \_trace                                | array[string]                                                                                                              | An array of stringified JSON values representing the connection trace, used for debugging                                                                                                                                                                              |
 | v                                      | integer                                                                                                                    | [API version](/reference#api-versions)                                                                                                                                                                                                                                 |
 | user                                   | [user](/resources/user#user-object) object                                                                                 | The connected user                                                                                                                                                                                                                                                     |
-| user_settings ^1^ ^4^ **(deprecated)** | [user settings](/resources/user-settings#legacy-user-settings-object) object                                               | The client settings for the user                                                                                                                                                                                                                                       |
-| user_settings_proto? ^1^               | string                                                                                                                     | The base 64-encoded serialized [preloaded user settings](/resources/user-settings#user-settings-proto-type) protobuf for the user, (if missing, defaults should be used)                                                                                               |
+| user_settings ^1^ ^4^ **(deprecated)** | [user settings](/resources/user-settings#user-settings-object) object                                                      | The client settings for the user                                                                                                                                                                                                                                       |
+| user_settings_proto? ^1^               | string                                                                                                                     | The base 64-encoded serialized [preloaded user settings](/resources/user-settings-proto#preloaded-user-settings-object) protobuf for the user, (if missing, defaults should be used)                                                                                   |
+| notification_settings ^1^              | [notification settings](/resources/user-settings#notification-settings-object) object                                      | The notification settings for the user                                                                                                                                                                                                                                 |
 | user_guild_settings ^1^ ^9^            | [versioned array](#versioned-structure)[[user guild settings](/resources/user-settings#user-guild-settings-object) object] | The user settings for each guild                                                                                                                                                                                                                                       |
 | guilds ^2^ ^6^                         | array[[gateway guild](#gateway-guild-object) object]                                                                       | The guilds the user is in                                                                                                                                                                                                                                              |
 | guild_join_requests ^1^                | array[partial [guild join request](/resources/guild#guild-join-request-object)]                                            | Active guild join requests the user has                                                                                                                                                                                                                                |
@@ -824,7 +869,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | game_relationships ^1^                 | array[[game relationship](/resources/relationships#game-relationship-object)]                                              | The game relationships the user has with other users                                                                                                                                                                                                                   |
 | friend_suggestion_count? ^1^           | integer                                                                                                                    | The number of friend suggestions the user has                                                                                                                                                                                                                          |
 | private_channels ^1^                   | array[[channel](/resources/channel#channel-object) object]                                                                 | The DMs and group DMs the user is participating in                                                                                                                                                                                                                     |
-| connected_accounts                     | array[[connection](/resources/user#connection-object)]                                                                     | The third-party accounts the user has linked                                                                                                                                                                                                                           |
+| connected_accounts                     | array[[connection](/resources/connected-accounts#connection-object)]                                                       | The third-party accounts the user has linked                                                                                                                                                                                                                           |
 | notes ^1^ ^5^                          | map[snowflake, string]                                                                                                     | A mapping of user IDs to notes the user has made for them                                                                                                                                                                                                              |
 | presences ^6^                          | array[[presence](/resources/presence#presence-object) object]                                                              | The presences of the user's non-offline [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)).                                         |
 | merged_presences ^6^                   | [merged presences](#merged-presences-structure) object                                                                     | The presences of the user's non-offline [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), and any guild presences sent at startup |
@@ -842,12 +887,14 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | required_action? ^1^                   | string                                                                                                                     | The [action a user is required to take](/resources/user#required-action-type) before continuing to use Discord                                                                                                                                                         |
 | country_code ^1^                       | string                                                                                                                     | The detected [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) of the user's current IP address                                                                                                                                      |
 | geo_ordered_rtc_regions                | array[string]                                                                                                              | A geo-ordered list of [RTC regions](/resources/voice#voice-region-object) that can be used when when setting a voice channel's [`rtc_region`](/resources/channel#channel-object) or [updating the client's voice state](#update-voice-state)                           |
+| consents ^1^                           | [consents](/resources/user-settings#consents-object)                                                                       | The tracking features the user has consented to                                                                                                                                                                                                                        |
 | tutorial ^1^ ^8^                       | ?[tutorial](#tutorial-structure) object                                                                                    | The tutorial state of the user, if any                                                                                                                                                                                                                                 |
 | shard?                                 | array[integer, integer]                                                                                                    | The [shard information](/topics/gateway#sharding) (shard_id, num_shards) associated with this session, if sharded                                                                                                                                                      |
 | resume_gateway_url                     | string                                                                                                                     | WebSocket URL for resuming connections                                                                                                                                                                                                                                 |
 | api_code_version ^1^                   | integer                                                                                                                    | The API code version, used when re-identifying with client state v2                                                                                                                                                                                                    |
 | experiments ^1^                        | array[[user experiment](/topics/experiments#user-experiments) object]                                                      | User experiment rollouts for the user                                                                                                                                                                                                                                  |
 | guild_experiments ^1^                  | array[[guild experiment](/topics/experiments#guild-experiments) object]                                                    | Guild experiment rollouts for the user                                                                                                                                                                                                                                 |
+| explicit_content_scan_version          | integer                                                                                                                    | The latest version of the explicit content scan filter feature                                                                                                                                                                                                         |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -1168,6 +1215,19 @@ Sent when a voice channel's status is updated.
 | guild_id | snowflake | The ID of the guild                                  |
 | status   | ?string   | The status of the voice channel (max 500 characters) |
 
+#### Channel Member Count Update
+
+Sent in response to [Request Channel Member Count](#request-channel-member-count). Contains the number of members that can currently see the channel.
+
+##### Channel Member Count Update Structure
+
+| Field          | Type      | Description                                                                  |
+| -------------- | --------- | ---------------------------------------------------------------------------- |
+| guild_id       | snowflake | The ID of the guild                                                          |
+| channel_id     | snowflake | The ID of the channel                                                        |
+| member_count   | integer   | The number of members that can currently see the channel                     |
+| presence_count | integer   | The number of members that can currently see the channel and are not offline |
+
 #### Channel Pins Update
 
 Sent when a message is pinned or unpinned in a text channel. This is not sent when a pinned message is deleted.
@@ -1202,6 +1262,24 @@ Sent when a user is removed from a group direct message channel.
 | ---------- | -------------------------------------------------- | ------------------------ |
 | channel_id | snowflake                                          | The ID of the channel    |
 | user       | partial [user](/resources/user#user-object) object | The user who was removed |
+
+### Consoles
+
+#### Console Command Update
+
+Sent when a console command is updated.
+
+###### Console Command Update Structure
+
+| Field      | Type                                                                                                | Description               |
+| ---------- | --------------------------------------------------------------------------------------------------- | ------------------------- |
+| id         | snowflake                                                                                           | The ID of the command     |
+| result ^1^ | string                                                                                              | The result of the command |
+| error ^2^  | ?partial [JSON error response](/topics/opcodes-and-status-codes#example-json-error-response) object | The error                 |
+
+^1^ If command failed, `result` will be set to either `failed`, or `n/a`.
+
+^2^ The object will contain only a `code` key.
 
 #### Conversation Summary Update
 
@@ -1263,7 +1341,7 @@ For bots, all active threads are synced at startup. For user accounts, only join
 
 #### Thread Member Update
 
-Sent when the [thread member](/resources/channel#thread-member-object) object for the current user is updated. The inner payload is a [thread member](/resources/channel#thread-member-object) object with an extra `guild_id` field. For bots, his event largely is just a signal that you are a member of the thread. See the [threads docs](/topics/threads) for more details.
+Sent when the [thread member](/resources/channel#thread-member-object) object for the current user is updated. The inner payload is a [thread member](/resources/channel#thread-member-object) object with an extra `guild_id` field. For bots, this event largely is just a signal that you are a member of the thread. See the [threads docs](/topics/threads) for more details.
 
 ###### Thread Member Update Structure Extra Fields
 
@@ -1328,7 +1406,7 @@ Sent when a friend suggestion is deleted.
 | data_mode ^5^              | string                                                                                               | The [data mode](#data-mode) for this object                                                    |
 | properties ^5^             | partial [guild](/resources/guild#guild-object) object                                                | The properties of the guild; an otherwise-normal guild object that is missing the below fields |
 | stickers                   | array[[sticker](/resources/sticker#sticker-object) object]                                           | Custom guild stickers                                                                          |
-| roles                      | array[[role](/topics/permissions#role-object) object]                                                | Roles in the guild                                                                             |
+| roles                      | array[[role](/resources/guild#role-object) object]                                                   | Roles in the guild                                                                             |
 | emojis                     | array[[emoji](/resources/emoji#emoji-object) object]                                                 | Custom guild emojis                                                                            |
 | premium_subscription_count | integer                                                                                              | The number of premium subscriptions (boosts) the guild currently has                           |
 
@@ -1355,6 +1433,10 @@ A partial guild object. Represents an offline guild, or a guild the client is no
 | id              | snowflake | The ID of the guild                                       |
 | unavailable?    | boolean   | Whether the guild is unavailable due to an outage         |
 | geo_restricted? | boolean   | Whether the guild is not available in your current region |
+| name? ^1^       | string    | The name of the guild (2-100 characters)                  |
+| icon? ^1^       | ?string   | The guild's [icon hash](/reference#cdn-formatting)        |
+
+^1^ Only included when `geo_restricted` is `true`.
 
 ###### Example Unavailable Guild
 
@@ -1400,6 +1482,10 @@ Sent when a guild is updated. The inner payload is a [guild](/resources/guild#gu
 
 Sent when a guild becomes or was already unavailable due to an outage, or when the user leaves or is removed from a guild. The inner payload is an [unavailable guild](#unavailable-guild-object) object. If the `unavailable` field is not set, the user was removed from the guild.
 
+#### Guild Applied Boosts Update
+
+Sent when a premium guild subscription is updated, meaning a user applied a boost or an existing boost was updated. The inner payload is a [premium guild subscription](/resources/guild#premium-guild-subscription-object) object.
+
 #### Guild Audit Log Entry Create
 
 Sent when a guild audit log entry is created. The inner payload is an [Audit Log Entry](/resources/audit-log#audit-log-entry-object) object. Requires the `VIEW_AUDIT_LOG` permission.
@@ -1425,6 +1511,31 @@ Sent when a user is unbanned from a guild.
 | -------- | -------------------------------------------------- | ------------------- |
 | guild_id | snowflake                                          | The ID of the guild |
 | user     | partial [user](/resources/user#user-object) object | The unbanned user   |
+
+#### Guild Directory Entry Create
+
+Sent when a guild directory entry is created. The inner payload is a [directory entry](/resources/directory#directory-entry-object) object.
+
+#### Guild Directory Entry Update
+
+Sent when a guild directory entry is updated. The inner payload is a [directory entry](/resources/directory#directory-entry-object) object.
+
+#### Guild Directory Entry Delete
+
+Sent when a guild directory entry is deleted.
+
+###### Guild Directory Entry Delete Structure
+
+| Field                | Type      | Description                                                                  |
+| -------------------- | --------- | ---------------------------------------------------------------------------- |
+| type                 | integer   | The [type of directory entry](/resources/directory#directory-entry-type)     |
+| directory_channel_id | snowflake | The ID of the directory channel that the entry is in                         |
+| guild_id             | snowflake | The ID of the guild that the entry is in                                     |
+| entity_id            | snowflake | The ID of the guild or scheduled event                                       |
+| created_at           | string    | When the entry was created                                                   |
+| primary_category_id? | integer   | The [primary category](/resources/directory#directory-category) of the entry |
+| description          | ?string   | The description of the entry                                                 |
+| author_id            | snowflake | The ID of the user that created the entry                                    |
 
 #### Guild Emojis Update
 
@@ -1596,10 +1707,10 @@ Sent when a guild role is created.
 
 ###### Guild Role Create Structure
 
-| Field    | Type                                           | Description         |
-| -------- | ---------------------------------------------- | ------------------- |
-| guild_id | snowflake                                      | The ID of the guild |
-| role     | [role](/topics/permissions#role-object) object | The role created    |
+| Field    | Type                                        | Description         |
+| -------- | ------------------------------------------- | ------------------- |
+| guild_id | snowflake                                   | The ID of the guild |
+| role     | [role](/resources/guild#role-object) object | The role created    |
 
 #### Guild Role Update
 
@@ -1607,10 +1718,10 @@ Sent when a guild role is updated.
 
 ###### Guild Role Update Structure
 
-| Field    | Type                                           | Description         |
-| -------- | ---------------------------------------------- | ------------------- |
-| guild_id | snowflake                                      | The ID of the guild |
-| role     | [role](/topics/permissions#role-object) object | The role updated    |
+| Field    | Type                                        | Description         |
+| -------- | ------------------------------------------- | ------------------- |
+| guild_id | snowflake                                   | The ID of the guild |
+| role     | [role](/resources/guild#role-object) object | The role updated    |
 
 #### Guild Role Delete
 
@@ -1803,6 +1914,7 @@ Unlike persistent messages, ephemeral messages are sent directly to the user and
 | guild_id? ^1^   | snowflake                                                           | The ID of the guild the message was sent in                                                                                                    |
 | member? ^1^ ^2^ | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author                                                                                                    |
 | mentions ^1^    | array[partial [user](/resources/user#user-object) object]           | Users specifically mentioned in the message, with an extra [`member`](/resources/guild#guild-member-object) key representing guild member data |
+| metadata?       | object                                                              | Custom metadata for the message (max 25 keys, 1024 characters per key and value)                                                               |
 
 ^1^ Ephemeral messages will not include these fields.
 
@@ -1979,6 +2091,12 @@ Sent in response to [Request Last Messages](#request-last-messages).
 | guild_id | snowflake                                                  | The ID of the guild                     |
 | messages | array[[message](/resources/message#message-object) object] | Last messages of the requested channels |
 
+### Notification Settings
+
+#### Notification Settings Update
+
+Sent when a user's notification settings are updated. The inner payload is a [notification settings](/resources/user-settings#notification-settings-object) object.
+
 ### OAuth2
 
 #### OAuth2 Token Revoke
@@ -2018,6 +2136,28 @@ The `user` object within this event can be very partial. The only field which is
 Along with this limitation, no fields are required, and the types of the fields are **not** validated. Your client should expect any combination of fields and types within this event.
 
 </Alert>
+
+### Quests
+
+#### Quests User Status Update
+
+Sent when a user's quest status is updated.
+
+###### Quests User Status Update Structure
+
+| Field       | Type                                                                   | Description               |
+| ----------- | ---------------------------------------------------------------------- | ------------------------- |
+| user_status | [quest user status](/resources/quests#quest-user-status-object) object | The user's quest progress |
+
+#### Quests User Completion Update
+
+Sent when a user's quest completion eligibility is updated.
+
+###### Quests User Completion Update Structure
+
+| Field                          | Type               | Description                              |
+| ------------------------------ | ------------------ | ---------------------------------------- |
+| quest_enrollment_blocked_until | ?ISO8601 timestamp | When the user can enroll in quests again |
 
 ### Relationships
 
@@ -2074,6 +2214,23 @@ Sent when a game relationship is removed, relevant to the current user.
 | since          | ISO8601 timestamp | When the user requested a relationship                                              |
 | dm_access_type | integer           | The [DM access level](/resources/relationships#dm-access-type) for the relationship |
 | user_id        | snowflake         | The ID of the current user                                                          |
+
+### Saved Messages
+
+#### Saved Message Create
+
+Sent when a message is saved. The inner payload is a [saved message](/resources/user#saved-message-structure) object.
+
+#### Saved Message Delete
+
+Sent when a message is unsaved.
+
+###### Saved Message Delete Structure
+
+| Field      | Type      | Description           |
+| ---------- | --------- | --------------------- |
+| channel_id | snowflake | The ID of the channel |
+| message_id | snowflake | The ID of the message |
 
 ### Sessions
 
@@ -2203,13 +2360,15 @@ Sent when a stream is deleted, or becomes unavailable due to an outage.
 
 ###### Stream Delete Reason
 
-| Value                     | Description                                           |
-| ------------------------- | ----------------------------------------------------- |
-| user_requested            | The user requested to end the stream                  |
-| stream_ended              | The client was disconnected because the stream ended  |
-| stream_full               | The client attempted to join a full stream            |
-| unauthorized              | The client is not authorized to view the stream       |
-| safety_guild_rate_limited | The stream was rate limited due to guild restrictions |
+| Value                     | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| user_requested            | The user requested to end the stream                   |
+| stream_ended              | The client was disconnected because the stream ended   |
+| stream_full               | The client attempted to join a full stream             |
+| unauthorized              | The client is not authorized to view the stream        |
+| safety_guild_rate_limited | The stream was rate limited due to guild restrictions  |
+| parse_failed              | Parsing the stream key failed                          |
+| invalid_channel           | The provided channel is not valid for this stream type |
 
 ###### Example Stream Delete
 
@@ -2264,7 +2423,7 @@ Sent when the current user deauthorizes an integrated application.
 
 #### User Connections Update
 
-Sent when the current user has their connections updated. Inner payload is either a [connection](/resources/user#connection-object) object, or the following object:
+Sent when the current user has their connections updated. Inner payload is either a [connection](/resources/connected-accounts#connection-object) object, or the following object:
 
 ###### User Connections Update Structure
 
@@ -2282,6 +2441,7 @@ Sent when the current user has their account merged with a provisional account. 
 
 - Relationships from the provisional account have been moved to the current user.
 - Game relationships from the provisional account have been moved to the current user.
+- Lobby memberships from the provisional account have been moved to the current user.
 - DMs from the provisional account have been migrated to the current user. If there is a conflict, a group DM is created.
 - Users that have blocked the provisional account now block the current user.
 
@@ -2316,14 +2476,14 @@ Sent when the client protobuf user settings are modified.
 
 ###### User Settings Proto Structure
 
-| Field | Type    | Description                                                                    |
-| ----- | ------- | ------------------------------------------------------------------------------ |
-| type  | integer | The [type of user settings](/resources/user-settings#user-settings-proto-type) |
-| proto | string  | The base 64-encoded serialized user settings protobuf                          |
+| Field | Type    | Description                                                                          |
+| ----- | ------- | ------------------------------------------------------------------------------------ |
+| type  | integer | The [type of user settings](/resources/user-settings-proto#user-settings-proto-type) |
+| proto | string  | The base 64-encoded serialized user settings protobuf                                |
 
 #### User Settings Update
 
-Sent when the client user settings are modified. Inner payload is a [legacy user settings](/resources/user-settings#legacy-user-settings-object) object.
+Sent when the client user settings are modified. Inner payload is a [user settings](/resources/user-settings#user-settings-object) object.
 
 <Alert type="info">
 

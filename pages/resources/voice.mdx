@@ -22,7 +22,7 @@ Used to represent a user's voice connection status.
 | self_stream?               | boolean                                                     | Whether this user is streaming using "Go Live"     |
 | self_video                 | boolean                                                     | Whether this user's camera is enabled              |
 | suppress                   | boolean                                                     | Whether this user's permission to speak is denied  |
-| request_to_speak_timestamp | ?ISO8601 timestamp                                          | The time at which the user requested to speak      |
+| request_to_speak_timestamp | ?ISO8601 timestamp                                          | When which the user requested to speak             |
 
 ^1^ Omitted in the [Gateway guild](/topics/gateway-events#gateway-guild-object) object.
 
@@ -74,21 +74,221 @@ Returns an array of [voice region](#voice-region-object) objects that can be use
 
 Returns a list of [voice region](#voice-region-object) objects that can be used when setting a [voice channel's `rtc_region`](/resources/channel#channel-object). Unlike the similar [Get Voice Regions](#get-voice-regions) route, this returns VIP servers when the guild is VIP-enabled.
 
+<RouteHeader method="PUT" url="/voice/public-keys">
+  Upload Voice Public Key
+</RouteHeader>
+
+Uploads a persistent public key used for voice encryption. Returns a 204 empty response on success.
+
+<Collapsible title="More Information" description="How do I generate and use this key?" icon="question">
+
+This key is used for persistent keypair signatures in the DAVE protocol. For further details, see the [whitepaper](https://daveprotocol.com/#persistent-signature-keypairs).
+
+Generating a keypair and signature can be done with the following Python pseudocode:
+
+```python
+import base64
+import requests
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+
+API_ENDPOINT = 'https://discord.com/api/v9'
+private_key = ec.generate_private_key(ec.SECP256R1())
+public_key = private_key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.CompressedPoint)
+
+# https://datatracker.ietf.org/doc/html/rfc9000#name-variable-length-integer-enc
+def encode_quic_varint(data):
+    length = len(data)
+    if length < 2**6:
+        return bytes([length]) + data
+    elif length < 2**14:
+        return bytes([(1 << 6) | (length >> 8), length & 0xFF]) + data
+    elif length < 2**30:
+        return bytes([(2 << 6) | (length >> 24), (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]) + data
+    else:
+        return bytes([(3 << 6) | (length >> 56), (length >> 48) & 0xFF, (length >> 40) & 0xFF, (length >> 32) & 0xFF, (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]) + data
+
+# https://datatracker.ietf.org/doc/html/rfc9420/#name-signing
+def sign_with_label(private_key, label, content) -> bytes:
+    label_bytes = b'MLS 1.0 ' + label.encode('ascii')
+    sign_content = encode_quic_varint(label_bytes) + encode_quic_varint(content)
+    signature = private_key.sign(sign_content, ec.ECDSA(hashes.SHA256()))
+    return signature
+
+# The session ID is the static_client_session_id value from the READY payload
+session_id = '00000000-0000-0000-0000-000000000000'.encode('ascii')
+signature = sign_with_label(private_key, "DiscordSelfSignature", session_id + b':' + public_key)
+
+data = {
+    'key_version': 1,
+    'public_key': 'data:application/octet-stream;base64,' + base64.b64encode(public_key).decode('utf-8'),
+    'signature': 'data:application/octet-stream;base64,' + base64.b64encode(signature).decode('utf-8'),
+}
+headers = {
+    'authorization': 'token',
+    # Rest of headers here
+}
+
+r = requests.put('%s/voice/public-keys' % API_ENDPOINT, json=data, headers=headers)
+r.raise_for_status()
+```
+
+</Collapsible>
+
+###### JSON Params
+
+| Field       | Type                            | Description                                                                                                                                        |
+| ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| key_version | integer                         | The version of the persistent key protocol (currently 1)                                                                                           |
+| public_key  | [cdn data](/reference#cdn-data) | The X9.62 P256 public key data                                                                                                                     |
+| signature   | [cdn data](/reference#cdn-data) | An MLS style self-signature of the public key data with application label `DiscordSelfSignature` and content `static_client_session_id:public_key` |
+
+<RouteHeader method="POST" url="/voice/{user.id}/match-public-key">
+  Verify Voice Public Key
+</RouteHeader>
+
+Verifies a user's persistent public key for voice encryption against their uploaded ones.
+
+<Collapsible title="More Information" description="Where do I get this key?" icon="question">
+
+This key is used by another user to encrypt voice data. For further details, see the [whitepaper](https://daveprotocol.com/#persistent-verification).
+
+</Collapsible>
+
+###### JSON Params
+
+| Field       | Type                            | Description                                              |
+| ----------- | ------------------------------- | -------------------------------------------------------- |
+| key_version | integer                         | The version of the persistent key protocol (currently 1) |
+| public_key  | [cdn data](/reference#cdn-data) | The X9.62 P256 public key data                           |
+
+###### Response Body
+
+| Field    | Type    | Description                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------- |
+| is_match | boolean | Whether the public key matches one of the user's uploaded persistent public keys |
+
+<RouteHeader method="GET" url="/voice-filters/catalog">
+  Get Voice Filters Catalog
+</RouteHeader>
+
+Returns the voice filters that can be used by the client.
+
+###### Query String Params
+
+| Field       | Type          | Description                                                                  |
+| ----------- | ------------- | ---------------------------------------------------------------------------- |
+| vfm_version | integer       | The version of the [voice filter native module](/topics/client-distribution) |
+| models?     | array[string] | The IDs of the ONNX models to return in the response                         |
+
+###### Response Body
+
+| Field               | Type                                                                 | Description                                                |
+| ------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| limited_time_voices | [limited time voices](#limited-time-voices-structure) object         | The current sets of limited time voice filters available   |
+| models? ^1^         | map[str, [voice filter model](#voice-filter-model-structure) object] | The ONNX machine learning models used by the voice filters |
+| voices?             | array[[voice filter](#voice-filter-structure) object]                | The voice filters available to the client                  |
+
+^1^ This field is empty if no models were provided in the `models` query parameter in voice filter module versions 6 and above.
+
+###### Limited Time Voices Structure
+
+| Field             | Type              | Description                                     |
+| ----------------- | ----------------- | ----------------------------------------------- |
+| current_set       | array[string]     | The currently free voice filters                |
+| current_set_end   | ISO8601 timestamp | When the current set will no longer be free     |
+| current_set_start | ISO8601 timestamp | When the current set will start being free      |
+| next_set          | array[string]     | The next set of voice filters that will be free |
+| next_set_end      | ISO8601 timestamp | When the next set ends                          |
+| next_set_start    | ISO8601 timestamp | When the next set starts                        |
+
+###### Voice Filter Model Structure
+
+| Field | Type   | Description                   |
+| ----- | ------ | ----------------------------- |
+| url   | string | The CDN URL to the ONNX model |
+
+###### Voice Filter Structure
+
+| Field                     | Type              | Description                                                      |
+| ------------------------- | ----------------- | ---------------------------------------------------------------- |
+| id                        | string            | The ID of the voice filter                                       |
+| models? ^1^               | array[string]     | The IDs of the ONNX models used by the voice filter              |
+| requires_premium          | boolean           | Whether the voice filter requires a premium (Nitro) subscription |
+| limited_time_free_ends?   | ISO8601 timestamp | When the voice filter will no longer be free to use              |
+| limited_time_free_starts? | ISO8601 timestamp | When the voice filter will start being free to use               |
+| available                 | boolean           | Whether the voice filter is available to use                     |
+
+^1^ This field is no longer used and is serialized as an empty object in voice filter module versions 6 and above.
+
+###### Example Response
+
+```json
+{
+  "limited_time_voices": {
+    "current_set": ["solara", "robot"],
+    "current_set_start": "2025-05-22T00:00:00+00:00",
+    "current_set_end": "2025-05-22T23:59:59+00:00",
+    "next_set": ["tunes", "robot"],
+    "next_set_start": "2025-05-23T00:00:00+00:00",
+    "next_set_end": "2025-05-23T23:59:59+00:00"
+  },
+  "models": {
+    "vocoder_large_1": {
+      "url": "https://cdn.discordapp.com/assets/content/XXX.onnx"
+    },
+    "asr_large": {
+      "url": "https://cdn.discordapp.com/assets/content/XXX.onnx"
+    },
+    "pitch_small_3": {
+      "url": "https://cdn.discordapp.com/assets/content/XXX.onnx"
+    }
+  },
+  "voices": [
+    {
+      "id": "skye",
+      "models": ["vocoder_large_1", "asr_large", "pitch_small_3"],
+      "requires_premium": true,
+      "limited_time_free_ends": "2025-05-22T23:59:59+00:00",
+      "limited_time_free_starts": "2025-05-22T00:00:00+00:00",
+      "available": true
+    }
+  ]
+}
+```
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/voice-states/@me">
+  Get Current User Voice State
+</RouteHeader>
+
+Returns the current user's [voice state](#voice-state-object) object in the guild.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/voice-states/{user.id}">
+  Get User Voice State
+</RouteHeader>
+
+Returns the specified user's [voice state](#voice-state-object) object in the guild.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/voice-states/@me">
   Modify Current User Voice State
 </RouteHeader>
 
 Updates the current user's voice state in the given guild ID. Returns a 204 empty response on success. Fires a [Voice State Update](/topics/gateway-events#voice-state-update) Gateway event.
 
-###### JSON Params
-
-| Field                       | Type               | Description                                    |
-| --------------------------- | ------------------ | ---------------------------------------------- |
-| channel_id?                 | snowflake          | The ID of the channel the user is currently in |
-| suppress?                   | boolean            | Whether the user is suppressed in the channel  |
-| request_to_speak_timestamp? | ?ISO8601 timestamp | The time at which the user requested to speak  |
-
-###### Caveats
+<Collapsible title="Caveats" description="Modifying voice states is subject to some restrictions" icon="warning">
 
 There are currently several caveats for this endpoint:
 
@@ -98,20 +298,23 @@ There are currently several caveats for this endpoint:
 - You must have the `REQUEST_TO_SPEAK` permission to request to speak; you can always clear your own request to speak
 - You can only set `request_to_speak_timestamp` to the present or a future time
 
+</Collapsible>
+
+###### JSON Params
+
+| Field                       | Type               | Description                                    |
+| --------------------------- | ------------------ | ---------------------------------------------- |
+| channel_id?                 | snowflake          | The ID of the channel the user is currently in |
+| suppress?                   | boolean            | Whether the user is suppressed in the channel  |
+| request_to_speak_timestamp? | ?ISO8601 timestamp | When the user requested to speak               |
+
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/voice-states/{user.id}">
   Modify User Voice State
 </RouteHeader>
 
 Updates another user's voice state in the given guild ID. Returns a 204 empty response on success. Fires a [Voice State Update](/topics/gateway-events#voice-state-update) Gateway event.
 
-###### JSON Params
-
-| Field      | Type      | Description                                    |
-| ---------- | --------- | ---------------------------------------------- |
-| channel_id | snowflake | The ID of the channel the user is currently in |
-| suppress?  | boolean   | Whether the user is suppressed in the channel  |
-
-###### Caveats
+<Collapsible title="Caveats" description="Modifying voice states is subject to some restrictions" icon="warning">
 
 There are currently several caveats for this endpoint:
 
@@ -120,6 +323,15 @@ There are currently several caveats for this endpoint:
 - You must have the `MUTE_MEMBERS` permission
 - When unsuppressed, user accounts will have their `request_to_speak_timestamp` set to the current time; bot users will not
 - When suppressed, the user will have their `request_to_speak_timestamp` removed
+
+</Collapsible>
+
+###### JSON Params
+
+| Field      | Type      | Description                                    |
+| ---------- | --------- | ---------------------------------------------- |
+| channel_id | snowflake | The ID of the channel the user is currently in |
+| suppress?  | boolean   | Whether the user is suppressed in the channel  |
 
 <RouteHeader method="POST" url="/channels/{channel.id}/voice-channel-effects">
   Send Voice Channel Effect
@@ -149,13 +361,25 @@ Sending a voice channel effect requires the current user to be connected to the 
 | 0     | PREMIUM | A fun animation, requires a premium (Nitro) subscription |
 | 1     | BASIC   | The standard animation                                   |
 
+<RouteHeader method="PATCH" url="/streams/{stream_key}/stream">
+  Modify Stream
+</RouteHeader>
+
+Modifies the stream. User must be the owner of the stream. Returns a 204 empty response on success. Fires a [Stream Update](/topics/gateway-events#stream-update) Gateway event.
+
+###### JSON Params
+
+| Field   | Type   | Description                                                                |
+| ------- | ------ | -------------------------------------------------------------------------- |
+| region? | string | The [voice region](/resources/voice#voice-region-object) ID for the stream |
+
 <RouteHeader method="GET" url="/streams/{stream_key}/preview">
   Get Stream Preview
 </RouteHeader>
 
 Returns a URL to a stream preview for the given [stream key](/topics/gateway-events#stream-key). Requires the `CONNECT` permission in the stream's channel.
 
-###### Response Structure
+###### Response Body
 
 | Field | Type   | Description                       |
 | ----- | ------ | --------------------------------- |
@@ -172,6 +396,18 @@ Uploads a stream preview for the given [stream key](/topics/gateway-events#strea
 | Field     | Type                              | Description              |
 | --------- | --------------------------------- | ------------------------ |
 | thumbnail | [image data](/reference#cdn-data) | The stream preview image |
+
+<RouteHeader method="POST" url="/streams/{stream_key}/preview/video">
+  Upload Video Stream Preview
+</RouteHeader>
+
+Uploads a stream preview video for the given [stream key](/topics/gateway-events#stream-key). User must be the owner of the stream. Returns a 204 empty response on success.
+
+###### Form Params
+
+| Field | Type          | Description                        |
+| ----- | ------------- | ---------------------------------- |
+| file  | file contents | The stream preview video to upload |
 
 <RouteHeader method="POST" url="/streams/{stream_key}/notify">
   Broadcast Stream Notification

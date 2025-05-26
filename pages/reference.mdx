@@ -1,5 +1,4 @@
 ---
-name: Reference
 sort: 2
 ---
 
@@ -238,15 +237,16 @@ Clients should operate on events and results from the API in as much of an idemp
 
 #### User Agent
 
-Clients using the HTTP API should provide a valid [User Agent](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43) which specifies information about the client library and version in the following format:
+Clients using the HTTP API should provide a valid [User Agent](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43) which specifies information about the client.
+For bots, it must contain the string `DiscordBot`. For user accounts, see the [Client Properties](#client-properties) section.
 
-###### User Agent Example
+###### Bot User Agent Example
 
 ```
 User-Agent: DiscordBot ($url, $versionNumber)
 ```
 
-Clients may append more information and metadata to the _end_ of this string as they wish.
+Clients may append more information and metadata to this string as they wish.
 
 #### Rate Limiting
 
@@ -264,6 +264,8 @@ The HTTP API accepts an optional `X-Debug-Options` header with a comma-delimited
 | ------ | ------------------------------------------------------ |
 | canary | Forcefully routes the request to the canary API        |
 | trace  | Forcefully [traces the request with APM](#apm-tracing) |
+
+All API responses include a `X-Discord-Features` header which contains the name of the API feature that the request was routed to.
 
 ###### APM Tracing
 
@@ -302,7 +304,7 @@ if __name__ == "__main__":
     generator.generate(user_id or 0)
 ```
 
-After the request is completed, the trace may be viewed by navigating to `https://app.datadoghq.com/apm/traces?query=@guid.x-client-trace-id:"{trace_id}"&showAllSpans=true` (replacing the `{trace_id}` with the value you provided).
+After the request is completed, the trace may be viewed by navigating to `https://datadog.discord.tools/apm/traces?query=@http.x_client_trace_id:"{trace_id}"&showAllSpans=true` (replacing the `{trace_id}` with the value you provided).
 
 <Alert type="info">
 
@@ -331,56 +333,62 @@ While including this header is not required, it is highly recommended due to its
 Due to the nature of client properties, the structure of this object is not well-defined, and no field is truly required.
 Additionally, types of fields are not verified, and all documented enums are merely conventions. Fields are marked as required if it's observed that they are sent in all official client properties.
 
-| Field                                           | Type     | Description                                                                                                                                                                            |
-| ----------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| os ^1^                                          | string   | The [operating system of the client](#operating-system-type)                                                                                                                           |
-| os_version                                      | string   | The operating system version (kernel version for Linux, SDK version for Android)                                                                                                       |
-| os_sdk_version?                                 | string   | The operating system SDK version                                                                                                                                                       |
-| os_arch?                                        | string   | The architecture of the operating system                                                                                                                                               |
-| app_arch?                                       | string   | The architecture of the desktop application                                                                                                                                            |
-| browser                                         | string   | The [browser the client is using](#browser-type)                                                                                                                                       |
-| browser_user_agent ^2^                          | string   | The user-agent of the client's browser, may be blank on mobile clients                                                                                                                 |
-| browser_version                                 | string   | The version of the client's browser, may be blank on mobile clients                                                                                                                    |
-| client_build_number ^1^                         | integer  | The build number of the client                                                                                                                                                         |
-| native_build_number?                            | ?integer | The [native metadata version](/topics/client-distribution#get-latest-distributed-application-manifest) of the desktop client, if using the new update system                           |
-| client_version? ^1^                             | string   | The mobile client version                                                                                                                                                              |
-| client_event_source?                            | ?string  | The [alternate event source](#client-event-source) this request originated from                                                                                                        |
-| client_performance_cpu? **(deprecated)**        | integer  | The total CPU utilization of the mobile device (in percent)                                                                                                                            |
-| client_performance_memory? **(deprecated)**     | integer  | The total memory utilization of the mobile device (in kilobytes)                                                                                                                       |
-| cpu_core_count? **(deprecated)**                | integer  | The number of CPU cores available to the mobile device                                                                                                                                 |
-| release_channel ^1^                             | string   | The [release channel of the client](#release-channel)                                                                                                                                  |
-| system_locale                                   | string   | The primary system locale                                                                                                                                                              |
-| device?                                         | string   | The model of the mobile device the client is running on                                                                                                                                |
-| device_vendor_id?                               | string   | A unique identifier for the mobile device (random UUID on Android, [IdentifierForVendor](https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor) on iOS) |
-| device_advertiser_id? **(deprecated)**          | string   | The advertiser ID of the mobile device                                                                                                                                                 |
-| design_id?                                      | integer  | The [design ID of the client](#design-id)                                                                                                                                              |
-| accessibility_support_enabled? **(deprecated)** | boolean  | Whether accessibility support is enabled                                                                                                                                               |
-| accessibility_features? **(deprecated)**        | integer  | The [accessibility features enabled on the client](#accessibility-feature-flags)                                                                                                       |
-| window_manager?                                 | string   | The Linux window manager (`env.XDG_CURRENT_DESKTOP ?? "unknown" + "," + env.GDMSESSION ?? "unknown"`)                                                                                  |
-| distro?                                         | string   | The Linux distribution (output of `lsb_release -ds`)                                                                                                                                   |
-| referrer?                                       | string   | The URL that originally referred the user to Discord                                                                                                                                   |
-| referrer_current?                               | string   | Same as `referrer` but for the current session                                                                                                                                         |
-| referring_domain?                               | string   | The domain of the URL that originally referred the user to Discord                                                                                                                     |
-| referring_domain_current?                       | string   | Same as `referring_domain` but for the current session                                                                                                                                 |
-| search_engine?                                  | string   | The [search engine that originally referred the user to Discord](#search-engine), parsed from the referrer URL                                                                         |
-| search_engine_current?                          | string   | Same as `search_engine` but for the current session                                                                                                                                    |
-| mp_keyword?                                     | string   | The search engine query that originally referred the user to Discord, parsed from the `q` or `p` parameter of the referrer URL                                                         |
-| mp_keyword_current?                             | string   | Same as `mp_keyword` but for the current session                                                                                                                                       |
-| utm_campaign?                                   | string   | The UTM campaign that originally referred the user to Discord, parsed from the `utm_campaign` parameter of the referrer URL                                                            |
-| utm_campaign_current?                           | string   | Same as `utm_campaign` but for the current session                                                                                                                                     |
-| utm_content?                                    | string   | The UTM content that originally referred the user to Discord, parsed from the `utm_content` parameter of the referrer URL                                                              |
-| utm_content_current?                            | string   | Same as `utm_content` but for the current session                                                                                                                                      |
-| utm_medium?                                     | string   | The UTM medium that originally referred the user to Discord, parsed from the `utm_medium` parameter of the referrer URL                                                                |
-| utm_medium_current?                             | string   | Same as `utm_medium` but for the current session                                                                                                                                       |
-| utm_source?                                     | string   | The UTM source that originally referred the user to Discord, parsed from the `utm_source` parameter of the referrer URL                                                                |
-| utm_source_current?                             | string   | Same as `utm_source` but for the current session                                                                                                                                       |
-| utm_term?                                       | string   | The UTM term that originally referred the user to Discord, parsed from the `utm_term` parameter of the referrer URL                                                                    |
-| utm_term_current?                               | string   | Same as `utm_term` but for the current session                                                                                                                                         |
-| has_client_mods?                                | boolean  | Whether the connecting client has modifications (e.g. BetterDiscord)                                                                                                                   |
+| Field                                           | Type     | Description                                                                                                                                                                     |
+| ----------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| os ^1^                                          | string   | The [operating system of the client](#operating-system-type)                                                                                                                    |
+| os_version                                      | string   | The operating system version (kernel version for Linux, SDK version for Android)                                                                                                |
+| os_sdk_version?                                 | string   | The operating system SDK version                                                                                                                                                |
+| os_arch?                                        | string   | The architecture of the operating system                                                                                                                                        |
+| app_arch?                                       | string   | The architecture of the desktop application                                                                                                                                     |
+| browser                                         | string   | The [browser the client is using](#browser-type)                                                                                                                                |
+| browser_user_agent ^2^                          | string   | The user-agent of the client's browser, may be blank on mobile clients                                                                                                          |
+| browser_version                                 | string   | The version of the client's browser, may be blank on mobile clients                                                                                                             |
+| client_build_number ^1^                         | integer  | The build number of the client                                                                                                                                                  |
+| native_build_number?                            | ?integer | The [native metadata version](/topics/client-distribution#get-latest-distributed-application-manifest) of the desktop client, if using the new update system                    |
+| client_version? ^1^                             | string   | The mobile client version                                                                                                                                                       |
+| client_event_source?                            | ?string  | The [alternate event source](#client-event-source) this request originated from                                                                                                 |
+| client_app_state? ^3^                           | string   | The [focus state](#client-app-state) of the client when the Gateway session was instantiated                                                                                    |
+| client_launch_id?                               | string   | A client-generated UUID used to identify the client launch                                                                                                                      |
+| client_heartbeat_session_id?                    | ?string  | A client-generated UUID representing the current persisted analytics heartbeat                                                                                                  |
+| client_performance_cpu? **(deprecated)**        | integer  | The total CPU utilization of the mobile device (in percent)                                                                                                                     |
+| client_performance_memory? **(deprecated)**     | integer  | The total memory utilization of the mobile device (in kilobytes)                                                                                                                |
+| cpu_core_count? **(deprecated)**                | integer  | The number of CPU cores available to the mobile device                                                                                                                          |
+| release_channel ^1^                             | string   | The [release channel of the client](#release-channel)                                                                                                                           |
+| system_locale                                   | string   | The primary system locale                                                                                                                                                       |
+| device?                                         | string   | The model of the mobile device the client is running on                                                                                                                         |
+| device_vendor_id?                               | string   | A unique identifier for the mobile device (UUID on Android, [IdentifierForVendor](https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor) on iOS) |
+| device_advertiser_id? **(deprecated)**          | string   | The advertiser ID of the mobile device                                                                                                                                          |
+| design_id?                                      | integer  | The [design ID of the client](#design-id)                                                                                                                                       |
+| accessibility_support_enabled? **(deprecated)** | boolean  | Whether accessibility support is enabled                                                                                                                                        |
+| accessibility_features? **(deprecated)**        | integer  | The [accessibility features enabled on the client](#accessibility-feature-flags)                                                                                                |
+| window_manager?                                 | string   | The Linux window manager (`env.XDG_CURRENT_DESKTOP ?? "unknown" + "," + env.GDMSESSION ?? "unknown"`)                                                                           |
+| distro?                                         | string   | The Linux distribution (output of `lsb_release -ds`)                                                                                                                            |
+| referrer?                                       | string   | The URL that originally referred the user to Discord                                                                                                                            |
+| referrer_current?                               | string   | Same as `referrer` but for the current session                                                                                                                                  |
+| referring_domain?                               | string   | The domain of the URL that originally referred the user to Discord                                                                                                              |
+| referring_domain_current?                       | string   | Same as `referring_domain` but for the current session                                                                                                                          |
+| search_engine?                                  | string   | The [search engine that originally referred the user to Discord](#search-engine), parsed from the referrer URL                                                                  |
+| search_engine_current?                          | string   | Same as `search_engine` but for the current session                                                                                                                             |
+| mp_keyword?                                     | string   | The search engine query that originally referred the user to Discord, parsed from the `q` or `p` parameter of the referrer URL                                                  |
+| mp_keyword_current?                             | string   | Same as `mp_keyword` but for the current session                                                                                                                                |
+| utm_campaign?                                   | string   | The UTM campaign that originally referred the user to Discord, parsed from the `utm_campaign` parameter of the referrer URL                                                     |
+| utm_campaign_current?                           | string   | Same as `utm_campaign` but for the current session                                                                                                                              |
+| utm_content?                                    | string   | The UTM content that originally referred the user to Discord, parsed from the `utm_content` parameter of the referrer URL                                                       |
+| utm_content_current?                            | string   | Same as `utm_content` but for the current session                                                                                                                               |
+| utm_medium?                                     | string   | The UTM medium that originally referred the user to Discord, parsed from the `utm_medium` parameter of the referrer URL                                                         |
+| utm_medium_current?                             | string   | Same as `utm_medium` but for the current session                                                                                                                                |
+| utm_source?                                     | string   | The UTM source that originally referred the user to Discord, parsed from the `utm_source` parameter of the referrer URL                                                         |
+| utm_source_current?                             | string   | Same as `utm_source` but for the current session                                                                                                                                |
+| utm_term?                                       | string   | The UTM term that originally referred the user to Discord, parsed from the `utm_term` parameter of the referrer URL                                                             |
+| utm_term_current?                               | string   | Same as `utm_term` but for the current session                                                                                                                                  |
+| has_client_mods?                                | boolean  | Whether the connecting client has modifications (e.g. BetterDiscord)                                                                                                            |
+| is_fast_connect? ^3^                            | boolean  | Whether the Gateway session sent the [identified](/topics/gateway#identifying) using fast connect (a preload script ran before the client was loaded)                           |
 
 ^1^ These properties are used to gate experimental features and may be required for certain endpoints. `client_version` is used instead of `client_build_number` for mobile experiments. See the [experiments documentation](/topics/experiments) for more information.
 
 ^2^ If specified, this value should match the `User-Agent` header sent by the client.
+
+^3^ These properties are only sent when [identifying](/topics/gateway#identifying) with the Gateway and are not included in the `X-Super-Properties` header.
 
 ###### Operating System Type
 
@@ -424,6 +432,13 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | ------- | ----------------------------------------------- |
 | OVERLAY | The request originated from the Discord Overlay |
 
+###### Client App State
+
+| Value     | Description                                 |
+| --------- | ------------------------------------------- |
+| focused   | The client is focused (in the foreground)   |
+| unfocused | The client is unfocused (in the background) |
+
 ###### Release Channel
 
 | Value              | Description                                                                                                           |
@@ -455,33 +470,33 @@ Additionally, types of fields are not verified, and all documented enums are mer
 
 ###### Accessibility Feature Flags
 
-| Value   | Name                               | Description                                                                    |
-| ------- | ---------------------------------- | ------------------------------------------------------------------------------ |
-| 1 << 0  | SCREENREADER                       | The user has a screen reader enabled                                           |
-| 1 << 1  | REDUCED_MOTION                     | The user has reduced motion enabled                                            |
-| 1 << 2  | REDUCED_TRANSPARENCY               | The user has reduced transparency enabled                                      |
-| 1 << 3  | HIGH_CONTRAST                      | The user has high contrast enabled                                             |
-| 1 << 4  | BOLD_TEXT                          | The user has bold text enabled                                                 |
-| 1 << 5  | GRAYSCALE                          | The user has grayscale colors enabled                                          |
-| 1 << 6  | INVERT_COLORS                      | The user has inverted colors enabled                                           |
-| 1 << 7  | PREFERS_COLOR_SCHEME_LIGHT         | The user prefers a light color scheme                                          |
-| 1 << 8  | PREFERS_COLOR_SCHEME_DARK          | The user prefers a dark color scheme                                           |
-| 1 << 9  | CHAT_FONT_SCALE_INCREASED          | The user has increased the chat font scale                                     |
-| 1 << 10 | CHAT_FONT_SCALE_DECREASED          | The user has decreased the chat font scale                                     |
-| 1 << 11 | ZOOM_LEVEL_INCREASED               | The user has increased the zoom level                                          |
-| 1 << 12 | ZOOM_LEVEL_DECREASED               | The user has decreased the zoom level                                          |
-| 1 << 13 | MESSAGE_GROUP_SPACING_INCREASED    | The user has increased the message group spacing                               |
-| 1 << 14 | MESSAGE_GROUP_SPACING_DECREASED    | The user has decreased the message group spacing                               |
-| 1 << 15 | DARK_SIDEBAR                       | The user has a dark sidebar enabled                                            |
-| 1 << 16 | REDUCED_MOTION_FROM_USER_SETTINGS  | The user has reduced motion explicitly enabled from user settings              |
-| 1 << 17 | SATURATION_LEVEL_DECREASED         | The user has decreased the saturation level                                    |
-| 1 << 18 | FORCED_COLORS                      | The user has system high-contrast forced colors enabled                        |
-| 1 << 19 | FORCED_COLORS_FROM_USER_SETTINGS   | The user has high-contrast forced colors explicitly enabled from user settings |
-| 1 << 20 | ROLE_STYLE_ADJUSTED                | The user has adjusted role styles                                              |
-| 1 << 21 | SYNC_PROFILE_THEME_WITH_USER_THEME | The user has enabled syncing the user profile theme with the client theme      |
-| 1 << 22 | REDUCED_MOTION_PREFERS_CROSSFADES  | The user has reduced motion enabled and prefers crossfades                     |
-| 1 << 23 | CONTRAST_LEVEL_INCREASED           | The user has increased the contrast level                                      |
-| 1 << 24 | CONTRAST_LEVEL_DECREASED           | The user has decreased the contrast level                                      |
+| Value   | Name                               | Description                                                                |
+| ------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| 1 << 0  | SCREENREADER                       | User has a screen reader enabled                                           |
+| 1 << 1  | REDUCED_MOTION                     | User has reduced motion enabled                                            |
+| 1 << 2  | REDUCED_TRANSPARENCY               | User has reduced transparency enabled                                      |
+| 1 << 3  | HIGH_CONTRAST                      | User has high contrast enabled                                             |
+| 1 << 4  | BOLD_TEXT                          | User has bold text enabled                                                 |
+| 1 << 5  | GRAYSCALE                          | User has grayscale colors enabled                                          |
+| 1 << 6  | INVERT_COLORS                      | User has inverted colors enabled                                           |
+| 1 << 7  | PREFERS_COLOR_SCHEME_LIGHT         | User prefers a light color scheme                                          |
+| 1 << 8  | PREFERS_COLOR_SCHEME_DARK          | User prefers a dark color scheme                                           |
+| 1 << 9  | CHAT_FONT_SCALE_INCREASED          | User has increased the chat font scale                                     |
+| 1 << 10 | CHAT_FONT_SCALE_DECREASED          | User has decreased the chat font scale                                     |
+| 1 << 11 | ZOOM_LEVEL_INCREASED               | User has increased the zoom level                                          |
+| 1 << 12 | ZOOM_LEVEL_DECREASED               | User has decreased the zoom level                                          |
+| 1 << 13 | MESSAGE_GROUP_SPACING_INCREASED    | User has increased the message group spacing                               |
+| 1 << 14 | MESSAGE_GROUP_SPACING_DECREASED    | User has decreased the message group spacing                               |
+| 1 << 15 | DARK_SIDEBAR                       | User has a dark sidebar enabled                                            |
+| 1 << 16 | REDUCED_MOTION_FROM_USER_SETTINGS  | User has reduced motion explicitly enabled from user settings              |
+| 1 << 17 | SATURATION_LEVEL_DECREASED         | User has decreased the saturation level                                    |
+| 1 << 18 | FORCED_COLORS                      | User has system high-contrast forced colors enabled                        |
+| 1 << 19 | FORCED_COLORS_FROM_USER_SETTINGS   | User has high-contrast forced colors explicitly enabled from user settings |
+| 1 << 20 | ROLE_STYLE_ADJUSTED                | User has adjusted role styles                                              |
+| 1 << 21 | SYNC_PROFILE_THEME_WITH_USER_THEME | User has enabled syncing the user profile theme with the client theme      |
+| 1 << 22 | REDUCED_MOTION_PREFERS_CROSSFADES  | User has reduced motion enabled and prefers crossfades                     |
+| 1 << 23 | CONTRAST_LEVEL_INCREASED           | User has increased the contrast level                                      |
+| 1 << 24 | CONTRAST_LEVEL_DECREASED           | User has decreased the contrast level                                      |
 
 ###### Search Engine
 
@@ -500,8 +515,8 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "browser": "Chrome",
   "device": "",
   "system_locale": "en-US",
-  "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0",
-  "browser_version": "124.0.0.0",
+  "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+  "browser_version": "136.0.0.0",
   "os_version": "10",
   "referrer": "https://www.reddit.com/",
   "referring_domain": "www.reddit.com",
@@ -510,9 +525,11 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "search_engine_current": "google",
   "mp_keyword_current": "discord",
   "release_channel": "stable",
-  "client_build_number": 290453,
+  "client_build_number": 396858,
   "client_event_source": null,
-  "has_client_mods": false
+  "has_client_mods": false,
+  "client_launch_id": "9a65c85b-401d-4cf0-9c17-9676a68a482c",
+  "client_heartbeat_session_id": "2fc3cabd-3ca0-4716-b399-496780c302d1"
 }
 ```
 
@@ -523,18 +540,20 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "os": "Windows",
   "browser": "Discord Client",
   "release_channel": "canary",
-  "client_version": "1.0.341",
-  "os_version": "10.0.26090",
+  "client_version": "1.0.328",
+  "os_version": "10.0.26100",
   "os_arch": "x64",
   "app_arch": "x64",
   "system_locale": "en-US",
   "has_client_mods": false,
-  "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.341 Chrome/120.0.6099.291 Electron/28.2.10 Safari/537.36",
-  "browser_version": "28.2.10",
-  "os_sdk_version": "26120",
-  "client_build_number": 290668,
-  "native_build_number": 47493,
-  "client_event_source": null
+  "client_launch_id": "466a709c-1d91-442d-a35f-34e8c834736e",
+  "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.328 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
+  "browser_version": "35.1.5",
+  "os_sdk_version": "26100",
+  "client_build_number": 397417,
+  "native_build_number": 63309,
+  "client_event_source": null,
+  "client_heartbeat_session_id": "b789aacc-2579-489a-9dc8-2aa440519ae6"
 }
 ```
 
@@ -545,18 +564,20 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "os": "Mac OS X",
   "browser": "Discord Client",
   "release_channel": "ptb",
-  "client_version": "0.0.113",
-  "os_version": "23.4.0",
+  "client_version": "0.0.171",
+  "os_version": "24.2.0",
   "os_arch": "arm64",
   "app_arch": "arm64",
   "system_locale": "en-US",
   "has_client_mods": false,
-  "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.113 Chrome/120.0.6099.291 Electron/28.2.10 Safari/537.36",
-  "browser_version": "28.2.10",
-  "os_sdk_version": "23",
-  "client_build_number": 290668,
+  "client_launch_id": "c1f90baa-5390-43bd-a5eb-36a77d0c17c1",
+  "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.171 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
+  "browser_version": "35.1.5",
+  "os_sdk_version": "24",
+  "client_build_number": 397030,
   "native_build_number": null,
-  "client_event_source": null
+  "client_event_source": null,
+  "client_heartbeat_session_id": "63efcf64-bfd4-48b3-bdb6-57e643c7f1e0"
 }
 ```
 
@@ -567,23 +588,32 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "os": "Linux",
   "browser": "Discord Client",
   "release_channel": "canary",
-  "client_version": "0.0.381",
+  "client_version": "0.0.670",
   "os_version": "5.15.153.1-microsoft-standard-WSL2",
   "os_arch": "x64",
   "app_arch": "x64",
   "system_locale": "en-US",
   "has_client_mods": false,
-  "browser_user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.381 Chrome/120.0.6099.291 Electron/28.2.10 Safari/537.36",
-  "browser_version": "28.2.10",
+  "client_launch_id": "ee3d1bb9-761a-426e-a9e4-4962295ca5df",
+  "browser_user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.670 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
+  "browser_version": "35.1.5",
   "window_manager": "Hyprland,unknown",
-  "distro": "Ubuntu 22.04.4 LTS",
-  "client_build_number": 290668,
+  "distro": "Ubuntu 24.04.4 LTS",
+  "client_build_number": 397417,
   "native_build_number": null,
-  "client_event_source": null
+  "client_event_source": null,
+  "client_heartbeat_session_id": "9345ac0b-2bbb-43f8-89c1-5cf190fbb61d"
 }
 ```
 
 ###### Example Client Properties (Android)
+
+<Alert>
+
+Given a client version of 280.2 and a release channel of alpha, the user agent version is derived like so:
+`280` for major version + `0/1/2` for stable/beta/alpha + `02` for minor version -> `280202`.
+
+</Alert>
 
 ```json
 {
@@ -592,15 +622,17 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "device": "a20e", // Samsung Galaxy A20e
   "system_locale": "en-US",
   "has_client_mods": false,
-  "client_version": "262.5 - rn",
+  "client_version": "280.2 - rn",
   "release_channel": "alpha",
   "device_vendor_id": "17503929-a4b8-4490-87bf-0222adfdadc8",
   "design_id": 2,
-  "browser_user_agent": "", // While it is not provided here, the User-Agent header is Discord-Android/262205;RNA
+  "browser_user_agent": "", // While it is not provided here, the User-Agent header is Discord-Android/280202;RNA
   "browser_version": "",
   "os_version": "34", // Android 14
-  "client_build_number": 3463,
-  "client_event_source": null
+  "client_build_number": 4025,
+  "client_event_source": null,
+  "client_launch_id": "9a65c85b-401d-4cf0-9c17-9676a68a482c",
+  "client_heartbeat_session_id": "2fc3cabd-3ca0-4716-b399-496780c302d1"
 }
 ```
 
@@ -621,7 +653,9 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "browser_version": "",
   "os_version": "17.4.1",
   "client_build_number": 58755,
-  "client_event_source": null
+  "client_event_source": null,
+  "client_launch_id": "9a65c85b-401d-4cf0-9c17-9676a68a482c",
+  "client_heartbeat_session_id": "2fc3cabd-3ca0-4716-b399-496780c302d1"
 }
 ```
 
@@ -712,41 +746,43 @@ In the case of endpoints that support animated images, the hash will begin with 
 
 ###### CDN Endpoints
 
-| Type                             | Path                                                                                                                                                                                                                                                                                                       | Supports                  |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Achievement Icon                 | /app-assets/[{application_id}](/resources/application#application-object)/achievements/{achievement_id}/icons/icon_hash.png                                                                                                                                                                                | PNG, JPEG, WebP           |
-| Application Icon                 | /app-icons/[{application_id}](/resources/application#application-object)/[{application_icon}](/resources/application#application-object).png                                                                                                                                                               | PNG, JPEG, WebP           |
-| Application Cover                | /app-icons/[{application_id}](/resources/application#application-object)/[{application_cover_image}](/resources/application#application-object).png                                                                                                                                                        | PNG, JPEG, WebP           |
-| Application Splash               | /app-icons/[{application_id}](/resources/application#application-object)/[{application_splash}](/resources/application#application-object).png                                                                                                                                                             | PNG, JPEG, WebP           |
-| Application Asset                | /app-assets/[{application_id}](/resources/application#application-object)/[{asset_id}](/resources/application#application-asset-object).png                                                                                                                                                                | PNG, JPEG, WebP           |
-| Application Directory Collection | /application-directory/collection-items/{item_id}/{item_hash}.png                                                                                                                                                                                                                                          | PNG, JPEG, WebP           |
-| Attachment ^2^                   | /attachments/[{channel_id}](/resources/channel#channel-object)/[{message_id]/[attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                                                                                          | Uploaded format ^4^       |
-| Ephemeral Attachment ^2^         | /ephemeral-attachments/[{application_id}](/resources/application#application-object)/[{attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                                                                                 | Uploaded format ^4^       |
-| Avatar Decoration Preset         | /avatar-decoration-presets/[{avatar_decoration_data_asset}](/resources/user#avatar-decoration-data-structure).png                                                                                                                                                                                          | PNG, JPEG, WebP           |
-| Channel Icon                     | /channels/[{channel_id}](/resources/channel#channel-object)/icons/[{channel_icon}](/resources/channel#channel-object).png                                                                                                                                                                                  | PNG, JPEG, WebP           |
-| Clan Badge                       | /clan-badges/[{guild_id}](/resources/guild#guild-object)/[{badge_hash}](/resources/clan#clan-object).png                                                                                                                                                                                                   | PNG                       |
-| Clan Banner                      | /clan-banners/[{guild_id}](/resources/guild#guild-object)/[{banner_hash}](/resources/clan#clan-object).png                                                                                                                                                                                                 | PNG                       |
-| Custom Emoji                     | /emojis/[{emoji_id}](/resources/emoji#emoji-object).png                                                                                                                                                                                                                                                    | PNG, JPEG, WebP, GIF      |
-| Guild Icon                       | /icons/[{guild_id}](/resources/guild#guild-object)/[{guild_icon}](/resources/guild#guild-object).png                                                                                                                                                                                                       | PNG, JPEG, WebP, GIF      |
-| Guild Splash                     | /splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_splash}](/resources/guild#guild-object).png                                                                                                                                                                                                  | PNG, JPEG, WebP           |
-| Guild Discovery Splash           | /discovery-splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_discovery_splash}](/resources/guild#guild-object).png                                                                                                                                                                              | PNG, JPEG, WebP           |
-| Guild Banner                     | /banners/[{guild_id}](/resources/guild#guild-object)/[{guild_banner}](/resources/guild#guild-object).png                                                                                                                                                                                                   | PNG, JPEG, WebP, GIF      |
-| Guild Home Header                | /guilds/[{guild_id}](/resources/guild#guild-object)/home-headers/[{guild_home_header}](/resources/guild#guild-object).png                                                                                                                                                                                  | PNG, JPEG, WebP           |
-| Guild Scheduled Event Cover      | /guild-events/[{scheduled_event_id}](/resources/guild-scheduled-event#guild-scheduled-event-object)/[{scheduled_event_cover_image}](/resources/guild-scheduled-event#guild-scheduled-event-object).png                                                                                                     | PNG, JPEG, WebP           |
-| Guild Member Avatar              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/avatars/[{user_avatar}](/resources/user#user-object).png                                                                                                                                                | PNG, JPEG, WebP, GIF      |
-| Guild Member Banner              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/banners/[{user_banner}](/resources/user#user-object).png                                                                                                                                                | PNG, JPEG, WebP, GIF      |
-| Profile Badge                    | /badge-icons/[{badge_icon}](/resources/user#profile-badge-structure).png                                                                                                                                                                                                                                   | PNG                       |
-| Quest Asset ^5^                  | /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{asset_name}](/resources/quests#quest-assets-structure).png, /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{theme}](/resources/user-settings#legacy-client-theme)/[{asset_name}](/resources/quests#quest-assets-structure).png | PNG, JPEG, GIF, SVG, WebM |
-| Role Icon                        | /roles/[{role_id}](/topics/permissions#role-object)/icons/[{role_icon}](/topics/permissions#role-object).png                                                                                                                                                                                               | PNG, JPEG, WebP           |
-| Soundboard Sound                 | /soundboard-sounds/{sound_id}                                                                                                                                                                                                                                                                              | MP3, OGG                  |
-| Sticker ^2^ ^3^                  | /stickers/[{sticker_id}](/resources/sticker#sticker-object).png                                                                                                                                                                                                                                            | PNG, Lottie, GIF          |
-| Sticker Pack Banner              | /app-assets/710982414301790216/store/[{asset_id}](/resources/sticker#sticker-pack-object).png                                                                                                                                                                                                              | PNG, JPEG, WebP           |
-| Stream Preview                   | /streams/[{stream_key}](/topics/gateway-events#stream-key)/{thumbnail_hash}.png                                                                                                                                                                                                                            | PNG, JPEG, WebP           |
-| Team Icon                        | /team-icons/[{team_id}](/resources/team#team-object)/[{team_icon}](/resources/team#team-object).png                                                                                                                                                                                                        | PNG, JPEG, WebP           |
-| User Avatar                      | /avatars/[{user_id}](/resources/user#user-object)/[{user_avatar}](/resources/user#user-object).png                                                                                                                                                                                                         | PNG, JPEG, WebP, GIF      |
-| Default User Avatar ^1^ ^2^      | /embed/avatars/[{user_index}](/resources/user#user-object).png                                                                                                                                                                                                                                             | PNG                       |
-| User Banner                      | /banners/[{user_id}](/resources/user#user-object)/[{user_banner}](/resources/user#user-object).png                                                                                                                                                                                                         | PNG, JPEG, WebP, GIF      |
-| Video Filter                     | /users/[{user_id}](/resources/user#user-object)/video-filter-assets/{video_filter_id}/{video_filter_asset}.png                                                                                                                                                                                             | PNG, JPEG, GIF, MP4, WEBP |
+| Type                             | Path                                                                                                                                                                                                                                                                                 | Supports                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Achievement Icon                 | /app-assets/[{application_id}](/resources/application#application-object)/achievements/{achievement_id}/icons/icon_hash.png                                                                                                                                                          | PNG, JPEG, WebP                                      |
+| Application Icon                 | /app-icons/[{application_id}](/resources/application#application-object)/[{application_icon}](/resources/application#application-object).png                                                                                                                                         | PNG, JPEG, WebP                                      |
+| Application Cover                | /app-icons/[{application_id}](/resources/application#application-object)/[{application_cover_image}](/resources/application#application-object).png                                                                                                                                  | PNG, JPEG, WebP                                      |
+| Application Splash               | /app-icons/[{application_id}](/resources/application#application-object)/[{application_splash}](/resources/application#application-object).png                                                                                                                                       | PNG, JPEG, WebP                                      |
+| Application Asset                | /app-assets/[{application_id}](/resources/application#application-object)/[{asset_id}](/resources/application#application-asset-object).png                                                                                                                                          | PNG, JPEG, WebP                                      |
+| Application Directory Collection | /application-directory/collection-items/{item_id}/{item_hash}.png                                                                                                                                                                                                                    | PNG, JPEG, WebP                                      |
+| Attachment ^2^                   | /attachments/[{channel_id}](/resources/channel#channel-object)/[{message_id]/[attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                                                                    | Uploaded format ^4^                                  |
+| Ephemeral Attachment ^2^         | /ephemeral-attachments/[{application_id}](/resources/application#application-object)/[{attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                                                           | Uploaded format ^4^                                  |
+| Avatar Decoration Preset         | /avatar-decoration-presets/[{avatar_decoration_data_asset}](/resources/user#avatar-decoration-data-structure).png                                                                                                                                                                    | PNG, JPEG, WebP                                      |
+| Channel Icon                     | /channels/[{channel_id}](/resources/channel#channel-object)/icons/[{channel_icon}](/resources/channel#channel-object).png                                                                                                                                                            | PNG, JPEG, WebP                                      |
+| Clan Badge                       | /clan-badges/[{guild_id}](/resources/guild#guild-object)/[{badge_hash}](/resources/discovery#guild-profile-object).png                                                                                                                                                               | PNG                                                  |
+| Clan Banner                      | /clan-banners/[{guild_id}](/resources/guild#guild-object)/[{banner_hash}](/resources/discovery#guild-profile-object).png                                                                                                                                                             | PNG                                                  |
+| Custom Emoji                     | /emojis/[{emoji_id}](/resources/emoji#emoji-object).png                                                                                                                                                                                                                              | PNG, JPEG, WebP, GIF                                 |
+| Guild Icon                       | /icons/[{guild_id}](/resources/guild#guild-object)/[{guild_icon}](/resources/guild#guild-object).png                                                                                                                                                                                 | PNG, JPEG, WebP, GIF                                 |
+| Guild Splash                     | /splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_splash}](/resources/guild#guild-object).png                                                                                                                                                                            | PNG, JPEG, WebP                                      |
+| Guild Discovery Splash           | /discovery-splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_discovery_splash}](/resources/guild#guild-object).png                                                                                                                                                        | PNG, JPEG, WebP                                      |
+| Guild Banner                     | /banners/[{guild_id}](/resources/guild#guild-object)/[{guild_banner}](/resources/guild#guild-object).png                                                                                                                                                                             | PNG, JPEG, WebP, GIF                                 |
+| Guild Home Header                | /guilds/[{guild_id}](/resources/guild#guild-object)/home-headers/[{guild_home_header}](/resources/guild#guild-object).png                                                                                                                                                            | PNG, JPEG, WebP                                      |
+| Guild Scheduled Event Cover      | /guild-events/[{scheduled_event_id}](/resources/guild-scheduled-event#guild-scheduled-event-object)/[{scheduled_event_cover_image}](/resources/guild-scheduled-event#guild-scheduled-event-object).png                                                                               | PNG, JPEG, WebP                                      |
+| Guild Member Avatar              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/avatars/[{user_avatar}](/resources/user#user-object).png                                                                                                                          | PNG, JPEG, WebP, GIF                                 |
+| Guild Member Banner              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/banners/[{user_banner}](/resources/user#user-object).png                                                                                                                          | PNG, JPEG, WebP, GIF                                 |
+| Nameplate                        | /assets/collectibles/[{asset_path}](/resources/user#nameplate-data-structure){asset_name} ^6^                                                                                                                                                                                        | PNG, WebM                                            |
+| Profile Badge                    | /badge-icons/[{badge_icon}](/resources/user#profile-badge-structure).png                                                                                                                                                                                                             | PNG                                                  |
+| Quest Asset ^5^                  | /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{asset_name}](/resources/quests#quest-assets-structure), /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{theme}](/resources/user-settings#theme)/[{asset_name}](/resources/quests#quest-assets-structure) | PNG, JPEG, GIF, SVG, WebP, WebM, MP4, M3U8, VTT, TXT |
+| Role Icon                        | /roles/[{role_id}](/resources/guild#role-object)/icons/[{role_icon}](/resources/guild#role-object).png                                                                                                                                                                               | PNG, JPEG, WebP                                      |
+| Soundboard Sound                 | /soundboard-sounds/{sound_id}                                                                                                                                                                                                                                                        | MP3, OGG                                             |
+| Sticker ^2^ ^3^                  | /stickers/[{sticker_id}](/resources/sticker#sticker-object).png                                                                                                                                                                                                                      | PNG, Lottie, GIF                                     |
+| Sticker Pack Banner              | /app-assets/710982414301790216/store/[{asset_id}](/resources/sticker#sticker-pack-object).png                                                                                                                                                                                        | PNG, JPEG, WebP                                      |
+| Stream Preview                   | /streams/[{stream_key}](/topics/gateway-events#stream-key)/{thumbnail_hash}.png                                                                                                                                                                                                      | PNG, JPEG, WebP                                      |
+| Team Icon                        | /team-icons/[{team_id}](/resources/team#team-object)/[{team_icon}](/resources/team#team-object).png                                                                                                                                                                                  | PNG, JPEG, WebP                                      |
+| User Avatar                      | /avatars/[{user_id}](/resources/user#user-object)/[{user_avatar}](/resources/user#user-object).png                                                                                                                                                                                   | PNG, JPEG, WebP, GIF                                 |
+| User Archived Avatar             | /avatars/[{user_id}](/resources/user#user-object)/archived/[{avatar_id}](/resources/user#avatar-structure)/[{avatar_storage_hash}](/resources/user#avatar-structure).png                                                                                                             | PNG, JPEG, WebP, GIF                                 |
+| Default User Avatar ^1^ ^2^      | /embed/avatars/[{user_index}](/resources/user#user-object).png                                                                                                                                                                                                                       | PNG                                                  |
+| User Banner                      | /banners/[{user_id}](/resources/user#user-object)/[{user_banner}](/resources/user#user-object).png                                                                                                                                                                                   | PNG, JPEG, WebP, GIF                                 |
+| Video Filter                     | /users/[{user_id}](/resources/user#user-object)/video-filter-assets/[{video_filter_id}](/resources/user-settings-proto#video-filter-asset-structure)/[{video_filter_asset}](/resources/user-settings-proto#video-filter-asset-structure).png                                         | PNG, JPEG, GIF, MP4, WEBP                            |
 
 ^1^ The value for `user_index` in the path for migrated users should be the user's ID shifted 22 bits to the left modulo 6 (i.e. `user_id >> 22 % 6`). The value for non-migrated users the user's discriminator modulo 5 (Test#1337 would be `1337 % 5`, which evaluates to 2). The value for teams should be the team's ID modulo 5 (i.e. `team_id % 5`). See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
 
@@ -756,7 +792,9 @@ In the case of endpoints that support animated images, the hash will begin with 
 
 ^4^ The attachment will only be available in its uploaded format, which can be any format.
 
-^5^ The [theme](/resources/user-settings#legacy-client-theme) path is only used for fetching the [`game_tile` and `logotype` assets](/resources/quests#quest-assets-structure).
+^5^ The [theme](/resources/user-settings#theme) path is only used for fetching the [`game_tile` and `logotype` assets](/resources/quests#quest-assets-structure). Only `dark` and `light` are supported.
+
+^6^ Valid asset names are limited to: `img.png`, `static.png`, `asset.webm`.
 
 ##### CDN Parameters
 
@@ -786,7 +824,7 @@ The quality of the image to return. Only supported with WebP and JPG formats (th
 
 Attachments uploaded to Discord's CDN (like user-uploaded images) have signed URLs with a preset expiry time. This includes ephemeral attachments. Discord automatically refreshes attachment CDN URLs that appear within the client, so when you receive a payload with a signed URL (like when you [fetch a message](/resources/message#get-messages)), it will be valid.
 
-When passing CDN URLs into API fields, like [`url` in an embed image object](/resources/message#embed-image-structure) and [`avatar_url` for webhooks](/resources/webhook#execute-webhook), or when simply sending a message, you can pass the CDN URL without any parameters as the value and Discord will automatically render and refresh the URL.
+When passing CDN URLs into API fields, like [`url` in an embed image object](/resources/message#embed-media-structure) and [`avatar_url` for webhooks](/resources/webhook#execute-webhook), or when simply sending a message, you can pass the CDN URL without any parameters as the value and Discord will automatically render and refresh the URL.
 
 If you need to refresh an attachment URL manually, you can use the [Refresh Attachment URLs](/resources/message#refresh-attachment-urls) endpoint with any URL.
 
@@ -819,11 +857,27 @@ Ensure you use the proper content type (e.g. `image/jpeg`, `image/png`, `image/g
 
 ## Uploading Files
 
+<Collapsible title="Upload Limits" description="How are file upload limits calculated?" icon="list">
+
+The file upload size limit applies to each file in a request. The default limit is **10 MiB** for all users, but may be higher depending on their [premium type](https://support.discord.com/hc/en-us/articles/115000435108)
+or the target guild's [premium tier](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-FAQ), whichever is higher. The table below summarizes the raised limits:
+
 <Alert type="info">
 
-A file upload size limit applies to _all_ files in a request (rather than each individual file). While the limit depends on the [**premium tier (boost level)**](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-FAQ-#h_419c3bd5-addd-4989-b7cf-c7957ef92583) of a guild, it is 10 MiB by default.
+Note that Cloudflare enforces a maximum request size of less than **200 MiB**. Exceeding this limit will fail with a 413 payload too large.
+To upload files larger than **200 MiB**, you must utilize [Google Cloud uploads](#uploading-to-google-cloud).
 
 </Alert>
+
+| Resource                                            | Tier     | Limit       |
+| --------------------------------------------------- | -------- | ----------- |
+| [User premium type](/resources/user#premium-type)   | `TIER_1` | **50 MiB**  |
+| [User premium type](/resources/user#premium-type)   | `TIER_2` | **500 MiB** |
+| [User premium type](/resources/user#premium-type)   | `TIER_3` | **50 MiB**  |
+| [Guild premium tier](/resources/guild#premium-tier) | `TIER_2` | **50 MiB**  |
+| [Guild premium tier](/resources/guild#premium-tier) | `TIER_3` | **100 MiB** |
+
+</Collapsible>
 
 Some endpoints support file attachments, indicated by the `files[n]` parameter. To add file(s), the standard `application/json` body must be replaced by a `multipart/form-data` body. The JSON message body can optionally be provided using the `payload_json` parameter.
 
@@ -897,7 +951,8 @@ Content-Type: image/gif
 
 ###### Using Attachments within Embeds
 
-You can upload attachments when creating a message and use those attachments within your embed. To do this, you will want to upload files as part of your `multipart/form-data` body. Make sure that you're uploading files which contain a filename, as you will need to reference it in your payload.
+You can upload attachments when creating a message and use those attachments within your embed. To do this, you will want to upload files as part of your `multipart/form-data` body.
+Make sure that you're uploading files which contain a filename, as you will need to reference it in your payload. Note that filenames are normalized by Discord, so sending exotic characters in the filename may lead to unexpected results.
 
 <Alert type="warn">
 
@@ -925,7 +980,7 @@ For example:
 
 You can upload large attachments quickly directly to Discord's Google Cloud storage bucket, using the [Create Attachments](/resources/message#create-attachments) endpoint to generate upload URLs, and sending each generated URL a `PUT` request with the intended attachment as the body.
 
-When using Google Cloud uploads, the file upload size limit applies to individual files, rather than the entire request.
+This allows you to sidestep the Discord request size limit of **200 MiB** and upload up a file up to **500 MiB** directly to Google Cloud. Note that [file size limits](#uploading-files) will still apply when sending the attachment in a message.
 
 An example implementation in Python pseudocode would be:
 
@@ -939,7 +994,7 @@ headers = {
     "Authorization": "Bot <bot_token>"
 }
 
-filename = "index.js"
+filename = "cat.png"
 size = os.stat(filename).st_size
 
 json = {
