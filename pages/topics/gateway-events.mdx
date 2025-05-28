@@ -71,6 +71,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Ping Stream Server](#ping-stream-server)                     | Ping a user's stream voice server                                 |
 | [Request Guild Members](#request-guild-members)               | Request members for one or more guilds                            |
 | [Request Call Connect](#request-call-connect)                 | Request a private channels's pre-existing call information        |
+| [Update Lobby Voice States](#update-lobby-voice-states)       | Update voice states for multiple lobbies                          |
 | Update Guild Subscriptions                                    | Update subscriptions for a guild                                  |
 | Request Forum Unreads                                         | Request thread-only channel unread counts                         |
 | [Remote Command](<#remote-command-(send)>)                    | Send a message to another Gateway session                         |
@@ -283,6 +284,23 @@ Sent when a client wants to request that the Gateway pings a misbehaving voice s
   "d": null
 }
 ```
+
+#### Update Lobby Voice States
+
+Sent by the client to update the user's voice state in multiple lobbies. Fires a [Lobby Voice State Update](#lobby-voice-state-update) and optionally [Lobby Voice Server Update](#lobby-voice-server-update) Gateway event.
+
+The inner `d` key is an array of the following objects:
+
+###### Update Lobby Voice State Structure
+
+| Field              | Type          | Description                                                                         |
+| ------------------ | ------------- | ----------------------------------------------------------------------------------- |
+| lobby_id           | snowflake     | The ID of the lobby                                                                 |
+| self_mute          | boolean       | Whether the client is muted                                                         |
+| self_deaf          | boolean       | Whether the client is deafened                                                      |
+| self_video?        | boolean       | Whether the client is streaming video to the channel                                |
+| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
+| preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the lobby   |
 
 #### Create Stream
 
@@ -774,8 +792,8 @@ These events directly correspond with a specific action or state change that has
 | [Guild Join Request Update](#guild-join-request-update)                             | Guild join request was updated                                                                  |
 | [Guild Join Request Delete](#guild-join-request-delete)                             | Guild join request was deleted                                                                  |
 | [Guild Member Add](#guild-member-add)                                               | User joined a guild                                                                             |
-| [Guild Member Remove](#guild-member-remove)                                         | User was removed from a guild                                                                   |
 | [Guild Member Update](#guild-member-update)                                         | Guild member was updated                                                                        |
+| [Guild Member Remove](#guild-member-remove)                                         | User was removed from a guild                                                                   |
 | [Guild Members Chunk](#guild-members-chunk)                                         | Response to [Request Guild Members](#request-guild-members)                                     |
 | [Guild Role Create](#guild-role-create)                                             | Guild role was created                                                                          |
 | [Guild Role Update](#guild-role-update)                                             | Guild role was updated                                                                          |
@@ -823,6 +841,17 @@ These events directly correspond with a specific action or state change that has
 | [Relationship Remove](#relationship-remove)                                         | User had a relationship removed                                                                 |
 | [Game Relationship Add](#game-relationship-add)                                     | User had a game relationship added                                                              |
 | [Game Relationship Remove](#game-relationship-remove)                               | User had a game relationship removed                                                            |
+| [Lobby Create](#lobby-create)                                                       | Lobby was created                                                                               |
+| [Lobby Update](#lobby-update)                                                       | Lobby was updated                                                                               |
+| [Lobby Delete](#lobby-delete)                                                       | Lobby was deleted                                                                               |
+| [Lobby Member Add](#lobby-member-add)                                               | User was added to a lobby                                                                       |
+| [Lobby Member Update](#lobby-member-update)                                         | Lobby member was updated                                                                        |
+| [Lobby Member Remove](#lobby-member-remove)                                         | User was removed from a lobby                                                                   |
+| [Lobby Message Create](#lobby-message-create)                                       | Message was created in a lobby                                                                  |
+| [Lobby Message Update](#lobby-message-update)                                       | Message was updated in a lobby                                                                  |
+| [Lobby Message Delete](#lobby-message-delete)                                       | Message was deleted in a lobby                                                                  |
+| [Lobby Voice State Update](#lobby-voice-state-update)                               | User joined, left, or moved lobbies                                                             |
+| [Lobby Voice Server Update](#lobby-voice-server-update)                             | Lobby voice connection server was updated                                                       |
 | [Saved Message Create](#saved-message-create)                                       | Message was bookmarked                                                                          |
 | [Saved Message Delete](#saved-message-delete)                                       | Bookmarked message was deleted                                                                  |
 | [Sessions Replace](#sessions-replace)                                               | User session list was updated                                                                   |
@@ -895,6 +924,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | experiments ^1^                        | array[[user experiment](/topics/experiments#user-experiments) object]                                                      | User experiment rollouts for the user                                                                                                                                                                                                                                  |
 | guild_experiments ^1^                  | array[[guild experiment](/topics/experiments#guild-experiments) object]                                                    | Guild experiment rollouts for the user                                                                                                                                                                                                                                 |
 | explicit_content_scan_version          | integer                                                                                                                    | The latest version of the explicit content scan filter feature                                                                                                                                                                                                         |
+| lobbies? ^10^ ^11^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -913,6 +943,10 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 ^8^ The tutorial state is cleared after a period of inactivity. A `null` tutorial means no indicators will be shown.
 
 ^9^ The field will be a [versioned array](#versioned-structure) if the `VERSIONED_USER_GUILD_SETTINGS` [Gateway capability](/topics/gateway#gateway-capabilities) is enabled. Otherwise, it will be a regular array.
+
+^10^ Only available in OAuth2 contexts.
+
+^11^ Requires the `AUTO_LOBBY_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities).
 
 ###### Session Type
 
@@ -1625,30 +1659,11 @@ Sent when a new user joins a guild. The inner payload is a [guild member](/resou
 
 For user accounts, this event is only sent for themselves. Users are not automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) or users they have an open DM with upon them joining.
 
-###### Guild Member Add Extra Fields
+###### Guild Member Add Structure Extra Fields
 
 | Field    | Type      | Description         |
 | -------- | --------- | ------------------- |
 | guild_id | snowflake | The ID of the guild |
-
-#### Guild Member Remove
-
-<Alert type="warn">
-
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
-
-</Alert>
-
-Sent when a user is removed from a guild (leave/kick/ban).
-
-For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
-
-###### Guild Member Remove Structure
-
-| Field    | Type                                       | Description         |
-| -------- | ------------------------------------------ | ------------------- |
-| guild_id | snowflake                                  | The ID of the guild |
-| user     | [user](/resources/user#user-object) object | The removed user    |
 
 #### Guild Member Update
 
@@ -1683,6 +1698,25 @@ For user accounts, this event is only sent for members they are subscribed to, a
 ^1^ Won't be included in contexts that are impossible for a pending member to exist in.
 
 ^2^ If the value is a time in the past, the member's timeout has expired and they can communicate again. An event will not be sent when this happens.
+
+#### Guild Member Remove
+
+<Alert type="warn">
+
+If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+
+</Alert>
+
+Sent when a user is removed from a guild (leave/kick/ban).
+
+For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
+
+###### Guild Member Remove Structure
+
+| Field    | Type                                       | Description         |
+| -------- | ------------------------------------------ | ------------------- |
+| guild_id | snowflake                                  | The ID of the guild |
+| user     | [user](/resources/user#user-object) object | The removed user    |
 
 #### Guild Members Chunk
 
@@ -2214,6 +2248,173 @@ Sent when a game relationship is removed, relevant to the current user.
 | since          | ISO8601 timestamp | When the user requested a relationship                                              |
 | dm_access_type | integer           | The [DM access level](/resources/relationships#dm-access-type) for the relationship |
 | user_id        | snowflake         | The ID of the current user                                                          |
+
+### Lobbies
+
+#### Gateway Lobby Object
+
+[Lobby](/resources/lobby#lobby-object) objects received over the Gateway have extended attributes that are not provided in the REST API.
+
+###### Gateway Lobby Structure Extra Fields
+
+| Field        | Type                                                                   | Description                                                                          |
+| ------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| voice_states | array[[lobby voice state](/resources/voice#voice-state-object) object] | The voice states of the users already in the lobby                                   |
+| region       | string                                                                 | The [voice region](/resources/voice#voice-region-object) ID the lobby is hosted from |
+| metadata     | ?map[string, string]                                                   | The metadata of the lobby                                                            |
+
+###### Lobby Deletion Reason
+
+| Value   | Description           |
+| ------- | --------------------- |
+| deleted | The lobby was deleted |
+| removed | The user was removed  |
+
+#### Lobby Create
+
+Sent when a lobby is updated. The inner payload is a [gateway lobby](#gateway-lobby-object) object.
+
+#### Lobby Update
+
+Sent when a lobby is updated. The inner payload is a [gateway lobby](#gateway-lobby-object) object.
+
+#### Lobby Delete
+
+Sent when a lobby is deleted or the user is removed from a lobby.
+
+###### Lobby Delete Structure
+
+| Field  | Type      | Description                                         |
+| ------ | --------- | --------------------------------------------------- |
+| id     | snowflake | The ID of the lobby                                 |
+| reason | string    | The [lobby deletion reason](#lobby-deletion-reason) |
+
+#### Lobby Member Add
+
+Sent when an user joins a lobby.
+
+###### Lobby Member Add Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The added member                                 |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Member Connect
+
+Sent when an user joins a lobby call.
+
+###### Lobby Member Connect Structure
+
+| Field    | Type                                                        | Description                       |
+| -------- | ----------------------------------------------------------- | --------------------------------- |
+| member   | [lobby member](/resources/lobby#lobby-member-object) object | The member that joined lobby call |
+| lobby_id | snowflake                                                   | The ID of the lobby               |
+
+#### Lobby Member Disconnect
+
+Sent when an user leaves a lobby call.
+
+###### Lobby Member Disconnect Structure
+
+| Field    | Type                                                        | Description                     |
+| -------- | ----------------------------------------------------------- | ------------------------------- |
+| member   | [lobby member](/resources/lobby#lobby-member-object) object | The member that left lobby call |
+| lobby_id | snowflake                                                   | The ID of the lobby             |
+
+#### Lobby Member Update
+
+Sent when a lobby member is updated.
+
+###### Lobby Member Update Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The updated member                               |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Member Remove
+
+Sent when a lobby member is removed.
+
+###### Lobby Member Remove Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The removed member                               |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Message Create
+
+Sent when a lobby message is created. The inner payload is a [message](/resources/message#message-object) object with the [extra structure](#message-object-extra-fields) above.
+
+<Alert type="warn">
+
+When the lobby does not have a channel linked, the message will be a partial [message](/resources/message#message-object) object.
+
+</Alert>
+
+#### Lobby Message Update
+
+Sent when a lobby message is updated. The inner payload is a [message](/resources/message#message-object) object with the [extra structure](#message-object-extra-fields) above.
+
+<Alert type="warn">
+
+When the lobby does not have a channel linked, the message will be a partial [message](/resources/message#message-object) object.
+
+</Alert>
+
+<Alert type="warn">
+
+The value for `tts` will always be `false` in message updates.
+
+</Alert>
+
+#### Lobby Message Delete
+
+Sent when a lobby message is deleted.
+
+###### Message Delete Structure
+
+| Field    | Type      | Description           |
+| -------- | --------- | --------------------- |
+| id       | snowflake | The ID of the message |
+| lobby_id | snowflake | The ID of the lobby   |
+
+#### Lobby Voice State Update
+
+Sent when someone joins/leaves/moves lobbies. Inner payload is a [lobby voice state](/resources/voice#voice-state-object) object.
+
+#### Lobby Voice Server Update
+
+Sent when a lobby's voice server is updated. This is sent when initially connecting to voice, and when the current voice instance fails over to a new server.
+
+<Alert type="warn">
+
+A `null` endpoint means that the voice server allocated has gone away and is trying to be reallocated. You should attempt to disconnect from the currently connected voice server, and not attempt to reconnect until a new voice server is allocated.
+
+</Alert>
+
+###### Lobby Voice Server Update Structure
+
+| Field    | Type      | Description                               |
+| -------- | --------- | ----------------------------------------- |
+| token    | string    | The voice connection token                |
+| lobby_id | snowflake | The lobby this voice server update is for |
+| endpoint | ?string   | The voice server host                     |
+
+###### Example Lobby Voice Server Update Payload
+
+```json
+{
+  "token": "66d29164ee8cd919",
+  "lobby_id": "41771983423143937",
+  "endpoint": "smart.loyal.discord.media:443"
+}
+```
 
 ### Saved Messages
 
