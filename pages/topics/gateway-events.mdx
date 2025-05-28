@@ -90,21 +90,23 @@ Details about identifying is in the [Gateway documentation](/topics/gateway#iden
 
 ###### Identify Structure
 
-| Field            | Type                                                     | Description                                                                                                                                                                                                                                                                     |
-| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| token            | string                                                   | Authentication token                                                                                                                                                                                                                                                            |
-| properties       | [client properties](/reference#client-properties) object | Client and system information                                                                                                                                                                                                                                                   |
-| compress?        | boolean                                                  | Whether this connection uses legacy payload compression (default false)                                                                                                                                                                                                         |
-| large_threshold? | integer                                                  | Total number of members where, for bots, the Gateway will stop sending offline members in the guild member list, or, for users, stop sending non-stateful events for guilds without a subscription (25-250, default 25 for bots and 250 for users) {/* TODO: Verify default */} |
-| shard?           | array[integer, integer]                                  | The connection's shard (shard_id, num_shards), used for [connection sharding](/topics/gateway#sharding)                                                                                                                                                                         |
-| presence? ^1^    | [update presence](#update-presence-structure) object     | Initial presence information                                                                                                                                                                                                                                                    |
-| intents? ^2^     | integer                                                  | The [Gateway intents](/topics/gateway#gateway-intents) you wish to receive                                                                                                                                                                                                      |
-| capabilities?    | integer                                                  | The [Gateway capabilities](/topics/gateway#gateway-capabilities) you wish to enable                                                                                                                                                                                             |
-| client_state?    | client state object                                      | The client's current cache state, used for reducing unneeded information transmission on re-identify                                                                                                                                                                            |
+| Field             | Type                                                     | Description                                                                                                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| token             | string                                                   | Authentication token                                                                                                                                                                                                                               |
+| properties        | [client properties](/reference#client-properties) object | Client and system information                                                                                                                                                                                                                      |
+| compress?         | boolean                                                  | Whether this connection uses legacy payload compression (default false)                                                                                                                                                                            |
+| large_threshold?  | integer                                                  | Total number of members where, for bots, the Gateway will stop sending offline members in the guild member list, or, for users, stop sending non-stateful events for guilds without a subscription (25-250, default 25 for bots and 250 for users) |
+| shard?            | array[integer, integer]                                  | The connection's shard (shard_id, num_shards), used for [connection sharding](/topics/gateway#sharding)                                                                                                                                            |
+| presence? ^1^ ^3^ | [update presence](#update-presence-structure) object     | Initial presence information                                                                                                                                                                                                                       |
+| intents? ^2^      | integer                                                  | The [Gateway intents](/topics/gateway#gateway-intents) you wish to receive                                                                                                                                                                         |
+| capabilities?     | integer                                                  | The [Gateway capabilities](/topics/gateway#gateway-capabilities) you wish to enable                                                                                                                                                                |
+| client_state? ^3^ | client state object                                      | The client's current cache state, used for reducing unneeded information transmission on re-identify                                                                                                                                               |
 
 ^1^ For user accounts, the `status` and `activities` specified may not always be respected. The field should only be used when re-identifying to communicate the last known presence of the user. Otherwise, the status should be `unknown` and activities an empty array.
 
 ^2^ Required for bots on API v8 and above.
+
+^3^ Not supported in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
 ###### Example Identify
 
@@ -904,7 +906,8 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | merged_presences ^6^                   | [merged presences](#merged-presences-structure) object                                                                     | The presences of the user's non-offline [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), and any guild presences sent at startup |
 | merged_members ^6^ ^7^                 | array[array[[guild member](/resources/guild#guild-member-object) object]]                                                  | The members of the user's guilds, in the same order as the `guilds` array                                                                                                                                                                                              |
 | users ^6^                              | array[partial [user](/resources/user#user-object) object]                                                                  | The deduped users across all objects in the event                                                                                                                                                                                                                      |
-| application?                           | [gateway application](#gateway-application-structure) object                                                               | The application of the connected user, if it is a bot                                                                                                                                                                                                                  |
+| application?                           | [gateway application](#gateway-application-structure) object                                                               | The application of the connected user or OAuth2 application                                                                                                                                                                                                            |
+| scopes? ^10^                           | array[string]                                                                                                              | The [OAuth2 scopes](/topics/oauth2#oauth2-scopes) the user has authorized for the application                                                                                                                                                                          |
 | session_id                             | string                                                                                                                     | Unique session ID, used for resuming connections                                                                                                                                                                                                                       |
 | session_type                           | string                                                                                                                     | The [type of session](#session-type) that was started                                                                                                                                                                                                                  |
 | sessions ^1^                           | array[[session](/resources/presence#session-object) object]                                                                | The sessions that are currently active for the user                                                                                                                                                                                                                    |
@@ -924,6 +927,8 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | experiments ^1^                        | array[[user experiment](/topics/experiments#user-experiments) object]                                                      | User experiment rollouts for the user                                                                                                                                                                                                                                  |
 | guild_experiments ^1^                  | array[[guild experiment](/topics/experiments#guild-experiments) object]                                                    | Guild experiment rollouts for the user                                                                                                                                                                                                                                 |
 | explicit_content_scan_version          | integer                                                                                                                    | The latest version of the explicit content scan filter feature                                                                                                                                                                                                         |
+| av_sf_protocol_floor? ^10^             | integer                                                                                                                    | The minimum supported version of the DAVE protocol in eligible voice connection                                                                                                                                                                                        |
+| feature_flags? ^10^                    | [gateway feature flags](#gateway-feature-flags-structure) object                                                           | Social layer SDK feature flags                                                                                                                                                                                                                                         |
 | lobbies? ^10^ ^11^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
@@ -944,15 +949,19 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 ^9^ The field will be a [versioned array](#versioned-structure) if the `VERSIONED_USER_GUILD_SETTINGS` [Gateway capability](/topics/gateway#gateway-capabilities) is enabled. Otherwise, it will be a regular array.
 
-^10^ Only available in OAuth2 contexts.
+^10^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
 ^11^ Requires the `AUTO_LOBBY_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities).
 
-###### Session Type
+###### Versioned Structure
 
-| Value  | Description             |
-| ------ | ----------------------- |
-| normal | A normal client session |
+A generic object used to represent versioned data. Depends on specific capabilities to enable versioning for certain fields in the [Ready](#ready) event.
+
+| Field   | Type          | Description                            |
+| ------- | ------------- | -------------------------------------- |
+| entries | array[object] | The entries                            |
+| partial | boolean       | Whether the `entries` field is partial |
+| version | integer       | The version of the object              |
 
 ###### Merged Presences Structure
 
@@ -972,20 +981,26 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 ###### Gateway Application Structure
 
-| Field | Type      | Description                                                         |
-| ----- | --------- | ------------------------------------------------------------------- |
-| id    | snowflake | The ID of the application                                           |
-| flags | integer   | The [application's flags](/resources/application#application-flags) |
+| Field     | Type      | Description                                                         |
+| --------- | --------- | ------------------------------------------------------------------- |
+| id        | snowflake | The ID of the application                                           |
+| flags     | integer   | The [application's flags](/resources/application#application-flags) |
+| name? ^1^ | string    | The name of the application                                         |
 
-###### Versioned Structure
+^1^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
-A generic object used to represent versioned data. Depends on specific capabilities to enable versioning for certain fields in the [Ready](#ready) event.
+###### Gateway Feature Flags Structure
 
-| Field   | Type          | Description                            |
-| ------- | ------------- | -------------------------------------- |
-| entries | array[object] | The entries                            |
-| partial | boolean       | Whether the `entries` field is partial |
-| version | integer       | The version of the object              |
+| Field                   | Type          | Description                                                              |
+| ----------------------- | ------------- | ------------------------------------------------------------------------ |
+| disabled_functions      | array[string] | Functions that are currently disabled in the SDK due to instability      |
+| disabled_gateway_events | array[string] | Gateway events that are currently disabled in the SDK due to instability |
+
+###### Session Type
+
+| Value  | Description             |
+| ------ | ----------------------- |
+| normal | A normal client session |
 
 #### Ready Supplemental
 
@@ -1651,7 +1666,7 @@ Sent when a guild join request is deleted. Requires the `KICK_MEMBERS` permissio
 
 <Alert type="warn">
 
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+If using [Gateway intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
 
 </Alert>
 
@@ -1669,7 +1684,7 @@ For user accounts, this event is only sent for themselves. Users are not automat
 
 <Alert type="warn">
 
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+If using [Gateway intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
 
 </Alert>
 
@@ -1703,7 +1718,7 @@ For user accounts, this event is only sent for members they are subscribed to, a
 
 <Alert type="warn">
 
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+If using [Gateway intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
 
 </Alert>
 
@@ -2154,7 +2169,7 @@ For user accounts, this event is only sent for presences they are subscribed to.
 
 <Alert type="warn">
 
-If you are using [Gateway Intents](/topics/gateway#gateway-intents), you _must_ specify the `GUILD_PRESENCES` intent in order to receive Presence Update events.
+If you are using [Gateway intents](/topics/gateway#gateway-intents), you _must_ specify the `GUILD_PRESENCES` intent in order to receive Presence Update events.
 
 </Alert>
 
