@@ -1,0 +1,89 @@
+# Email Verification
+
+Discord accounts typically require email verification to unlock full functionality. While this is usually done during account registration, users can add or change their email address at any time.
+
+## Registering with an Email Address
+
+When registering a new account, users typically provide an email address to verify their account during the [standard registration process](/authentication#register).
+
+## Adding an Email Address
+
+Users can add an email address to their account at any time. This is required for certain features, or, in some cases, for [anti-abuse purposes](/resources/user#required-action-type). Having an email address associated with your account is recommended.
+
+To add an email address, clients must first send a request to the [Modify Current User](/resources/user#modify-current-user) endpoint with the email address the user wishes to add.
+This will send a verification link to the email address that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/verify#token=eyJpZCI6ODUyODkyMjk3NjYxOTA2OTkzLCJlbWFpbCI6Im5lbGx5QGRpc2NvcmRhcHAuY29tIn0.Z6pQDg.pKCZBaaiodflO6FZhdttm6B_z74`).
+After receiving the token, clients can then procede to [verify the change](#verify-email-address) to complete the process.
+
+## Changing Email Addresses
+
+Users can change their email address at any time.If the current email address is verified, the user will need to have access to it to initiate the change.
+In this case, clients must first send a request to the [Send Email Change Challenge](#send-email-change-challenge) endpoint, which will send a verification code to the user's current email address.
+After receiving the code, clients can then send a request to the [Verify Email Change Code](#verify-email-change-code) endpoint with the code to receive a verification token that can be used to change the user's email address via the [Modify Current User](/resources/user#modify-current-user) endpoint.
+
+If the current email address is not verified, clients can directly send a request to the [Modify Current User](/resources/user#modify-current-user) endpoint with the new email address, similar to [adding an email address](#adding-an-email-address).
+
+Finally, the user must verify the new email address as outlined in the [above flow](#adding-an-email-address).
+
+## Reverifying an Email Address
+
+Users may be prompted to reverify their email address for [anti-abuse purposes](/resources/user#required-action-type).
+
+In this case, a verification link will be automatically sent to the email address on file. If the user has not received a link, clients can [choose to resend it](#resend-verification-code).
+The link should be used to verify the email address as outlined in the [adding an email address](#adding-an-email-address) flow.
+
+## Removing an Email Address
+
+Users cannot remove the registered email address from their account. Instead, they must [change it to a new one](#changing-email-addresses) or [delete their account entirely](/resources/user#delete-user-account).
+
+## Endpoints
+
+<RouteHeader method="POST" url="/auth/verify" unauthenticated>
+  Verify Email Address
+</RouteHeader>
+
+Verifies an email address and links it to the user's account. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field | Type   | Description                               |
+| ----- | ------ | ----------------------------------------- |
+| token | string | The verification token received via email |
+
+###### Response Body
+
+| Field     | Type    | Description                                 |
+| --------- | ------- | ------------------------------------------- |
+| user_id   | string  | The ID of the user whose email was verified |
+| token ^1^ | ?string | The authentication token for the user       |
+
+^1^ A token is not returned if the user has MFA enabled and valid authorization is not provided.
+
+<RouteHeader method="POST" url="/auth/verify/resend">
+  Resend Verification Link
+</RouteHeader>
+
+Resends a verification link to the user's email address. Requires that the user's account has an email address marked as unverified. Returns a 204 empty response on success.
+
+<RouteHeader method="PUT" url="/users/@me/email">
+  Send Email Change Challenge
+</RouteHeader>
+
+Sends an email to the current user with a verification code to initiate the email change process. Returns a 204 empty response on success.
+
+<RouteHeader method="POST" url="/users/@me/email/verify-code">
+  Verify Email Change Code
+</RouteHeader>
+
+Verifies the email change code sent to the user's email address. If successful, the returned token can be used with the [Modify Current User](/resources/user#modify-current-user) endpoint to change the user's email address.
+
+###### JSON Params
+
+| Field | Type   | Description           |
+| ----- | ------ | --------------------- |
+| code  | string | The verification code |
+
+###### Response Body
+
+| Field | Type   | Description                             |
+| ----- | ------ | --------------------------------------- |
+| token | string | The token to use for email verification |
