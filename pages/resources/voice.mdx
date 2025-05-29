@@ -24,8 +24,11 @@ Used to represent a user's voice connection status.
 | self_video                 | boolean                                                     | Whether this user's camera is enabled              |
 | suppress                   | boolean                                                     | Whether this user's permission to speak is denied  |
 | request_to_speak_timestamp | ?ISO8601 timestamp                                          | When which the user requested to speak             |
+| user_volume? ^2^           | float                                                       | Volume level of the user (0-100)                   |
 
 ^1^ Omitted in the [Gateway guild](/topics/gateway-events#gateway-guild-object) object.
+
+^2^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway). For regular connections, user volumes are available in [audio settings](/resources/user-settings-proto#audio-settings-structure).
 
 ###### Example Voice State
 
@@ -99,7 +102,7 @@ private_key = ec.generate_private_key(ec.SECP256R1())
 public_key = private_key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.CompressedPoint)
 
 # https://datatracker.ietf.org/doc/html/rfc9000#name-variable-length-integer-enc
-def encode_quic_varint(data):
+def encode_quic_varint(data: bytes) -> bytes:
     length = len(data)
     if length < 2**6:
         return bytes([length]) + data
@@ -111,7 +114,7 @@ def encode_quic_varint(data):
         return bytes([(3 << 6) | (length >> 56), (length >> 48) & 0xFF, (length >> 40) & 0xFF, (length >> 32) & 0xFF, (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]) + data
 
 # https://datatracker.ietf.org/doc/html/rfc9420/#name-signing
-def sign_with_label(private_key, label, content) -> bytes:
+def sign_with_label(private_key: ec.EllipticCurvePrivateKey, label: str, content: bytes) -> bytes:
     label_bytes = b'MLS 1.0 ' + label.encode('ascii')
     sign_content = encode_quic_varint(label_bytes) + encode_quic_varint(content)
     signature = private_key.sign(sign_content, ec.ECDSA(hashes.SHA256()))
