@@ -57,6 +57,7 @@ await writeFile(join(process.cwd(), "public", "sitemap.xml"), sitemap);
 
 interface Page {
   name: string;
+  sortName: string;
   link: `/${string}`;
   subLinks: any[];
   sort: number;
@@ -82,14 +83,17 @@ for (const file of files) {
   };
   const sectionList = navigationLinks[section];
 
+  const name =
+    parsed.data.name ??
+    parsed.content
+      .trim()
+      .split("\n")
+      .find((line) => line.startsWith("#"))
+      ?.replace("# ", "");
+
   sectionList.items![link] ??= {
-    name:
-      parsed.data.name ??
-      parsed.content
-        .trim()
-        .split("\n")
-        .find((line) => line.startsWith("#"))
-        ?.replace("# ", ""),
+    name,
+    sortName: parsed.data["sort-name"] ?? name,
     link: file === "index" ? "/" : `/${file}`,
     subLinks: [],
     sort: parsed.data.sort ?? 99999,
@@ -135,7 +139,7 @@ for (const file of files) {
 // Probably not the best way to do this but it's fine, just converts the object into an array
 for (const section in navigationLinks) {
   const pages = Object.values(navigationLinks[section].items!);
-  pages.sort((a, b) => (a.sort === b.sort ? a.name.localeCompare(b.name) : a.sort - b.sort));
+  pages.sort((a, b) => (a.sort === b.sort ? a.sortName.localeCompare(b.sortName) : a.sort - b.sort));
   navigationLinks[section].pages = pages;
   delete navigationLinks[section].items;
 }
