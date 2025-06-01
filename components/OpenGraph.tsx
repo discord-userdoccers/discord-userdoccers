@@ -48,7 +48,7 @@ export default function OpenGraph({
       <div itemScope itemType="https://schema.org/WebSite">
         <link itemProp="url" href={`https://${process.env.BASE_DOMAIN}`} />
         <meta itemProp="name" content="Discord Userdoccers" />
-        <meta itemProp="alternateName" content="Userdoccers"/>
+        <meta itemProp="alternateName" content="Userdoccers" />
       </div>
     </>
   );
