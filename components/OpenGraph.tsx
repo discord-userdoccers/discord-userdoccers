@@ -14,33 +14,42 @@ export default function OpenGraph({
 }: OpenGraphProps) {
   const router = useRouter();
   const url = `https://${process.env.BASE_DOMAIN}${router.asPath}`;
-  const isBase = router.asPath === "/" || router.asPath === "/intro";
+  const isBase = router.asPath === "/";
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
   return (
-    <Head>
-      <title>Discord Userdoccers - Unofficial API Documentation</title>
-      <link rel="canonical" href={url} />
+    <>
+      <Head>
+        <title>Discord Userdoccers - Unofficial API Documentation</title>
+        <link rel="canonical" href={url} />
 
-      <meta key="description" name="description" content={description} />
+        <meta key="description" name="description" content={description} />
 
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" key="twitter-card" />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" key="twitter-card" />
 
-      {/* Open Graph */}
-      <meta property="og:url" content={url} key="og-url" />
-      <meta property="og:site_name" content="Discord Userdoccers" key="og-site-name" />
-      <meta property="og:title" content={`Discord Userdoccers - ${section}`} key="og-title" />
-      <meta property="og:description" content={description} key="og-desc" />
+        {/* Open Graph */}
+        <meta property="og:url" content={url} key="og-url" />
+        <meta property="og:site_name" content="Discord Userdoccers" key="og-site-name" />
+        <meta property="og:title" content={`Discord Userdoccers - ${section}`} key="og-title" />
+        <meta property="og:description" content={description} key="og-desc" />
 
-      {/* Hide image on other routes */}
-      {isBase && <meta property="og:image" content="/banner.webp" key="og-image" />}
+        {/* Hide image on other routes */}
+        {isBase && <meta property="og:image" content="/banner.webp" key="og-image" />}
 
-      {/* FIXME: theme color contrasts with page body in safari */}
-      <meta name="theme-color" content="#5864F2" />
+        {/* FIXME: theme color contrasts with page body in safari */}
+        <meta name="theme-color" content="#5864F2" />
 
-      {/* Google Site Verification */}
-      {google_site_verification && <meta name="google-site-verification" content={google_site_verification} />}
-    </Head>
+        {/* Google Site Verification */}
+        {google_site_verification && <meta name="google-site-verification" content={google_site_verification} />}
+      </Head>
+
+      {/* Website title and canonical homepage */}
+      <div itemScope itemType="https://schema.org/WebSite">
+        <link itemProp="url" href={`https://${process.env.BASE_DOMAIN}`} />
+        <meta itemProp="name" content="Discord Userdoccers" />
+        <meta itemProp="alternateName" content="Userdoccers"/>
+      </div>
+    </>
   );
 }

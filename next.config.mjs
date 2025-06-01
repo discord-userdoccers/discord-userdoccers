@@ -17,8 +17,8 @@ const config = {
   async redirects() {
     return [
       {
-        source: "/",
-        destination: "/intro",
+        source: "/intro",
+        destination: "/",
         permanent: true,
       },
       // for convenience

@@ -90,7 +90,7 @@ for (const file of files) {
         .split("\n")
         .find((line) => line.startsWith("#"))
         ?.replace("# ", ""),
-    link: `/${file}`,
+    link: file === "index" ? "/" : `/${file}`,
     subLinks: [],
     sort: parsed.data.sort ?? 99999,
   };
