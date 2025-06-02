@@ -1,4 +1,5 @@
 // @ts-nocheck
+// TODO: Fix types
 
 import classNames from "classnames";
 import Highlight, { defaultProps, Prism } from "prism-react-renderer";
@@ -62,14 +63,13 @@ interface ICodeProps {
   // we know this is going to be a string
   children?: ReactNode;
   className?: string;
-  metastring?: string;
   file?: string | true;
 }
 
 type CodeProps = ICodeProps & Omit<DetailedHTMLProps, keyof ICodeProps>;
 
 // TODO: This module needs some love
-export default function Code({ children, className, metastring, file, ...props }: CodeProps) {
+export default function Code({ children, className, file, ...props }: CodeProps) {
   if (typeof children !== "string") throw new Error("Code content is not a string");
 
   const propList = ["copy", "terminal", "no-lines"];

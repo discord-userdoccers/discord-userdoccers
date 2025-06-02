@@ -1,4 +1,6 @@
-export default function TypeScript(props: JSX.IntrinsicElements["svg"]) {
+import React from "react";
+
+export default function TypeScript(props: React.JSX.IntrinsicElements["svg"]) {
   return (
     <svg viewBox="0 0 128 128" {...props}>
       <path fill="#fff" d="M22.67 47h99.67v73.67H22.67z"></path>
