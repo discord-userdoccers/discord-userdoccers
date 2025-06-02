@@ -1,6 +1,6 @@
 import { FC } from "react";
 
-export const ViewIcon: FC<JSX.IntrinsicElements["svg"]> = (props) => (
+export const ViewIcon: FC<React.JSX.IntrinsicElements["svg"]> = (props) => (
   <svg
     aria-label="EyeIcon"
     aria-hidden="false"

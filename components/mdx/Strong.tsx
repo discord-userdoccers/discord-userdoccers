@@ -1,3 +1,5 @@
-export default function Strong(props: JSX.IntrinsicElements["strong"]) {
+import React from "react";
+
+export default function Strong(props: React.JSX.IntrinsicElements["strong"]) {
   return <strong {...props} />;
 }

@@ -1,8 +1,8 @@
 import { FC } from "react";
 
-export const CodeIcon: FC<JSX.IntrinsicElements["svg"]> = (props) => (
+export const CodeIcon: FC<React.JSX.IntrinsicElements["svg"]> = (props) => (
   <svg
-    aria-label="SettingsIcon"
+    aria-label="CodeIcon"
     aria-hidden="false"
     role="img"
     xmlns="http://www.w3.org/2000/svg"
