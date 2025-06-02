@@ -64,7 +64,6 @@ export default function App({ Component, pageProps, router }: AppProps) {
       <ThemeProvider defaultTheme="system" attribute="data-theme">
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
           <CodegenLanguageProvider>
-            {/* eslint-disable-next-line react/jsx-pascal-case */}
             <MDX>
               <OpenGraph description={meta?.description} section={meta?.title} />
               <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">

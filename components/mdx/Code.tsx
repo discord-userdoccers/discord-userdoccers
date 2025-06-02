@@ -77,11 +77,9 @@ export default function Code({ children, className, file, ...props }: CodeProps)
   const language = className?.replace(/language-/, "");
   const breakWords = propList.includes(language);
 
-  /* eslint-disable react/prop-types */
   const hasCopy = !(props.noCopy || language === "json");
   const isTerminal = props.terminal || language === "terminal";
   const hasLines = file != null || props.lines;
-  /* eslint-enable react/prop-types */
 
   const lineNumberClasses = classNames("line_number inline-block w-6 text-right leading-6 select-none");
 
@@ -144,7 +142,6 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                         if (
                           isDiff &&
                           (key === 0 || key === 1) &&
-                          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                           Object.values(SYMBOLS).includes(token.content.charAt(0) as string)
                         ) {
                           return (
@@ -153,7 +150,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                               {...getTokenProps({
                                 token: {
                                   ...token,
-                                  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
                                   content: token.content.slice(1),
                                 },
                                 key,

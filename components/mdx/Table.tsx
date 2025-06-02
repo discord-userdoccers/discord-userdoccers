@@ -1,5 +1,4 @@
-import { RefObject, useEffect, useRef, useState } from "react";
-import React from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 
 import Chevron from "@components/icons/Chevron";
 import CopyIcon from "@components/icons/Copy";
