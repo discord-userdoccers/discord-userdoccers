@@ -1,16 +1,18 @@
-// @ts-nocheck
-// TODO: Fix types
-
 import classNames from "classnames";
-import Highlight, { defaultProps, Prism } from "prism-react-renderer";
-import { DetailedHTMLProps, ReactNode } from "react";
+import Highlight, { defaultProps, type Language as TLanguage } from "prism-react-renderer";
+import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
 
 import CopyButton from "../Copy";
 import CopyIcon from "../icons/Copy";
 // import FileIcon from "../icons/File";
 
-// Extend base classes
-globalThis.Prism = Prism;
+// this isn't exported for some reason
+type Token = {
+  types: string[];
+  content: string;
+  empty?: boolean;
+};
+type Language = TLanguage | "terminal";
 
 const diffBgColorMap = {
   "+": "var(--prism-highlight-add)",
@@ -64,9 +66,12 @@ interface ICodeProps {
   children?: ReactNode;
   className?: string;
   file?: string | true;
+  noCopy?: boolean;
+  isTerminal?: boolean;
+  hasLines?: boolean;
 }
 
-type CodeProps = ICodeProps & Omit<DetailedHTMLProps, keyof ICodeProps>;
+type CodeProps = ICodeProps & Omit<DetailedHTMLProps<HTMLAttributes<Element>, Element>, keyof ICodeProps>;
 
 // TODO: This module needs some love
 export default function Code({ children, className, file, ...props }: CodeProps) {
@@ -74,19 +79,20 @@ export default function Code({ children, className, file, ...props }: CodeProps)
 
   const propList = ["copy", "terminal", "no-lines"];
 
-  const language = className?.replace(/language-/, "");
-  const breakWords = propList.includes(language);
+  const language: Language = className?.replace(/language-/, "")! as Language;
+
+  const breakWords = propList.includes(language!);
 
   const hasCopy = !(props.noCopy || language === "json");
-  const isTerminal = props.terminal || language === "terminal";
-  const hasLines = file != null || props.lines;
+  const isTerminal = props.isTerminal || language === "terminal";
+  const hasLines = file != null || props.hasLines;
 
   const lineNumberClasses = classNames("line_number inline-block w-6 text-right leading-6 select-none");
 
   return (
     <div className="code-block relative my-3 rounded-md font-mono">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight {...defaultProps} code={children} language={language}>
+      <Highlight {...defaultProps} code={children} language={language! as TLanguage}>
         {({
           className: blockClassName,
           tokens,
@@ -106,7 +112,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
           >
             <code className="rounded-md p-4 px-1.5">
               {cleanTokens(tokens).map((line: Token[], i: number) => {
-                const lineClass = {};
+                const lineClass: Record<string, string> = {};
                 let isDiff = false;
                 let diffSymbol = "";
 
@@ -116,7 +122,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                 ) {
                   diffSymbol = line[0]?.content?.length ? line[0].content[0] : line[1].content;
 
-                  lineClass.backgroundColor = diffBgColorMap[diffSymbol];
+                  lineClass.backgroundColor = diffBgColorMap[diffSymbol as keyof typeof diffBgColorMap];
 
                   isDiff = true;
                 }
