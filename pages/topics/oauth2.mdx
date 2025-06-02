@@ -475,6 +475,16 @@ Represents an OAuth2 authorization.
 | scopes      | array[string]                                                           | The scopes the user has authorized the application for |
 | application | partial [application](/resources/application#application-object) object | The authorized application                             |
 
+###### External Provider Authentication Type
+
+| Value                             | Description                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------ |
+| OIDC                              | OpenID Connect ID token                                                              |
+| EPIC_ONLINE_SERVICES_ACCESS_TOKEN | Access token for Epic Online Services (supports EOS Auth access tokens)              |
+| EPIC_ONLINE_SERVICES_ID_TOKEN     | ID token for Epic Online Services (supports both EOS Auth + Connect ID tokens)       |
+| STEAM_SESSION_TICKET              | A Steam authentication ticket for web generated with `discord` set as the `identity` |
+| UNITY_SERVICES_ID_TOKEN           | ID token for Unity Auth Services                                                     |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/oauth2/@me" supportsOAuth2>
@@ -564,3 +574,64 @@ Returns a list of [OAuth2 token](#oauth2-token-object) objects.
 </RouteHeader>
 
 Revokes the given token. Returns a 204 empty response on success. Fires a [OAuth2 Token Revoke](/topics/gateway-events#oauth2-token-revoke) and optionally a [User Application Remove](/topics/gateway-events#user-application-remove) Gateway event.
+
+<RouteHeader method="POST" url="/partner-sdk/token">
+  Get Provisional Account Token
+</RouteHeader>
+
+Retrieves an authentication token of provisional account for the given credentials.
+
+If account wasn't found but provided external authentication token was valid, a new provisional account will be created.
+
+###### JSON Params
+
+| Field               | Type      | Description                                                                                |
+| ------------------- | --------- | ------------------------------------------------------------------------------------------ |
+| client_id           | snowflake | The ID of the application                                                                  |
+| client_secret? ^1^  | string    | The client secret of the application                                                       |
+| external_auth_token | string    | The external authentication token                                                          |
+| external_auth_type  | string    | The [type of the external authentication provider](#external-provider-authentication-type) |
+
+^1^ Required if the application does not have [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+
+###### Response Body
+
+| Field          | Type          | Description                                         |
+| -------------- | ------------- | --------------------------------------------------- |
+| token_type     | string        | The type of token                                   |
+| access_token   | string        | The token of the provisional account                |
+| expires_in     | integer       | Duration (in seconds) after which the token expires |
+| scope          | string        | The scopes for the token (separated by space)       |
+| id_token       | string        | The ID token                                        |
+| refresh_token? | string        | The separate token used to refresh access token     |
+| scopes?        | array[string] | The scopes for the token                            |
+| expires_at_s?  | integer       | When the token expires (in seconds)                 |
+
+###### Example Response
+
+```json
+{
+  "token_type": "Bearer",
+  "access_token": "MTE2OTQyMTc2MTg1OTgzMzk5Nw.bqVojV8HtgGiA6eeujrAFYLQcAblm0",
+  "expires_in": 3600,
+  "scope": "sdk.social_layer account.global_name.update openid",
+  "id_token": "..."
+}
+```
+
+<RouteHeader method="POST" url="/partner-sdk/provisional-accounts/unmerge">
+  Unmerge Provisional Account
+</RouteHeader>
+
+Unmerge a provisional account. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field               | Type      | Description                                                                                |
+| ------------------- | --------- | ------------------------------------------------------------------------------------------ |
+| client_id           | snowflake | The ID of the application                                                                  |
+| client_secret? ^1^  | string    | The client secret of the application                                                       |
+| external_auth_token | string    | The external authentication token                                                          |
+| external_auth_type  | string    | The [type of the external authentication provider](#external-provider-authentication-type) |
+
+^1^ Required if the application does not have [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
