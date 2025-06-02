@@ -12,7 +12,7 @@ type Token = {
   content: string;
   empty?: boolean;
 };
-type Language = TLanguage | "terminal";
+type Language = TLanguage | "terminal" | "text";
 
 const diffBgColorMap = {
   "+": "var(--prism-highlight-add)",
@@ -79,7 +79,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
 
   const propList = ["copy", "terminal", "no-lines"];
 
-  const language: Language = className?.replace(/language-/, "")! as Language;
+  const language: Language = className ? (className.replace(/language-/, "") as Language) : "text";
 
   const breakWords = propList.includes(language!);
 
