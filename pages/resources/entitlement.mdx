@@ -6,31 +6,45 @@ Entitlements in Discord represent a user or guild's access to a specific SKU. En
 
 ###### Entitlement Structure
 
-| Field               | Type                             | Description                                                                         |
-| ------------------- | -------------------------------- | ----------------------------------------------------------------------------------- |
-| id                  | snowflake                        | The ID of the entitlement                                                           |
-| type                | integer                          | The [type of entitlement](#entitlement-type)                                        |
-| sku_id              | snowflake                        | The ID of the SKU granted                                                           |
-| application_id      | snowflake                        | The ID of the application that owns the SKU                                         |
-| user_id             | snowflake                        | The ID of the user that is granted access to the SKU                                |
-| guild_id?           | snowflake                        | The ID of the guild that is granted access to the SKU                               |
-| parent_id?          | snowflake                        | The ID of the parent entitlement                                                    |
-| deleted             | boolean                          | Whether the entitlement is deleted                                                  |
-| consumed?           | boolean                          | For consumable items, whether the entitlement has been consumed                     |
-| branches?           | list[snowflake]                  | The IDs of the application branches granted                                         |
-| starts_at           | ?ISO8601 timestamp               | When the entitlement validity period starts                                         |
-| ends_at             | ?ISO8601 timestamp               | When the entitlement validity period ends                                           |
-| promotion_id        | ?snowflake                       | The ID of the promotion the entitlement is from                                     |
-| subscription_id?    | snowflake                        | The ID of the subscription the entitlement is from                                  |
-| gift_code_flags     | integer                          | The [flags for the gift code](#gift-code-flags) the entitlement is attached to      |
-| gift_code_batch_id? | snowflake                        | The ID of the batch the gift code attached to the entitlement is from               |
-| gifter_user_id?     | snowflake                        | The ID of the user that gifted the entitlement                                      |
-| gift_style?         | integer                          | The [style of the gift](#gift-style) attached to the entitlement                    |
-| fulfillment_status? | integer                          | The [tenant fulfillment status](#entitlement-fulfillment-status) of the entitlement |
-| fulfilled_at?       | ISO8601 timestamp                | When the entitlement was fulfilled                                                  |
-| source_type?        | integer                          | The [special source type](#entitlement-source-type) of the entitlement              |
-| sku?                | SKU object                       | The SKU granted                                                                     |
-| subscription_plan?  | partial subscription plan object | The subscription plan granted                                                       |
+| Field               | Type                                                 | Description                                                                         |
+| ------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| id                  | snowflake                                            | The ID of the entitlement                                                           |
+| type                | integer                                              | The [type of entitlement](#entitlement-type)                                        |
+| sku_id              | snowflake                                            | The ID of the SKU granted                                                           |
+| application_id      | snowflake                                            | The ID of the application that owns the SKU                                         |
+| user_id             | snowflake                                            | The ID of the user that is granted access to the SKU                                |
+| guild_id?           | snowflake                                            | The ID of the guild that is granted access to the SKU                               |
+| parent_id?          | snowflake                                            | The ID of the parent entitlement                                                    |
+| deleted             | boolean                                              | Whether the entitlement is deleted                                                  |
+| consumed?           | boolean                                              | For consumable items, whether the entitlement has been consumed                     |
+| branches?           | list[snowflake]                                      | The IDs of the application branches granted                                         |
+| starts_at           | ?ISO8601 timestamp                                   | When the entitlement validity period starts                                         |
+| ends_at             | ?ISO8601 timestamp                                   | When the entitlement validity period ends                                           |
+| promotion_id        | ?snowflake                                           | The ID of the promotion the entitlement is from                                     |
+| subscription_id?    | snowflake                                            | The ID of the subscription the entitlement is from                                  |
+| gift_code_flags     | integer                                              | The [flags for the gift code](#gift-code-flags) the entitlement is attached to      |
+| gift_code_batch_id? | snowflake                                            | The ID of the batch the gift code attached to the entitlement is from               |
+| gifter_user_id?     | snowflake                                            | The ID of the user that gifted the entitlement                                      |
+| gift_style?         | integer                                              | The [style of the gift](#gift-style) attached to the entitlement                    |
+| fulfillment_status? | integer                                              | The [tenant fulfillment status](#entitlement-fulfillment-status) of the entitlement |
+| fulfilled_at?       | ISO8601 timestamp                                    | When the entitlement was fulfilled                                                  |
+| source_type?        | integer                                              | The [special source type](#entitlement-source-type) of the entitlement              |
+| tenant_metadata?    | [tenant metadata](#tenant-metadata-structure) object | Tenant metadata for the entitlement                                                 |
+| sku?                | SKU object                                           | The SKU granted                                                                     |
+| subscription_plan?  | partial subscription plan object                     | The subscription plan granted                                                       |
+
+###### Tenant Metadata Structure
+
+| Field         | Type                                                               | Description                                                 |
+| ------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| quest_rewards | [quest rewards metadata](#quest-rewards-metadata-structure) object | Metadata about the quest rewards granted by the entitlement |
+
+###### Quest Rewards Metadata Structure
+
+| Field        | Type                                                                   | Description                                                               |
+| ------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| tag          | integer                                                                | The [reward type](/resources/quests#quest-reward-type) of the entitlement |
+| reward_code? | [quest reward code](/resources/quests#quest-reward-code-object) object | The reward granted by the entitlement                                     |
 
 ###### Entitlement Type
 
@@ -268,7 +282,11 @@ Returns a list of [entitlement](#entitlement-object) objects granted to the curr
 | sku_ids?         | array[snowflake] | The IDs of the SKUs to look up entitlements for                |
 | exclude_consumed | boolean          | Whether consumed entitlements should be omitted (default true) |
 
-<RouteHeader method="GET" url="/applications/{application.id}/entitlements/{entitlement.id}" supportsOAuth2="applications.entitlements">
+<RouteHeader
+  method="GET"
+  url="/applications/{application.id}/entitlements/{entitlement.id}"
+  supportsOAuth2="applications.entitlements"
+>
   Get Application Entitlement
 </RouteHeader>
 
@@ -301,13 +319,21 @@ This endpoint is not usable by user accounts.
 | 1     | GUILD | Entitlement is for a guild |
 | 2     | USER  | Entitlement is for a user  |
 
-<RouteHeader method="POST" url="/applications/{application.id}/entitlements/{entitlement.id}/consume" supportsOAuth2="applications.entitlements">
+<RouteHeader
+  method="POST"
+  url="/applications/{application.id}/entitlements/{entitlement.id}/consume"
+  supportsOAuth2="applications.entitlements"
+>
   Consume Application Entitlement
 </RouteHeader>
 
 For one-time purchase consumable SKUs, marks a given entitlement for the user as consumed. Returns a 204 empty response on success. Fires an [Entitlement Update](/topics/gateway-events#entitlement-update) Gateway event.
 
-<RouteHeader method="DELETE" url="/applications/{application.id}/entitlements/{entitlement.id}" supportsOAuth2="applications.entitlements">
+<RouteHeader
+  method="DELETE"
+  url="/applications/{application.id}/entitlements/{entitlement.id}"
+  supportsOAuth2="applications.entitlements"
+>
   Delete Application Entitlement
 </RouteHeader>
 
