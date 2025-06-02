@@ -150,7 +150,6 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                               {...getTokenProps({
                                 token: {
                                   ...token,
-
                                   content: token.content.slice(1),
                                 },
                                 key,
