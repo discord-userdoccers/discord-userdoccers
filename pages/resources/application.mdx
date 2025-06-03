@@ -802,15 +802,23 @@ Each metadata type offers a comparison operation that allows guilds to configure
 
 ###### Social SDK Release Structure
 
-| Field             | Type                                                                             | Description                   |
-| ----------------- | -------------------------------------------------------------------------------- | ----------------------------- |
-| version           | string                                                                           | The version of the SDK        |
-| release_date_time | ISO8601 timestamp                                                                | When the SDK version released |
-| artifacts ^1^     | array[[social SDK release artifact](#social-sdk-release-artifact-object) object] | The SDK artifacts             |
+| Field             | Type                                                                                | Description                   |
+| ----------------- | ----------------------------------------------------------------------------------- | ----------------------------- |
+| version           | string                                                                              | The version of the SDK        |
+| release_date_time | ISO8601 timestamp                                                                   | When the SDK version released |
+| artifacts ^1^     | array[[social SDK release artifact](#social-sdk-release-artifact-structure) object] | The SDK artifacts             |
 
-^1^ Only provided in [Get Social SDK Release](#get-social-sdk-release) endpoint.
+^1^ Only included when fetched from the [Get Social SDK Release](#get-social-sdk-release) endpoint.
 
-###### Social SDK Release Example
+### Social SDK Release Artifact Structure
+
+| Field        | Type    | Description                 |
+| ------------ | ------- | --------------------------- |
+| download_url | string  | The SDK download URL        |
+| filename     | string  | The filename                |
+| size_bytes   | integer | The size of file (in bytes) |
+
+###### Example Social SDK Release
 
 ```json
 {
@@ -846,15 +854,15 @@ Each metadata type offers a comparison operation that allows guilds to configure
 }
 ```
 
-### Social SDK Release Artifact Object
+###### Application External Identity Provider Configuration Structure
 
-###### Social SDK Release Artifact Structure
-
-| Field        | Type    | Description                 |
-| ------------ | ------- | --------------------------- |
-| download_url | string  | The SDK download URL        |
-| filename     | string  | The filename                |
-| size_bytes   | integer | The size of file (in bytes) |
+| Field           | Type                                                                                                                    | Description                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| application_id  | snowflake                                                                                                               | The ID of the application                                                |
+| provider_type   | integer                                                                                                                 | The [type of the identity provider](#application-identity-provider-type) |
+| client_id       | string                                                                                                                  | The ID of the primary provider client                                    |
+| oidc_issuer_url | ?string                                                                                                                 | The primary URL of the OpenID Connect Issuer                             |
+| clients         | array[[application external identity provider client](#application-external-identity-provider-client-structure) object] | The provider clients                                                     |
 
 ###### Application Identity Provider Type
 
@@ -865,8 +873,6 @@ Each metadata type offers a comparison operation that allows guilds to configure
 | STEAM                | Steam-based authentication                                                                                    |
 | UNITY                | [Unity-based authentication](https://docs.unity.com/ugs/manual/authentication/manual/unity-player-accounts)   |
 
-### Application External Identity Provider Client Object
-
 ###### Application External Identity Provider Client Structure
 
 | Field           | Type    | Description                             |
@@ -876,19 +882,7 @@ Each metadata type offers a comparison operation that allows guilds to configure
 | description?    | ?string | The description of the client (max 250) |
 | environment?    | ?string | The environment for the client          |
 
-### Application External Identity Provider Configuration Object
-
-###### Application External Identity Provider Configuration Object
-
-| Field           | Type                                                                                                                    | Description                                                              |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| application_id  | snowflake                                                                                                               | The ID of the application                                                |
-| provider_type   | integer                                                                                                                 | The [type of the identity provider](#application-identity-provider-type) |
-| client_id       | string                                                                                                                  | The ID of the primary provider client                                    |
-| oidc_issuer_url | ?string                                                                                                                 | The primary URL of the OpenID Connect Issuer                             |
-| clients         | array[[application external identity provider client](#application-external-identity-provider-client-structure) object] | The provider clients                                                     |
-
-###### Application External Identity Provider Client Example
+###### Example Application External Identity Provider Configuration
 
 ```json
 {
@@ -906,6 +900,13 @@ Each metadata type offers a comparison operation that allows guilds to configure
   ]
 }
 ```
+
+###### Application Undeletable Reason
+
+| Value | Name | Description |
+| 0 | UNKNOWN | Unknown |
+| 1 | USER_THRESHOLD_EXCEEDED | The application has over 500 active users |
+| 2 | SOCIAL_SDK_APP_DELETION_ERROR | Unknown |
 
 ## Endpoints
 
@@ -1857,17 +1858,17 @@ Returns a [social SDK release](#social-sdk-release-object) object for the given 
 <RouteHeader method="POST" url="/applications/{application.id}/social-sdk/enable">
   Enable Social SDK
 </RouteHeader>
-
-Enables social SDK for the given application and applies the [`SOCIAL_LAYER_INTEGRATION_LIMITED` application flag](#application-flags) to the application. Returns a 204 empty response on success.
+Enables social SDK features for the given application, applying the [`SOCIAL_LAYER_INTEGRATION_LIMITED` application
+flag](#application-flags). Returns a 204 empty response on success.
 
 ###### JSON Params
 
-| Field                | Type   | Description                       |
-| -------------------- | ------ | --------------------------------- |
-| name                 | string | The name of the game              |
-| business_email       | string | The business email (max 320)      |
-| game_or_studio_name? | string | The name of the company (max 100) |
-| game_or_studio_url?  | string | The URL of the company (max 512)  |
+| Field                | Type   | Description                                     |
+| -------------------- | ------ | ----------------------------------------------- |
+| name                 | string | The name of the company (1-100 characters)      |
+| business_email       | string | The company business email (max 320 characters) |
+| game_or_studio_name? | string | The name of the company (max 100 characters)    |
+| game_or_studio_url?  | string | The URL of the company (max 512 characters)     |
 
 <RouteHeader method="GET" url="/applications/{application.id}/external-identity-provider-configurations">
   Get Application External Identity Provider Configurations
@@ -1882,14 +1883,14 @@ Returns a list of [application external identity provider configuration](#applic
   Create Application External Identity Provider Configuration
 </RouteHeader>
 
-Adds or updates configuration for given external identity provider type.
+Creates or updates a configuration for the given external identity provider type.
 
 ###### JSON Params
 
-| Field           | Type                                                                                                                 | Description                                  |
-| --------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| clients         | array[[application external identity provider client](#application-external-identity-provider-client-object) object] | The provider clients                         |
-| oidc_issuer_url | ?string                                                                                                              | The primary URL of the OpenID Connect Issuer |
+| Field           | Type                                                                                                                    | Description                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| clients         | array[[application external identity provider client](#application-external-identity-provider-client-structure) object] | The provider clients                         |
+| oidc_issuer_url | ?string                                                                                                                 | The primary URL of the OpenID Connect Issuer |
 
 <RouteHeader
   method="DELETE"
@@ -1899,3 +1900,16 @@ Adds or updates configuration for given external identity provider type.
 </RouteHeader>
 
 Remove configuration for given external identity provider. Returns a 204 empty response on success.
+
+<RouteHeader method="GET" url="/applications/{application.id}/can-delete">
+  Get Application Undeletable Reason
+</RouteHeader>
+
+Returns a reason why application cannot be deleted.
+
+###### Response Body
+
+| Field      | Type     | Description                                                                         |
+| ---------- | -------- | ----------------------------------------------------------------------------------- |
+| deletable? | ?boolean | Whether the application is deletable (default false)                                |
+| reason?    | ?integer | The [reason](#application-undeletable-reason) why the application cannot be deleted |
