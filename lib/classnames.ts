@@ -27,7 +27,7 @@ function parseValue(className: NonNullable<ClassName>) {
   }
 
   if (Array.isArray(className)) {
-    return classNames.apply(null, className);
+    return classNames(...className);
   }
 
   if (className.toString !== Object.prototype.toString && !className.toString.toString().includes("[native code]")) {
