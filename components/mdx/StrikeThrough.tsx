@@ -1,3 +1,5 @@
-export default function StrikeThrough(props: JSX.IntrinsicElements["s"]) {
+import React from "react";
+
+export default function StrikeThrough(props: React.JSX.IntrinsicElements["s"]) {
   return <s {...props} />;
 }

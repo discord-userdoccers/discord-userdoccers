@@ -176,7 +176,7 @@ Further complicating things, some optional fields may be omitted if their value 
 | ~~1 << 5~~  | ~~RPC_PRIVATE_BETA~~                   | ~~Application can access the client RPC server~~                                                                                                           | ~~No~~  |
 | 1 << 6      | AUTO_MODERATION_RULE_CREATE_BADGE      | Application has created 100+ AutoMod rules                                                                                                                 | Yes     |
 | 1 << 7      | GAME_PROFILE_DISABLED                  | Application has its game profile page disabled                                                                                                             | Yes     |
-| 1 << 8      | PUBLIC_OAUTH2_CLIENT                   | Application's OAuth2 credentials are public                                                                                                                | Yes     |
+| 1 << 8      | PUBLIC_OAUTH2_CLIENT                   | Application's OAuth2 credentials are considered public and a client secret is not required                                                                 | Yes     |
 | 1 << 9      | CONTEXTLESS_ACTIVITY                   | Embedded application's activity can be launched without a context                                                                                          | Yes     |
 | 1 << 10     | SOCIAL_LAYER_INTEGRATION_LIMITED       | Application has limited access to the social layer SDK                                                                                                     | Yes     |
 | ~~1 << 8~~  | ~~ALLOW_ASSETS~~                       | ~~Application can use activity assets~~                                                                                                                    | ~~No~~  |
@@ -527,17 +527,18 @@ The values of this enum are currently unknown. Help us by figuring them out and 
 
 ##### Distributor Type
 
-| Value       | Description       |
-| ----------- | ----------------- |
-| discord     | Discord Store     |
-| steam       | Steam             |
-| twitch      | Twitch            |
-| uplay       | Ubisoft Connect   |
-| battlenet   | Battle.net        |
-| origin      | Origin            |
-| gog         | GOG.com           |
-| epic        | Epic Games Store  |
-| google_play | Google Play Store |
+| Value          | Description         |
+| -------------- | ------------------- |
+| discord        | Discord Store       |
+| steam          | Steam               |
+| twitch         | Twitch              |
+| uplay          | Ubisoft Connect     |
+| battlenet      | Battle.net          |
+| origin         | Origin              |
+| gog            | GOG.com             |
+| epic           | Epic Games Store    |
+| google_play    | Google Play Store   |
+| nvidia_gdn_app | NVIDIA Cloud Gaming |
 
 ###### Example Application SKU
 
@@ -656,11 +657,12 @@ Mapped URLs are available at `<application_id>.discordsays.com/.proxy/<prefix>`.
 
 ###### Embedded Activity Platform Config Structure
 
-| Field         | Type               | Description                                                                 |
-| ------------- | ------------------ | --------------------------------------------------------------------------- |
-| label_type    | integer            | The [type of release label](#embedded-activity-label-type) for the platform |
-| label_until?  | ?ISO8601 timestamp | When the release label expires                                              |
-| release_phase | string             | The [release phase](#embedded-activity-release-phase) for the platform      |
+| Field                    | Type               | Description                                                                 |
+| ------------------------ | ------------------ | --------------------------------------------------------------------------- |
+| label_type               | integer            | The [type of release label](#embedded-activity-label-type) for the platform |
+| label_until?             | ?ISO8601 timestamp | When the release label expires                                              |
+| release_phase            | string             | The [release phase](#embedded-activity-release-phase) for the platform      |
+| omit_badge_from_surfaces | array[string]      | The [surfaces](#embedded-activity-surface) to omit the activity badge from  |
 
 ###### Embedded Activity Label Type
 
@@ -672,13 +674,21 @@ Mapped URLs are available at `<application_id>.discordsays.com/.proxy/<prefix>`.
 
 ###### Embedded Activity Release Phase
 
-| Value            | Description                                                                                                             |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| in_development   | The activity is still in development                                                                                    |
-| activities_team  | The activity is available to guilds with the [`ACTIVITIES_INTERNAL_DEV` guild feature](/resources/guild#guild-features) |
-| employee_release | The activity is available to guilds with the [`ACTIVITIES_EMPLOYEE` guild feature](/resources/guild#guild-features)     |
-| soft_launch      | The activity is available to guilds with the [`ACTIVITIES_ALPHA` guild feature](/resources/guild#guild-features)        |
-| global_launch    | The activity is available to all guilds                                                                                 |
+| Value                 | Description                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| in_development        | The activity is still in development                                                                                |
+| activities_team       | The activity is available to guilds with the [`ACTIVITIES_ALPHA` guild feature](/resources/guild#guild-features)    |
+| employee_release      | The activity is available to guilds with the [`ACTIVITIES_EMPLOYEE` guild feature](/resources/guild#guild-features) |
+| soft_launch           | The activity is available to all guilds                                                                             |
+| soft_launch_multi_geo | The activity is available to all guilds                                                                             |
+| global_launch         | The activity is available to all guilds                                                                             |
+
+###### Embedded Activity Surface
+
+| Value          | Description                                          |
+| -------------- | ---------------------------------------------------- |
+| voice_launcher | The activity launcher in the voice channel interface |
+| text_launcher  | The activity launcher in the text channel interface  |
 
 ###### Example Embedded Activity Config
 
@@ -694,9 +704,24 @@ Mapped URLs are available at `<application_id>.discordsays.com/.proxy/<prefix>`.
   "free_period_starts_at": null,
   "free_period_ends_at": null,
   "client_platform_config": {
-    "android": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
-    "ios": { "label_type": 0, "label_until": null, "release_phase": "global_launch" },
-    "web": { "label_type": 0, "label_until": null, "release_phase": "global_launch" }
+    "android": {
+      "label_type": 0,
+      "label_until": null,
+      "release_phase": "global_launch",
+      "omit_badge_from_surfaces": []
+    },
+    "ios": {
+      "label_type": 0,
+      "label_until": null,
+      "release_phase": "global_launch",
+      "omit_badge_from_surfaces": []
+    },
+    "web": {
+      "label_type": 0,
+      "label_until": null,
+      "release_phase": "global_launch",
+      "omit_badge_from_surfaces": []
+    }
   },
   "shelf_rank": 3,
   "has_csp_exception": false,
@@ -760,7 +785,7 @@ When a user connects their account using the integration's [`role_connections_ve
 
 | Field                      | Type          | Description                                                                          |
 | -------------------------- | ------------- | ------------------------------------------------------------------------------------ |
-| type                       | integer       | The [type of metadata value]](/resources/guild#role-connection-operator-type)        |
+| type                       | integer       | The [type of metadata value](/resources/guild#role-connection-operator-type)         |
 | key                        | string        | Key for the metadata field (1-50 characters, must be `a-z`, `0-9`, or `_`)           |
 | name                       | string        | The name of the metadata field (1-100 characters)                                    |
 | name_localizations?        | map[str, str] | Translations of the name with keys in [available locales](/reference#locales)        |
@@ -815,7 +840,7 @@ Returns a list of [application](#application-object) objects that the current us
       "id": "891436243903728565",
       "name": "Lightbulb",
       "icon": "546242649e3b09a97af7e8f29983837b",
-      "description": "\ud83d\udca1 Let there be light",
+      "description": "💡 Let there be light",
       "summary": "",
       "type": null,
       "is_monetized": false,
@@ -1079,6 +1104,71 @@ Resets the application's client secret. This revokes all previous secrets and re
 }
 ```
 
+<RouteHeader method="GET" url="/oauth2/applications/{application.id}/allowlist">
+  Get Application Testers
+</RouteHeader>
+
+Returns a list of [whitelisted user](#whitelisted-user-structure) objects representing the invited testers for the given application ID. User must be the owner of the application or member of the current team.
+
+###### Whitelisted User Structure
+
+| Field | Type                                               | Description                                                        |
+| ----- | -------------------------------------------------- | ------------------------------------------------------------------ |
+| user  | partial [user](/resources/user#user-object) object | The user that is whitelisted for the application                   |
+| state | integer                                            | The [state of the whitelisted user](#application-membership-state) |
+
+###### Application Membership State
+
+| Value | Name     | Description                                                                |
+| ----- | -------- | -------------------------------------------------------------------------- |
+| 1     | INVITED  | The user has been invited to the application but has not yet accepted      |
+| 2     | ACCEPTED | The user has accepted the invitation to the application and is whitelisted |
+
+<RouteHeader method="POST" url="/oauth2/applications/{application.id}/allowlist">
+  Add Application Tester
+</RouteHeader>
+
+Adds a user to the application's list of testers. User must be the owner of the application or developer of the current team. Returns a [whitelisted user](#whitelisted-user-structure) object on success.
+
+<Alert type="warn">
+
+You must be friends with the user you are inviting.
+
+</Alert>
+
+<Alert type="warn">
+
+Applications may have a maximum of 50 whitelisted users.
+
+</Alert>
+
+###### JSON Params
+
+| Field              | Type    | Description                          |
+| ------------------ | ------- | ------------------------------------ |
+| username           | string  | The username of the user to add      |
+| discriminator? ^1^ | ?string | The discriminator of the user to add |
+
+^1^ Not applicable for migrated users. See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
+
+<RouteHeader method="POST" url="/oauth2/allowlist/accept">
+  Accept Application Tester Invitation
+</RouteHeader>
+
+Accepts an application tester invitation received via email. Invited users will receive an email with a link that redirects to the official Discord client with a verification token present in the URL's query (e.g. `https://discord.com/oauth2/allowlist/accept?token=h9sYyrafnMhhObX4nGi9VOugCa9CSt`). Returns a 204 empty response on success.
+
+###### Query String Params
+
+| Field | Type   | Description                         |
+| ----- | ------ | ----------------------------------- |
+| token | string | The verification token from the URL |
+
+<RouteHeader method="DELETE" url="/oauth2/applications/{application.id}/allowlist/{user.id}">
+  Remove Application Tester
+</RouteHeader>
+
+Removes a user from the application's list of testers. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
+
 <RouteHeader method="POST" url="/applications/{application.id}/bot" mfa deprecated>
   Create Application Bot
 </RouteHeader>
@@ -1130,6 +1220,45 @@ Resets the application's bot token. This revokes all previous tokens and returns
 | Field | Type   | Description          |
 | ----- | ------ | -------------------- |
 | token | string | The token of the bot |
+
+<RouteHeader method="POST" url="/applications/{application.id}/request-additional-intents">
+  Request Application Gateway Intents
+</RouteHeader>
+
+Submits a request for Gateway intents for a verified bot. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field                                                                           | Type     | Description                                                                                                                                                                            |
+| ------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| application_description                                                         | string   | The description of the application (50-2000 characters)                                                                                                                                |
+| intents_flags_requested?                                                        | integer  | The [application flags](#application-flags) representing the requested Gateway intents (only `GATEWAY_PRESENCE`, `GATEWAY_GUILD_MEMBERS`, and `GATEWAY_MESSAGE_CONTENT` are supported) |
+| intents_gateway_presence_use_case_description? ^1^                              | ?string  | The use case for requesting the presence intent (50-2000 characters)                                                                                                                   |
+| intents_gateway_presence_use_case_supplemental_material_description? ^1^        | ?string  | The supplemental material for the requested Gateway presence intent (5-2000 characters)                                                                                                |
+| intents_gateway_presence_store_off_platform? ^1^                                | ?boolean | Whether the application stores presence data off-platform                                                                                                                              |
+| intents_gateway_presence_retention?                                             | ?boolean | Whether the application retains presence data for 30 days or less                                                                                                                      |
+| intents_gateway_presence_encrypted?                                             | ?boolean | Whether the application encrypts stored presence data at rest                                                                                                                          |
+| intents_gateway_presence_opt_out_stored?                                        | ?boolean | Whether application users can opt out of having their presence data stored                                                                                                             |
+| intents_gateway_presence_contact_deletion? ^1^                                  | ?string  | How application users can request the deletion of their presence data (25-2000 characters)                                                                                             |
+| intents_gateway_guild_members_use_case_description? ^1^                         | ?string  | The use case for requesting the guild members intent (50-2000 characters)                                                                                                              |
+| intents_gateway_guild_members_use_case_supplemental_material_description? ^1^   | ?string  | The supplemental material for the requested Gateway guild members intent (5-2000 characters)                                                                                           |
+| intents_gateway_guild_members_store_off_platform? ^1^                           | ?boolean | Whether the application stores guild member data off-platform                                                                                                                          |
+| intents_gateway_guild_members_retention?                                        | ?boolean | Whether the application retains guild member datafor 30 days or less                                                                                                                   |
+| intents_gateway_guild_members_encrypted?                                        | ?boolean | Whether the application encrypts stored guild member data at rest                                                                                                                      |
+| intents_gateway_guild_members_contact_deletion?                                 | ?string  | How application users can request the deletion of their guild member data (25-2000 characters)                                                                                         |
+| intents_gateway_message_content_use_case_description? ^1^                       | ?string  | The use case for requesting the message content intent (50-2000 characters)                                                                                                            |
+| intents_gateway_message_content_use_case_supplemental_material_description? ^1^ | ?string  | The supplemental material for the requested Gateway message content intent (5-2000 characters)                                                                                         |
+| intents_gateway_message_content_store_off_platform? ^1^                         | ?boolean | Whether the application stores message content data off-platform                                                                                                                       |
+| intents_gateway_message_content_retention?                                      | ?boolean | Whether the application retains message content data for 30 days or less                                                                                                               |
+| intents_gateway_message_content_encrypted?                                      | ?boolean | Whether the application encrypts stored message content data at rest                                                                                                                   |
+| intents_gateway_message_content_opt_out_stored?                                 | ?boolean | Whether application users can opt out of having their message content data stored                                                                                                      |
+| intents_gateway_message_content_ai_training?                                    | ?boolean | Whether the application uses message content data for AI training                                                                                                                      |
+| intents_gateway_message_content_privacy_policy_public?                          | ?boolean | Whether the application has a public privacy policy detailing how message content data is used                                                                                         |
+| intents_gateway_message_content_privacy_policy_location?                        | ?string  | Where the application's privacy policy can be found (25-2000 characters)                                                                                                               |
+| intents_gateway_message_content_privacy_policy_example?                         | ?string  | A link to or screenshots of the application's privacy policy (25-2000 characters)                                                                                                      |
+| intents_gateway_message_content_contact_deletion?                               | ?string  | How application users can request the deletion of their message content data (25-2000 characters)                                                                                      |
+
+^1^ Required if the corresponding intent is requested.
 
 <RouteHeader method="GET" url="/applications/{application.id}/discoverability-state">
   Get Application Discoverability State
@@ -1397,9 +1526,9 @@ Returns a partial [application](#application-object) object for the given ID wit
 
 ###### Query String Params
 
-| Field       | Type    | Description                                                                       |
-| ----------- | ------- | --------------------------------------------------------------------------------- |
-| with_guild? | boolean | Whether to include the `guild` field if the guild is discoverable (default false) |
+| Field       | Type    | Description                                                                                      |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------ |
+| with_guild? | boolean | Whether to include the guild object in the response if the guild is discoverable (default false) |
 
 <RouteHeader method="GET" url="/applications/{application.id}/rpc" unauthenticated>
   Get Rich Presence Application

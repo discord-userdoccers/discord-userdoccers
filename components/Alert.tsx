@@ -13,8 +13,13 @@ function getClasses(type: AlertType) {
 interface AlertProps {
   type: AlertType;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
-export default function Alert({ type, children }: AlertProps) {
-  return <aside className={getClasses(type)}>{children}</aside>;
+export default function Alert({ type, children, style }: AlertProps) {
+  return (
+    <aside className={getClasses(type)} style={style}>
+      {children}
+    </aside>
+  );
 }

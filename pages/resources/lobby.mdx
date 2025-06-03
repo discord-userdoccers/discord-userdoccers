@@ -1,0 +1,245 @@
+# Lobbies
+
+Lobbies are groups of users that can communicate with each other via text and voice. Users can be in multiple lobbies at once. A lobby can also have metadata (an arbitrary JSON blob) associated with the lobby and each user.
+
+Lobbies have a text chat channel that all members can use to communicate. Messages are sent to all members of the lobby.
+Lobbies support also voice calls. Although a lobby is allowed to have 1,000 members, you should not start voice calls in lobbies that large (around 25 is a good number).
+
+### Lobby Object
+
+A game lobby within Discord.
+
+###### Lobby Structure
+
+| Field           | Type                                                | Description                                                                |
+| --------------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| id              | snowflake                                           | The ID of the lobby                                                        |
+| application_id  | snowflake                                           | The ID of the application that created the lobby                           |
+| metadata        | ?map[string, string]                                | The metadata of the lobby (max 25 keys, 1024 characters per key and value) |
+| members         | array[[lobby member](#lobby-member-object) object]  | The members of the lobby (max 1000)                                        |
+| linked_channel? | [channel](/resources/channel#channel-object) object | The guild channel linked to the lobby                                      |
+
+###### Example Lobby Object
+
+```json
+{
+  "id": "1350184413060661332",
+  "application_id": "891436243903728565",
+  "metadata": {
+    "topic": "balls"
+  },
+  "members": [
+    {
+      "id": "852892297661906993",
+      "metadata": null,
+      "flags": 1
+    }
+  ]
+}
+```
+
+### Lobby Member Object
+
+Represents a member of a lobby.
+
+###### Lobby Member Structure
+
+| Field         | Type                 | Description                                                                       |
+| ------------- | -------------------- | --------------------------------------------------------------------------------- |
+| id ^1^        | snowflake            | The ID of the user                                                                |
+| metadata?     | ?map[string, string] | The metadata of the lobby member (max 25 keys, 1024 characters per key and value) |
+| flags?        | integer              | The [lobby member's flags](#lobby-member-flags)                                   |
+| connected ^2^ | boolean              | Whether the member is connected to a call in lobby                                |
+
+^1^ Not included when returned [over the Gateway](/topics/gateway-events#lobbies).
+
+^2^ Only included in lobby objects returned [over the Gateway](/topics/gateway-events#lobbies).
+
+###### Lobby Member Flags
+
+| Value  | Name           | Description                                       |
+| ------ | -------------- | ------------------------------------------------- |
+| 1 << 0 | CAN_LINK_LOBBY | Lobby member can link a text channel to the lobby |
+
+## Endpoints
+
+<RouteHeader method="POST" url="/lobbies">
+  Create Lobby
+</RouteHeader>
+
+Creates a new lobby. Returns a [lobby](#lobby-object) object on success. Fires a [Lobby Create](/topics/gateway-events#lobby-create) Gateway event.
+
+<Alert type="info">
+
+Clients will not be able to join or leave a lobby created using this API.
+
+</Alert>
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field                 | Type                                                       | Description                                                                                                       |
+| --------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| metadata?             | ?map[string, string]                                       | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                                        |
+| members?              | array[partial [lobby member](#lobby-member-object) object] | The members of the lobby (max 25)                                                                                 |
+| idle_timeout_seconds? | integer                                                    | How long to wait (in seconds) before shutting down a lobby after it becomes idle (min 5, max 604800, default 300) |
+
+<RouteHeader method="PUT" url="/lobbies" supportsOAuth2="lobbies.write">
+  Join or Create Lobby
+</RouteHeader>
+
+Joins an existing lobby or creates a new lobby. Returns a [lobby](#lobby-object) object on success. May fire a [Lobby Create](/topics/gateway-events#lobby-create) or [Lobby Member Add](/topics/gateway-events#lobby-member-add) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field                 | Type                 | Description                                                                                                       |
+| --------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| secret ^1^            | string               | The lobby secret (max 250 characters)                                                                             |
+| lobby_metadata?       | ?map[string, string] | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                                        |
+| member_metadata?      | ?map[string, string] | The metadata of the lobby member (max 25 keys, 1024 characters per key and value)                                 |
+| idle_timeout_seconds? | integer              | How long to wait (in seconds) before shutting down a lobby after it becomes idle (min 5, max 604800, default 300) |
+
+^1^ Secret values expire after 30 days. After this time period, the lobby will still exist, but new users won't be able to join.
+
+<RouteHeader method="GET" url="/lobbies/{lobby.id}">
+  Get Lobby
+</RouteHeader>
+
+Returns a [lobby](#lobby-object) object for the given lobby ID. User must be a member of the lobby.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="PATCH" url="/lobbies/{lobby.id}">
+  Modify Lobby
+</RouteHeader>
+
+Modifies a lobby's settings. Application must be the creator of the lobby. Returns the updated [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field                 | Type                                               | Description                                                                                          |
+| --------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| metadata?             | ?map[string, string]                               | The metadata of the lobby (max 25 keys, 1024 characters per key and value)                           |
+| members?              | array[[lobby member](#lobby-member-object) object] | The members of the lobby (max 25)                                                                    |
+| idle_timeout_seconds? | integer                                            | How long to wait (in seconds) before shutting down a lobby after it becomes idle (min 5, max 604800) |
+
+<RouteHeader method="DELETE" url="/lobbies/{lobby.id}">
+  Delete Lobby
+</RouteHeader>
+
+Deletes a lobby. Application must be the creator of the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="PUT" url="/lobbies/{lobby.id}/members/{user.id}">
+  Add Lobby Member
+</RouteHeader>
+
+Adds a member to the lobby. Returns the [lobby member](#lobby-member-object) object. Fires a [Lobby Member Add](/topics/gateway-events#lobby-member-add) or [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<Alert type="info">
+
+All parameters to this endpoint are optional and nullable. Omitting or setting a `null` value will set it to default. If the user is already a member of the lobby, this will update the member and fire a [Lobby Member Update](/topics/gateway-events#lobby-member-update) Gateway event instead.
+
+</Alert>
+
+###### JSON Params
+
+| Field     | Type                 | Description                                                                       |
+| --------- | -------------------- | --------------------------------------------------------------------------------- |
+| metadata? | ?map[string, string] | The metadata of the lobby member (max 25 keys, 1024 characters per key and value) |
+| flags?    | integer              | The [lobby member's flags](#lobby-member-flags)                                   |
+
+<RouteHeader method="DELETE" url="/lobbies/{lobby.id}/members/{user.id}">
+  Remove Lobby Member
+</RouteHeader>
+
+Removes a member from the lobby. Returns a 204 empty response on success. Fires a [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="DELETE" url="/lobbies/{lobby.id}/members/@me" supportsOAuth2="lobbies.write">
+  Leave Lobby
+</RouteHeader>
+
+Removes the current user from the lobby. Returns a 204 empty response on success. Fires a [Lobby Delete](/topics/gateway-events#lobby-delete) and [Lobby Member Remove](/topics/gateway-events#lobby-member-remove) Gateway event.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `lobbies.write` scope.
+
+</Alert>
+
+<RouteHeader method="PATCH" url="/lobbies/{lobby.id}/channel-linking" supportsOAuth2="lobbies.write">
+  Modify Lobby Linked Channel
+</RouteHeader>
+
+Links or unlinks a channel to the lobby. Returns a [lobby](#lobby-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) and [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+The application must be the creator of the lobby or the member must have the [`CAN_LINK_LOBBY` flag](#lobby-member-flags).
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `lobbies.write` scope.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type       | Description                                |
+| ----------- | ---------- | ------------------------------------------ |
+| channel_id? | ?snowflake | The ID of the channel to link to the lobby |
+
+<RouteHeader method="POST" url="/lobbies/{lobby.id}/messages" supportsOAuth2="lobbies.write">
+  Create Lobby Message
+</RouteHeader>
+
+Posts a message to a lobby. Returns a partial [message](/resources/message#message-object) object on success. Fires a [Lobby Message Create](/topics/gateway-events#lobby-message-create) and [Message Create](/topics/gateway-events#message-create) Gateway event.
+Functionally identical to the [Create Message](/resources/message#create-message) endpoint, but is used for lobbies in an OAuth2 context and has some additional parameters. Check there for more information.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `lobbies.write` scope.
+
+</Alert>
+
+###### Extra JSON Params
+
+| Field     | Type   | Description                                                                      |
+| --------- | ------ | -------------------------------------------------------------------------------- |
+| metadata? | object | Custom metadata for the message (max 25 keys, 1024 characters per key and value) |

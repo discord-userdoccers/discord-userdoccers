@@ -93,8 +93,18 @@ Having the `MANAGE_CHANNELS` permission bypasses this limit and allows you to jo
 
 <Alert type="info">
 
-Similarly, when the voice channel max video user limit is reached, you will not receive any events in response to your request.
-However, having the `MANAGE_CHANNELS` permission only allows an extra one additional user to join the channel. It does not bypass the limit entirely.
+Similarly, when the voice channel video user limit is reached, you will not receive any events in response to your request.
+However, having the `MANAGE_CHANNELS` permission allows an additional **one** user to join the channel (i.e. moderators have a limit of `max_video_channel_users + 1`).
+So, assuming the channel is not already oversaturated, you will be able to join the channel even if the video user limit is reached.
+
+</Alert>
+
+<Alert type="info">
+
+In the case of streams, a stage channel's max stream user limit is given by `max_stage_video_channel_users`.
+For voice channels, the limit is typically 50, but clients should attempt to join the channel regardless of the limit.
+If the limit is reached, the Gateway will respond with a [Stream Delete](/topics/gateway-events#stream-delete) event, containing a `reason` of `stream_full`.
+This signals that the client cannot join the stream.
 
 </Alert>
 
@@ -108,18 +118,20 @@ Once a call exists, clients can choose to [ring the channel recipients](/resourc
 
 ### Establishing a Voice WebSocket Connection
 
-Once we retrieve a `session_id`, `token`, and `endpoint` information, we can connect and handshake with the voice server over another secure WebSocket. Unlike the Gateway endpoint we receive in a [Get Gateway](/topics/gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/topics/gateway-events#voice-server-update) payload does not contain a URL protocol, so some libraries may require manually prepending it with `wss://` before connecting. Once connected to the voice WebSocket endpoint, we can immediately send an [Opcode 0 Identify](#gateway-commands) payload:
+Once we retrieve a `session_id`, `token`, and `endpoint` information, we can connect and handshake with the voice server over another secure WebSocket.
+Unlike the Gateway endpoint we receive in a [Get Gateway](/topics/gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/topics/gateway-events#voice-server-update) payload does not contain a URL protocol,
+so some libraries may require manually prepending it with `wss://` before connecting. Once connected to the voice WebSocket endpoint, we can immediately send an [Opcode 0 Identify](#gateway-commands) payload:
 
 ###### Identify Structure
 
-| Field      | Type                                      | Description                                                        |
-| ---------- | ----------------------------------------- | ------------------------------------------------------------------ |
-| server_id  | snowflake                                 | The ID of the guild, private channel, or stream being connected to |
-| user_id    | snowflake                                 | The ID of the current user                                         |
-| session_id | string                                    | The session ID of the current session                              |
-| token      | string                                    | The voice token for the current session                            |
-| video?     | boolean                                   | Whether this connection supports video (default false)             |
-| streams?   | array[[stream](#stream-structure) object] | [Simulcast](#simulcasting) streams to send                         |
+| Field      | Type                                      | Description                                                               |
+| ---------- | ----------------------------------------- | ------------------------------------------------------------------------- |
+| server_id  | snowflake                                 | The ID of the guild, private channel, stream, or lobby being connected to |
+| user_id    | snowflake                                 | The ID of the current user                                                |
+| session_id | string                                    | The session ID of the current session                                     |
+| token      | string                                    | The voice token for the current session                                   |
+| video?     | boolean                                   | Whether this connection supports video (default false)                    |
+| streams?   | array[[stream](#stream-structure) object] | [Simulcast](#simulcasting) streams to send                                |
 
 ###### Stream Structure
 
@@ -951,3 +963,5 @@ Then, send a [Create Stream](/topics/gateway-events#create-stream) or [Watch Str
 
 If our request succeeded, as with voice, you must wait for the Gateway to respond with _two_ events—a [Stream Create](/topics/gateway-events#stream-create) event and a [Stream Server Update](/topics/gateway-events#stream-server-update).
 You can then use the information provided in these events to establish a connection to the stream server as outlined in [Connecting to Voice](#connecting-to-voice). Note that the `server_id` used when identifying will be provided in the [Stream Create](/topics/gateway-events#stream-create) event.
+
+Note that if joining a stream fails, the Gateway will instead respond with a [Stream Delete](/topics/gateway-events#stream-delete) event which will contain the reason for the failure.

@@ -1,4 +1,5 @@
 import classNames from "classnames";
+import React from "react";
 import Link, { LinkProps } from "next/link";
 
 // hack to make the props like each other
@@ -13,7 +14,7 @@ function DocLink({ href, ...props }: DocLinkProps) {
   return <Link href={href} {...props} />;
 }
 
-export default function Anchor({ href, className, ...props }: JSX.IntrinsicElements["a"]) {
+export default function Anchor({ href, className, ...props }: React.JSX.IntrinsicElements["a"]) {
   const classes = classNames("text-brand-link hover:underline", className);
 
   if (href?.startsWith("/")) {

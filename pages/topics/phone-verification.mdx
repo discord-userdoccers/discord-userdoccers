@@ -1,0 +1,134 @@
+# Phone Verification
+
+Discord allows users to add a phone number to their account for various purposes, such as account security, verification, and contact syncing.
+There are a few different flows for phone verification, depending on the context in which the phone number is being used.
+
+## Registering with a Phone Number
+
+When registering a new account, users can provide a phone number to verify their account. This flow is outlined in the [account registration documentation](/authentication#phone-registration).
+
+## Adding a Phone Number
+
+Users can add a phone number to their account at any time. This is required for certain features, or, in some cases, for [anti-abuse purposes](/resources/user#required-action-type).
+
+To add a phone number, clients must first send a request to the [Add Phone Number](#add-phone-number) endpoint with the phone number the user wishes to add, and preferrably a reason for the change. This will send a verification code to the phone number via SMS.
+After the user receives the code, clients must then use the [Verify Phone Number](#verify-phone-number) endpoint with the phone number and the code to receive a phone verification token.
+After receiving the token, clients can then use the [Add Phone Number](#add-phone-number) endpoint again, providing the verification token, the user's password, and the same reason to complete the process.
+
+<Alert type="info">
+
+Phone numbers can only be associated with one Discord account at a time. Adding a phone number that is already associated with another account may result in the phone number being removed from the other account.
+Registering a new account with a phone number that is already associated with another account will fail, and the user will need to remove the phone number from the other account first.
+
+</Alert>
+
+## Reverifying Your Phone Number
+
+Users may be prompted to reverify their phone number for [anti-abuse purposes](/resources/user#required-action-type).
+
+In this case, clients must follow the same flow as [adding a phone number](#adding-a-phone-number), but instead of the [Add Phone Number](#add-phone-number) endpoint, they must use the [Reverify Phone Number](#reverify-phone-number) endpoint.
+
+## Removing Your Phone Number
+
+Users can remove a phone number from their account at any time. Note that if a phone number was added for anti-abuse purposes, the user may be required to add a new phone number before they can continue using their account.
+
+To remove a phone number, clients must send a request to the [Remove Phone Number](#remove-phone-number) endpoint with the user's password and an optional reason for removing the phone number.
+
+###### Change Phone Reason
+
+| Value                | Description                                                             |
+| -------------------- | ----------------------------------------------------------------------- |
+| user_action_required | Phone number is required for anti-abuse purposes                        |
+| user_settings_update | Phone number is manually added by the user                              |
+| guild_phone_required | Phone number is required to fulfill a guild's verification requirements |
+| mfa_phone_update     | Phone number is desired to enable SMS MFA                               |
+| contact_sync         | Phone number is desired to sync contacts                                |
+
+## Endpoints
+
+<RouteHeader method="POST" url="/phone-verifications/verify" unauthenticated>
+  Verify Phone Number
+</RouteHeader>
+
+Verifies a phone number for use in Discord. A code must first be sent to the phone number via a verification flow.
+
+###### JSON Params
+
+| Field | Type   | Description                                |
+| ----- | ------ | ------------------------------------------ |
+| phone | string | The E.164-formatted phone number to verify |
+| code  | string | The code received via SMS                  |
+
+###### Response Body
+
+| Field | Type   | Description                             |
+| ----- | ------ | --------------------------------------- |
+| token | string | The token to use for phone verification |
+
+<RouteHeader method="POST" url="/phone-verifications/resend" unauthenticated>
+  Resend Verification Code
+</RouteHeader>
+
+Resends a verification code to the given phone number. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field | Type   | Description                                          |
+| ----- | ------ | ---------------------------------------------------- |
+| phone | string | The E.164-formatted phone number to resend a code to |
+
+<RouteHeader method="POST" url="/users/@me/phone">
+  Add Phone Number
+</RouteHeader>
+
+Adds a phone number to the current user's account. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) and optionally a [User Required Action Update](/topics/gateway-events#user-required-action-update) Gateway event.
+
+<Alert type="info">
+
+Providing the `phone` parameter will send a verification code to the phone number. After the phone number is [verified](#verify-phone-number), the request should be retried, providing `phone_token` and `password` (and NOT `phone`) to complete the process.
+
+</Alert>
+
+###### JSON Params
+
+| Field                | Type   | Description                                                                                      |
+| -------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| phone?               | string | The E.164-formatted phone number to send a verification code to                                  |
+| phone_token?         | string | The phone verification token received from the [phone registration flow](#adding-a-phone-number) |
+| password?            | string | The user's current password; if the account does not have a password, this sets it               |
+| change_phone_reason? | string | The [reason](#change-phone-reason) for adding a phone number                                     |
+
+<RouteHeader method="POST" url="/users/@me/phone/reverify">
+  Reverify Phone Number
+</RouteHeader>
+
+Reverifies a phone number for the current user. This endpoint should only be used when a [relevant required action](/resources/user#required-action-type) is received. The phone number provided must match the phone number currently associated with the account.
+Fires a [User Update](/topics/gateway-events#user-update) and optionally a [User Required Action Update](/topics/gateway-events#user-required-action-update) Gateway event.
+
+<Alert type="info">
+
+Providing the `phone` parameter will send a verification code to the phone number. After the phone number is [verified](#verify-phone-number), the request should be retried, providing `phone_token` and `password` (and NOT `phone`) to complete the process.
+
+</Alert>
+
+###### JSON Params
+
+| Field                | Type   | Description                                                                                      |
+| -------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| phone?               | string | The E.164-formatted phone number to send a verification code to                                  |
+| phone_token?         | string | The phone verification token received from the [phone registration flow](#adding-a-phone-number) |
+| password?            | string | The user's current password; if the account does not have a password, this sets it               |
+| change_phone_reason? | string | The [reason](#change-phone-reason) for adding a phone number                                     |
+
+<RouteHeader method="DELETE" url="/users/@me/phone" mfa>
+  Remove Phone Number
+</RouteHeader>
+
+Removes the phone number from the current user. Returns a 204 empty response on success. Fires a [User Update](/topics/gateway-events#user-update) and optionally a [User Required Action Update](/topics/gateway-events#user-required-action-update) Gateway event.
+
+###### JSON Params
+
+| Field               | Type   | Description                                                                        |
+| ------------------- | ------ | ---------------------------------------------------------------------------------- |
+| password            | string | The user's current password; if the account does not have a password, this sets it |
+| change_phone_reason | string | The [removal reason](#change-phone-reason)                                         |

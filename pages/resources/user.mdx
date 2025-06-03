@@ -1,3 +1,7 @@
+---
+sort-name: User
+---
+
 # Users
 
 Users in Discord are generally considered the base entity. Users can spawn across the entire platform, be members of
@@ -67,9 +71,10 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | id                           | snowflake                                                                | The ID of the user                                                                                              |
 | username ^5^                 | string                                                                   | The user's username, may be unique across the platform (2-32 characters)                                        |
 | discriminator ^5^            | string                                                                   | The user's stringified 4-digit Discord tag                                                                      |
-| global_name ^5^              | ?string                                                                  | The user's display name (1-32 characters); for bots, this is the application name                               |
+| global_name ^5^              | ?string                                                                  | The user's display name (1-32 characters)                                                                       |
 | avatar                       | ?string                                                                  | The user's [avatar hash](/reference#cdn-formatting)                                                             |
 | avatar_decoration_data       | ?[avatar decoration data](#avatar-decoration-data-structure) object      | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
+| collectibles                 | ?[collectibles](#collectibles-structure) object                          | The user's equipped collectibles                                                                                |
 | primary_guild?               | ?[primary guild](#primary-guild-structure) object                        | The primary clan guild the user is in                                                                           |
 | linked_users ^1^ ^3^         | array[[linked user](/resources/family-center#linked-user-object) object] | The linked users connected to the account via [Family Center](/resources/family-center)                         |
 | bot?                         | boolean                                                                  | Whether the user is a bot account                                                                               |
@@ -80,7 +85,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | pronouns? ^1^ ^4^            | string                                                                   | The user's pronouns (max 40 characters)                                                                         |
 | bio ^1^                      | string                                                                   | The user's bio (max 190 characters)                                                                             |
 | banner                       | ?string                                                                  | The user's [banner hash](/reference#cdn-formatting)                                                             |
-| accent_color                 | ?integer                                                                 | The user's banner color encoded as an integer representation of hexadecimal color code                          |
+| accent_color                 | ?integer                                                                 | The user's banner color encoded as an integer representation of a hexadecimal color code                        |
 | locale? ^3^                  | string                                                                   | The [language option](/reference#locales) chosen by the user                                                    |
 | verified ^2^                 | boolean                                                                  | Whether the email on this account has been verified                                                             |
 | email ^2^                    | ?string                                                                  | The user's email address                                                                                        |
@@ -117,11 +122,12 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | global_name? ^1^        | ?string                                                          | The user's display name (1-32 characters); for bots, this is the application name                               |
 | avatar                  | ?string                                                          | The user's [avatar hash](/reference#cdn-formatting)                                                             |
 | avatar_decoration_data? | ?[avatar decoration data](#avatar-decoration-data-object) object | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
+| collectibles            | ?[collectibles](#collectibles-structure) object                  | The user's equipped collectibles                                                                                |
 | primary_guild?          | ?[primary guild](#primary-guild-structure) object                | The primary clan guild the user is in                                                                           |
 | bot?                    | boolean                                                          | Whether the user is a bot account                                                                               |
 | system?                 | boolean                                                          | Whether the user is an official Discord System user (part of the urgent message system)                         |
 | banner? ^2^             | ?string                                                          | The user's [banner hash](/reference#cdn-formatting)                                                             |
-| accent_color? ^2^       | ?integer                                                         | The user's banner color encoded as an integer representation of hexadecimal color code                          |
+| accent_color? ^2^       | ?integer                                                         | The user's banner color encoded as an integer representation of a hexadecimal color code                        |
 | public_flags?           | integer                                                          | The public [flags](#user-flags) on a user's account                                                             |
 
 ^1^ See the [section on Discord's new username system](#unique-usernames) for more information.
@@ -192,12 +198,13 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 
 Purchased flags denote what premium items a user has ever purchased. Visit the [Nitro](https://discord.com/nitro) page to learn more about the premium plans currently offered.
 
-| Value  | Name          | Description                      |
-| ------ | ------------- | -------------------------------- |
-| 1 << 0 | NITRO_CLASSIC | User has purchased Nitro classic |
-| 1 << 1 | NITRO         | User has purchased regular Nitro |
-| 1 << 2 | GUILD_BOOST   | User has purchased a guild boost |
-| 1 << 3 | NITRO_BASIC   | User has purchased Nitro basic   |
+| Value  | Name             | Description                      |
+| ------ | ---------------- | -------------------------------- |
+| 1 << 0 | NITRO_CLASSIC    | User has purchased Nitro classic |
+| 1 << 1 | NITRO            | User has purchased regular Nitro |
+| 1 << 2 | GUILD_BOOST      | User has purchased a guild boost |
+| 1 << 3 | NITRO_BASIC      | User has purchased Nitro basic   |
+| 1 << 4 | ON_REVERSE_TRIAL | User has a reverse trial active  |
 
 ###### Premium Usage Flags
 
@@ -230,23 +237,21 @@ Premium types denote the level of premium a user has. Visit the [Nitro](https://
 
 ###### Required Action Type
 
-Required action types denote an action Discord requires the user to take before they can continue using the platform.
+Denotes an action Discord requires the user to take before they can continue using the platform. In some cases, multiple actions may be required, and the user must complete all of them before they can continue using Discord.
 
-| Value                            | Description                                                                                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| UPDATE_AGREEMENTS                | The user must re-indicate their agreement of Discord's terms of service and privacy policy; this does not limit the user from using Discord |
-| ~~COMPLETE_CAPTCHA~~             | ~~The user must [complete a reCAPTCHA challenge](#verify-user-captcha)~~                                                                    |
-| VERIFY_EMAIL                     | The user must add and verify an email address to their account                                                                              |
-| REVERIFY_EMAIL                   | The user must reverify their existing email address                                                                                         |
-| VERIFY_PHONE                     | The user must add a phone number to their account                                                                                           |
-| REVERIFY_PHONE                   | The user must reverify their existing phone number                                                                                          |
-| ~~VERIFY_PHONE_THEN_EMAIL~~ ^1^  | ~~The user must add a phone number to their account and then add and verify an email address to their account~~                             |
-| VERIFY_EMAIL_OR_VERIFY_PHONE     | The user must add and verify an email address to their account or add a phone number to their account                                       |
-| REVERIFY_EMAIL_OR_VERIFY_PHONE   | The user must reverify their existing email address or add a phone number to their account                                                  |
-| VERIFY_EMAIL_OR_REVERIFY_PHONE   | The user must add and verify an email address to their account or reverify their existing phone number                                      |
-| REVERIFY_EMAIL_OR_REVERIFY_PHONE | The user must reverify their existing email address or reverify their existing phone number                                                 |
-
-^1^ This is now represented by first receiving a `VERIFY_PHONE` action, and then receiving a `VERIFY_EMAIL` action after the phone number has been verified.
+| Value                                        | Description                                                                                                                                 | Action                                                                                                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AGREEMENTS                                   | The user must re-indicate their agreement of Discord's terms of service and privacy policy; this does not limit the user from using Discord | [Reaffirm agreements](#modify-user-agreements)                                                                                                                                     |
+| ~~REQUIRE_CAPTCHA~~                          | ~~The user must complete a reCAPTCHA challenge~~                                                                                            | ~~[Complete a reCAPTCHA challenge](#verify-user-captcha)~~                                                                                                                         |
+| REQUIRE_VERIFIED_EMAIL                       | The user must add and verify an email address to their account                                                                              | [Add an email address](/topics/email-verification#adding-an-email-address)                                                                                                         |
+| REQUIRE_REVERIFIED_EMAIL                     | The user must reverify their existing email address                                                                                         | [Reverify your email address](/topics/email-verification#reverifying-your-email-address)                                                                                           |
+| REQUIRE_VERIFIED_PHONE                       | The user must add a phone number to their account                                                                                           | [Add a phone number](/topics/phone-verification#adding-a-phone-number)                                                                                                             |
+| REQUIRE_REVERIFIED_PHONE                     | The user must reverify their existing phone number                                                                                          | [Reverify your phone number](/topics/phone-verification#reverifying-your-phone-number)                                                                                             |
+| ~~REQUIRE_VERIFIED_PHONE_THEN_EMAIL~~        | ~~The user must add a phone number to their account and then add and verify an email address to their account~~                             | ~~[Add a phone number](/topics/phone-verification#adding-a-phone-number) and [add an email address](/topics/email-verification#adding-an-email-address)~~                          |
+| REQUIRE_VERIFIED_EMAIL_OR_VERIFIED_PHONE     | The user must add and verify an email address to their account or add a phone number to their account                                       | [Add an email address](/topics/email-verification#adding-an-email-address) or [add a phone number](/topics/phone-verification#adding-a-phone-number)                               |
+| REQUIRE_REVERIFIED_EMAIL_OR_VERIFIED_PHONE   | The user must reverify their existing email address or add a phone number to their account                                                  | [Reverify your email address](/topics/email-verification#reverifying-your-email-address) or [add a phone number](/topics/phone-verification#adding-a-phone-number)                 |
+| REQUIRE_VERIFIED_EMAIL_OR_REVERIFIED_PHONE   | The user must add and verify an email address to their account or reverify their existing phone number                                      | [Add an email address](/topics/email-verification#adding-an-email-address) or [reverify your phone number](/topics/phone-verification#reverifying-your-phone-number)               |
+| REQUIRE_REVERIFIED_EMAIL_OR_REVERIFIED_PHONE | The user must reverify their existing email address or reverify their existing phone number                                                 | [Reverify your email address](/topics/email-verification#reverifying-your-email-address) or [reverify your phone number](/topics/phone-verification#reverifying-your-phone-number) |
 
 ###### Example User
 
@@ -318,11 +323,11 @@ A user's active avatar decoration.
 
 ###### Avatar Decoration Data Structure
 
-| Field       | Type     | Description                                                  |
-| ----------- | -------- | ------------------------------------------------------------ |
-| asset       | string   | The [avatar decoration hash](/reference#cdn-formatting)      |
-| sku_id?     | string   | The ID of the avatar decoration's SKU                        |
-| expires_at? | ?integer | Unix timestamp of when the current avatar decoration expires |
+| Field      | Type      | Description                                                  |
+| ---------- | --------- | ------------------------------------------------------------ |
+| asset      | string    | The [avatar decoration hash](/reference#cdn-formatting)      |
+| sku_id     | snowflake | The ID of the avatar decoration's SKU                        |
+| expires_at | ?integer  | Unix timestamp of when the current avatar decoration expires |
 
 ###### Example Avatar Decoration Data
 
@@ -331,6 +336,55 @@ A user's active avatar decoration.
   "sku_id": "1144058844004233369",
   "asset": "a_fed43ab12698df65902ba06727e20c0e",
   "expires_at": 1740124800
+}
+```
+
+### Collectibles Object
+
+A user's equipped collectibles.
+
+###### Collectibles Structure
+
+| Field     | Type                                               | Description                                                                                         |
+| --------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| nameplate | [nameplate data](#nameplate-data-structure) object | The user's [nameplate](https://support.discord.com/hc/en-us/articles/30408457944215-Nameplates-FAQ) |
+
+###### Nameplate Data Structure
+
+| Field      | Type      | Description                                               |
+| ---------- | --------- | --------------------------------------------------------- |
+| asset      | string    | The [nameplate asset path](/reference#cdn-formatting)     |
+| sku_id     | snowflake | The ID of the nameplate's SKU                             |
+| label      | string    | The nameplate's accessibility description                 |
+| palette    | string    | The nameplate's [color palette](#nameplate-color-palette) |
+| expires_at | ?integer  | Unix timestamp of when the current nameplate expires      |
+
+###### Nameplate Color Palette
+
+| Value      | Name      |
+| ---------- | --------- |
+| none       | None      |
+| crimson    | Crimson   |
+| berry      | Berry     |
+| sky        | Sky       |
+| teal       | Teal      |
+| forest     | Forest    |
+| bubble_gum | BubbleGum |
+| violet     | Violet    |
+| cobalt     | Cobalt    |
+| clover     | Clover    |
+
+###### Example Collectibles Object
+
+```json
+{
+  "nameplate": {
+    "asset": "nameplates/nameplatetest/angel/",
+    "palette": "bubble_gum",
+    "label": "COLLECTIBLES_NAMEPLATETEST_ANGEL_A11Y",
+    "sku_id": "1344802364934062152",
+    "expires_at": null
+  }
 }
 ```
 
@@ -346,7 +400,7 @@ A user's profile metadata.
 | pronouns                        | string                                              | The user's pronouns (max 40 characters)                                                                   |
 | bio?                            | string                                              | The user's bio (max 190 characters)                                                                       |
 | banner?                         | ?string                                             | The user's [banner hash](/reference#cdn-formatting)                                                       |
-| accent_color? ^1^               | ?integer                                            | The user's banner color encoded as an integer representation of hexadecimal color code                    |
+| accent_color? ^1^               | ?integer                                            | The user's banner color encoded as an integer representation of a hexadecimal color code                  |
 | theme_colors?                   | ?array[integer, integer]                            | The user's two theme colors encoded as an array of integers representing hexadecimal color codes          |
 | popout_animation_particle_type? | ?snowflake                                          | The user's profile popout animation particle type                                                         |
 | emoji?                          | ?[emoji](/resources/emoji#emoji-object) object      | The user's profile emoji                                                                                  |
@@ -589,160 +643,6 @@ A user survey.
 }
 ```
 
-### Connection Object
-
-The connection object that the user has attached.
-
-###### Connection Structure
-
-| Field                | Type                                                                      | Description                                                             |
-| -------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| id                   | string                                                                    | ID of the connection account                                            |
-| type                 | string                                                                    | The [type](#connection-type) of the connection                          |
-| name                 | string                                                                    | The username of the connection account                                  |
-| verified             | boolean                                                                   | Whether the connection is verified                                      |
-| metadata?            | object                                                                    | Service-specific metadata about the connection                          |
-| metadata_visibility  | integer                                                                   | [Visibility](#visibility-type) of the connection's metadata             |
-| revoked              | boolean                                                                   | whether the connection is revoked                                       |
-| integrations ^1^ ^2^ | array[[connection integration](#connection-integration-structure) object] | The guild integrations attached to the connection                       |
-| friend_sync          | boolean                                                                   | Whether friend sync is enabled for this connection                      |
-| show_activity        | boolean                                                                   | Whether activities related to this connection will be shown in presence |
-| two_way_link         | boolean                                                                   | Whether this connection has a corresponding third party OAuth2 token    |
-| visibility           | integer                                                                   | [Visibility](#visibility-type) of the connection                        |
-| access_token? ^1^    | string                                                                    | The access token for the connection account                             |
-
-^1^ Not included when [fetching a user's connections](#get-user-connections) via OAuth2.
-
-^2^ These integrations can be used to [join your own sub-enabled guild or the guild of a creator you are supporting](/resources/integration#join-integration-guild).
-
-###### Partial Connection Structure
-
-| Field     | Type    | Description                                    |
-| --------- | ------- | ---------------------------------------------- |
-| id        | string  | ID of the connection account                   |
-| type      | string  | The [type](#connection-type) of the connection |
-| name      | string  | The username of the connection account         |
-| verified  | boolean | Whether the connection is verified             |
-| metadata? | object  | Service-specific metadata about the connection |
-
-###### Example Connection
-
-```json
-{
-  "type": "reddit",
-  "id": "run&hide",
-  "name": "alien",
-  "visibility": 1,
-  "friend_sync": false,
-  "show_activity": true,
-  "verified": true,
-  "two_way_link": false,
-  "metadata_visibility": 1,
-  "metadata": {
-    "gold": "0",
-    "mod": "1",
-    "total_karma": "20223",
-    "created_at": "2019-05-02T20:28:37"
-  },
-  "revoked": false,
-  "integrations": []
-}
-```
-
-###### Example Partial Connection
-
-```json
-{
-  "type": "reddit",
-  "id": "run&hide",
-  "name": "alien",
-  "verified": true,
-  "metadata": {
-    "gold": "0",
-    "mod": "1",
-    "total_karma": "20223",
-    "created_at": "2019-05-02T20:28:37"
-  }
-}
-```
-
-###### Connection Integration Structure
-
-| Field   | Type                                                                        | Description                                                        |
-| ------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| id ^1^  | snowflake                                                                   | The ID of the integration                                          |
-| type    | string                                                                      | The [type of integration](/resources/integration#integration-type) |
-| account | [account](/resources/integration#integration-account-structure) object      | The integration's account information                              |
-| guild   | [integration guild](/resources/integration#integration-guild-object) object | The guild that the integration is attached to                      |
-
-^1^ This field may also be the literal string "twitch-partners" to represent the Twitch Partners integration.
-
-###### Example Connection Integration
-
-```json
-{
-  "id": "twitch-partners",
-  "type": "twitch",
-  "account": {
-    "id": "92473777",
-    "name": "discordapp"
-  },
-  "guild": {
-    "id": "107939014299901952",
-    "name": "Twitch Partners",
-    "icon": "62450d21b75478191962d9c4b81831ae"
-  }
-}
-```
-
-###### Connection Type
-
-| Value           | Name                          |
-| --------------- | ----------------------------- |
-| amazon-music    | Amazon Music                  |
-| battlenet       | Battle.net                    |
-| bluesky         | Bluesky                       |
-| bungie          | Bungie.net                    |
-| contacts ^2^    | Contact Sync                  |
-| crunchyroll     | Crunchyroll                   |
-| domain          | Domain                        |
-| ebay            | eBay                          |
-| epicgames       | Epic Games                    |
-| facebook        | Facebook                      |
-| github          | GitHub                        |
-| instagram ^1^   | Instagram                     |
-| leagueoflegends | League of Legends             |
-| mastodon        | Mastodon                      |
-| paypal          | PayPal                        |
-| playstation     | PlayStation Network           |
-| playstation-stg | PlayStation Network (Staging) |
-| reddit          | Reddit                        |
-| roblox          | Roblox                        |
-| riotgames       | Riot Games                    |
-| samsung ^1^     | Samsung Galaxy                |
-| soundcloud      | SoundCloud                    |
-| spotify         | Spotify                       |
-| skype ^1^       | Skype                         |
-| steam           | Steam                         |
-| tiktok          | TikTok                        |
-| twitch          | Twitch                        |
-| twitter         | Twitter                       |
-| xbox            | Xbox                          |
-| youtube         | YouTube                       |
-
-^1^ Service can no longer be added by users.
-
-^2^ Service is not returned in [Get User Profile](#get-user-profile) or when [fetching a user's connections](#get-user-connections) via OAuth2.
-
-###### Visibility Type
-
-| Value | Name     | Description                                      |
-| ----- | -------- | ------------------------------------------------ |
-| 0     | NONE     | Invisible to everyone except the user themselves |
-| 1     | EVERYONE | Visible to everyone                              |
-
-[Partial connections](#partial-connection-structure) always have a visibility of 1.
-
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me" supportsOAuth2="identify">
@@ -771,6 +671,8 @@ At least one active Gateway session is required to modify a user account's usern
 | discriminator? ^5^        | string                             | The user's stringified 4-digit Discord tag; can only be changed for users with an applicable premium (Nitro) plan, which triggers a reroll after the subscription expires |
 | global_name? ^5^          | ?string                            | The user's display name (1-32 characters)                                                                                                                                 |
 | avatar?                   | ?[image data](/reference#cdn-data) | The user's avatar; can be animated when the user has an applicable premium (Nitro) plan                                                                                   |
+| avatar_description?       | ?string                            | The description of the new user avatar, usually in the format "{filename}, added {date}" (max 1024 characters)                                                            |
+| avatar_id?                | string                             | The ID of the recent avatar to use                                                                                                                                        |
 | avatar_decoration_id?     | ?snowflake                         | The ID of the user's avatar decoration                                                                                                                                    |
 | avatar_decoration_sku_id? | ?snowflake                         | The SKU ID of the user's avatar decoration                                                                                                                                |
 | email?                    | string                             | The user's email address; if changing from a verified email, `email_token` must be provided                                                                               |
@@ -778,7 +680,7 @@ At least one active Gateway session is required to modify a user account's usern
 | pronouns?                 | ?string                            | The user's pronouns (max 40 characters)                                                                                                                                   |
 | bio?                      | ?string                            | The user's bio (max 190 characters)                                                                                                                                       |
 | banner?                   | ?[image data](/reference#cdn-data) | The user's banner; can only be changed for premium (Nitro) users                                                                                                          |
-| accent_color?             | ?integer                           | The user's accent color as a hex integer                                                                                                                                  |
+| accent_color?             | ?integer                           | The user's banner color encoded as an integer representation of a hexadecimal color code                                                                                  |
 | flags?                    | integer                            | The user's [flags](#user-flags) (only `PREMIUM_PROMO_DISMISSED` and `HAS_UNREAD_URGENT_MESSAGES` can be set)                                                              |
 | date_of_birth? ^2^        | ISO8601 timestamp                  | The user's date of birth; can only be set once                                                                                                                            |
 | password? ^1^             | string                             | The user's current password; if the account does not have a password, this sets it                                                                                        |
@@ -790,9 +692,9 @@ At least one active Gateway session is required to modify a user account's usern
 
 ^3^ Changing the account password invalidates all active tokens. Don't fret though, as the `token` key in the response will be valid.
 
-^4^ This value can be obtained by requesting a verification code with the [Get User Email Change Code](#get-user-email-change-code) endpoint and verifying it using the [Verify User Email Change](#verify-user-email-change) endpoint.
+^4^ This value can be obtained by requesting a verification code as outlined in the [email verification documentation](/topics/email-verification#changing-your-email-address).
 
-^5^ If using pomelo, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username changed may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information. See the [Usernames and Nicknames section](#usernames-and-nicknames) for more information on username restrictions.
+^5^ If using pomelo, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information. See the [Usernames and Nicknames section](#usernames-and-nicknames) for information on username restrictions.
 
 <RouteHeader method="PATCH" url="/users/@me/account" supportsOAuth2="account.global_name.update">
   Modify Current User Account
@@ -811,6 +713,46 @@ This endpoint is only usable with an OAuth2 access token with the `account.globa
 | Field        | Type    | Description                               |
 | ------------ | ------- | ----------------------------------------- |
 | global_name? | ?string | The user's display name (1-32 characters) |
+
+<RouteHeader method="GET" url="/users/@me/avatars">
+  Get Recent Avatars
+</RouteHeader>
+
+Returns the user's recent avatars. For premium users, the six most recent avatars will be returned. Otherwise, only two will be returned.
+
+###### Response Body
+
+| Field   | Type                                      | Description                     |
+| ------- | ----------------------------------------- | ------------------------------- |
+| avatars | array[[avatar](#avatar-structure) object] | The recent avatars for the user |
+
+###### Avatar Structure
+
+| Field        | Type    | Description                                            |
+| ------------ | ------- | ------------------------------------------------------ |
+| id           | string  | The avatar ID                                          |
+| storage_hash | string  | The [avatar hash](/reference#cdn-formatting)           |
+| description  | ?string | The description specified when the avatar was uploaded |
+
+###### Example Response
+
+```json
+{
+  "avatars": [
+    {
+      "id": "1357011390585507910",
+      "storage_hash": "212aed0ac14cf7804051218f99624a9f",
+      "description": "alien, added April 2, 2025 at 5:09 PM"
+    }
+  ]
+}
+```
+
+<RouteHeader method="DELETE" url="/users/@me/avatars/{avatar.id}">
+  Delete Recent Avatar
+</RouteHeader>
+
+Deletes a recent avatar for the user. Returns a 204 empty response on success.
 
 <RouteHeader method="GET" url="/users/{user.id}">
   Get User
@@ -832,7 +774,7 @@ This endpoint requires one of the following:
 - The user shares a mutual guild with the current user
 - The user is a friend of the current user
 - The user is a friend suggestion of the current user
-- A valid [`friend_token`](#get-friend-token) is provided
+- The user has an outgoing friend request to the current user
 - A valid [`join_request_id`](/resources/guild#guild-join-request-object) is provided
 
 </Alert>
@@ -841,7 +783,6 @@ This endpoint requires one of the following:
 
 | Field                      | Type      | Description                                                                                        |
 | -------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
-| friend_token?              | string    | The friend token to use for the request                                                            |
 | with_mutual_guilds?        | boolean   | Whether to include the mutual guilds of the user with the current user (default true)              |
 | with_mutual_friends?       | boolean   | Whether to include mutual friends the user has with the current user (default false)               |
 | with_mutual_friends_count? | boolean   | Whether to include the number of mutual friends the user has with the current user (default false) |
@@ -864,7 +805,7 @@ This endpoint requires one of the following:
 | mutual_guilds? ^1^            | array[[mutual guild](#mutual-guild-structure) object]                                                  | The mutual guilds of the user with the current user                                          |
 | mutual_friends? ^1^ ^3^       | array[partial [user](#user-object) object]                                                             | The mutual friends the user has with the current user                                        |
 | mutual_friends_count? ^1^ ^3^ | integer                                                                                                | The number of mutual friends the user has with the current user                              |
-| connected_accounts            | array[partial [connection](#connection-object) object]                                                 | The user's public connected accounts                                                         |
+| connected_accounts            | array[partial [connection](/resources/connected-accounts#connection-object) object]                    | The user's public connected accounts                                                         |
 | application_role_connections? | array[[application role connection](/resources/application#application-role-connection-object) object] | The user's application role connections for the role specified                               |
 | premium_type ^1^              | ?integer                                                                                               | The [type of premium (Nitro) subscription](#premium-type) on a user's account                |
 | premium_since ^1^             | ?ISO8601 timestamp                                                                                     | The date the user's premium (Nitro) subscription started                                     |
@@ -1061,7 +1002,7 @@ Modifies the current user's profile. Returns the updated [profile metadata](#pro
 | pronouns?                       | ?string                            | The user's pronouns (max 40 characters)                                                          |
 | bio?                            | ?string                            | The user's bio (max 190 characters)                                                              |
 | banner?                         | ?[image data](/reference#cdn-data) | The user's banner; can only be changed for premium (Nitro) users                                 |
-| accent_color?                   | ?integer                           | The user's accent color as a hex integer                                                         |
+| accent_color?                   | ?integer                           | The user's banner color encoded as an integer representation of a hexadecimal color code         |
 | theme_colors?                   | ?array[integer, integer]           | The user's two theme colors encoded as an array of integers representing hexadecimal color codes |
 | popout_animation_particle_type? | ?snowflake                         | The user's profile popout animation particle type                                                |
 | emoji_id?                       | ?snowflake                         | The user's profile emoji ID                                                                      |
@@ -1304,7 +1245,7 @@ Returns the user's MFA backup codes.
 ```
 
 <RouteHeader method="POST" url="/users/@me/disable" mfa>
-  Disable User
+  Disable User Account
 </RouteHeader>
 
 Disables the current user's account. Invalidates all active tokens. Returns a 204 empty response on success.
@@ -1316,7 +1257,7 @@ Disables the current user's account. Invalidates all active tokens. Returns a 20
 | password | string | The user's password |
 
 <RouteHeader method="POST" url="/users/@me/delete" mfa>
-  Delete User
+  Delete User Account
 </RouteHeader>
 
 Marks the current user's account for deletion. Invalidates all active tokens. Returns a 204 empty response on success.
@@ -1331,7 +1272,7 @@ Marks the current user's account for deletion. Invalidates all active tokens. Re
   Verify User Captcha
 </RouteHeader>
 
-Verifies a reCAPTCHA solution when needed by the [`COMPLETE_CAPTCHA` required action](#required-action-type). Returns a 204 empty response on success. Fires a [User Required Action Update](/topics/gateway-events#user-required-action-update) Gateway event.
+Verifies a reCAPTCHA solution when needed by the [`REQUIRE_CAPTCHA` required action](#required-action-type). Returns a 204 empty response on success. Fires a [User Required Action Update](/topics/gateway-events#user-required-action-update) Gateway event.
 
 ###### reCAPTCHA Site Key
 
@@ -1349,7 +1290,7 @@ Verifies a reCAPTCHA solution when needed by the [`COMPLETE_CAPTCHA` required ac
   Modify User Agreements
 </RouteHeader>
 
-Reaffirms the user's agreements to Discord's [Terms of Service](https://discord.com/terms) and [Privacy Policy](https://discord.com/privacy) when needed by the [`UPDATE_AGREEMENTS` required action](#required-action-type), which is assigned when a policy change occurs.
+Reaffirms the user's agreements to Discord's [Terms of Service](https://discord.com/terms) and [Privacy Policy](https://discord.com/privacy) when needed by the [`AGREEMENTS` required action](#required-action-type), which is assigned when a policy change occurs.
 Returns a 204 empty response on success. Fires a [User Required Action Update](/topics/gateway-events#user-required-action-update) Gateway event.
 
 ###### JSON Params
@@ -1358,30 +1299,6 @@ Returns a 204 empty response on success. Fires a [User Required Action Update](/
 | -------- | ------- | ----------------------------------------------- |
 | terms?   | boolean | Whether the user agrees to the Terms of Service |
 | privacy? | boolean | Whether the user agrees to the Privacy Policy   |
-
-<RouteHeader method="PUT" url="/users/@me/email">
-  Get User Email Change Code
-</RouteHeader>
-
-Sends a verification code to the current user's email address to initiate the email change process. Returns a 204 empty response on success.
-
-<RouteHeader method="POST" url="/users/@me/email/verify-code">
-  Verify User Email Change
-</RouteHeader>
-
-Verifies a verification code sent to the current user's email address to initiate an email change.
-
-###### JSON Params
-
-| Field | Type   | Description           |
-| ----- | ------ | --------------------- |
-| code  | string | The verification code |
-
-###### Response Body
-
-| Field | Type   | Description                                                                                              |
-| ----- | ------ | -------------------------------------------------------------------------------------------------------- |
-| token | string | The email token; can be used with [Modify Current User](#modify-current-user) to change the user's email |
 
 <RouteHeader method="GET" url="/users/@me/pomelo-suggestions" deprecated>
   Get Pomelo Suggestions
@@ -1427,9 +1344,9 @@ See the [Usernames and Nicknames section](/resources/user#usernames-and-nickname
 
 ###### Response Body
 
-| Field | Type    | Description                   |
-| ----- | ------- | ----------------------------- |
-| taken | boolean | Whether the username is taken |
+| Field | Type     | Description                   |
+| ----- | -------- | ----------------------------- |
+| taken | ?boolean | Whether the username is taken |
 
 ###### Example Response
 
@@ -1454,6 +1371,19 @@ This endpoint is used during the pomelo migration flow. The user must be in the 
 | Field    | Type   | Description           |
 | -------- | ------ | --------------------- |
 | username | string | The username to claim |
+
+<RouteHeader method="PUT" url="/users/@me/clan">
+  Set Guild Identity
+</RouteHeader>
+
+Sets the current user's primary guild. Returns an outdated partial [user](#user-object) object on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field             | Type       | Description                                         |
+| ----------------- | ---------- | --------------------------------------------------- |
+| identity_enabled  | boolean    | Whether the user has enabled the feature            |
+| identity_guild_id | ?snowflake | The ID of the guild whose identity is being adopted |
 
 <RouteHeader method="GET" url="/users/@me/mentions">
   Get Recent Mentions
@@ -1599,200 +1529,6 @@ Sets the note for the given user. Returns a 204 empty response on success. Fires
 | Field | Type    | Description                   |
 | ----- | ------- | ----------------------------- |
 | note  | ?string | The note (max 256 characters) |
-
-<RouteHeader method="GET" url="/connections/{connection.type}/authorize" unauthenticated>
-  Authorize User Connection
-</RouteHeader>
-
-Returns an authorization link that can be used for authorizing a new connection.
-
-###### Query String Params
-
-| Field              | Type    | Description                                                |
-| ------------------ | ------- | ---------------------------------------------------------- |
-| two_way_link_type? | ?string | The [type of two-way link](#two-way-link-type) to create   |
-| two_way_user_code? | ?string | The device code to use for the two-way link                |
-| continuation?      | boolean | Whether this is a continuation of a previous authorization |
-
-###### Two Way Link Type
-
-| Value   | Description                          |
-| ------- | ------------------------------------ |
-| web     | The connection is linked via web     |
-| mobile  | The connection is linked via mobile  |
-| desktop | The connection is linked via desktop |
-
-###### Response Body
-
-| Field | Type   | Description                         |
-| ----- | ------ | ----------------------------------- |
-| url   | string | The authorization link for the user |
-
-<RouteHeader method="POST" url="/connections/{connection.type}/callback">
-  Create User Connection Callback
-</RouteHeader>
-
-Creates a new connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
-
-###### JSON Params
-
-| Field              | Type    | Description                                 |
-| ------------------ | ------- | ------------------------------------------- |
-| code               | string  | The authorization code for the connection   |
-| state              | string  | The state used to authorize the connection  |
-| two_way_link_code? | string  | The code to use for two-way linking         |
-| insecure?          | boolean | Whether the connection is insecure          |
-| friend_sync?       | boolean | Whether to sync friends over the connection |
-| openid_params?     | object  | Additional parameters for OpenID Connect    |
-
-<RouteHeader method="PUT" url="/users/@me/connections/contacts/{connection.id}">
-  Create Contact Sync Connection
-</RouteHeader>
-
-Creates a new contact sync connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
-
-<Alert type="warn">
-
-This endpoint is only usable to create contact sync connections (nominally with an ID of @me). For most other connections, use [Authorize User Connection](#authorize-user-connection) and [Create User Connection Callback](#create-user-connection-callback).
-
-</Alert>
-
-###### JSON Params
-
-| Field        | Type    | Description                                 |
-| ------------ | ------- | ------------------------------------------- |
-| name         | string  | The username of the connection account      |
-| friend_sync? | boolean | Whether to sync friends over the connection |
-
-<RouteHeader method="POST" url="/users/@me/connections/domain/{connection.id}">
-  Create Domain Connection
-</RouteHeader>
-
-Creates a new domain connection for the current user. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
-
-<Alert type="warn">
-
-This endpoint is only usable to create domain connections. For most other connections, use [Authorize User Connection](#authorize-user-connection) and [Create User Connection Callback](#create-user-connection-callback).
-
-</Alert>
-
-<Alert type="info">
-
-When attempting to create a domain connection, Discord will verify that the domain is owned by the user. If this verification fails, the endpoint will return an error response:
-
-```json
-{ "message": "Unable to validate domain.", "code": 50187, "proof": "dh=dceaca792e3c40fcf356a9297949940af5cfe538" }
-```
-
-The `proof` provided must be added to the domain's DNS records as a TXT record with the name `_discord.<domain>`. Alternatively, the proof can be served at `https://<domain>/.well-known/discord`.
-
-After adding the proof, the request should be retried.
-
-</Alert>
-
-<RouteHeader method="GET" url="/users/@me/connections" supportsOAuth2="connections">
-  Get User Connections
-</RouteHeader>
-
-Returns a list of [connection](#connection-object) objects.
-
-<RouteHeader method="GET" url="/users/@me/connections/{connection.type}/{connection.id}/access-token">
-  Get User Connection Access Token
-</RouteHeader>
-
-Returns a new access token for the given connection. Only available for Twitch, YouTube, and Spotify connections. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
-
-###### Response Body
-
-| Field        | Type   | Description                   |
-| ------------ | ------ | ----------------------------- |
-| access_token | string | The connection's access token |
-
-<RouteHeader method="GET" url="/users/@me/connections/reddit/{connection.id}/subreddits">
-  Get User Connection Subreddits
-</RouteHeader>
-
-Returns a list of [subreddits](#subreddit-structure) the connected account moderates. Only available for Reddit connections.
-
-###### Subreddit Structure
-
-| Field       | Type    | Description                       |
-| ----------- | ------- | --------------------------------- |
-| id          | string  | The subreddit's ID                |
-| subscribers | integer | The number of joined Reddit users |
-| url         | string  | The subreddit's relative URL      |
-
-###### Example Response
-
-```json
-[
-  {
-    "id": "t5_388p4",
-    "subscribers": 1044184,
-    "url": "/r/discordapp/"
-  }
-]
-```
-
-<RouteHeader method="POST" url="/users/@me/connections/{connection.type}/{connection.id}/refresh">
-  Refresh User Connection
-</RouteHeader>
-
-Refreshes a connection. Returns a 204 empty response on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
-
-<RouteHeader method="PATCH" url="/users/@me/connections/{connection.type}/{connection.id}">
-  Modify User Connection
-</RouteHeader>
-
-Modifies a connection. Returns a [connection](#connection-object) object on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
-
-Not all connection types support all parameters.
-
-###### JSON Params
-
-| Field               | Type    | Description                                                             |
-| ------------------- | ------- | ----------------------------------------------------------------------- |
-| name                | string  | The connection's username                                               |
-| show_activity       | boolean | Whether activities related to this connection will be shown in presence |
-| friend_sync         | boolean | Whether friend sync is enabled for this connection                      |
-| metadata_visibility | integer | [Visibility](#visibility-type) of the connection's metadata             |
-| visibility          | integer | [Visibility](#visibility-type) of the connection                        |
-
-<RouteHeader method="DELETE" url="/users/@me/connections/{connection.type}/{connection.id}">
-  Delete User Connection
-</RouteHeader>
-
-Deletes a connection. Returns a 204 empty response on success. Fires a [User Connections Update](/topics/gateway-events#user-connections-update) and optionally a [Guild Delete](/topics/gateway-events#guild-delete) Gateway event.
-
-<Alert type="warn">
-
-Deleting a connection will remove you from any guilds you joined via the connection's [integrations](#connection-integration-structure).
-
-</Alert>
-
-<RouteHeader method="GET" url="/users/@me/friend-token">
-  Get Friend Token
-</RouteHeader>
-
-Returns the current user's friend token. These can be used to [fetch the user's profile](#get-user-profile) without a mutual and [add the user as a friend](/resources/relationships#create-relationship) regardless of their friend request settings.
-
-<Alert type="info">
-
-Friend tokens are validated similarly to regular authentication tokens. They only expire after an authentication change (e.g. password reset).
-
-</Alert>
-
-###### Response Body
-
-| Field        | Type   | Description                     |
-| ------------ | ------ | ------------------------------- |
-| friend_token | string | The current user's friend token |
-
-###### Example Response
-
-```json
-{ "friend_token": "ODUyODkyMjk3NjYxOTA2OTkz.Z3cftw.IClap6I53w2tYxs6xD8zaGX_7KA" }
-```
 
 <RouteHeader method="GET" url="/users/@me/affinities/users">
   Get User Affinities
@@ -1992,6 +1728,19 @@ This endpoint does not remove the webhook created by the user when joining the p
 
 </Alert>
 
+<RouteHeader method="POST" url="/dev-portal-csat-survey-response">
+  Submit Developer Portal CSAT Survey
+</RouteHeader>
+
+Submits a customer satisfaction survey response for the development experience on Discord. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field         | Type      | Description                        |
+| ------------- | --------- | ---------------------------------- |
+| user_id       | snowflake | The ID of the client user          |
+| csat_response | integer   | The rating given by the user (1-5) |
+
 <RouteHeader method="GET" url="/users/@me/premium-usage">
   Get User Premium Usage
 </RouteHeader>
@@ -2154,10 +1903,10 @@ Returns the number of confetti potions left to use.
 
 ###### Response Body
 
-| Field       | Type                | Description                                    |
-| ----------- | ------------------- | ---------------------------------------------- |
-| entitlement | ?entitlement object | The entitlement to which the potions belong to |
-| num_potions | integer             | The Number of unused potions left              |
+| Field       | Type                                                             | Description                                    |
+| ----------- | ---------------------------------------------------------------- | ---------------------------------------------- |
+| entitlement | ?[entitlement](/resources/entitlement#entitlement-object) object | The entitlement to which the potions belong to |
+| num_potions | integer                                                          | Number of unused potions left                  |
 
 <RouteHeader method="POST" url="/users/@me/consumable/confetti">
   Apply Confetti Potion

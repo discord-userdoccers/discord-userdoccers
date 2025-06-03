@@ -67,10 +67,12 @@ An in-game relationship between the current user and another user, created using
 | id             | string                                      | The ID of the target user                                             |
 | application_id | snowflake                                   | The ID of the application whose game the relationship originated from |
 | type           | integer                                     | The [type](#game-relationship-type) of relationship                   |
-| user           | partial [user](/resources/user#user-object) | The target user                                                       |
+| user ^1^       | partial [user](/resources/user#user-object) | The target user                                                       |
 | since          | ISO8601 timestamp                           | When the user requested a relationship                                |
 | dm_access_type | integer                                     | The [DM access level](#dm-access-type) for the relationship           |
 | user_id        | snowflake                                   | The ID of the current user                                            |
+
+^1^ Not included when fetching game relationships via OAuth2.
 
 ###### Game Relationship Type
 
@@ -117,11 +119,11 @@ A friend suggestion for the current user.
 
 ###### Friend Suggestion Reason Structure
 
-| Field    | Type    | Description                                                                         |
-| -------- | ------- | ----------------------------------------------------------------------------------- |
-| type     | integer | The [type of reason](#friend-suggestion-reason-type)                                |
-| platform | string  | The [platform that the suggestion originated from](/resources/user#connection-type) |
-| name     | string  | The user's name on the platform                                                     |
+| Field    | Type    | Description                                                                                       |
+| -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| type     | integer | The [type of reason](#friend-suggestion-reason-type)                                              |
+| platform | string  | The [platform that the suggestion originated from](/resources/connected-accounts#connection-type) |
+| name     | string  | The user's name on the platform                                                                   |
 
 ###### Friend Suggestion Reason Type
 
@@ -161,13 +163,11 @@ A friend suggestion for the current user.
 
 Returns a list of [relationship](#relationship-object) objects for the current user.
 
-###### Query String Params
+<Alert type="info">
 
-| Field              | Type    | Description                                               |
-| ------------------ | ------- | --------------------------------------------------------- |
-| with_implicit? ^1^ | boolean | Whether to include implicit relationships (default false) |
+For OAuth2 requests, only relationships of type `FRIEND` are returned.
 
-^1^ Only usable with OAuth2 requests. On non-OAuth2 requests, only user-created relationships will be returned.
+</Alert>
 
 <RouteHeader method="POST" url="/users/@me/relationships" supportsOAuth2="relationships.write">
   Send Friend Request
@@ -185,10 +185,10 @@ Suspicious friend request activity may be flagged by Discord and require [additi
 
 ###### JSON Params
 
-| Field             | Type    | Description                                                                |
-| ----------------- | ------- | -------------------------------------------------------------------------- |
-| username          | string  | The username of the user to send a friend request to                       |
-| discriminator ^1^ | ?string | The discriminator of the user to send a friend request to, if not migrated |
+| Field             | Type    | Description                                               |
+| ----------------- | ------- | --------------------------------------------------------- |
+| username          | string  | The username of the user to send a friend request to      |
+| discriminator ^1^ | ?string | The discriminator of the user to send a friend request to |
 
 ^1^ `null` for migrated users. See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
 
@@ -211,9 +211,6 @@ Suspicious friend request activity may be flagged by Discord and require [additi
 | ----------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | type?                   | integer | The [relationship type](#relationship-type) to create (defaults to -1, which accepts an existing or creates a new friend request) |
 | from_friend_suggestion? | boolean | Whether the relationship was created from a friend suggestion (default false)                                                     |
-| friend_token? ^1^       | string  | The friend token of the user to add as a friend                                                                                   |
-
-^1^ Providing a valid [friend token](/resources/user#get-friend-token) will bypass the user's friend request settings.
 
 <RouteHeader method="PUT" url="/users/@me/relationships/{user.id}/ignore">
   Ignore User
@@ -265,6 +262,12 @@ Removes multiple relationships. Returns a 204 empty response on success. May fir
 </RouteHeader>
 
 Returns a list of [game relationship](#game-relationship-object) objects for the current user.
+
+<Alert type="info">
+
+For OAuth2 requests, only game relationships originating from the same application as the requestor are returned.
+
+</Alert>
 
 <RouteHeader method="POST" url="/users/@me/game-relationships" supportsOAuth2="relationships.write">
   Send Game Friend Request
