@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useRef } from "react";
 import Bars from "./icons/Bars";

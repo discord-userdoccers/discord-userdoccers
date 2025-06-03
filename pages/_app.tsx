@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
 import { useCallback, useMemo, useState } from "react";

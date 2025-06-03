@@ -1,5 +1,5 @@
 import { Menu, Transition } from "@headlessui/react";
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import { useTheme } from "next-themes";
 import { Fragment, useCallback } from "react";
 import Check from "./icons/Check";

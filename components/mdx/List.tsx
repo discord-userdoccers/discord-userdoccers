@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import React from "react";
 
 export function ListItem(props: React.JSX.IntrinsicElements["li"]) {
