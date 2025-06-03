@@ -1,15 +1,18 @@
-// @ts-nocheck
-
-import classNames from "classnames";
-import Highlight, { defaultProps, Prism } from "prism-react-renderer";
-import { DetailedHTMLProps, ReactNode } from "react";
+import classNames from "@lib/classnames";
+import { Highlight, type Language as TLanguage } from "prism-react-renderer";
+import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
 
 import CopyButton from "../Copy";
 import CopyIcon from "../icons/Copy";
 // import FileIcon from "../icons/File";
 
-// Extend base classes
-globalThis.Prism = Prism;
+// this isn't exported for some reason
+type Token = {
+  types: string[];
+  content: string;
+  empty?: boolean;
+};
+type Language = TLanguage | "terminal" | "text";
 
 const diffBgColorMap = {
   "+": "var(--prism-highlight-add)",
@@ -62,33 +65,34 @@ interface ICodeProps {
   // we know this is going to be a string
   children?: ReactNode;
   className?: string;
-  metastring?: string;
   file?: string | true;
+  noCopy?: boolean;
+  isTerminal?: boolean;
+  hasLines?: boolean;
 }
 
-type CodeProps = ICodeProps & Omit<DetailedHTMLProps, keyof ICodeProps>;
+type CodeProps = ICodeProps & Omit<DetailedHTMLProps<HTMLAttributes<Element>, Element>, keyof ICodeProps>;
 
 // TODO: This module needs some love
-export default function Code({ children, className, metastring, file, ...props }: CodeProps) {
+export default function Code({ children, className, file, ...props }: CodeProps) {
   if (typeof children !== "string") throw new Error("Code content is not a string");
 
   const propList = ["copy", "terminal", "no-lines"];
 
-  const language = className?.replace(/language-/, "");
-  const breakWords = propList.includes(language);
+  const language: Language = className ? (className.replace(/language-/, "") as Language) : "text";
 
-  /* eslint-disable react/prop-types */
+  const breakWords = propList.includes(language!);
+
   const hasCopy = !(props.noCopy || language === "json");
-  const isTerminal = props.terminal || language === "terminal";
-  const hasLines = file != null || props.lines;
-  /* eslint-enable react/prop-types */
+  const isTerminal = props.isTerminal || language === "terminal";
+  const hasLines = file != null || props.hasLines;
 
   const lineNumberClasses = classNames("line_number inline-block w-6 text-right leading-6 select-none");
 
   return (
     <div className="code-block relative my-3 rounded-md font-mono">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight {...defaultProps} code={children} language={language}>
+      <Highlight code={children} language={language! as TLanguage}>
         {({
           className: blockClassName,
           tokens,
@@ -108,7 +112,7 @@ export default function Code({ children, className, metastring, file, ...props }
           >
             <code className="rounded-md p-4 px-1.5">
               {cleanTokens(tokens).map((line: Token[], i: number) => {
-                const lineClass = {};
+                const lineClass: Record<string, string> = {};
                 let isDiff = false;
                 let diffSymbol = "";
 
@@ -118,7 +122,7 @@ export default function Code({ children, className, metastring, file, ...props }
                 ) {
                   diffSymbol = line[0]?.content?.length ? line[0].content[0] : line[1].content;
 
-                  lineClass.backgroundColor = diffBgColorMap[diffSymbol];
+                  lineClass.backgroundColor = diffBgColorMap[diffSymbol as keyof typeof diffBgColorMap];
 
                   isDiff = true;
                 }
@@ -144,7 +148,6 @@ export default function Code({ children, className, metastring, file, ...props }
                         if (
                           isDiff &&
                           (key === 0 || key === 1) &&
-                          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                           Object.values(SYMBOLS).includes(token.content.charAt(0) as string)
                         ) {
                           return (
@@ -153,7 +156,6 @@ export default function Code({ children, className, metastring, file, ...props }
                               {...getTokenProps({
                                 token: {
                                   ...token,
-                                  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                                   content: token.content.slice(1),
                                 },
                                 key,

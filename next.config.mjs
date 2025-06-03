@@ -8,7 +8,6 @@ const config = {
   reactStrictMode: true,
   basePath: "",
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
-  swcMinify: true,
   env: {
     BASE_DOMAIN:
       process.env.CF_PAGES_URL ?? (process.env.NODE_ENV === "production" ? "docs.discord.food" : "localhost:3000"),

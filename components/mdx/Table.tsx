@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef, useState } from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 
 import Chevron from "@components/icons/Chevron";
 import CopyIcon from "@components/icons/Copy";
@@ -127,7 +127,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   );
 }
 
-export function Table(props: JSX.IntrinsicElements["table"]) {
+export function Table(props: React.JSX.IntrinsicElements["table"]) {
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
@@ -138,21 +138,21 @@ export function Table(props: JSX.IntrinsicElements["table"]) {
         {...props}
       />
       <div className="absolute right-0 top-0 p-2 px-2">
-        <CopyBar tableRef={tableRef} />
+        <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
       </div>
     </div>
   );
 }
 
-export function TableHead(props: JSX.IntrinsicElements["thead"]) {
+export function TableHead(props: React.JSX.IntrinsicElements["thead"]) {
   return <thead className="dark:bord-white border-b-2 border-gray-300 text-left dark:border-black" {...props} />;
 }
 
-export function TableHeader(props: JSX.IntrinsicElements["th"]) {
+export function TableHeader(props: React.JSX.IntrinsicElements["th"]) {
   return <th className="bg-gray-200 p-2 px-3 uppercase dark:bg-table-head-background-dark" {...props} />;
 }
 
-export function TableRow(props: JSX.IntrinsicElements["tr"]) {
+export function TableRow(props: React.JSX.IntrinsicElements["tr"]) {
   return (
     <tr
       className="bg-gray-100 text-text-light even:bg-gray-50 dark:bg-trueGray-800 dark:text-text-dark dark:even:bg-trueGray-900"
@@ -161,6 +161,6 @@ export function TableRow(props: JSX.IntrinsicElements["tr"]) {
   );
 }
 
-export function TableData(props: JSX.IntrinsicElements["td"]) {
+export function TableData(props: React.JSX.IntrinsicElements["td"]) {
   return <td className="max-w-xs p-2 px-3" {...props} />;
 }

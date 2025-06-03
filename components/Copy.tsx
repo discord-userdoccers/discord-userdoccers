@@ -1,4 +1,4 @@
-import classnames from "classnames";
+import classnames from "@lib/classnames";
 import { CopyStatus, useClipboard } from "../hooks/useClipboard";
 
 interface CopyButtonProps {

@@ -19,7 +19,7 @@ import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table"
 import MDX_ICONS from "./mdx/icons";
 
 const COMPONENTS = {
-  wrapper: (props: any) => <ContentWrapper {...props} />,
+  wrapper: (props: React.ComponentProps<typeof ContentWrapper>) => <ContentWrapper {...props} />,
   h1: H1,
   h2: H2,
   h3: H3,
