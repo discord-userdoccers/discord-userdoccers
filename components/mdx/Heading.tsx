@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import React, { isValidElement, ReactNode } from "react";
 import HyperlinkIcon from "../icons/Hyperlink";
 import TickIcon from "../icons/Tick";

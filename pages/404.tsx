@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import Link from "next/link";
 import { ReactNode } from "react";
 import ContentWrapper from "../components/mdx/ContentWrapper";

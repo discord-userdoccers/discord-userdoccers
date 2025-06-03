@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import { Highlight, type Language as TLanguage } from "prism-react-renderer";
 import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
 

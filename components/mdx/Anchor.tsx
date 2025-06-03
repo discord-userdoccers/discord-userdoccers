@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import React from "react";
 import Link, { LinkProps } from "next/link";
 
