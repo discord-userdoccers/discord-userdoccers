@@ -1,0 +1,169 @@
+diff --git a/dist/build/next-config-ts/require-hook.js b/dist/build/next-config-ts/require-hook.js
+index bce387c5f34618ba5664ef0205d13d15daf2ac3d..71d923bb24bfd1a92cd738e858f23e9f21fa8e96 100644
+--- a/dist/build/next-config-ts/require-hook.js
++++ b/dist/build/next-config-ts/require-hook.js
+@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
+ 0 && (module.exports = {
+     deregisterHook: null,
+     registerHook: null,
+-    requireFromString: null
+ });
+ function _export(target, all) {
+     for(var name in all)Object.defineProperty(target, name, {
+@@ -20,66 +19,73 @@ _export(exports, {
+     registerHook: function() {
+         return registerHook;
+     },
+-    requireFromString: function() {
+-        return requireFromString;
+-    }
+ });
+ const _nodemodule = /*#__PURE__*/ _interop_require_default(require("node:module"));
+ const _nodefs = require("node:fs");
+-const _nodepath = require("node:path");
+ function _interop_require_default(obj) {
+     return obj && obj.__esModule ? obj : {
+         default: obj
+     };
+ }
+-const oldJSHook = require.extensions['.js'];
++
+ const extensions = [
+     '.ts',
+     '.cts',
+     '.mts',
++    '.js',
+     '.cjs',
+     '.mjs'
+ ];
++
++let registered = false;
++
+ function registerHook(swcOptions) {
++    registered = true;
+     // lazy require swc since it loads React before even setting NODE_ENV
+     // resulting loading Development React on Production
+     const { transformSync } = require('../swc');
+-    require.extensions['.js'] = function(mod, oldFilename) {
+-        try {
+-            return oldJSHook(mod, oldFilename);
+-        } catch (error) {
+-            if (error.code !== 'ERR_REQUIRE_ESM') {
+-                throw error;
++
++    _nodemodule.default.registerHooks({
++        resolve(specifier, context, nextResolve) {
++            if (!registered) return nextResolve(specifier, context);
++
++            try {
++                return nextResolve(specifier, context)
++            } catch {
++                const path = context.parentURL != null
++                    ? new URL(specifier, context.parentURL).pathname
++                    : new URL(specifier).pathname;
++                
++                for (const ext of extensions) {
++                    if (!_nodefs.existsSync(path + ext)) continue;
++
++                    return {
++                        url: "file://" + path + ext,
++                    }
++                }
+             }
+-            // calling oldJSHook throws ERR_REQUIRE_ESM, so run _compile manually
+-            // TODO: investigate if we can remove readFileSync
+-            const content = (0, _nodefs.readFileSync)(oldFilename, 'utf8');
+-            const { code } = transformSync(content, swcOptions);
+-            mod._compile(code, oldFilename);
+-        }
+-    };
+-    for (const ext of extensions){
+-        const oldHook = require.extensions[ext] ?? oldJSHook;
+-        require.extensions[ext] = function(mod, oldFilename) {
+-            const _compile = mod._compile;
+-            mod._compile = function(code, filename) {
+-                const swc = transformSync(code, swcOptions);
+-                return _compile.call(this, swc.code, filename);
+-            };
+-            return oldHook(mod, oldFilename);
+-        };
+-    }
++        },
++        load(url, context, nextLoad) {
++            if (!registered) return nextLoad(url, context);
++
++            if (!/\.[mc]?ts$/.test(url)) return nextLoad(url, context);
++            
++            const { source: rawSource } = nextLoad(url, { ...context, format: 'swc' });
++            const src = rawSource.toString("utf-8");
++
++            const { code } = transformSync(src, swcOptions)
++
++            return {
++                format: "module",
++                shortCircuit: true,
++                source: code
++            }
++        },
++    })
+ }
++
+ function deregisterHook() {
+-    require.extensions['.js'] = oldJSHook;
+-    extensions.forEach((ext)=>delete require.extensions[ext]);
+-}
+-function requireFromString(code, filename) {
+-    const paths = _nodemodule.default._nodeModulePaths((0, _nodepath.dirname)(filename));
+-    const m = new _nodemodule.default(filename, module.parent);
+-    m.paths = paths;
+-    m._compile(code, filename);
+-    return m.exports;
++    registered = false;
+ }
+ 
+ //# sourceMappingURL=require-hook.js.map
+\ No newline at end of file
+diff --git a/dist/build/next-config-ts/transpile-config.js b/dist/build/next-config-ts/transpile-config.js
+index f61819ce61ef09c6b09e64a734f0d3d64c08e53b..23df0144945bc6422c6a1bebea9c9e69d4f6c06f 100644
+--- a/dist/build/next-config-ts/transpile-config.js
++++ b/dist/build/next-config-ts/transpile-config.js
+@@ -24,7 +24,7 @@ function resolveSWCOptions(cwd, compilerOptions) {
+             baseUrl: resolvedBaseUrl
+         },
+         module: {
+-            type: 'commonjs'
++            type: 'es6'
+         },
+         isModule: 'unknown'
+     };
+@@ -53,14 +53,22 @@ async function transpileConfig({ nextConfigPath, cwd }) {
+         // lazy require swc since it loads React before even setting NODE_ENV
+         // resulting loading Development React on Production
+         const { transform } = require('../swc');
+-        const { code } = await transform(nextConfigString, swcOptions);
+-        // register require hook only if require exists
+-        if (code.includes('require(')) {
+-            (0, _requirehook.registerHook)(swcOptions);
+-            hasRequire = true;
+-        }
+-        // filename & extension don't matter here
+-        return (0, _requirehook.requireFromString)(code, (0, _nodepath.join)(cwd, 'next.config.compiled.js'));
++
++        // Support ESM in next.config.ts
++        // https://github.com/vercel/next.js/pull/68365#issuecomment-2358349887
++        const compiledConfigPath = (0, _nodepath.join)(cwd, '.next', 'next.config.compiled.mjs');
++        const { code } = await transform(nextConfigString, {
++            ...swcOptions,
++            filename: compiledConfigPath
++        });
++
++        (0, _requirehook.registerHook)(swcOptions);
++        hasRequire = true;
++
++        // https://github.com/vercel/next.js/pull/68365#issuecomment-2358349887
++        await (0, _promises.mkdir)((0, _nodepath.join)(cwd, '.next'), { recursive: true });
++        await (0, _promises.writeFile)(compiledConfigPath, code, 'utf8');
++        return await import(compiledConfigPath);
+     } catch (error) {
+         throw error;
+     } finally{

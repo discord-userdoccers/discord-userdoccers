@@ -1,10 +1,11 @@
-import createMDX from "@next/mdx";
-import supersub from "remark-supersub";
-import frontmatter from "./lib/frontmatter.mjs";
 import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
+import createMDX from "@next/mdx";
+import { NextConfig } from "next";
+import supersub from "remark-supersub";
 
-/** @type {import('next').NextConfig} */
-const config = {
+import frontmatter from "@lib/frontmatter";
+
+const config: NextConfig = {
   reactStrictMode: true,
   basePath: "",
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
