@@ -54,9 +54,10 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | premium_progress_bar_enabled        | boolean                                                                                    | Whether the guild has the premium (boost) progress bar enabled                                                             |
 | latest_onboarding_question_id       | ?snowflake                                                                                 | The ID of the guild's latest [onboarding prompt option](#onboarding-prompt-option-structure)                               |
 | incidents_data                      | ?[automod incidents data](/resources/auto-moderation#automod-incidents-data-object) object | Information on the guild's AutoMod incidents                                                                               |
-| inventory_settings **(deprecated)** | ?[inventory settings](#inventory-settings-structure) object                                | Settings for emoji packs                                                                                                   |
+| inventory_settings **(deprecated)** | ?[guild inventory settings](#guild-inventory-settings-structure) object                    | Settings for emoji packs                                                                                                   |
 | approximate_member_count? ^2^       | integer                                                                                    | Approximate count of total members in the guild                                                                            |
 | approximate_presence_count? ^2^     | integer                                                                                    | Approximate count of non-offline members in the guild                                                                      |
+| premium_features ^3^                | ?[guild premium features](#guild-premium-features-structure) object                        | The guild's powerup information                                                                                            |
 | profile ^3^                         | ?partial [guild profile](/resources/discovery#guild-profile-object) object                 | The guild's identity                                                                                                       |
 
 ^1^ This limit also applies to stream viewers within the channel. The value is always 50 for premium tiers 0 to 1, 150 for premium tier 2, and `300 + 30 * (premium_subscription_count - 14)` for premium tier 3.
@@ -65,7 +66,7 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 
 ^3^ Only included in guild objects returned [over the Gateway](/topics/gateway-events#guilds), through the [Join Guild](#join-guild) endpoint, or through [OAuth2](/topics/oauth2#advanced-bot-authorization).
 
-###### Partial Guild Struture
+###### Partial Guild Structure
 
 | Field                           | Type                                                       | Description                                                                          |
 | ------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -93,11 +94,20 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | tag   | string | The clan tag of the guild (2-4 characters)               |
 | badge | string | The guild's [clan badge hash](/reference#cdn-formatting) |
 
-###### Inventory Settings Structure
+###### Guild Inventory Settings Structure
 
 | Field                      | Type    | Description                                                   |
 | -------------------------- | ------- | ------------------------------------------------------------- |
 | is_emoji_pack_collectible? | boolean | Allows everyone to collect and use the guild's emoji globally |
+
+###### Guild Premium Features Structure
+
+| Field                    | Type          | Description                                                      |
+| ------------------------ | ------------- | ---------------------------------------------------------------- |
+| features                 | array[string] | Enabled [powerup-specific guild features](#guild-features)       |
+| additional_emoji_slots   | integer       | The number of additional emoji slots available to the guild      |
+| additional_sticker_slots | integer       | The number of additional sticker slots available to the guild    |
+| additional_sound_slots   | integer       | The number of additional soundboard slots available to the guild |
 
 ###### Message Notification Level
 
@@ -339,6 +349,9 @@ The available guild features, their functionality, and their requirements is sub
 | ~~THREE_DAY_THREAD_ARCHIVE~~ ^1^                       | ~~Ability to have threads that archive after three days~~                                                                                                                                                                                                                                          |
 | ~~TICKETED_EVENTS_ENABLED~~                            | ~~Access to ticketed [scheduled events](/resources/guild-scheduled-event)~~                                                                                                                                                                                                                        |
 | ~~TICKETING_ENABLED~~                                  | ~~Access to ticketed [scheduled events](/resources/guild-scheduled-event)~~ (see `TICKETED_EVENTS_ENABLED`)                                                                                                                                                                                        |
+| TIERLESS_BOOSTING                                      | Guild is using the new powerups-based boosting system                                                                                                                                                                                                                                              |
+| TIERLESS_BOOSTING_CLIENT_TEST                          | Early access to guild powerup management                                                                                                                                                                                                                                                           |
+| TIERLESS_BOOSTING_TEST                                 | Early access to guild powerup management                                                                                                                                                                                                                                                           |
 | ~~VALORANT_L30~~                                       | Access to clan conversion based on the intensity of Valorant engagement among the guild's members, as depicted by the power user curve                                                                                                                                                             |
 | VANITY_URL                                             | Ability to set a vanity URL                                                                                                                                                                                                                                                                        |
 | VERIFIED                                               | Guild is [verified](https://discord.com/verification)                                                                                                                                                                                                                                              |
@@ -2652,7 +2665,31 @@ Onboarding enforces constraints when enabled. These constraints are that there m
   Get Premium Guild Subscriptions
 </RouteHeader>
 
-Returns a list of [premium guild subscription](#premium-guild-subscription-object) objects for the guild.
+Returns a list of [premium guild subscription](#premium-guild-subscription-object) objects for the guild. User must be a member of the guild.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/powerups">
+  Get Guild Powerups
+</RouteHeader>
+
+Returns a list of [entitlement](/resources/entitlement#entitlement-object) objects representing the guild's applied powerups. Powerups are special SKUs that can be purchased using premium subscriptions (boosts) to enhance the guild's features. User must be a member of the guild.
+
+###### Query String Params
+
+| Field            | Type      | Description |
+| ---------------- | --------- | ----------- |
+| include_ends_at? | boolean   | Unknown     |
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/skus/{sku.id}">
+  Add Guild Powerup
+</RouteHeader>
+
+Adds the given powerup SKU to the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Guild Update](/topics/gateway-events#guild-update) and [Guild Powerup Entitlements Create](/topics/gateway-events#guild-powerup-entitlements-create) Gateway event.
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/skus/{sku.id}">
+  Remove Guild Powerup
+</RouteHeader>
+
+Removes the given powerup SKU from the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Guild Update](/topics/gateway-events#guild-update) and [Guild Powerup Entitlements Delete](/topics/gateway-events#guild-powerup-entitlements-delete) Gateway event.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/admin-server-eligibility">
   Get Admin Community Eligibility
