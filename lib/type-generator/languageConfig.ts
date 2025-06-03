@@ -1,6 +1,5 @@
 import Python from "@components/icons/Python";
 import TypeScript from "@components/icons/TypeScript";
-
 import { PythonGenerator } from "@lib/type-generator/python";
 import { TypescriptGenerator } from "@lib/type-generator/typescript";
 

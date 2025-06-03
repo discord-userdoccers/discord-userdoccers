@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { useCallback, useContext } from "react";
-import ThemeSwitcher from "./ThemeSwitcher";
+import MenuContext from "../contexts/MenuContext";
 import Bars from "./icons/Bars";
 import Userdoccers from "./icons/Userdoccers";
-import MenuContext from "../contexts/MenuContext";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 export default function Header() {
   const { setOpen } = useContext(MenuContext);

@@ -1,10 +1,9 @@
-import React, { RefObject, useEffect, useRef, useState } from "react";
-
 import Chevron from "@components/icons/Chevron";
 import CopyIcon from "@components/icons/Copy";
 import TickIcon from "@components/icons/Tick";
 import { Language, LANGUAGE_CONFIG } from "@lib/type-generator/languageConfig";
 import { useCodegenLanguage, useToast } from "@lib/type-generator/store";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 
 const cn = (...c: string[]) => c.join(" ");
 

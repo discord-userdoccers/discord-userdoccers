@@ -1,6 +1,6 @@
 import classNames from "@lib/classnames";
-import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
+import type { AppProps } from "next/app";
 import { useCallback, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
@@ -8,7 +8,6 @@ import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
-
 import "@docsearch/css";
 import "../stylesheets/tailwind.css";
 import "../stylesheets/styles.css";

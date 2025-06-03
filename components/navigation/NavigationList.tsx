@@ -1,5 +1,5 @@
-import { NavigationSection, NavigationLink, NavigationSubLink, SearchItem } from "./NavigationItems";
 import data from "./data.json" with { type: "json" };
+import { NavigationLink, NavigationSection, NavigationSubLink, SearchItem } from "./NavigationItems";
 
 export interface NavigationData {
   name: string | null;

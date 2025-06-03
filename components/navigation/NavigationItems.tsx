@@ -3,9 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Fragment, useEffect, useState } from "react";
 import useToggle from "../../hooks/useToggle";
-import Searchbar from "../Searchbar";
 import Caret from "../icons/Caret";
 import CaretFill from "../icons/CaretFill";
+import Searchbar from "../Searchbar";
 
 interface MenuSelectionProps {
   title?: string;
