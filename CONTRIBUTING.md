@@ -69,6 +69,8 @@ If enums are used in multiple places, they should be defined by the most relevan
 | 0     | NONE     | Invisible to everyone except the user themselves |
 | 1     | EVERYONE | Visible to everyone                              |
 
+For enums that have strings as values, the name can be skipped like so:
+
 ###### Platform Type
 
 | Value   | Description        |
@@ -78,8 +80,6 @@ If enums are used in multiple places, they should be defined by the most relevan
 | desktop | A desktop platform |
 
 Note that **Type** is used, *not* **Types** like in the official documentation.
-
-For enums that have strings as values, the name can be skipped like so:
 
 ## Flags
 
