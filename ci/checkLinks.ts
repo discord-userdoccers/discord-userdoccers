@@ -50,7 +50,7 @@ function scanFile(
 ): void {
   let multilineCode = false;
   splitFile.forEach((line, lineNum) => {
-    if (line.startsWith("```")) {
+    if (line.startsWith("```") && !line.split(" ").includes("pmo")) {
       multilineCode = !multilineCode;
       if (line.length > 3 && line.endsWith("```")) multilineCode = !multilineCode;
     }
