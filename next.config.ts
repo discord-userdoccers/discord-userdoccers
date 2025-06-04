@@ -1,7 +1,7 @@
 import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 import frontmatter from "@lib/frontmatter";
 import createMDX from "@next/mdx";
-import { NextConfig } from "next";
+import type { NextConfig } from "next";
 import supersub from "remark-supersub";
 
 const config: NextConfig = {
