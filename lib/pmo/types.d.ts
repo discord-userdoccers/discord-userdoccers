@@ -40,8 +40,7 @@ export declare namespace PMO {
 
   export interface Flag extends Member {
     initial: number;
-    // null if the flag cannot be represented as a left shift for some reason
-    shift: number | null;
+    shift: number;
   }
 
   export namespace Types {

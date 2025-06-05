@@ -5,10 +5,14 @@
 import { Root } from "mdast";
 import ts from "typescript";
 import { visit } from "unist-util-visit";
-import { Resolver } from "./resolve";
+import { error, Resolver } from "./resolve";
 
-// this actually persists throughout pages
-// idk why you need to know this but it might be useful in future
+// import type { Plugin } from "unified";
+// // @ts-expect-error it still resolves tho!
+// type VFile = Parameters<ReturnType<Plugin<[], Root>>>[1];
+// entity to path mappings to error on duplicate definitions
+// const dedupe = new Map<string, string>();
+
 const resolver = new Resolver();
 
 function expandPMO(tree: Root) {
@@ -17,11 +21,11 @@ function expandPMO(tree: Root) {
     if (node.meta != "pmo") return;
 
     if (["ts", "typescript"].indexOf(node.lang?.toLowerCase() ?? "") == -1) {
-      throw new Error("⚠ found a pmo node with invalid language");
+      throw error("has invalid language");
     }
 
     if (parent == null || index == null) {
-      throw new Error("⚠ found a pmo node without a parent and/or index");
+      throw error("without a parent and/or index");
     }
 
     const ast = ts.createSourceFile("pmo.ts", node.value, ts.ScriptTarget.Latest);

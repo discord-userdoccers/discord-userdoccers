@@ -1,11 +1,18 @@
+import chalk from "chalk";
 import type { RootContent } from "mdast";
 import type {
+  BinaryExpression,
+  EnumDeclaration,
+  EnumMember,
   InterfaceDeclaration,
   JSDoc,
   JSDocContainer,
   NodeArray,
+  NumericLiteral,
+  PropertyName,
   QualifiedName,
   Statement,
+  StringLiteral,
   TypeElement,
   TypeNode,
   TypeReferenceNode,
@@ -34,6 +41,14 @@ export class Resolver {
 
           break;
         case ts.SyntaxKind.EnumDeclaration:
+          const enumeration = this.resolveEnum(statement as EnumDeclaration);
+
+          nodes.push({
+            type: "code",
+            lang: "json",
+            value: JSON.stringify(enumeration, undefined, 2),
+          });
+
           break;
       }
     }
@@ -41,12 +56,14 @@ export class Resolver {
     return nodes;
   }
 
-  resolveStructure(statement: InterfaceDeclaration) {
+  resolveStructure(decl: InterfaceDeclaration) {
+    const name = decl.name.text;
+
     const structure: PMO.Structure = {
       type: "structure",
-      name: statement.name.text,
-      description: getDescription(statement),
-      properties: this.resolveStructureProperties(statement.name.text, statement.members),
+      name,
+      description: getDescription(decl),
+      properties: this.resolveStructureProperties(name, decl.members),
     };
 
     return structure;
@@ -57,36 +74,24 @@ export class Resolver {
 
     for (const member of members) {
       if (!ts.isPropertySignature(member) || member.type == null) {
-        throw new Error(
-          `⚠ pmo definition ${container} contains a member that isn't a property signature or doesn't have a type`,
-        );
+        throw error("contains a member that isn't a property signature or doesn't have a type", container);
       }
 
       if (member.name == null) {
-        throw new Error(`⚠ pmo definition ${container} contains a member without a name`);
+        throw error("contains a member without a name", container);
       }
 
-      switch (member.name.kind) {
-        case ts.SyntaxKind.NumericLiteral:
-        case ts.SyntaxKind.StringLiteral:
-        case ts.SyntaxKind.Identifier:
-          break;
-        default:
-          throw new Error(`⚠ pmo definition ${container} contains a member with invalid name`);
-      }
+      const name = this.resolvePropertyName(container, member.name);
+      const tags = getTags(container, name, member);
 
-      const tags = getTags(container, member.name.text, member);
-
-      const verbatimType = this.resolveType(container, member.name.text, member.type);
+      const verbatimType = this.resolveType(container, name, member.type);
 
       const { nullable, type } = this.resolveNullable(verbatimType);
 
       properties.push({
-        name: member.name.text,
+        name: name,
         description: getDescription(member),
-        deprecated: tags.deprecated,
-        deleted: tags.deleted,
-        notes: tags.notes,
+        ...tags,
         optional: member.questionToken != null,
         nullable,
         type,
@@ -94,6 +99,139 @@ export class Resolver {
     }
 
     return properties;
+  }
+
+  resolveEnum(decl: EnumDeclaration): PMO.Enum | PMO.Flags {
+    const type = this.resolveEnumType(decl);
+
+    const name = decl.name.text;
+    const description = getDescription(decl);
+
+    if (type === "enum") {
+      return {
+        type: "enum",
+        name,
+        description,
+        variants: this.resolveEnumMembers(name, decl.members, "enum"),
+      };
+    }
+
+    return {
+      type: "flags",
+      name,
+      description,
+      flags: this.resolveEnumMembers(name, decl.members, "flags"),
+    };
+  }
+
+  resolveEnumType(decl: EnumDeclaration) {
+    const container = decl.name.text;
+
+    let flagLikeCount = 0;
+
+    for (const member of decl.members) {
+      const name = this.resolvePropertyName(container, member.name);
+
+      if (member.initializer == null) {
+        throw error("doesn't have an initializer", container, name);
+      }
+
+      const initializer = member.initializer;
+
+      if (ts.isNumericLiteral(initializer) || ts.isStringLiteral(initializer)) {
+        continue;
+      }
+
+      if (!ts.isBinaryExpression(initializer)) {
+        throw error("expected binary expression", container, name);
+      }
+
+      if (initializer.operatorToken.kind !== ts.SyntaxKind.LessThanLessThanToken) {
+        throw error("expected a `<<` token", container, name);
+      }
+
+      if (!ts.isNumericLiteral(initializer.left) || !ts.isNumericLiteral(initializer.right)) {
+        throw error("shoud have numeric literals on both sides of the binary expression", container, name);
+      }
+
+      flagLikeCount += 1;
+    }
+
+    if (flagLikeCount > 0) {
+      if (flagLikeCount != decl.members.length) {
+        throw error("has flag-like initializers mixed in with non-flag-like initializers", container);
+      }
+
+      if (!container.endsWith("Flags")) {
+        throw error("flags name must end with `Flags`", container);
+      }
+
+      return "flag";
+    }
+
+    return "enum";
+  }
+
+  resolveEnumMembers<const T extends "flags" | "enum">(container: string, members: NodeArray<EnumMember>, type: T) {
+    const resolved: (PMO.Variant | PMO.Flag)[] = [];
+
+    for (const member of members) {
+      const name = this.resolvePropertyName(container, member.name);
+      const description = getDescription(member);
+      const tags = getTags(container, name, member);
+
+      // 2 assumptions
+      // 1. `this.resolveEnumType` has been called
+      // 2. `type` is the same as the resolved type
+      //
+      // the following lines will work under these assumption
+
+      const initializer = member.initializer!;
+
+      if (type === "enum") {
+        const value = ts.isNumericLiteral(initializer)
+          ? parseInt(initializer.text)
+          : (initializer as StringLiteral).text;
+
+        resolved.push({
+          name,
+          description,
+          ...tags,
+          value,
+        });
+
+        continue;
+      }
+
+      // again, same assumptions as above
+      const binary = initializer as BinaryExpression;
+      const left = binary.left as NumericLiteral;
+      const right = binary.right as NumericLiteral;
+
+      const initial = parseInt(left.text);
+      const shift = parseInt(right.text);
+
+      resolved.push({
+        name,
+        description,
+        ...tags,
+        initial,
+        shift,
+      });
+    }
+
+    return resolved as T extends "enum" ? PMO.Variant[] : PMO.Flag[];
+  }
+
+  resolvePropertyName(container: string, name: PropertyName) {
+    switch (name.kind) {
+      case ts.SyntaxKind.NumericLiteral:
+      case ts.SyntaxKind.StringLiteral:
+      case ts.SyntaxKind.Identifier:
+        return name.text;
+      default:
+        throw error("contains a member with invalid name", container);
+    }
   }
 
   resolveType(container: string, member: string, node: TypeNode): PMO.Types.Any {
@@ -110,7 +248,7 @@ export class Resolver {
     } else if (ts.isLiteralTypeNode(node)) {
       // TODO: maybe string and number literals?
       if (node.literal.kind !== ts.SyntaxKind.NullKeyword) {
-        throw new Error(`⚠ pmo definition ${container}.${member} is a literal that isn't null`);
+        throw error("is a literal that isn't null", container, member);
       }
 
       return {
@@ -136,7 +274,7 @@ export class Resolver {
       return this.resolveTypeReference(container, member, node);
     }
 
-    throw new Error(`⚠ pmo definition ${container}.${member} contains a member with unhandled type`);
+    throw error("contains a member with unhandled type", container, member);
   }
 
   resolveTypeReference(container: string, member: string, node: TypeReferenceNode): PMO.Types.Any {
@@ -173,7 +311,7 @@ export class Resolver {
           value: this.resolveType(container, member, node.typeArguments![1]),
         };
       default:
-        throw new Error(`⚠ pmo definition ${container}.${member} contains a member with invalid type reference`);
+        throw error("contains a member with invalid type reference", container, member);
     }
   }
 
@@ -211,6 +349,12 @@ export class Resolver {
   }
 }
 
+export function error(message: string, container?: string, member?: string) {
+  const prefix = container != null ? ` ${container}${member != null ? `.${member}` : ""}` : "";
+
+  return new Error(`${chalk.red("⨯")} pmo definition${chalk.blue(prefix)}: ${chalk.yellow(message)}`);
+}
+
 function getJSDoc<T extends JSDocContainer>(node: T) {
   return (node as { jsDoc?: JSDoc[] }).jsDoc;
 }
@@ -243,7 +387,7 @@ function getTags<T extends JSDocContainer>(container: string, member: string, no
           const note = stringifyJSDoc(tag.comment);
 
           if (note == null) {
-            throw new Error(`⚠ pmo definition ${container}.${member} contains an empty note`);
+            throw error(`contains an empty note`, container, member);
           }
 
           tags.notes.push(note);
