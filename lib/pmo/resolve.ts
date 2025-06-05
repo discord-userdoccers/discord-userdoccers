@@ -1,4 +1,4 @@
-import type { Literal, RootContent } from "mdast";
+import type { RootContent } from "mdast";
 import type {
   InterfaceDeclaration,
   JSDoc,
@@ -11,7 +11,7 @@ import type {
   TypeReferenceNode,
 } from "typescript";
 import ts from "typescript";
-import { PMO } from "./types";
+import type { PMO } from "./types";
 
 export class Resolver {
   resolve(statements: NodeArray<Statement>) {
@@ -212,7 +212,7 @@ export class Resolver {
 }
 
 function getJSDoc<T extends JSDocContainer>(node: T) {
-  return (node as any).jsDoc as JSDoc[] | undefined;
+  return (node as { jsDoc?: JSDoc[] }).jsDoc;
 }
 
 function getTags<T extends JSDocContainer>(container: string, member: string, node: T) {

@@ -1,4 +1,4 @@
-export namespace PMO {
+export declare namespace PMO {
   export interface Base {
     type: string;
     name: string;
