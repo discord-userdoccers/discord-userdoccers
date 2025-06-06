@@ -254,10 +254,12 @@ export class Serializer {
     }
   }
 
+  // eslint-disable-next-line
   serializeEnum(enumeration: PMO.Enum) {
     return [];
   }
 
+  // eslint-disable-next-line
   serializeFlags(flags: PMO.Flags) {
     return [];
   }
