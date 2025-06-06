@@ -1,3 +1,35 @@
+export declare module "mdast" {
+  interface PhrasingContentMap {
+    subscript: Subscript;
+    superscript: Superscript;
+  }
+
+  interface RootContentMap {
+    subscript: Subscript;
+    superscript: Superscript;
+  }
+
+  export interface SubscriptData extends Data {
+    hName: "sub";
+  }
+
+  export interface Subscript {
+    type: "subscript";
+    data: SubscriptData;
+    children: PhrasingContent[];
+  }
+
+  export interface SuperscriptData extends Data {
+    hName: "sup";
+  }
+
+  export interface Superscript {
+    type: "superscript";
+    data: SuperscriptData;
+    children: PhrasingContent[];
+  }
+}
+
 export declare namespace PMO {
   export interface Base {
     type: string;
