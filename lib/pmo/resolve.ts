@@ -1,5 +1,4 @@
 import chalk from "chalk";
-import type { RootContent } from "mdast";
 import type {
   BinaryExpression,
   EnumDeclaration,
@@ -21,9 +20,7 @@ import ts from "typescript";
 import type { PMO } from "./types";
 
 export class Resolver {
-  resolve(statements: NodeArray<Statement>) {
-    const nodes: RootContent[] = [];
-
+  *resolve(statements: NodeArray<Statement>) {
     // TODO: tables and footnotes
     // TODO: create JSX component that wraps the table
     // TODO: pass prop + doc data to said JSX component
@@ -31,29 +28,15 @@ export class Resolver {
     for (const statement of statements) {
       switch (statement.kind) {
         case ts.SyntaxKind.InterfaceDeclaration:
-          const struct = this.resolveStructure(statement as InterfaceDeclaration);
-
-          nodes.push({
-            type: "code",
-            lang: "json",
-            value: JSON.stringify(struct, undefined, 2),
-          });
+          yield this.resolveStructure(statement as InterfaceDeclaration);
 
           break;
         case ts.SyntaxKind.EnumDeclaration:
-          const enumeration = this.resolveEnum(statement as EnumDeclaration);
-
-          nodes.push({
-            type: "code",
-            lang: "json",
-            value: JSON.stringify(enumeration, undefined, 2),
-          });
+          yield this.resolveEnum(statement as EnumDeclaration);
 
           break;
       }
     }
-
-    return nodes;
   }
 
   resolveStructure(decl: InterfaceDeclaration) {
@@ -109,18 +92,18 @@ export class Resolver {
 
     if (type === "enum") {
       return {
-        type: "enum",
+        type,
         name,
         description,
-        variants: this.resolveEnumMembers(name, decl.members, "enum"),
+        variants: this.resolveEnumMembers(name, decl.members, type),
       };
     }
 
     return {
-      type: "flags",
+      type,
       name,
       description,
-      flags: this.resolveEnumMembers(name, decl.members, "flags"),
+      flags: this.resolveEnumMembers(name, decl.members, type),
     };
   }
 
@@ -166,13 +149,21 @@ export class Resolver {
         throw error("flags name must end with `Flags`", container);
       }
 
-      return "flag";
+      return "flags";
+    }
+
+    if (!container.endsWith("Type")) {
+      throw error("flags name must end with `Type`", container);
     }
 
     return "enum";
   }
 
-  resolveEnumMembers<const T extends "flags" | "enum">(container: string, members: NodeArray<EnumMember>, type: T) {
+  resolveEnumMembers<const T extends (PMO.Enum | PMO.Flags)["type"]>(
+    container: string,
+    members: NodeArray<EnumMember>,
+    type: T,
+  ) {
     const resolved: (PMO.Variant | PMO.Flag)[] = [];
 
     for (const member of members) {
@@ -274,7 +265,7 @@ export class Resolver {
       return this.resolveTypeReference(container, member, node);
     }
 
-    throw error("contains a member with unhandled type", container, member);
+    throw error(`contains a member with unhandled type ${ts.SyntaxKind[node.kind]}`, container, member);
   }
 
   resolveTypeReference(container: string, member: string, node: TypeReferenceNode): PMO.Types.Any {
@@ -384,10 +375,14 @@ function getTags<T extends JSDocContainer>(container: string, member: string, no
 
           break;
         case "note": {
-          const note = stringifyJSDoc(tag.comment);
+          let note: string | number | null = stringifyJSDoc(tag.comment);
 
           if (note == null) {
             throw error(`contains an empty note`, container, member);
+          }
+
+          if (/\*\d+$/.test(note)) {
+            note = parseInt(note.slice(1));
           }
 
           tags.notes.push(note);

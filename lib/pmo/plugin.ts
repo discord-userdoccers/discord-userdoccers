@@ -6,14 +6,10 @@ import { Root } from "mdast";
 import ts from "typescript";
 import { visit } from "unist-util-visit";
 import { error, Resolver } from "./resolve";
-
-// import type { Plugin } from "unified";
-// // @ts-expect-error it still resolves tho!
-// type VFile = Parameters<ReturnType<Plugin<[], Root>>>[1];
-// entity to path mappings to error on duplicate definitions
-// const dedupe = new Map<string, string>();
+import { Serializer } from "./serializer";
 
 const resolver = new Resolver();
+const serializer = new Serializer();
 
 function expandPMO(tree: Root) {
   visit(tree, (node, index, parent) => {
@@ -31,11 +27,17 @@ function expandPMO(tree: Root) {
     const ast = ts.createSourceFile("pmo.ts", node.value, ts.ScriptTarget.Latest);
     const resolved = resolver.resolve(ast.statements);
 
-    parent.children.splice(index, 1, ...resolved);
+    const serialized = [];
+
+    for (const model of resolved) {
+      serialized.push(...serializer.serialize(model));
+    }
+
+    parent.children.splice(index, 1, ...serialized);
 
     // `- 1` because we are also deleting the original node
     // return a number because we don't want to visit these nodes
-    return resolved.length - 1;
+    return serialized.length - 1;
   });
 }
 

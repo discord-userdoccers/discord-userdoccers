@@ -10,7 +10,7 @@ export declare namespace PMO {
     description: string | null;
     deprecated: string | boolean;
     deleted: boolean;
-    notes: string[];
+    notes: (string | number)[];
   }
 
   export interface Structure extends Base {
