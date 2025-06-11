@@ -31,6 +31,7 @@
           ];
 
           shellHook = ''
+            # see https://github.com/cloudflare/workerd/issues/1482
             if [[ $(uname -a) == *"NixOS"* ]] then
                 if [[ ! -d node_modules/.pnpm ]] then
                     echo "You are on NixOS, please reload the dev shell after \`pnpm install\`"
