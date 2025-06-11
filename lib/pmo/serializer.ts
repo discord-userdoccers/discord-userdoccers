@@ -10,6 +10,7 @@ type LiteralNodes = {
 };
 
 type Filter<T> = {
+  // eslint-disable-next-line
   [K in keyof T]-?: T[K] extends {} ? T[K] : never;
 }[keyof T];
 
@@ -166,7 +167,6 @@ export class Serializer {
     });
   }
 
-  // eslint-disable-next-line
   serializeEnum(enumeration: PMO.Enum): RootContent[] {
     const notes: RootContent[] = [];
 
@@ -240,7 +240,6 @@ export class Serializer {
     return rows;
   }
 
-  // eslint-disable-next-line
   serializeFlags(flags: PMO.Flags): RootContent[] {
     const notes: RootContent[] = [];
 
