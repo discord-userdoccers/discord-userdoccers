@@ -19,12 +19,9 @@ import type {
 import ts from "typescript";
 import type { PMO } from "./types";
 
+// TODO: add additional column support via jsdoc
 export class Resolver {
-  *resolve(statements: NodeArray<Statement>) {
-    // TODO: tables and footnotes
-    // TODO: create JSX component that wraps the table
-    // TODO: pass prop + doc data to said JSX component
-    // TODO: use the JSX component for (better) codegen
+  *resolve(statements: NodeArray<Statement>): Generator<PMO.Model, undefined> {
     for (const statement of statements) {
       switch (statement.kind) {
         case ts.SyntaxKind.InterfaceDeclaration:
@@ -39,20 +36,18 @@ export class Resolver {
     }
   }
 
-  resolveStructure(decl: InterfaceDeclaration) {
+  resolveStructure(decl: InterfaceDeclaration): PMO.Structure {
     const name = decl.name.text;
 
-    const structure: PMO.Structure = {
+    return {
       type: "structure",
       name,
       description: getDescription(decl),
       properties: this.resolveStructureProperties(name, decl.members),
     };
-
-    return structure;
   }
 
-  resolveStructureProperties(container: string, members: NodeArray<TypeElement>) {
+  resolveStructureProperties(container: string, members: NodeArray<TypeElement>): PMO.Property[] {
     const properties: PMO.Property[] = [];
 
     for (const member of members) {
@@ -107,7 +102,7 @@ export class Resolver {
     };
   }
 
-  resolveEnumType(decl: EnumDeclaration) {
+  resolveEnumType(decl: EnumDeclaration): (PMO.Enum | PMO.Flags)["type"] {
     const container = decl.name.text;
 
     let flagLikeCount = 0;
@@ -163,7 +158,7 @@ export class Resolver {
     container: string,
     members: NodeArray<EnumMember>,
     type: T,
-  ) {
+  ): T extends PMO.Enum["type"] ? PMO.Variant[] : PMO.Flag[] {
     const resolved: (PMO.Variant | PMO.Flag)[] = [];
 
     for (const member of members) {
@@ -211,10 +206,10 @@ export class Resolver {
       });
     }
 
-    return resolved as T extends "enum" ? PMO.Variant[] : PMO.Flag[];
+    return resolved as T extends PMO.Enum["type"] ? PMO.Variant[] : PMO.Flag[];
   }
 
-  resolvePropertyName(container: string, name: PropertyName) {
+  resolvePropertyName(container: string, name: PropertyName): string {
     switch (name.kind) {
       case ts.SyntaxKind.NumericLiteral:
       case ts.SyntaxKind.StringLiteral:
@@ -231,12 +226,16 @@ export class Resolver {
         type: "primitive",
         kind: "string",
       };
-    } else if (node.kind === ts.SyntaxKind.BooleanKeyword) {
+    }
+
+    if (node.kind === ts.SyntaxKind.BooleanKeyword) {
       return {
         type: "primitive",
         kind: "boolean",
       };
-    } else if (ts.isLiteralTypeNode(node)) {
+    }
+
+    if (ts.isLiteralTypeNode(node)) {
       // TODO: maybe string and number literals?
       if (node.literal.kind !== ts.SyntaxKind.NullKeyword) {
         throw error("is a literal that isn't null", container, member);
@@ -246,22 +245,30 @@ export class Resolver {
         type: "primitive",
         kind: "null",
       };
-    } else if (ts.isUnionTypeNode(node)) {
+    }
+
+    if (ts.isUnionTypeNode(node)) {
       return {
         type: "union",
         elements: node.types.map((type) => this.resolveType(container, member, type)),
       };
-    } else if (ts.isArrayTypeNode(node)) {
+    }
+
+    if (ts.isArrayTypeNode(node)) {
       return {
         type: "array",
         element: this.resolveType(container, member, node.elementType),
       };
-    } else if (ts.isTupleTypeNode(node)) {
+    }
+
+    if (ts.isTupleTypeNode(node)) {
       return {
         type: "tuple",
         elements: node.elements.map((element) => this.resolveType(container, member, element)),
       };
-    } else if (ts.isTypeReferenceNode(node)) {
+    }
+
+    if (ts.isTypeReferenceNode(node)) {
       return this.resolveTypeReference(container, member, node);
     }
 
@@ -306,7 +313,7 @@ export class Resolver {
     }
   }
 
-  resolveQualifiedName(node: QualifiedName) {
+  resolveQualifiedName(node: QualifiedName): string[] {
     const path: string[] = [];
 
     if (ts.isQualifiedName(node.left)) {
@@ -320,7 +327,7 @@ export class Resolver {
     return path;
   }
 
-  resolveNullable(type: PMO.Types.Any) {
+  resolveNullable(type: PMO.Types.Any): { nullable: boolean; type: PMO.Types.Any } {
     // only a top level union indicates nullability
     if (type.type != "union") return { nullable: false, type };
 
@@ -340,17 +347,21 @@ export class Resolver {
   }
 }
 
-export function error(message: string, container?: string, member?: string) {
+export function error(message: string, container?: string, member?: string): Error {
   const prefix = container != null ? ` ${container}${member != null ? `.${member}` : ""}` : "";
 
   return new Error(`${chalk.red("⨯")} pmo definition${chalk.blue(prefix)}: ${chalk.yellow(message)}`);
 }
 
-function getJSDoc<T extends JSDocContainer>(node: T) {
+function getJSDoc<T extends JSDocContainer>(node: T): JSDoc[] | undefined {
   return (node as { jsDoc?: JSDoc[] }).jsDoc;
 }
 
-function getTags<T extends JSDocContainer>(container: string, member: string, node: T) {
+function getTags<T extends JSDocContainer>(
+  container: string,
+  member: string,
+  node: T,
+): Pick<PMO.Member, "deprecated" | "deleted" | "notes"> {
   const jsdoc = getJSDoc(node);
 
   const tags: Pick<PMO.Member, "deprecated" | "deleted" | "notes"> = {
@@ -396,7 +407,7 @@ function getTags<T extends JSDocContainer>(container: string, member: string, no
   return tags;
 }
 
-function getDescription<T extends JSDocContainer>(node: T) {
+function getDescription<T extends JSDocContainer>(node: T): string | null {
   const jsdoc = getJSDoc(node);
 
   if (jsdoc == null) return null;
@@ -404,7 +415,7 @@ function getDescription<T extends JSDocContainer>(node: T) {
   return jsdoc.map((doc) => stringifyJSDoc(doc.comment) ?? "").join(" ");
 }
 
-function stringifyJSDoc(comment: JSDoc["comment"]) {
+function stringifyJSDoc(comment: JSDoc["comment"]): string | null {
   if (comment == null) return null;
 
   if (typeof comment === "string") return comment;

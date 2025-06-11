@@ -2,18 +2,20 @@ export declare module "mdast" {
   interface PhrasingContentMap {
     subscript: Subscript;
     superscript: Superscript;
+    jsx: JSX;
   }
 
   interface RootContentMap {
     subscript: Subscript;
     superscript: Superscript;
+    jsx: JSX;
   }
 
   export interface SubscriptData extends Data {
     hName: "sub";
   }
 
-  export interface Subscript {
+  export interface Subscript extends Parent {
     type: "subscript";
     data: SubscriptData;
     children: PhrasingContent[];
@@ -23,14 +25,20 @@ export declare module "mdast" {
     hName: "sup";
   }
 
-  export interface Superscript {
+  export interface Superscript extends Parent {
     type: "superscript";
     data: SuperscriptData;
     children: PhrasingContent[];
   }
+
+  export interface JSX extends Literal {
+    type: "jsx";
+  }
 }
 
 export declare namespace PMO {
+  export type Model = Structure | Enum | Flags;
+
   export interface Base {
     type: string;
     name: string;

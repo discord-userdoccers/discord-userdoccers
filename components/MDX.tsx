@@ -12,6 +12,7 @@ import HorizontalRule from "./mdx/HorizontalRule";
 import MDX_ICONS from "./mdx/icons";
 import InlineCode from "./mdx/InlineCode";
 import { ListItem, OrderedList, UnorderedList } from "./mdx/List";
+import Model from "./mdx/Model";
 import Paragraph from "./mdx/Paragraph";
 import StrikeThrough from "./mdx/StrikeThrough";
 import Strong from "./mdx/Strong";
@@ -48,6 +49,7 @@ const COMPONENTS = {
   Alert,
   RouteHeader,
   Collapsible,
+  Model,
 
   // icons
   ...MDX_ICONS,
