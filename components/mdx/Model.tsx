@@ -6,4 +6,3 @@ import React from "react";
 export default function Model({ children }: React.PropsWithChildren<{ model: PMO.Model }>) {
   return <>{children}</>;
 }
-
