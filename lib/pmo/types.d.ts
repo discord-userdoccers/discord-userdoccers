@@ -43,6 +43,7 @@ export declare namespace PMO {
     type: string;
     name: string;
     description: string | null;
+    columns: string[];
   }
 
   export interface Member {
@@ -51,6 +52,7 @@ export declare namespace PMO {
     deprecated: string | boolean;
     deleted: boolean;
     notes: (string | number)[];
+    columns: Record<string, string>;
   }
 
   export interface Structure extends Base {

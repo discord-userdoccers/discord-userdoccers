@@ -19,7 +19,6 @@ import type {
 import ts from "typescript";
 import type { PMO } from "./types";
 
-// TODO: add additional column support via jsdoc
 export class Resolver {
   *resolve(statements: NodeArray<Statement>): Generator<PMO.Model, undefined> {
     for (const statement of statements) {
@@ -38,17 +37,25 @@ export class Resolver {
 
   resolveStructure(decl: InterfaceDeclaration): PMO.Structure {
     const name = decl.name.text;
+    const columns: PMO.Base["columns"] = [];
 
     return {
       type: "structure",
       name,
       description: getDescription(decl),
-      properties: this.resolveStructureProperties(name, decl.members),
+      columns,
+      properties: this.resolveStructureProperties(name, decl.members, columns),
     };
   }
 
-  resolveStructureProperties(container: string, members: NodeArray<TypeElement>): PMO.Property[] {
+  resolveStructureProperties(
+    container: string,
+    members: NodeArray<TypeElement>,
+    columnList: PMO.Base["columns"],
+  ): PMO.Property[] {
     const properties: PMO.Property[] = [];
+
+    let index = 0;
 
     for (const member of members) {
       if (!ts.isPropertySignature(member) || member.type == null) {
@@ -59,8 +66,11 @@ export class Resolver {
         throw error("contains a member without a name", container);
       }
 
+      const columns: PMO.Member["columns"] = {};
+
       const name = this.resolvePropertyName(container, member.name);
-      const tags = getTags(container, name, member);
+      const tags = getTags(container, name, member, columnList, columns, index);
+      index++;
 
       const verbatimType = this.resolveType(container, name, member.type);
 
@@ -70,6 +80,7 @@ export class Resolver {
         name: name,
         description: getDescription(member),
         ...tags,
+        columns,
         optional: member.questionToken != null,
         nullable,
         type,
@@ -84,13 +95,15 @@ export class Resolver {
 
     const name = decl.name.text;
     const description = getDescription(decl);
+    const columns: PMO.Base["columns"] = [];
 
     if (type === "enum") {
       return {
         type,
         name,
         description,
-        variants: this.resolveEnumMembers(name, decl.members, type),
+        columns,
+        variants: this.resolveEnumMembers(name, decl.members, columns, type),
       };
     }
 
@@ -98,7 +111,8 @@ export class Resolver {
       type,
       name,
       description,
-      flags: this.resolveEnumMembers(name, decl.members, type),
+      columns,
+      flags: this.resolveEnumMembers(name, decl.members, columns, type),
     };
   }
 
@@ -157,14 +171,20 @@ export class Resolver {
   resolveEnumMembers<const T extends (PMO.Enum | PMO.Flags)["type"]>(
     container: string,
     members: NodeArray<EnumMember>,
+    columnList: PMO.Base["columns"],
     type: T,
   ): T extends PMO.Enum["type"] ? PMO.Variant[] : PMO.Flag[] {
     const resolved: (PMO.Variant | PMO.Flag)[] = [];
 
+    let index = 0;
+
     for (const member of members) {
       const name = this.resolvePropertyName(container, member.name);
       const description = getDescription(member);
-      const tags = getTags(container, name, member);
+
+      const columns: PMO.Member["columns"] = {};
+      const tags = getTags(container, name, member, columnList, columns, index);
+      index++;
 
       // 2 assumptions
       // 1. `this.resolveEnumType` has been called
@@ -183,6 +203,7 @@ export class Resolver {
           name,
           description,
           ...tags,
+          columns,
           value,
         });
 
@@ -201,6 +222,7 @@ export class Resolver {
         name,
         description,
         ...tags,
+        columns,
         initial,
         shift,
       });
@@ -361,6 +383,9 @@ function getTags<T extends JSDocContainer>(
   container: string,
   member: string,
   node: T,
+  columnList: PMO.Base["columns"],
+  columns: PMO.Member["columns"],
+  index: number,
 ): Pick<PMO.Member, "deprecated" | "deleted" | "notes"> {
   const jsdoc = getJSDoc(node);
 
@@ -389,7 +414,7 @@ function getTags<T extends JSDocContainer>(
           let note: string | number | null = stringifyJSDoc(tag.comment);
 
           if (note == null) {
-            throw error(`contains an empty note`, container, member);
+            throw error("contains an empty note tag", container, member);
           }
 
           if (/\*\d+$/.test(note)) {
@@ -400,6 +425,24 @@ function getTags<T extends JSDocContainer>(
 
           break;
         }
+        case "column":
+          const comment = stringifyJSDoc(tag.comment);
+
+          if (comment == null) {
+            throw error("contains an empty column tag", container, member);
+          }
+
+          const colon = comment.indexOf(":");
+          const name = comment.slice(0, colon);
+          const content = comment.slice(colon + 1).trim();
+
+          if (!columnList.includes(name)) {
+            columnList.push(name);
+          }
+
+          columns[name] ??= "";
+          columns[name] += ` ${content}`;
+          columns[name] = columns[name].trim();
       }
     }
   }
