@@ -43,7 +43,7 @@ export class Serializer {
     notes: RootContent[],
   ) {
     const prelude: RootContent[] = [
-      parent("heading", [literal("text", name.replace(/(?<!^)[A-Z]/, " &$"))], { depth: 6 }),
+      parent("heading", [literal("text", name.replace(/(?<!^)[A-Z]/, " $&"))], { depth: 6 }),
       // TODO: parse description as markdown
       parent("paragraph", [literal("text", description)]),
     ];
@@ -82,10 +82,10 @@ export class Serializer {
     );
   }
 
-  serializeNotes(notes: RootContent[], data: { notes: PMO.Member["notes"]; counter: number }) {
+  serializeNotes(notes: RootContent[], srcNotes: PMO.Member["notes"], data: { counter: number }) {
     const serialized: PhrasingContent[] = [];
 
-    for (const note of data.notes) {
+    for (const note of srcNotes) {
       const superscript = typeof note === "number" ? note.toString() : data.counter.toString();
 
       serialized.push(
@@ -130,14 +130,11 @@ export class Serializer {
   ): TableRow[] {
     const rows: TableRow[] = [];
 
-    let notesCounter = 1;
+    const notesData = { counter: 1 };
 
     for (const property of properties) {
       const nameNode = literal("text", property.name);
-      const nameSuffix = this.serializeNotes(notes, {
-        notes: property.notes,
-        counter: notesCounter,
-      });
+      const nameSuffix = this.serializeNotes(notes, property.notes, notesData);
 
       if (property.optional) {
         nameNode.value += "?";
@@ -243,13 +240,10 @@ export class Serializer {
   serializeEnumVariants(variants: PMO.Variant[], notes: RootContent[], columns: PMO.Base["columns"]): TableRow[] {
     const rows: TableRow[] = [];
 
-    let notesCounter = 1;
+    const notesData = { counter: 1 };
 
     for (const variant of variants) {
-      const nameSuffix = this.serializeNotes(notes, {
-        notes: variant.notes,
-        counter: notesCounter,
-      });
+      const nameSuffix = this.serializeNotes(notes, variant.notes, notesData);
 
       if (variant.deprecated) {
         nameSuffix.push(parent("strong", [literal("text", " (deprecated)")]));
@@ -285,13 +279,10 @@ export class Serializer {
   serializeFlagsFlags(flags: PMO.Flag[], notes: RootContent[], columns: PMO.Base["columns"]): TableRow[] {
     const rows: TableRow[] = [];
 
-    let notesCounter = 1;
+    const notesData = { counter: 1 };
 
     for (const flag of flags) {
-      const nameSuffix = this.serializeNotes(notes, {
-        notes: flag.notes,
-        counter: notesCounter,
-      });
+      const nameSuffix = this.serializeNotes(notes, flag.notes, notesData);
 
       if (flag.deprecated) {
         nameSuffix.push(parent("strong", [literal("text", " (deprecated)")]));

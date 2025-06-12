@@ -55,8 +55,6 @@ export class Resolver {
   ): PMO.Property[] {
     const properties: PMO.Property[] = [];
 
-    let index = 0;
-
     for (const member of members) {
       if (!ts.isPropertySignature(member) || member.type == null) {
         throw error("contains a member that isn't a property signature or doesn't have a type", container);
@@ -69,8 +67,7 @@ export class Resolver {
       const columns: PMO.Member["columns"] = {};
 
       const name = this.resolvePropertyName(container, member.name);
-      const tags = getTags(container, name, member, columnList, columns, index);
-      index++;
+      const tags = getTags(container, name, member, columnList, columns);
 
       const verbatimType = this.resolveType(container, name, member.type);
 
@@ -176,15 +173,12 @@ export class Resolver {
   ): T extends PMO.Enum["type"] ? PMO.Variant[] : PMO.Flag[] {
     const resolved: (PMO.Variant | PMO.Flag)[] = [];
 
-    let index = 0;
-
     for (const member of members) {
       const name = this.resolvePropertyName(container, member.name);
       const description = getDescription(member);
 
       const columns: PMO.Member["columns"] = {};
-      const tags = getTags(container, name, member, columnList, columns, index);
-      index++;
+      const tags = getTags(container, name, member, columnList, columns);
 
       // 2 assumptions
       // 1. `this.resolveEnumType` has been called
@@ -385,7 +379,6 @@ function getTags<T extends JSDocContainer>(
   node: T,
   columnList: PMO.Base["columns"],
   columns: PMO.Member["columns"],
-  index: number,
 ): Pick<PMO.Member, "deprecated" | "deleted" | "notes"> {
   const jsdoc = getJSDoc(node);
 
