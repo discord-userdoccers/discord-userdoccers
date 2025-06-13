@@ -1,4 +1,4 @@
-import { Literal, Parent, PhrasingContent, RootContent, TableRow } from "mdast";
+import { Literal, Parent, PhrasingContent, RootContent, TableCell, TableRow } from "mdast";
 import { PMO } from "./types";
 
 type ParentNodes = {
@@ -16,7 +16,11 @@ type Filter<T> = {
 
 type Args<T> = Filter<T> extends never ? [] : [T];
 
-// TODO: deduplicate this code
+type NotesData = {
+  notes: RootContent[];
+  counter: number;
+};
+
 export class Serializer {
   serialize(model: PMO.Model): RootContent[] {
     const data = JSON.stringify(model);
@@ -35,16 +39,17 @@ export class Serializer {
     }
   }
 
-  serializeGeneric(
+  serializeGeneric<M>(
     name: string,
     description: string,
     columns: PMO.Base["columns"],
-    rows: TableRow[],
-    notes: RootContent[],
-  ) {
+    members: M[],
+    rowSerializer: (member: M, notes: NotesData, columns: PMO.Base["columns"]) => TableRow,
+  ): RootContent[] {
+    const notes: RootContent[] = [];
+
     const prelude: RootContent[] = [
       parent("heading", [literal("text", name.replace(/(?<!^)[A-Z]/, " $&"))], { depth: 6 }),
-      // TODO: parse description as markdown
       parent("paragraph", [literal("text", description)]),
     ];
 
@@ -53,36 +58,39 @@ export class Serializer {
         "tableRow",
         columns.map((column) => parent("tableCell", [literal("text", column)])),
       ),
-      ...rows,
+      ...members.map((member) => rowSerializer(member, { notes, counter: 1 }, columns)),
     ]);
 
     return prelude.concat(table).concat(notes);
   }
 
   serializeGenericRow(
-    nameFirst: boolean,
-    name: string,
-    nameSuffix: PhrasingContent[],
-    second: PhrasingContent[],
-    third: PhrasingContent[],
     columnList: string[],
-    columns: PMO.Member["columns"],
+    columns: Record<string, string | PhrasingContent[]>,
     deleted: boolean,
-  ) {
-    const first = parent("tableCell", this.serializeDeleted([literal("text", name)], deleted).concat(nameSuffix));
-    const sDel = parent("tableCell", this.serializeDeleted(second, deleted));
+  ): TableRow {
+    const cells: TableCell[] = [];
 
-    return parent(
-      "tableRow",
-      [
-        nameFirst ? first : sDel,
-        nameFirst ? sDel : first,
-        parent("tableCell", this.serializeDeleted(third, deleted)),
-      ].concat(columnList.map((column) => parent("tableCell", [literal("text", columns[column] ?? "")]))),
-    );
+    for (const column of columnList) {
+      const value = columns[column];
+
+      if (typeof value === "string") {
+        cells.push(parent("tableCell", this.serializeDeleted([literal("text", value)], deleted)));
+
+        continue;
+      }
+
+      cells.push(parent("tableCell", value[0].type === "delete" ? value : this.serializeDeleted(value, deleted)));
+    }
+
+    return parent("tableRow", cells);
   }
 
-  serializeNotes(notes: RootContent[], srcNotes: PMO.Member["notes"], data: { counter: number }) {
+  serializeDeletedName(name: string, suffix: PhrasingContent[], deleted: boolean): PhrasingContent[] {
+    return this.serializeDeleted([literal("text", name)], deleted).concat(suffix);
+  }
+
+  serializeNotes(data: NotesData, srcNotes: PMO.Member["notes"]): PhrasingContent[] {
     const serialized: PhrasingContent[] = [];
 
     for (const note of srcNotes) {
@@ -95,7 +103,7 @@ export class Serializer {
 
       if (typeof note === "number") continue;
 
-      notes.push(
+      data.notes.push(
         parent("paragraph", [
           parent("superscript", [literal("text", superscript)], { data: { hName: "sup" } }),
           literal("text", ` ${note}`),
@@ -108,60 +116,49 @@ export class Serializer {
     return serialized;
   }
 
+  serializeNameSuffix(
+    notes: NotesData,
+    srcNotes: PMO.Member["notes"],
+    deprecated: PMO.Member["deprecated"],
+  ): PhrasingContent[] {
+    const nameSuffix = this.serializeNotes(notes, srcNotes);
+
+    // TODO: handle string case
+    if (deprecated) {
+      nameSuffix.push(parent("strong", [literal("text", " (deprecated)")]));
+    }
+
+    return nameSuffix;
+  }
+
   serializeStructure(structure: PMO.Structure): RootContent[] {
-    const notes: RootContent[] = [];
-
-    // TODO: make this serialize additional columns
-    const rows = this.serializeStrucutureFields(structure.properties, notes, structure.columns);
-
     return this.serializeGeneric(
       `${structure.name}Structure`,
       structure.description ?? "",
       ["Field", "Type", "Description"].concat(structure.columns),
-      rows,
-      notes,
+      structure.properties,
+      this.serializeStrucutureProperty.bind(this),
     );
   }
 
-  serializeStrucutureFields(
-    properties: PMO.Property[],
-    notes: RootContent[],
-    columns: PMO.Base["columns"],
-  ): TableRow[] {
-    const rows: TableRow[] = [];
+  serializeStrucutureProperty(property: PMO.Property, notes: NotesData, columns: PMO.Base["columns"]): TableRow {
+    const name = `${property.name}${property.optional ? "" : "?"}`;
+    const nameSuffix = this.serializeNameSuffix(notes, property.notes, property.deprecated);
 
-    const notesData = { counter: 1 };
+    const nameNode = this.serializeDeletedName(name, nameSuffix, property.deleted);
+    const typeNode = this.serializeType(property.type);
+    const descriptionNode = [literal("text", property.description ?? "")];
 
-    for (const property of properties) {
-      const nameNode = literal("text", property.name);
-      const nameSuffix = this.serializeNotes(notes, property.notes, notesData);
-
-      if (property.optional) {
-        nameNode.value += "?";
-      }
-
-      if (property.deprecated) {
-        nameSuffix.push(parent("strong", [literal("text", " (deprecated)")]));
-      }
-
-      const typeNode = this.serializeType(property.type);
-      const descriptionNode = [literal("text", property.description ?? "")];
-
-      rows.push(
-        this.serializeGenericRow(
-          true,
-          `${property.name}${property.optional ? "" : "?"}`,
-          nameSuffix,
-          typeNode,
-          descriptionNode,
-          columns,
-          property.columns,
-          property.deleted,
-        ),
-      );
-    }
-
-    return rows;
+    return this.serializeGenericRow(
+      columns,
+      {
+        Field: nameNode,
+        Type: typeNode,
+        Description: descriptionNode,
+        ...property.columns,
+      },
+      property.deleted,
+    );
   }
 
   serializeType(type: PMO.Types.Any): PhrasingContent[] {
@@ -224,88 +221,68 @@ export class Serializer {
   }
 
   serializeEnum(enumeration: PMO.Enum): RootContent[] {
-    const notes: RootContent[] = [];
-
-    const rows = this.serializeEnumVariants(enumeration.variants, notes, enumeration.columns);
+    // I hate you dolfies,
+    // I really dislike this but for the sake of consistency with CONTRIBUTING.md
+    // (at the time of writing) enums with all string values will have their
+    // names skipped
+    const allString = !enumeration.variants.some((variant) => typeof variant.value === "number");
+    const baseColumns = ["Value", ...(allString ? [] : ["Name"]), "Description"].concat(enumeration.columns);
 
     return this.serializeGeneric(
       enumeration.name,
       enumeration.description ?? "",
-      ["Value", "Name", "Description"].concat(enumeration.columns),
-      rows,
-      notes,
+      baseColumns.concat(enumeration.columns),
+      enumeration.variants,
+      this.serializeEnumVariant.bind(this),
     );
   }
 
-  serializeEnumVariants(variants: PMO.Variant[], notes: RootContent[], columns: PMO.Base["columns"]): TableRow[] {
-    const rows: TableRow[] = [];
+  serializeEnumVariant(variant: PMO.Variant, notes: NotesData, columns: PMO.Base["columns"]): TableRow {
+    const nameSuffix = this.serializeNameSuffix(notes, variant.notes, variant.deprecated);
 
-    const notesData = { counter: 1 };
+    const valueNode = [literal("text", variant.value.toString())];
+    const nameNode = this.serializeDeletedName(variant.name, nameSuffix, variant.deleted);
+    const descriptionNode = [literal("text", variant.description ?? "")];
 
-    for (const variant of variants) {
-      const nameSuffix = this.serializeNotes(notes, variant.notes, notesData);
-
-      if (variant.deprecated) {
-        nameSuffix.push(parent("strong", [literal("text", " (deprecated)")]));
-      }
-
-      const valueNode = [literal("text", variant.value.toString())];
-      const descriptionNode = [literal("text", variant.description ?? "")];
-
-      rows.push(
-        this.serializeGenericRow(
-          false,
-          variant.name,
-          nameSuffix,
-          valueNode,
-          descriptionNode,
-          columns,
-          variant.columns,
-          variant.deleted,
-        ),
-      );
-    }
-
-    return rows;
+    return this.serializeGenericRow(
+      columns,
+      {
+        Value: valueNode,
+        Name: nameNode,
+        Description: descriptionNode,
+        ...variant.columns,
+      },
+      variant.deleted,
+    );
   }
 
   serializeFlags(flags: PMO.Flags): RootContent[] {
-    const notes: RootContent[] = [];
-    const rows = this.serializeFlagsFlags(flags.flags, notes, flags.columns);
-
-    return this.serializeGeneric(flags.name, flags.description ?? "", ["Value", "Name", "Description"], rows, notes);
+    return this.serializeGeneric(
+      flags.name,
+      flags.description ?? "",
+      ["Value", "Name", "Description"],
+      flags.flags,
+      this.serializeFlagsFlag.bind(this),
+    );
   }
 
-  serializeFlagsFlags(flags: PMO.Flag[], notes: RootContent[], columns: PMO.Base["columns"]): TableRow[] {
-    const rows: TableRow[] = [];
+  serializeFlagsFlag(flag: PMO.Flag, notes: NotesData, columns: PMO.Base["columns"]): TableRow {
+    const nameSuffix = this.serializeNameSuffix(notes, flag.notes, flag.deprecated);
 
-    const notesData = { counter: 1 };
+    const valueNode = [literal("text", `${flag.initial} << ${flag.shift}`)];
+    const nameNode = this.serializeDeletedName(flag.name, nameSuffix, flag.deleted);
+    const descriptionNode = [literal("text", flag.description ?? "")];
 
-    for (const flag of flags) {
-      const nameSuffix = this.serializeNotes(notes, flag.notes, notesData);
-
-      if (flag.deprecated) {
-        nameSuffix.push(parent("strong", [literal("text", " (deprecated)")]));
-      }
-
-      const valueNode = [literal("text", `${flag.initial} << ${flag.shift}`)];
-      const descriptionNode = [literal("text", flag.description ?? "")];
-
-      rows.push(
-        this.serializeGenericRow(
-          false,
-          flag.name,
-          nameSuffix,
-          valueNode,
-          descriptionNode,
-          columns,
-          flag.columns,
-          flag.deleted,
-        ),
-      );
-    }
-
-    return rows;
+    return this.serializeGenericRow(
+      columns,
+      {
+        Value: valueNode,
+        Name: nameNode,
+        Description: descriptionNode,
+        ...flag.columns,
+      },
+      flag.deleted,
+    );
   }
 
   serializeDeleted(content: PhrasingContent[], deleted: boolean): PhrasingContent[] {
