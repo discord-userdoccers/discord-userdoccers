@@ -1,4 +1,10 @@
 import { Literal, Parent, PhrasingContent, RootContent, TableCell, TableRow } from "mdast";
+import remarkGfm from "remark-gfm";
+import remarkMdx from "remark-mdx";
+import remarkParse from "remark-parse";
+import remarkSuperSub from "remark-supersub";
+import { unified } from "unified";
+import { error } from "./resolve";
 import { PMO } from "./types";
 
 type ParentNodes = {
@@ -21,6 +27,8 @@ type NotesData = {
   counter: number;
 };
 
+const PIPELINE = unified().use(remarkParse).use(remarkGfm).use(remarkMdx).use(remarkSuperSub);
+
 export class Serializer {
   serialize(model: PMO.Model): RootContent[] {
     const data = JSON.stringify(model);
@@ -40,17 +48,18 @@ export class Serializer {
   }
 
   serializeGeneric<M>(
-    name: string,
+    formattedName: string,
     description: string,
     columns: PMO.Base["columns"],
     members: M[],
-    rowSerializer: (member: M, notes: NotesData, columns: PMO.Base["columns"]) => TableRow,
+    rowSerializer: (member: M, notes: NotesData, columns: PMO.Base["columns"], container: string) => TableRow,
+    realName?: string,
   ): RootContent[] {
     const notes: RootContent[] = [];
 
     const prelude: RootContent[] = [
-      parent("heading", [literal("text", name.replace(/(?<!^)[A-Z]/, " $&"))], { depth: 6 }),
-      parent("paragraph", [literal("text", description)]),
+      parent("heading", [literal("text", formattedName.replace(/(?<!^)[A-Z]/, " $&"))], { depth: 6 }),
+      ...PIPELINE.parse(description).children,
     ];
 
     const table = parent("table", [
@@ -58,16 +67,18 @@ export class Serializer {
         "tableRow",
         columns.map((column) => parent("tableCell", [literal("text", column)])),
       ),
-      ...members.map((member) => rowSerializer(member, { notes, counter: 1 }, columns)),
+      ...members.map((member) => rowSerializer(member, { notes, counter: 1 }, columns, realName ?? formattedName)),
     ]);
 
     return prelude.concat(table).concat(notes);
   }
 
-  serializeGenericRow(
+  serializeRow(
     columnList: string[],
     columns: Record<string, string | PhrasingContent[]>,
     deleted: boolean,
+    container: string,
+    name: string,
   ): TableRow {
     const cells: TableCell[] = [];
 
@@ -75,7 +86,13 @@ export class Serializer {
       const value = columns[column];
 
       if (typeof value === "string") {
-        cells.push(parent("tableCell", this.serializeDeleted([literal("text", value)], deleted)));
+        // TableCell accepts any PhrasingContent
+        // Paragraph children are PhrasingContent
+        //
+        // so that works I guess?
+        const children = parseColumnString(value, container, name, column);
+
+        cells.push(parent("tableCell", this.serializeDeleted(children, deleted)));
 
         continue;
       }
@@ -86,7 +103,12 @@ export class Serializer {
         continue;
       }
 
-      cells.push(parent("tableCell", value[0].type === "delete" ? value : this.serializeDeleted(value, deleted)));
+      cells.push(
+        parent(
+          "tableCell",
+          value.some((node) => node.type === "delete") ? value : this.serializeDeleted(value, deleted),
+        ),
+      );
     }
 
     return parent("tableRow", cells);
@@ -96,24 +118,25 @@ export class Serializer {
     return this.serializeDeleted([literal("text", name)], deleted).concat(suffix);
   }
 
-  serializeNotes(data: NotesData, srcNotes: PMO.Member["notes"]): PhrasingContent[] {
+  serializeNotes(
+    data: NotesData,
+    srcNotes: PMO.Member["notes"],
+    container: string,
+    name: string,
+    column: string,
+  ): PhrasingContent[] {
     const serialized: PhrasingContent[] = [];
 
     for (const note of srcNotes) {
       const superscript = typeof note === "number" ? note.toString() : data.counter.toString();
+      const superNode = parent("superscript", [literal("text", superscript)], { data: { hName: "sup" } });
 
-      serialized.push(
-        literal("text", " "),
-        parent("superscript", [literal("text", superscript)], { data: { hName: "sup" } }),
-      );
+      serialized.push(literal("text", " "), superNode);
 
       if (typeof note === "number") continue;
 
       data.notes.push(
-        parent("paragraph", [
-          parent("superscript", [literal("text", superscript)], { data: { hName: "sup" } }),
-          literal("text", ` ${note}`),
-        ]),
+        parent("paragraph", [superNode, literal("text", " "), ...parseColumnString(note, container, name, column)]),
       );
 
       data.counter++;
@@ -126,8 +149,10 @@ export class Serializer {
     notes: NotesData,
     srcNotes: PMO.Member["notes"],
     deprecated: PMO.Member["deprecated"],
+    container: string,
+    name: string,
   ): PhrasingContent[] {
-    const nameSuffix = this.serializeNotes(notes, srcNotes);
+    const nameSuffix = this.serializeNotes(notes, srcNotes, container, name, "Name");
 
     // TODO: handle string case
     if (deprecated) {
@@ -137,6 +162,14 @@ export class Serializer {
     return nameSuffix;
   }
 
+  serializeDescription(description: PMO.Member["description"], container: string, name: string): PhrasingContent[] {
+    if (description == null) {
+      return [];
+    }
+
+    return parseColumnString(description, container, name, "Description");
+  }
+
   serializeStructure(structure: PMO.Structure): RootContent[] {
     return this.serializeGeneric(
       `${structure.name}Structure`,
@@ -144,18 +177,26 @@ export class Serializer {
       ["Field", "Type", "Description"].concat(structure.columns),
       structure.properties,
       this.serializeStrucutureProperty.bind(this),
+      structure.name,
     );
   }
 
-  serializeStrucutureProperty(property: PMO.Property, notes: NotesData, columns: PMO.Base["columns"]): TableRow {
-    const name = `${property.name}${property.optional ? "" : "?"}`;
-    const nameSuffix = this.serializeNameSuffix(notes, property.notes, property.deprecated);
+  serializeStrucutureProperty(
+    property: PMO.Property,
+    notes: NotesData,
+    columns: PMO.Base["columns"],
+    container: string,
+  ): TableRow {
+    const name = property.name;
 
-    const nameNode = this.serializeDeletedName(name, nameSuffix, property.deleted);
+    const formattedName = `${name}${property.optional ? "" : "?"}`;
+    const nameSuffix = this.serializeNameSuffix(notes, property.notes, property.deprecated, container, name);
+
+    const nameNode = this.serializeDeletedName(formattedName, nameSuffix, property.deleted);
     const typeNode = this.serializeType(property.type);
-    const descriptionNode = [literal("text", property.description ?? "")];
+    const descriptionNode = this.serializeDescription(property.description, container, name);
 
-    return this.serializeGenericRow(
+    return this.serializeRow(
       columns,
       {
         Field: nameNode,
@@ -164,6 +205,8 @@ export class Serializer {
         ...property.columns,
       },
       property.deleted,
+      container,
+      name,
     );
   }
 
@@ -243,14 +286,21 @@ export class Serializer {
     );
   }
 
-  serializeEnumVariant(variant: PMO.Variant, notes: NotesData, columns: PMO.Base["columns"]): TableRow {
-    const nameSuffix = this.serializeNameSuffix(notes, variant.notes, variant.deprecated);
+  serializeEnumVariant(
+    variant: PMO.Variant,
+    notes: NotesData,
+    columns: PMO.Base["columns"],
+    container: string,
+  ): TableRow {
+    const name = variant.name;
+
+    const nameSuffix = this.serializeNameSuffix(notes, variant.notes, variant.deprecated, container, name);
 
     const valueNode = [literal("text", variant.value.toString())];
-    const nameNode = this.serializeDeletedName(variant.name, nameSuffix, variant.deleted);
-    const descriptionNode = [literal("text", variant.description ?? "")];
+    const nameNode = this.serializeDeletedName(name, nameSuffix, variant.deleted);
+    const descriptionNode = this.serializeDescription(variant.description, container, name);
 
-    return this.serializeGenericRow(
+    return this.serializeRow(
       columns,
       {
         Value: valueNode,
@@ -259,6 +309,8 @@ export class Serializer {
         ...variant.columns,
       },
       variant.deleted,
+      container,
+      name,
     );
   }
 
@@ -272,14 +324,16 @@ export class Serializer {
     );
   }
 
-  serializeFlagsFlag(flag: PMO.Flag, notes: NotesData, columns: PMO.Base["columns"]): TableRow {
-    const nameSuffix = this.serializeNameSuffix(notes, flag.notes, flag.deprecated);
+  serializeFlagsFlag(flag: PMO.Flag, notes: NotesData, columns: PMO.Base["columns"], container: string): TableRow {
+    const name = flag.name;
+
+    const nameSuffix = this.serializeNameSuffix(notes, flag.notes, flag.deprecated, container, name);
 
     const valueNode = [literal("text", `${flag.initial} << ${flag.shift}`)];
-    const nameNode = this.serializeDeletedName(flag.name, nameSuffix, flag.deleted);
-    const descriptionNode = [literal("text", flag.description ?? "")];
+    const nameNode = this.serializeDeletedName(name, nameSuffix, flag.deleted);
+    const descriptionNode = this.serializeDescription(flag.description, container, name);
 
-    return this.serializeGenericRow(
+    return this.serializeRow(
       columns,
       {
         Value: valueNode,
@@ -288,6 +342,8 @@ export class Serializer {
         ...flag.columns,
       },
       flag.deleted,
+      container,
+      name,
     );
   }
 
@@ -296,6 +352,26 @@ export class Serializer {
 
     return [parent("delete", content)];
   }
+}
+
+function parseColumnString(content: string, container: string, name: string, column: string): PhrasingContent[] {
+  const root = PIPELINE.parse(content);
+
+  if (root.children.length === 0) {
+    throw error(`expected ≥1 children in column \`${column}\``, container, name);
+  }
+
+  const children: PhrasingContent[] = [];
+
+  for (const node of root.children) {
+    if (node.type != "paragraph") {
+      throw error(`column \`${column}\` has a non-paragraph value`, container, name);
+    }
+
+    children.push(...node.children);
+  }
+
+  return children;
 }
 
 function parent<T extends keyof ParentNodes>(
