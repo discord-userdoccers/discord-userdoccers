@@ -448,7 +448,9 @@ function getDescription<T extends JSDocContainer>(node: T): string | null {
 
   if (jsdoc == null) return null;
 
-  return jsdoc.map((doc) => stringifyJSDoc(doc.comment) ?? "").join(" ");
+  const desc = jsdoc.map((doc) => stringifyJSDoc(doc.comment) ?? "").join(" ");
+
+  return desc.trim().length === 0 ? null : desc;
 }
 
 function stringifyJSDoc(comment: JSDoc["comment"]): string | null {
