@@ -232,7 +232,7 @@ export class Serializer {
     // (at the time of writing) enums with all string values will have their
     // names skipped
     const allString = !enumeration.variants.some((variant) => typeof variant.value === "number");
-    const baseColumns = ["Value", ...(allString ? [] : ["Name"]), "Description"].concat(enumeration.columns);
+    const baseColumns = ["Value", ...(allString ? [] : ["Name"]), "Description"];
 
     return this.serializeGeneric(
       enumeration.name,
