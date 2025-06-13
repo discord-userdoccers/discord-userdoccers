@@ -80,6 +80,12 @@ export class Serializer {
         continue;
       }
 
+      if (value == null) {
+        cells.push(parent("tableCell", []));
+
+        continue;
+      }
+
       cells.push(parent("tableCell", value[0].type === "delete" ? value : this.serializeDeleted(value, deleted)));
     }
 
