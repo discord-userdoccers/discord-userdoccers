@@ -20,13 +20,58 @@ todo i am lazy to make description for resouce
 | invalid                    | boolean                                    | Whether the payment source is invalid                                             |
 | flags                      | integer                                    | The [payment source's flags](#payment-source-flags)                               |
 | deleted_at                 | ?ISO8601 timestamp                         | When the payment source was deleted at                                            |
-| expires_month?             | integer                                    | The year the credit card expires in                                               |
-| expires_year?              | integer                                    | The month the credit card expires in                                              |
+| expires_month?             | integer                                    | The month the credit card expires in                                              |
+| expires_year?              | integer                                    | The year the credit card expires in                                               |
 | email?                     | string                                     | The email address associated with the payment source (only applicable for PayPal) |
 | bank?                      | string                                     | The bank associated with the payment source                                       |
 | username?                  | string                                     | The username associated with the payment source (only applicable for Venmo)       |
 
 ^1^ Not available in payment objects.
+
+###### Example Payment Source
+
+```json
+ {
+        "id": "1",
+        "type": 1,
+        "invalid": false,
+        "flags": 0,
+        "deleted_at": null,
+        "brand": "visa",
+        "last_4": "4242",
+        "expires_month": 6,
+        "expires_year": 2077,
+        "billing_address": {
+            "name": "Іван",
+            "line_1": "вул. Хрещатик, 24",
+            "line_2": null,
+            "city": "Київ",
+            "state": "State",
+            "country": "UA",
+            "postal_code": "46610"
+        },
+        "country": "UA",
+        "payment_gateway": 1,
+        "payment_gateway_source_id": "pm_DwiVlGlYwe1qxLzy4QWChQeo",
+        "default": false
+    }
+
+```
+
+### Billing Address Object
+
+###### Billing Address Structure
+
+| Field        | Type    | Description                                          |
+| ------------ | ------- | ---------------------------------------------------- |
+| line_1       | string  | The address of the location                          |
+| line_2?      | ?string | The secondary address of the location                |
+| name         | string  | The name of the payment source                       |
+| postal_code? | string  | The postal code of the location                      |
+| city         | string  | The city of the location                             |
+| state?       | string  | The state or province of the location                |
+| country      | string  | The country of the location                          |
+| email?       | string  | The email address associated with the payment source |
 
 ###### Payment Source Type
 
@@ -149,3 +194,124 @@ Validates a billing address.
 | Field | Type   | Description                            |
 | ----- | ------ | -------------------------------------- |
 | token | string | The token of validated billing address |
+
+<RouteHeader method="POST" url="/users/@me/billing/stripe/setup-intents">
+  Get Stripe Setup Intent Secret
+</RouteHeader>
+
+Creates a Stripe SetupIntent and returns client secret for it. See the [Stripe documentation](https://docs.stripe.com/api/setup_intents) for more information.
+
+###### Response Body
+
+| Field         | Type   | Description                       |
+| ------------- | ------ | --------------------------------- |
+| client_secret | string | The client secret of setup intent |
+
+<RouteHeader method="GET" url="/users/@me/billing/adyen/payment-methods">
+  Get Available Adyen Payment Methods
+</RouteHeader>
+
+Returns available payment methods for Adyen. This endpoint is a proxy for getting available payment methods for transactions using Adyen API. See the [Adyen documentation](https://docs.adyen.com/api-explorer/Checkout/71/post/paymentMethods) for more information.
+
+<RouteHeader method="POST" url="/billing/apple/apply-receipt">
+  Apply Apple Receipt
+</RouteHeader>
+
+| encoded_receipt    | string    |
+| entitlement_sku_id | snowflake |
+| presentment_amount | integer   |
+| app_store_region   | string
+| gift_info_options  | {reward_sku_ids?: Snowflake[]} |
+
+<RouteHeader method="PATCH url="/billing/apple/subscriptions/{subscription.id}">
+  Modify Apple Subscription
+</RouteHeader>
+
+modifies apple Subscription bruh bruh blah blah
+
+###### JSON Params
+
+| request_identifier | string | The ID of the request (max 128 characters) |
+| operation          | string | String like 'cancel', 'resubscribe', 'reactivate' |
+
+<RouteHeader method="POST" url="/users/@me/billing/apple/trial-offer-signature">
+  Get Trial Offer Signature
+</RouteHeader>
+
+adsadasdasdasd
+
+###### JSON Params
+
+| product_id        | string | ??? |
+| product_offer_id  | string | ??? |
+| app_account_token | string | ??? |
+
+<RouteHeader method="POST" url="/billing/apple/jwt-token">
+  Get IAP JWT Request Data
+</RouteHeader>
+
+```rs
+#[serde(tag = "operation", rename_all = "lowercase")]
+enum Body {
+  Cancel {
+    request_identifier: String, // max 128
+    subscription_id: Snowflake,
+  },
+  Charge {
+    request_identifier: String, // no limit
+    sku_id: Snowflake,
+    currency: String, // enum
+    country_code: String, // enum
+  },
+  Create {
+    request_identifier: String, // no limit
+    items: [{
+      plan_id: Snowflake,
+      quantity?: int, // min 1, max 500000
+    }], // min 1, max 5
+    currency: String, // enum
+    country_code: String, // enum
+  },
+  Reactivate {
+    request_identifier: String, // max 128
+    subscription_id: Snowflake,
+  },
+  Resubscribe {
+    request_identifier: String, // no limit
+    subscription_id: Snowflake,
+  },
+}
+// response: {"request_data": {"signatureInfo": {"token": "JWT HERE BRUH"}}}
+```
+
+POST /google-play/verify-purchase-token
+```ts
+type Body = {
+  purchase_token: String, // max 152133
+  user_id: Snowflake,
+  package_name: String, // max 152133
+  subscription_sku_id?: Snowflake,
+  one_time_purchase_sku_id?: Snowflake,
+  gift_info_options?: ???,
+  one_time_purchase_options?: {consume_on_validate: bool},
+}
+```
+
+Downgrade Google Play Subscription % POST /google-play/downgrade-subscription
+```ts
+type Body = {
+  purchase_token: string,
+  subscription_id: Snowflake,
+  subscription_sku_id: Snowflake,
+};
+// idk what it responds with
+```
+
+Validate Google Play Purcahse % POST /google-play/validate-purchase
+```ts
+type Body = {
+  product_id: string, // max 40 chars
+  subscription_id?: Snowflake,
+};
+// responds w 204...
+```
