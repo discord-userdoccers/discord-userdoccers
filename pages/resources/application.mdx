@@ -799,6 +799,46 @@ Each metadata type offers a comparison operation that allows guilds to configure
 
 </Alert>
 
+### Activity Link Object
+
+###### Activity Link Structure
+
+| Field                         | Type      | Description                                      |
+| ----------------------------- | --------- | ------------------------------------------------ |
+| application_id                | snowflake | The application ID                               |
+| link_id ^1^                   | string    | The link ID                                      |
+| asset_path? ^2^               | string    | The hash of the application quick link asset     |
+| asset_id? ^2^                 | snowflake | The ID of the application asset                  |
+| title                         | string    | The title of the activity link                   |
+| description                   | string    | The description of the activity link             |
+| custom_id?                    | ?string   | A custom ID for the activity link                |
+| primary_cta? **(deprecated)** | ?string   | The primary call to action for the activity link |
+
+^1^ The link ID is in the format `<type>-<id>` where `type` is the [activity link type](#activity-link-type) and `id` is the snowflake ID.
+
+^2^ `asset_path` is only present on quick links, while `asset_id` is only present on managed links.
+
+###### Activity Link Type
+
+| Value | Name         | Description                                      |
+| ----- | ------------ | ------------------------------------------------ |
+| 0     | MANAGED_LINK | Managed by the application and last indefinitely |
+| 1     | QUICK_LINK   | Made by the user and last for 30 days            |
+
+###### Example Activity Link
+
+```json
+{
+  "application_id": "891436233903964161",
+  "link_id": "1-1385320255148003439",
+  "asset_path": "74420086a1aee57564cd6fc9a28461b1",
+  "title": "Alien",
+  "description": "aliens",
+  "primary_cta": null,
+  "custom_id": "button"
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/applications">
@@ -1734,33 +1774,16 @@ Updates an application's role connection for the user. Returns the updated [appl
 | metadata?          | map[string, string] | Object mapping [application role connection metadata](#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
 
 <RouteHeader method="GET" url="/applications/{application.id}/managed-links/">
-  Get Application Activity Managed Links
+  Get Application Managed Links
 </RouteHeader>
 
-Returns a list of [activity link](#activity-link-structure) objects for the given application ID.
-
-###### Activity Link Structure
-
-| Field                         | Type      | Description                                      |
-| ----------------------------- | --------- | ------------------------------------------------ |
-| application_id                | snowflake | The application ID                               |
-| link_id ^1^                   | string    | The link ID                                      |
-| asset_path? ^2^               | string    | The hash of the application quick link asset     |
-| asset_id? ^2^                 | snowflake | The ID of the application asset                  |
-| title                         | string    | The title of the activity link                   |
-| description                   | string    | The description of the activity link             |
-| custom_id?                    | ?string   | A custom id for the activity link                |
-| primary_cta? **(deprecated)** | ?string   | The primary call to action for the activity link |
-
-^1^ The link ID is `1-1385208877569802300` the first part is the type of activity link, 0 - managed link, 1 - quick link, when fetching an activity link the type must be omitted.
-
-^2^ `asset_path` is only present on quick links, while `asset_id` is only present on managed links.
+Returns a list of [activity link](#activity-link-object) objects for the given application ID. User must be the owner of the application or developer of the current team.
 
 <RouteHeader method="POST" url="/applications/{application.id}/managed-links/">
-  Create Application Activity Managed Link
+  Create Application Managed Link
 </RouteHeader>
 
-Creates a new activity managed link. Returns an [activity link](#activity-link-structure) object on success.
+Creates a new activity managed link. User must be the owner of the application or developer of the current team. Returns an [activity link](#activity-link-object) object on success.
 
 ###### JSON Params
 
@@ -1772,28 +1795,34 @@ Creates a new activity managed link. Returns an [activity link](#activity-link-s
 | title       | string                            | The title of the activity link (1-32 characters)       |
 
 <RouteHeader method="GET" url="/applications/{application.id}/managed-links/{link_id}">
-  Get Application Activity Managed Link
+  Get Application Managed Link
 </RouteHeader>
 
-Returns the specified [activity link](#activity-link-structure).
+Returns an [activity link](#activity-link-object) object for the given ID. User must be the owner of the application or developer of the current team.
 
 <RouteHeader method="PATCH" url="/applications/{application.id}/managed-links/{link_id}">
-  Update Application Activity Managed Link
+  Update Application Managed Link
 </RouteHeader>
 
-Updates the specified [activity link](#activity-link-structure) for the given application ID.
+Updates the specified activity link for the given application ID. User must be the owner of the application or developer of the current team. Returns an [activity link](#activity-link-object) object on success.
 
 <RouteHeader method="DELETE" url="/applications/{application.id}/managed-links/{link_id}">
-  Delete Application Activity Managed Link
+  Delete Application Managed Link
 </RouteHeader>
 
-Deletes the specified [activity link](#activity-link-structure) for the given application ID.
+Deletes the specified activity link for the given application ID. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
 
-<RouteHeader method="POST" url="/applications/{application.id}/quick-links/">
-  Create Application Activity Quick Link
+<RouteHeader method="POST" url="/applications/{application.id}/quick-links/" supportsOAuth2>
+  Create Application Quick Link
 </RouteHeader>
 
-Creates a new activity quick link. Returns an [activity link](#activity-link-structure) object on success.
+<Alert type="warn">
+
+When using OAuth2, quick links can be only created for the application that the access token belongs to.
+
+</Alert>
+
+Creates a new activity quick link. Returns an [activity link](#activity-link-object) object on success.
 
 ###### JSON Params
 
@@ -1805,7 +1834,7 @@ Creates a new activity quick link. Returns an [activity link](#activity-link-str
 | title       | string                            | The title of the activity link (1-32 characters)       |
 
 <RouteHeader method="GET" url="/applications/{application.id}/quick-links/{link_id}" unauthenticated>
-  Get Application Activity Quick Link
+  Get Application Quick Link
 </RouteHeader>
 
-Returns the specified [activity link](#activity-link-structure).
+Returns an [activity link](#activity-link-object) object for the given ID.
