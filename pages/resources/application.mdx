@@ -799,6 +799,46 @@ Each metadata type offers a comparison operation that allows guilds to configure
 
 </Alert>
 
+### Activity Link Object
+
+###### Activity Link Structure
+
+| Field                         | Type      | Description                                      |
+| ----------------------------- | --------- | ------------------------------------------------ |
+| application_id                | snowflake | The application ID                               |
+| link_id ^1^                   | string    | The link ID                                      |
+| asset_path? ^2^               | string    | The hash of the application quick link asset     |
+| asset_id? ^2^                 | snowflake | The ID of the application asset                  |
+| title                         | string    | The title of the activity link                   |
+| description                   | string    | The description of the activity link             |
+| custom_id?                    | ?string   | A custom ID for the activity link                |
+| primary_cta? **(deprecated)** | ?string   | The primary call to action for the activity link |
+
+^1^ The link ID is in the format `<type>-<id>` where `type` is the [activity link type](#activity-link-type) and `id` is the snowflake ID.
+
+^2^ `asset_path` is only present on quick links, while `asset_id` is only present on managed links.
+
+###### Activity Link Type
+
+| Value | Name         | Description                                      |
+| ----- | ------------ | ------------------------------------------------ |
+| 0     | MANAGED_LINK | Managed by the application and last indefinitely |
+| 1     | QUICK_LINK   | Made by the user and last for 30 days            |
+
+###### Example Activity Link
+
+```json
+{
+  "application_id": "891436233903964161",
+  "link_id": "1-1385320255148003439",
+  "asset_path": "74420086a1aee57564cd6fc9a28461b1",
+  "title": "Alien",
+  "description": "aliens",
+  "primary_cta": null,
+  "custom_id": "button"
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/applications">
@@ -1732,3 +1772,69 @@ Updates an application's role connection for the user. Returns the updated [appl
 | platform_name?     | string              | The vanity name of the platform a bot has connected (max 50 characters)                                                                                                                                      |
 | platform_username? | string              | The username on the platform a bot has connected (max 100 characters)                                                                                                                                        |
 | metadata?          | map[string, string] | Object mapping [application role connection metadata](#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
+
+<RouteHeader method="GET" url="/applications/{application.id}/managed-links/">
+  Get Application Managed Links
+</RouteHeader>
+
+Returns a list of [activity link](#activity-link-object) objects for the given application ID. User must be the owner of the application or developer of the current team.
+
+<RouteHeader method="POST" url="/applications/{application.id}/managed-links/">
+  Create Application Managed Link
+</RouteHeader>
+
+Creates a new activity managed link. User must be the owner of the application or developer of the current team. Returns an [activity link](#activity-link-object) object on success.
+
+###### JSON Params
+
+| Field       | Type                              | Description                                            |
+| ----------- | --------------------------------- | ------------------------------------------------------ |
+| custom_id?  | ?string                           | A custom id for the activity link (1-256 characters)   |
+| description | string                            | The description of the activity link (1-64 characters) |
+| image       | [image data](/reference#cdn-data) | The activity link asset                                |
+| title       | string                            | The title of the activity link (1-32 characters)       |
+
+<RouteHeader method="GET" url="/applications/{application.id}/managed-links/{link_id}">
+  Get Application Managed Link
+</RouteHeader>
+
+Returns an [activity link](#activity-link-object) object for the given ID.
+
+<RouteHeader method="PATCH" url="/applications/{application.id}/managed-links/{link_id}">
+  Update Application Managed Link
+</RouteHeader>
+
+Updates the specified activity link for the given application ID. User must be the owner of the application or developer of the current team. Returns an [activity link](#activity-link-object) object on success.
+
+<RouteHeader method="DELETE" url="/applications/{application.id}/managed-links/{link_id}">
+  Delete Application Managed Link
+</RouteHeader>
+
+Deletes the specified activity link for the given application ID. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
+
+<RouteHeader method="POST" url="/applications/{application.id}/quick-links/" supportsOAuth2>
+  Create Application Quick Link
+</RouteHeader>
+
+Creates a new activity quick link. Returns an [activity link](#activity-link-object) object on success.
+
+<Alert type="warn">
+
+When using OAuth2, quick links can be only created for the application that the access token belongs to.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type                              | Description                                            |
+| ----------- | --------------------------------- | ------------------------------------------------------ |
+| custom_id?  | ?string                           | A custom id for the activity link (1-256 characters)   |
+| description | string                            | The description of the activity link (1-64 characters) |
+| image       | [image data](/reference#cdn-data) | The activity link asset                                |
+| title       | string                            | The title of the activity link (1-32 characters)       |
+
+<RouteHeader method="GET" url="/applications/{application.id}/quick-links/{link_id}" unauthenticated>
+  Get Application Quick Link
+</RouteHeader>
+
+Returns an [activity link](#activity-link-object) object for the given ID.
