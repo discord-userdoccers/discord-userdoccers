@@ -50,13 +50,11 @@ The value of a single zero (`0`) in the [`discriminator` field on the user objec
 ~~Users can only migrate their account to pomelo if they are in the rollout. A user is in the rollout if they have `pomelo` in the [`disclose` field on the Ready Supplemental event](/topics/gateway-events#ready-supplemental) and are [in the `2023-03_pomelo` user experiment](/topics/experiments#user-experiments).~~
 Migration is now complete and all non-migrated users have been automatically assigned a unique username.
 
-To migrate, users should first [check if the username they want is available](#get-pomelo-eligibility), and then [migrate their account to that username](#create-pomelo-migration). If the username they want is not available, they can [get a list of suggested usernames](#get-pomelo-suggestions) to choose from.
+To migrate, users should first [check if the username they want is available](#get-unique-username-eligibility), and then [migrate their account to that username](#create-unique-username). If the username they want is not available, they can [get a list of suggested usernames](#get-unique-username-suggestions) to choose from.
 
 #### Display Names
 
-As part of pomelo, user accounts can define a non-unique display name. This value is a new nullable `global_name` field with a max length of 32 characters.
-
-For bots, the display name will be the same as their application's name.
+As part of unique usernames, user accounts can define a non-unique display name. This value is a new nullable `global_name` field with a max length of 32 characters.
 
 #### Default Avatars
 
@@ -119,7 +117,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | id                      | snowflake                                                        | The ID of the user                                                                                              |
 | username ^1^            | string                                                           | The user's username, may be unique across the platform (2-32 characters)                                        |
 | discriminator ^1^       | string                                                           | The user's stringified 4-digit Discord tag                                                                      |
-| global_name? ^1^        | ?string                                                          | The user's display name (1-32 characters); for bots, this is the application name                               |
+| global_name? ^1^        | ?string                                                          | The user's display name (1-32 characters)                                                                       |
 | avatar                  | ?string                                                          | The user's [avatar hash](/reference#cdn-formatting)                                                             |
 | avatar_decoration_data? | ?[avatar decoration data](#avatar-decoration-data-object) object | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
 | collectibles            | ?[collectibles](#collectibles-structure) object                  | The user's equipped collectibles                                                                                |
@@ -188,7 +186,7 @@ For users with migrated accounts, default avatar URLs will be based on the user 
 | 1 << 41     | DISABLED                             | User's account is disabled                                                                                                               | No ^1^  |
 | 1 << 43     | HAS_SESSION_STARTED                  | User has started at least one Gateway session and is now eligible to send messages                                                       | No ^1^  |
 | 1 << 44     | QUARANTINED                          | User is quarantined and cannot create DMs or accept invites                                                                              | No      |
-| 1 << 47     | PREMIUM_ELIGIBLE_FOR_UNIQUE_USERNAME | User is eligible for early access to [pomelo migration](#create-pomelo-migration)                                                        | No ^1^  |
+| 1 << 47     | PREMIUM_ELIGIBLE_FOR_UNIQUE_USERNAME | User is eligible for early access to [unique usernames](#create-unique-username)                                                         | No ^1^  |
 | 1 << 50     | COLLABORATOR                         | User is a collaborator and is considered staff                                                                                           | No      |
 | 1 << 51     | RESTRICTED_COLLABORATOR              | User is a restricted collaborator and is considered staff                                                                                | No      |
 
@@ -534,6 +532,7 @@ This object is more verbose than needed as it is used internally by Discord empl
   "completed_at": "2024-12-21T11:05:41.462828+00:00",
   "polled_at": "2024-12-21T11:05:41.462828+00:00",
   "backends": {
+    "ads": "EXTRACTED",
     "users": "EXTRACTED",
     "guilds": "EXTRACTED",
     "hubspot": "EXTRACTED",
@@ -589,6 +588,7 @@ This object is more verbose than needed as it is used internally by Discord empl
 | messages     | All user messages                                                                                             |
 | hubspot      | Discord's [HubSpot](https://www.hubspot.com/) contact data, used for official Discord programs (e.g. partner) |
 | guilds       | All guilds the user is currently a member of                                                                  |
+| ads          | Quest data                                                                                                    |
 
 ###### Harvest Backend State
 
@@ -685,6 +685,10 @@ At least one active Gateway session is required to modify a user account's usern
 | date_of_birth? ^2^        | ISO8601 timestamp                  | The user's date of birth; can only be set once                                                                                                                            |
 | password? ^1^             | string                             | The user's current password; if the account does not have a password, this sets it                                                                                        |
 | new_password? ^3^         | string                             | The user's new password (8-72 characters)                                                                                                                                 |
+| push_provider             | string                             | The [push notification provider](/topics/push-notifications#push-notification-provider) of the device                                                                     |
+| push_token                | string                             | The push notification token to register                                                                                                                                   |
+| push_voip_provider? ^6^   | string                             | The VOIP [push notification provider](/topics/push-notifications#push-notification-provider) of the device                                                                |
+| push_voip_token? ^6^      | string                             | The VOIP push notification token to register                                                                                                                              |
 
 ^1^ Required for changing `username`, `discriminator`, `email`, `date_of_birth`, or `new_password`.
 
@@ -694,7 +698,9 @@ At least one active Gateway session is required to modify a user account's usern
 
 ^4^ This value can be obtained by requesting a verification code as outlined in the [email verification documentation](/topics/email-verification#changing-your-email-address).
 
-^5^ If using pomelo, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information. See the [Usernames and Nicknames section](#usernames-and-nicknames) for information on username restrictions.
+^5^ If using unique usernames, the `username` field must be unique across Discord, and `discriminator` cannot be changed. Else, the `username` and `discriminator` fields must be unique across Discord, and changing the username may cause the discriminator to be randomized. See the [section on Discord's new username system](#unique-usernames) for more information. See the [Usernames and Nicknames section](#usernames-and-nicknames) for information on username restrictions.
+
+^6^ VOIP-specific push notification tokens are only used with PushKit on iOS.
 
 <RouteHeader method="PATCH" url="/users/@me/account" supportsOAuth2="account.global_name.update">
   Modify Current User Account
@@ -1301,7 +1307,7 @@ Returns a 204 empty response on success. Fires a [User Required Action Update](/
 | privacy? | boolean | Whether the user agrees to the Privacy Policy   |
 
 <RouteHeader method="GET" url="/users/@me/pomelo-suggestions" deprecated>
-  Get Pomelo Suggestions
+  Get Unique Username Suggestions
 </RouteHeader>
 
 Returns a suggested unique username string based on the current user's username.
@@ -1325,7 +1331,7 @@ This endpoint is used during the pomelo migration flow. The user must be in the 
 ```
 
 <RouteHeader method="POST" url="/users/@me/pomelo-attempt">
-  Get Pomelo Eligibility
+  Get Unique Username Eligibility
 </RouteHeader>
 
 Checks whether a unique username is available for the user to claim.
@@ -1355,7 +1361,7 @@ See the [Usernames and Nicknames section](/resources/user#usernames-and-nickname
 ```
 
 <RouteHeader method="POST" url="/users/@me/pomelo" deprecated>
-  Create Pomelo Migration
+  Create Unique Username
 </RouteHeader>
 
 Claims a unique username for the user. Returns the updated [user](#user-object) object on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
@@ -1376,14 +1382,14 @@ This endpoint is used during the pomelo migration flow. The user must be in the 
   Set Guild Identity
 </RouteHeader>
 
-Sets the current user's primary guild. Returns an outdated partial [user](#user-object) object on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
+Sets the current user's primary guild. Returns a [user](#user-object) object on success. Fires a [User Update](/topics/gateway-events#user-update) Gateway event.
 
 ###### JSON Params
 
-| Field             | Type       | Description                                         |
-| ----------------- | ---------- | --------------------------------------------------- |
-| identity_enabled  | boolean    | Whether the user has enabled the feature            |
-| identity_guild_id | ?snowflake | The ID of the guild whose identity is being adopted |
+| Field              | Type       | Description                                         |
+| ------------------ | ---------- | --------------------------------------------------- |
+| identity_enabled?  | ?boolean   | Whether the user has enabled the feature            |
+| identity_guild_id? | ?snowflake | The ID of the guild whose identity is being adopted |
 
 <RouteHeader method="GET" url="/users/@me/mentions">
   Get Recent Mentions
@@ -1434,6 +1440,7 @@ See [the official support page](https://support.discord.com/hc/en-us/articles/36
 | Value      | Description                                  |
 | ---------- | -------------------------------------------- |
 | Accounts   | All account information                      |
+| Ads        | Quest data                                   |
 | Analytics  | Actions the user has taken in Discord        |
 | Activities | First-party embedded activity information    |
 | Messages   | All user messages                            |
@@ -1649,6 +1656,12 @@ Returns the current user's affinity scores for their participated channels. Affi
 | channel_id | snowflake | The channel's ID   |
 | affinity   | float     | The affinity score |
 
+<RouteHeader method="GET" url="/tutorial">
+  Get Tutorial
+</RouteHeader>
+
+Returns the current user's [tutorial](/topics/gateway-events#tutorial-structure) object, which contains information about the user's tutorial progress. If no tutorial is available, returns a 204 empty response instead.
+
 <RouteHeader method="PUT" url="/tutorial/indicators/{indicator}">
   Confirm Tutorial Indicator
 </RouteHeader>
@@ -1793,7 +1806,7 @@ Returns the current user's premium usage for various perks. Only available for u
   Get User Profile Effects
 </RouteHeader>
 
-Returns the list of [profile effects](https://support.discord.com/hc/en-us/articles/17828465914263-Profile-Effects) available to use.
+Returns the list of [profile effects](https://support.discord.com/hc/en-us/articles/17828465914263-Profile-Effects) available to display.
 
 ###### Response Body
 
@@ -1806,7 +1819,7 @@ Returns the list of [profile effects](https://support.discord.com/hc/en-us/artic
 | Field               | Type                                                                          | Description                                                                        |
 | ------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | id                  | string                                                                        | The ID of the profile effect                                                       |
-| type                | integer                                                                       | The type of profile effect                                                         |
+| type                | integer                                                                       | The [type of collectible](#collectible-type) (always `PROFILE_EFFECT`)             |
 | sku_id              | string                                                                        | The ID of the profile effect SKU                                                   |
 | title               | string                                                                        | The title of the profile effect                                                    |
 | description         | string                                                                        | The description of the profile effect                                              |
@@ -1818,17 +1831,18 @@ Returns the list of [profile effects](https://support.discord.com/hc/en-us/artic
 
 ###### Profile Effect Animation Structure
 
-| Field     | Type                                                                 | Description                                                      |
-| --------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| src       | string                                                               | The URL of the animation image (in APNG format)                  |
-| loop      | boolean                                                              | Whether the animation frame should loop                          |
-| height    | integer                                                              | The height of the animation image                                |
-| width     | integer                                                              | The width of the animation image                                 |
-| duration  | integer                                                              | The duration of the animation frame (in milliseconds)            |
-| start     | integer                                                              | The start time of the animation frame (in milliseconds)          |
-| loopDelay | integer                                                              | The delay between loops of the animation frame (in milliseconds) |
-| position  | [profile effect position](#profile-effect-position-structure) object | The position of the animation frame                              |
-| zIndex    | integer                                                              | The z-index of the animation frame                               |
+| Field             | Type                                                                    | Description                                                      |
+| ----------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| src               | string                                                                  | The URL of the animation image (in APNG format)                  |
+| loop              | boolean                                                                 | Whether the animation frame should loop                          |
+| height            | integer                                                                 | The height of the animation image                                |
+| width             | integer                                                                 | The width of the animation image                                 |
+| duration          | integer                                                                 | The duration of the animation frame (in milliseconds)            |
+| start             | integer                                                                 | The start time of the animation frame (in milliseconds)          |
+| loopDelay         | integer                                                                 | The delay between loops of the animation frame (in milliseconds) |
+| position          | [profile effect position](#profile-effect-position-structure) object    | The position of the animation frame                              |
+| zIndex            | integer                                                                 | The z-index of the animation frame                               |
+| randomizedSources | array[[profile effect source](#profile-effect-source-structure) object] | The sources to randomize the `src` from                          |
 
 ###### Profile Effect Position Structure
 
@@ -1836,6 +1850,23 @@ Returns the list of [profile effects](https://support.discord.com/hc/en-us/artic
 | ----- | ------- | --------------------------------------- |
 | x     | integer | The x-coordinate of the animation frame |
 | y     | integer | The y-coordinate of the animation frame |
+
+###### Profile Effect Source Structure
+
+| Field | Type   | Description                                     |
+| ----- | ------ | ----------------------------------------------- |
+| src   | string | The URL of the animation image (in APNG format) |
+
+###### Collectible Type
+
+| Value | Name              | Description                     |
+| ----- | ----------------- | ------------------------------- |
+| 0     | AVATAR_DECORATION | An avatar decoration            |
+| 1     | PROFILE_EFFECT    | A profile effect animation      |
+| 2     | NAMEPLATE         | A nameplate                     |
+| 1000  | BUNDLE            | A bundle of collectibles        |
+| 2000  | VARIANTS_GROUP    | A group of collectible variants |
+| 3000  | EXTERNAL_SKU      | An external SKU                 |
 
 ###### Profile Effect Animation Type
 
@@ -1845,51 +1876,49 @@ Returns the list of [profile effects](https://support.discord.com/hc/en-us/artic
 | 1     | PERSISTENT   | The animation type is persistent   |
 | 2     | INTERMITTENT | The animation type is intermittent |
 
-###### Example Response
+###### Example Profile Effect Config
 
 ```json
 {
-  "profile_effect_configs": [
+  "type": 1,
+  "id": "1139323075519852625",
+  "sku_id": "1139323092645183591",
+  "title": "Hydro Blast",
+  "description": "Time to make a splash.",
+  "accessibilityLabel": "A powerful stream of water swirls and twirls in the air. Wait, where's it headed off to?!",
+  "animationType": 2,
+  "thumbnailPreviewSrc": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/thumbnail.png",
+  "reducedMotionSrc": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/reducedMotion.png",
+  "effects": [
     {
-      "type": 1,
-      "id": "1139323075519852625",
-      "sku_id": "1139323092645183591",
-      "title": "Hydro Blast",
-      "description": "Time to make a splash.",
-      "accessibilityLabel": "A powerful stream of water swirls and twirls in the air. Wait, where's it headed off to?!",
-      "animationType": 2,
-      "thumbnailPreviewSrc": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/thumbnail.png",
-      "reducedMotionSrc": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/reducedMotion.png",
-      "effects": [
-        {
-          "src": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/intro.png",
-          "loop": false,
-          "height": 880,
-          "width": 450,
-          "duration": 2880,
-          "start": 0,
-          "loopDelay": 0,
-          "position": {
-            "x": 0,
-            "y": 0
-          },
-          "zIndex": 100
-        },
-        {
-          "src": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/loop.png",
-          "loop": true,
-          "height": 880,
-          "width": 450,
-          "duration": 2880,
-          "start": 5760,
-          "loopDelay": 5760,
-          "position": {
-            "x": 0,
-            "y": 0
-          },
-          "zIndex": 100
-        }
-      ]
+      "src": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/intro.png",
+      "loop": false,
+      "height": 880,
+      "width": 450,
+      "duration": 2880,
+      "start": 0,
+      "loopDelay": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "zIndex": 100,
+      "randomizedSources": []
+    },
+    {
+      "src": "https://cdn.discordapp.com/assets/profile_effects/effects/b17d139f2e9/splash/loop.png",
+      "loop": true,
+      "height": 880,
+      "width": 450,
+      "duration": 2880,
+      "start": 5760,
+      "loopDelay": 5760,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "zIndex": 100,
+      "randomizedSources": []
     }
   ]
 }
