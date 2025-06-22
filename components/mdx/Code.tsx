@@ -92,7 +92,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
   return (
     <div className="code-block relative my-3 rounded-md font-mono">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight code={children} language={language! as TLanguage}>
+      <Highlight code={children} language={language! as TLanguage} theme={{ styles: [], plain: {} }}>
         {({
           className: blockClassName,
           tokens,
