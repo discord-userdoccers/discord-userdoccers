@@ -1,7 +1,6 @@
-import { Analytics } from "@vercel/analytics/next";
-import classNames from "classnames";
-import type { AppProps } from "next/app";
+import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
+import type { AppProps } from "next/app";
 import { useCallback, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
@@ -9,7 +8,6 @@ import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
-
 import "@docsearch/css";
 import "../stylesheets/tailwind.css";
 import "../stylesheets/styles.css";
@@ -18,6 +16,7 @@ import "../stylesheets/whitney/whitney.css";
 import "../stylesheets/prism.css";
 import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
+import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
 const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
 
@@ -63,20 +62,20 @@ export default function App({ Component, pageProps, router }: AppProps) {
     <>
       <ThemeProvider defaultTheme="system" attribute="data-theme">
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
-          {/* eslint-disable-next-line react/jsx-pascal-case */}
-          <MDX>
-            <OpenGraph description={meta?.description} section={meta?.title} />
-            <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
-              <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-              <Menu />
+          <CodegenLanguageProvider>
+            <MDX>
+              <OpenGraph description={meta?.description} section={meta?.title} />
+              <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
+                <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
+                <Menu />
 
-              <Component {...pageProps} />
-            </div>
-            <Footer />
-          </MDX>
+                <Component {...pageProps} />
+              </div>
+              <Footer />
+            </MDX>
+          </CodegenLanguageProvider>
         </MenuContext.Provider>
       </ThemeProvider>
-      <Analytics />
     </>
   );
 }

@@ -25,7 +25,7 @@ All Gateway events in Discord are tagged with an opcode that denotes the payload
 | 14     | Guild Subscriptions                    | Send         | Update subscriptions for a guild.                                                       |
 | ~~15~~ | ~~Lobby Connect~~                      | ~~Send~~     | ~~Join a lobby.~~                                                                       |
 | ~~16~~ | ~~Lobby Disconnect~~                   | ~~Send~~     | ~~Leave a lobby.~~                                                                      |
-| ~~17~~ | ~~Lobby Voice States~~                 | ~~Send~~     | ~~Update the client's voice state in a lobby.~~                                         |
+| 17     | Lobby Voice States                     | Send         | Update the client's voice state in a lobby.                                             |
 | 18     | Stream Create                          | Send         | Create a stream for the client.                                                         |
 | 19     | Stream Delete                          | Send         | End a client stream.                                                                    |
 | 20     | Stream Watch                           | Send         | Watch a user's stream.                                                                  |
@@ -47,6 +47,7 @@ All Gateway events in Discord are tagged with an opcode that denotes the payload
 | 36     | Request Channel Statuses               | Send         | Request voice channel statuses for a guild.                                             |
 | 37     | Guild Subscriptions Bulk               | Send         | Update subscriptions for multiple guilds.                                               |
 | 38     | Guild Channels Resync                  | Send         | Resynchronize accessible guild channels.                                                |
+| 39     | Request Channel Member Count           | Send         | Request the member and online count for a channel.                                      |
 
 ###### Gateway Close Event Codes
 
@@ -63,10 +64,11 @@ All Gateway events in Discord are tagged with an opcode that denotes the payload
 | 4008     | Rate limited                | Woah nelly! You're sending payloads too quickly. Slow it down! You will be disconnected on receiving this.                                                                                                             |
 | 4009     | Session timed out           | Your session timed out. Reconnect and start a new one.                                                                                                                                                                 |
 | 4010     | Invalid shard               | You sent us an invalid [shard when identifying](/topics/gateway#sharding).                                                                                                                                             |
-| 4011     | Sharding required           | The session would have handled too many guilds - you are required to [shard](/topics/gateway#sharding) your connection in order to connect.                                                                            |
+| 4011     | Sharding required           | The session would have handled too many guilds—you are required to [shard](/topics/gateway#sharding) your connection in order to connect.                                                                              |
 | 4012     | Invalid API version         | You sent an invalid version for the Gateway.                                                                                                                                                                           |
-| 4013     | Invalid intent(s)           | You sent an invalid intent for a [Gateway Intent](/topics/gateway#gateway-intents). You may have incorrectly calculated the bitwise value.                                                                             |
-| 4014     | Disallowed intent(s)        | You sent a disallowed intent for a [Gateway Intent](/topics/gateway#gateway-intents). You may have tried to specify an intent that you [have not enabled or are not approved for](/topics/gateway#privileged-intents). |
+| 4013     | Invalid intent(s)           | You sent an invalid intent for a [Gateway intent](/topics/gateway#gateway-intents). You may have incorrectly calculated the bitwise value.                                                                             |
+| 4014     | Disallowed intent(s)        | You sent a disallowed intent for a [Gateway intent](/topics/gateway#gateway-intents). You may have tried to specify an intent that you [have not enabled or are not approved for](/topics/gateway#privileged-intents). |
+| 4016     | Connection request canceled | Console device connection request was canceled. The Gateway session is no longer needed.                                                                                                                               |
 
 ## Voice
 
@@ -112,10 +114,12 @@ The Voice Gateway has its own set of opcodes and close codes.
 | 4009 | Session timeout          | Your session has timed out.                                                                                                           |
 | 4011 | Server not found         | We can't find the server you're trying to connect to.                                                                                 |
 | 4012 | Unknown protocol         | We didn't recognize the [protocol](/topics/voice-connections#select-protocol-structure) you sent.                                     |
-| 4014 | Disconnected             | Channel was deleted, you were kicked, voice server changed, or the main Gateway session was dropped. Should not reconnect.            |
+| 4014 | Disconnected             | Disconnect individual client (you were kicked, the main Gateway session was dropped, etc.). Should not reconnect.                     |
 | 4015 | Voice server crashed     | The server crashed. Our bad! Try [resuming](/topics/voice-connections#resuming-voice-connection).                                     |
 | 4016 | Unknown encryption mode  | We didn't recognize your [encryption](/topics/voice-connections#sending-and-receiving-voice).                                         |
 | 4020 | Bad request              | You sent a malformed request.                                                                                                         |
+| 4021 | Rate limited             | Rate limit exceeded. Should not reconnect.                                                                                            |
+| 4022 | Disconnected             | Disconnect all clients (channel deleted, voice server changed, call ended, etc.). Should not reconnect.                               |
 
 ## HTTP
 
@@ -123,26 +127,29 @@ The API will return semantically valid HTTP response codes based on the success 
 
 ###### HTTP Response Codes
 
-| Code                      | Meaning                                                                                                    |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 200 (OK)                  | The request completed successfully.                                                                        |
-| 201 (CREATED)             | The entity was created successfully.                                                                       |
-| 202 (ACCEPTED)            | The request was accepted but the resource is not ready. A `retry_after` key should be present in the body. |
-| 204 (NO CONTENT)          | The request completed successfully but returned no content.                                                |
-| 304 (NOT MODIFIED)        | The entity was not modified (no action was taken).                                                         |
-| 400 (BAD REQUEST)         | The request was improperly formatted, or the server couldn't understand it.                                |
-| 401 (UNAUTHORIZED)        | The `Authorization` header was missing or invalid.                                                         |
-| 403 (FORBIDDEN)           | You do not have permission to perform the requested action.                                                |
-| 404 (NOT FOUND)           | The resource at the location specified doesn't exist.                                                      |
-| 405 (METHOD NOT ALLOWED)  | The HTTP method used is not valid for the location specified.                                              |
-| 409 (CONFLICT)            | The requested resource update could not be completed due to the current state of the target resource.      |
-| 410 (GONE)                | The resource being accessed is no longer available.                                                        |
-| 413 (PAYLOAD TOO LARGE)   | The request entity was too large.                                                                          |
-| 415 (UNSUPPORTED MEDIA)   | The requested content type is not supported (CDN only).                                                    |
-| 429 (TOO MANY REQUESTS)   | You are being rate limited, see [Rate Limits](/topics/rate-limits).                                        |
-| 502 (GATEWAY UNAVAILABLE) | There was no gateway available to process your request. Wait a bit and retry.                              |
-| 503 (SERVICE UNAVAILABLE) | The service required to process your request is unavailable. Wait a bit and retry.                         |
-| 5xx (SERVER ERROR) ^1^    | The server had an error processing your request.                                                           |
+| Code                        | Meaning                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 200 (OK)                    | The request completed successfully.                                                                        |
+| 201 (CREATED)               | The entity was created successfully.                                                                       |
+| 202 (ACCEPTED)              | The request was accepted but the resource is not ready. A `retry_after` key should be present in the body. |
+| 204 (NO CONTENT)            | The request completed successfully but returned no content.                                                |
+| 304 (NOT MODIFIED)          | The entity was not modified (no action was taken).                                                         |
+| 400 (BAD REQUEST)           | The request was improperly formatted, or the server couldn't understand it.                                |
+| 401 (UNAUTHORIZED)          | The `Authorization` header was missing or invalid.                                                         |
+| 403 (FORBIDDEN)             | You do not have permission to perform the requested action.                                                |
+| 404 (NOT FOUND)             | The resource at the location specified doesn't exist.                                                      |
+| 405 (METHOD NOT ALLOWED)    | The HTTP method used is not valid for the location specified.                                              |
+| 409 (CONFLICT)              | The requested resource update could not be completed due to the current state of the target resource.      |
+| 410 (GONE)                  | The resource being accessed is no longer available.                                                        |
+| 413 (PAYLOAD TOO LARGE)     | The request entity was too large.                                                                          |
+| 415 (UNSUPPORTED MEDIA)     | The requested content type is not supported (CDN only).                                                    |
+| 422 (UNPROCESSABLE CONTENT) | The request was well-formed but failed validation (Rust services only).                                    |
+| 429 (TOO MANY REQUESTS)     | You are being rate limited, see [Rate Limits](/topics/rate-limits).                                        |
+| 501 (NOT IMPLEMENTED)       | The requested HTTP method is not supported.                                                                |
+| 502 (GATEWAY UNAVAILABLE)   | There was no gateway available to process your request. Wait a bit and retry.                              |
+| 503 (SERVICE UNAVAILABLE)   | The service required to process your request is unavailable. Wait a bit and retry.                         |
+| 504 (GATEWAY TIMEOUT)       | The gateway processing your request timed out. Wait a bit and retry.                                       |
+| 5xx (SERVER ERROR) ^1^      | The server had an error processing your request.                                                           |
 
 ^1^ 502, 504, 507, 522, 523, 524 should be retried with a backoff. The number of failed requests can be specified with the `X-Failed-Requests` header. Whether you retry other 5xx errors is up to you.
 
@@ -152,7 +159,7 @@ Along with the HTTP error code, the API can also return more detailed error code
 
 <Alert type="info">
 
-A special `40333` JSON error code is returned if your request is blocked by Cloudflare. This may be due to a malformed request or improper user agent. The response resembles a normal error structure:
+A special `40333` JSON error code is returned if your request is blocked by Cloudflare. This may be due to a malformed request or improper user agent. The response resembles a normal error structure but is not thrown by the API itself:
 
 ```json
 {

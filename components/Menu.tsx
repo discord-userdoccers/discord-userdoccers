@@ -1,13 +1,13 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useRef } from "react";
-import Bars from "./icons/Bars";
-import Navigation from "./navigation/Navigation";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
+import Bars from "./icons/Bars";
+import Navigation from "./navigation/Navigation";
 
 export default function Menu() {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { open, setClose } = useContext(MenuContext);
 
@@ -33,7 +33,7 @@ export default function Menu() {
     return () => router.events.on("routeChangeComplete", handler);
   }, [router.events, open, setClose]);
 
-  useOnClickOutside(ref, setClose);
+  useOnClickOutside(ref as React.RefObject<HTMLDivElement>, setClose);
 
   return (
     <div className={classes}>

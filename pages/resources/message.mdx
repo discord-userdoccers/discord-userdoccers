@@ -12,10 +12,11 @@ A message sent in a channel within Discord.
 | ----------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | id                            | snowflake                                                                                          | The ID of the message                                                                                                                     |
 | channel_id                    | snowflake                                                                                          | The ID of the channel the message was sent in                                                                                             |
+| lobby_id?                     | snowflake                                                                                          | The ID of the lobby the message was sent in                                                                                               |
 | author ^1^                    | partial [user](/resources/user#user-object) object                                                 | The author of the message                                                                                                                 |
 | content ^2^                   | string                                                                                             | Contents of the message                                                                                                                   |
 | timestamp                     | ISO8601 timestamp                                                                                  | When this message was sent                                                                                                                |
-| edited_timestamp              | ?ISO8601 timestamp                                                                                 | when this message was last edited                                                                                                         |
+| edited_timestamp              | ?ISO8601 timestamp                                                                                 | When this message was last edited                                                                                                         |
 | tts                           | boolean                                                                                            | Whether this message will be read out by TTS                                                                                              |
 | mention_everyone              | boolean                                                                                            | Whether this message mentions everyone                                                                                                    |
 | mentions                      | array[partial [user](/resources/user#user-object) object]                                          | Users specifically mentioned in the message                                                                                               |
@@ -30,7 +31,7 @@ A message sent in a channel within Discord.
 | type                          | integer                                                                                            | The [type of message](#message-type)                                                                                                      |
 | activity?                     | [message activity](#message-activity-object) object                                                | The rich presence activity the author is inviting users to                                                                                |
 | application?                  | [integration application](/resources/integration#integration-application-object) object            | The application of the message's rich presence activity                                                                                   |
-| application_id?               | snowflake                                                                                          | The ID of the application; only send for interaction responses                                                                            |
+| application_id?               | snowflake                                                                                          | The ID of the application; only sent for interaction responses and messages created through OAuth2                                        |
 | flags                         | integer                                                                                            | The [message's flags](#message-flags)                                                                                                     |
 | message_reference? ^4^        | [message reference](#message-reference-object) object                                              | The source of a crosspost, snapshot, channel follow add, pin, or reply message                                                            |
 | referenced_message? ^5^ ^4^   | ?[message object](#message-object)                                                                 | The message associated with the `message_reference`                                                                                       |
@@ -38,11 +39,12 @@ A message sent in a channel within Discord.
 | call?                         | [message call](#message-call-object) object                                                        | The private channel call that prompted this message                                                                                       |
 | interaction? **(deprecated)** | [message interaction](/interactions/receiving-and-responding#message-interaction-structure) object | The interaction the message is responding to                                                                                              |
 | interaction_metadata?         | [message interaction metadata](#message-interaction-metadata-object) object                        | The interaction the message originated from                                                                                               |
+| resolved?                     | [select menu resolved](/resources/components#select-menu-resolved-object) object                   | The resolved data for the select menu component's interaction                                                                             |
 | thread?                       | [channel](/resources/channel#channel-object) object                                                | The thread that was started from this message, with the [`member`](/resources/channel#channel-object) key representing thread member data |
 | role_subscription_data?       | [message role subscription](#message-role-subscription-object) object                              | The role subscription purchase or renewal that prompted this message                                                                      |
 | purchase_notification?        | [message purchase notification](#message-purchase-notification-object) object                      | The guild purchase that prompted this message                                                                                             |
 | gift_info?                    | [message gift info](#message-gift-info-object) object                                              | Information on the gift that prompted this message                                                                                        |
-| components ^2^                | array[[message component](/interactions/message-components#component-object) object]               | The message's components (e.g. buttons, select menus)                                                                                     |
+| components ^2^                | array[[message component](/resources/components#component-object) object]                          | The message's components (e.g. buttons, select menus)                                                                                     |
 | sticker_items?                | array[[sticker item](/resources/sticker#sticker-item-object) object]                               | The message's sticker items                                                                                                               |
 | stickers?                     | array[[sticker](/resources/sticker#sticker-object) object]                                         | Extra rich information for the message's sticker items; only available in some contexts                                                   |
 | poll? ^2^                     | [poll](#poll-object) object                                                                        | A poll!                                                                                                                                   |
@@ -58,7 +60,28 @@ A message sent in a channel within Discord.
 
 ^4^ See the [message reference types](#message-reference-type) for more information on which message references have which fields.
 
-^5^ his field is only returned for messages with a `type` of `REPLY`, `THREAD_STARTER_MESSAGE`, or `CONTEXT_MENU_COMMAND`. If the message is one of these but the `referenced_message` field is not present, the backend did not attempt to fetch the message, so its state is unknown. If the field exists but is `null`, the referenced message was deleted.
+^5^ This field is only returned for messages with a `type` of `REPLY`, `THREAD_STARTER_MESSAGE`, or `CONTEXT_MENU_COMMAND`. If the message is one of these but the `referenced_message` field is not present, the backend did not attempt to fetch the message, so its state is unknown. If the field exists but is `null`, the referenced message was deleted.
+
+###### Partial Message Structure
+
+This structure is a subset of the [message](#message-object) object above with the following fields:
+
+| Field             | Type                                                 | Description                                             |
+| ----------------- | ---------------------------------------------------- | ------------------------------------------------------- |
+| id                | snowflake                                            | The ID of the message                                   |
+| lobby_id?         | snowflake                                            | The ID of the lobby the message was sent in             |
+| channel_id ^1^    | snowflake                                            | The ID of the channel the message was sent in           |
+| type?             | integer                                              | The [type of message](/resources/message#message-type)  |
+| content           | string                                               | Contents of the message                                 |
+| author            | partial [user](/resources/user#user-object) object   | The author of the message                               |
+| flags?            | integer                                              | The [message's flags](/resources/message#message-flags) |
+| application_id?   | snowflake                                            | The ID of the application                               |
+| channel? ^2^      | [channnel](/resources/channel#channel-object) object | The channel the message was sent in                     |
+| recipient_id? ^2^ | snowflake                                            | The ID of the other recipient                           |
+
+^1^ If the message was sent in a lobby and the lobby has no channel linked, this will be equal to the ID of the lobby.
+
+^2^ These fields will be present only in ephemeral DM channels.
 
 ###### Message Type
 
@@ -170,24 +193,24 @@ See the below table for the system welcome messages specific to clans.
 
 ###### Message Flags
 
-| Value   | Name                                   | Description                                                                       |
-| ------- | -------------------------------------- | --------------------------------------------------------------------------------- |
-| 1 << 0  | CROSSPOSTED                            | This message has been published to subscribed channels (via Channel Following)    |
-| 1 << 1  | IS_CROSSPOST                           | This message originated from a message in another channel (via Channel Following) |
-| 1 << 2  | SUPPRESS_EMBEDS                        | Embeds will not be included when serializing this message                         |
-| 1 << 3  | SOURCE_MESSAGE_DELETED                 | The source message for this crosspost has been deleted (via Channel Following)    |
-| 1 << 4  | URGENT                                 | This message came from the urgent message system                                  |
-| 1 << 5  | HAS_THREAD                             | This message has an associated thread, with the same ID as the message            |
-| 1 << 6  | EPHEMERAL                              | This message is only visible to the user who invoked the interaction              |
-| 1 << 7  | LOADING                                | This message is an interaction response and the bot is "thinking"                 |
-| 1 << 8  | FAILED_TO_MENTION_SOME_ROLES_IN_THREAD | Some roles were not mentioned and added to the thread                             |
-| 1 << 9  | GUILD_FEED_HIDDEN                      | This message is hidden from the guild's feed                                      |
-| 1 << 10 | SHOULD_SHOW_LINK_NOT_DISCORD_WARNING   | This message contains a link that impersonates Discord                            |
-| 1 << 12 | SUPPRESS_NOTIFICATIONS                 | This message will not trigger push and desktop notifications                      |
-| 1 << 13 | IS_VOICE_MESSAGE                       | This message's audio attachment is rendered as a voice message                    |
-| 1 << 14 | HAS_SNAPSHOT                           | This message has a forwarded message snapshot attached                            |
-| 1 << 15 | IS_COMPONENTS_V2                       | This message contains components from version 2 of the UI kit                     |
-| 1 << 16 | SENT_BY_SOCIAL_LAYER_INTEGRATION       | This message was triggered by the social layer integration                        |
+| Value   | Name                                   | Description                                                                  |
+| ------- | -------------------------------------- | ---------------------------------------------------------------------------- |
+| 1 << 0  | CROSSPOSTED                            | Message has been published to subscribed channels (via Channel Following)    |
+| 1 << 1  | IS_CROSSPOST                           | Message originated from a message in another channel (via Channel Following) |
+| 1 << 2  | SUPPRESS_EMBEDS                        | Embeds will not be included when serializing this message                    |
+| 1 << 3  | SOURCE_MESSAGE_DELETED                 | Source message for this crosspost has been deleted (via Channel Following)   |
+| 1 << 4  | URGENT                                 | Message came from the urgent message system                                  |
+| 1 << 5  | HAS_THREAD                             | Message has an associated thread, with the same ID as the message            |
+| 1 << 6  | EPHEMERAL                              | Message is only visible to the user who invoked the interaction              |
+| 1 << 7  | LOADING                                | Message is an interaction response and the bot is "thinking"                 |
+| 1 << 8  | FAILED_TO_MENTION_SOME_ROLES_IN_THREAD | Some roles were not mentioned and added to the thread                        |
+| 1 << 9  | GUILD_FEED_HIDDEN                      | Message is hidden from the guild's feed                                      |
+| 1 << 10 | SHOULD_SHOW_LINK_NOT_DISCORD_WARNING   | Message contains a link that impersonates Discord                            |
+| 1 << 12 | SUPPRESS_NOTIFICATIONS                 | Message will not trigger push and desktop notifications                      |
+| 1 << 13 | IS_VOICE_MESSAGE                       | Message's audio attachment is rendered as a voice message                    |
+| 1 << 14 | HAS_SNAPSHOT                           | Message has a forwarded message snapshot attached                            |
+| 1 << 15 | IS_COMPONENTS_V2                       | Message contains components from version 2 of the UI kit                     |
+| 1 << 16 | SENT_BY_SOCIAL_LAYER_INTEGRATION       | Message was triggered by the social layer integration                        |
 
 ###### Example Message
 
@@ -392,7 +415,7 @@ Information on a gift that prompted a message. The relevant gift link is provide
 
 | Field      | Type                                                                   | Description                        |
 | ---------- | ---------------------------------------------------------------------- | ---------------------------------- |
-| emoji? ^1^ | partial [emoji](/resources/emoji#emoji-object)                         | The emoji associated with the gift |
+| emoji? ^1^ | partial [emoji](/resources/emoji#emoji-object) object                  | The emoji associated with the gift |
 | sound?     | [message soundboard sound](#message-soundboard-sound-structure) object | The sound associated with the gift |
 
 ^1^ The emoji `name` and `id` fields are user-provided and not guaranteed to be valid or accurate. The `animated` field is never present.
@@ -457,20 +480,21 @@ A snapshot of a partial message at a point in time.
 
 ###### Snapshot Message Structure
 
-| Field               | Type                                                                                 | Description                                           |
-| ------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| content ^1^         | string                                                                               | Contents of the message                               |
-| timestamp           | ISO8601 timestamp                                                                    | When this message was sent                            |
-| edited_timestamp    | ?ISO8601 timestamp                                                                   | when this message was last edited                     |
-| mentions            | array[partial [user](/resources/user#user-object) object]                            | Users specifically mentioned in the message           |
-| mention_roles       | array[snowflake]                                                                     | Roles specifically mentioned in this message          |
-| attachments ^1^     | array[[attachment](#attachment-object) object]                                       | The attached files                                    |
-| embeds ^1^          | array[[embed](#embed-object) object]                                                 | Content embedded in the message                       |
-| type                | integer                                                                              | The [type of message](#message-type)                  |
-| flags               | integer                                                                              | The [message's flags](#message-flags)                 |
-| components? ^1^ ^2^ | array[[message component](/interactions/message-components#component-object) object] | The message's components (e.g. buttons, select menus) |
-| sticker_items?      | array[[sticker item](/resources/sticker#sticker-item-object) object]                 | The message's sticker items                           |
-| soundboard_sounds?  | array[[soundboard sound](/resources/soundboard/#soundboard-sound-object) object]     | The message's soundboard sounds                       |
+| Field               | Type                                                                             | Description                                                   |
+| ------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| content ^1^         | string                                                                           | Contents of the message                                       |
+| timestamp           | ISO8601 timestamp                                                                | When this message was sent                                    |
+| edited_timestamp    | ?ISO8601 timestamp                                                               | when this message was last edited                             |
+| mentions            | array[partial [user](/resources/user#user-object) object]                        | Users specifically mentioned in the message                   |
+| mention_roles       | array[snowflake]                                                                 | Roles specifically mentioned in this message                  |
+| attachments ^1^     | array[[attachment](#attachment-object) object]                                   | The attached files                                            |
+| embeds ^1^          | array[[embed](#embed-object) object]                                             | Content embedded in the message                               |
+| type                | integer                                                                          | The [type of message](#message-type)                          |
+| flags               | integer                                                                          | The [message's flags](#message-flags)                         |
+| components? ^1^ ^2^ | array[[message component](/resources/components#component-object) object]        | The message's components (e.g. buttons, select menus)         |
+| resolved?           | [select menu resolved](/resources/components#select-menu-resolved-object) object | The resolved data for the select menu component's interaction |
+| sticker_items?      | array[[sticker item](/resources/sticker#sticker-item-object) object]             | The message's sticker items                                   |
+| soundboard_sounds?  | array[[soundboard sound](/resources/soundboard/#soundboard-sound-object) object] | The message's soundboard sounds                               |
 
 ^1^ Users must configure (or, in the case of bots, be approved for) the [`MESSAGE_CONTENT` intent](/topics/gateway#message-content-intent) to receive non-empty values for these fields in most situations.
 
@@ -628,23 +652,28 @@ The media proxy caches link embeds for 30 minutes.
 
 ###### Embed Structure
 
-| Field         | Type                                                 | Description                                                                           |
-| ------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| title?        | string                                               | The title of the embed (max 256 characters)                                           |
-| type?         | string                                               | The [type of embed](#embed-type) (always `rich` for sent embeds)                      |
-| description?  | string                                               | The description of the embed (max 4096 characters)                                    |
-| url?          | string                                               | The URL of the embed (max 2048 characters)                                            |
-| timestamp?    | ISO8601 timestamp                                    | Timestamp of embed content                                                            |
-| color?        | integer                                              | The color of the embed encoded as an integer representation of hexadecimal color code |
-| footer?       | [embed footer](#embed-footer-structure) object       | Embed footer information                                                              |
-| image?        | [embed image](#embed-image-structure) object         | Embed image information                                                               |
-| thumbnail?    | [embed thumbnail](#embed-thumbnail-structure) object | Embed thumbnail information                                                           |
-| video?        | [embed video](#embed-video-structure) object         | Embed video information                                                               |
-| provider?     | [embed provider](#embed-provider-structure) object   | Embed provider information                                                            |
-| author?       | [embed author](#embed-author-structure) object       | Embed author information                                                              |
-| fields?       | array[[embed field](#embed-field-structure) object]  | The fields of the embed (max 25)                                                      |
-| reference_id? | snowflake                                            | The ID of the message this embed was generated from                                   |
-| flags?        | integer                                              | The [embed's flags](#embed-flags)                                                     |
+| Field                         | Type                                                | Description                                                                             |
+| ----------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| title?                        | string                                              | The title of the embed (max 256 characters)                                             |
+| type? ^1^                     | string                                              | The [type of embed](#embed-type) (always `rich` for sent embeds)                        |
+| description?                  | string                                              | The description of the embed (max 4096 characters)                                      |
+| url?                          | string                                              | The URL of the embed (max 2048 characters)                                              |
+| timestamp?                    | ISO8601 timestamp                                   | Timestamp of embed content                                                              |
+| color?                        | integer                                             | The color of the embed encoded as an integer representation of a hexadecimal color code |
+| footer?                       | [embed footer](#embed-footer-structure) object      | Embed footer information                                                                |
+| image?                        | [embed media](#embed-media-structure) object        | Embed image information                                                                 |
+| thumbnail?                    | [embed media](#embed-media-structure) object        | Embed thumbnail information                                                             |
+| video? ^1^                    | [embed media](#embed-media-structure) object        | Embed video information                                                                 |
+| provider? ^1^                 | [embed provider](#embed-provider-structure) object  | Embed provider information                                                              |
+| author?                       | [embed author](#embed-author-structure) object      | Embed author information                                                                |
+| fields?                       | array[[embed field](#embed-field-structure) object] | The fields of the embed (max 25)                                                        |
+| reference_id? ^1^             | snowflake                                           | The ID of the message this embed was generated from                                     |
+| content_scan_version? ^1^ ^2^ | integer                                             | The version of the explicit content scan filter this embed was scanned with             |
+| flags? ^1^                    | integer                                             | The [embed's flags](#embed-flags)                                                       |
+
+^1^ These fields cannot be specified in a rich embed.
+
+^2^ This field will be missing if the embed has not yet been scanned. In this case, a scan can be triggered with the [Scan Explicit Media](#scan-explicit-media) endpoint. If the field is present and set to `0`, the embed is not eligible for a scan (e.g. it is a textual embed without media).
 
 ###### Embed Type
 
@@ -660,58 +689,38 @@ Most embed types are "loosely defined" and, for the most part, are not used by o
 | gifv                              | Animated GIF image rendered as a video embed                                              |
 | image                             | Image embed                                                                               |
 | link                              | Link embed                                                                                |
-| post_preview ^2^                  | Media channel post preview embed                                                          |
+| poll_result ^2^                   | Poll result embed                                                                         |
+| post_preview ^3^                  | Media channel post preview embed                                                          |
 | rich                              | Generic embed rendered from embed attributes                                              |
 | video                             | Video embed                                                                               |
 
 ^1^ These embed types are system-generated and cannot be sent by users. Their [`fields` array](#embed-object) represents the object linked in the description as a list of key-value pairs.
 
-^2^ This embed type is used to signal to the client to render a [preview of the linked media channel post](#get-channel-media-preview). This embed is created for URLs that link to a media channel post if the channel is a paywalled role subscription benefit. The URL is always in the format `https://discord.com/channels/:guild_id/:parent_id/threads/:thread_id/:initial_message_id`.
+^2^ See the [poll result notifications](#poll-result-notifications) section for more information.
+
+^3^ This embed type is used to signal to the client to render a [preview of the linked media channel post](#get-channel-media-preview). This embed is created for URLs that link to a media channel post if the channel is a paywalled role subscription benefit. The URL is always in the format `https://discord.com/channels/:guild_id/:parent_id/threads/:thread_id/:initial_message_id`.
 
 ###### Embed Flags
 
-| Value  | Name                    | Description                                                                                                 |
-| ------ | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 1 << 4 | CONTAINS_EXPLICIT_MEDIA | This embed was flagged as [sensitive content](https://support.discord.com/hc/en-us/articles/18210995019671) |
-| 1 << 5 | CONTENT_INVENTORY_ENTRY | This embed is a legacy content inventory reply                                                              |
+| Value  | Name                    | Description                                                                                            |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| 1 << 4 | CONTAINS_EXPLICIT_MEDIA | Embed was flagged as [sensitive content](https://support.discord.com/hc/en-us/articles/18210995019671) |
+| 1 << 5 | CONTENT_INVENTORY_ENTRY | Embed is a legacy content inventory reply                                                              |
 
-###### Embed Thumbnail Structure
+###### Embed Media Structure
 
-| Field                    | Type    | Description                                                                                                   |
-| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
-| url                      | string  | Source URL of thumbnail (only supports http(s) and attachments) (max 2048 characters)                         |
-| proxy_url? ^1^           | string  | A proxied URL of the thumbnail                                                                                |
-| height? ^1^              | integer | Height of thumbnail                                                                                           |
-| width? ^1^               | integer | Width of thumbnail                                                                                            |
-| flags? ^1^               | integer | The [thumbnail's attachment flags](#attachment-flags)                                                         |
-| placeholder_version? ^1^ | integer | The attachment placeholder protocol version (currently 1)                                                     |
-| placeholder? ^1^         | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the image, to display before it is loaded |
-
-^1^ This field is received only and cannot be set.
-
-###### Embed Video Structure
-
-| Field                | Type    | Description                                                                                                   |
-| -------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| url                  | string  | Source URL of video                                                                                           |
-| proxy_url?           | string  | A proxied URL of the video                                                                                    |
-| height?              | integer | Height of video                                                                                               |
-| width?               | integer | Width of video                                                                                                |
-| flags?               | integer | The [video's attachment flags](#attachment-flags)                                                             |
-| placeholder_version? | integer | The attachment placeholder protocol version (currently 1)                                                     |
-| placeholder?         | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the video, to display before it is loaded |
-
-###### Embed Image Structure
-
-| Field                    | Type    | Description                                                                                                   |
-| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
-| url                      | string  | Source URL of image (only supports http(s) and attachments) (max 2048 characters)                             |
-| proxy_url? ^1^           | string  | A proxied URL of the image                                                                                    |
-| height? ^1^              | integer | Height of image                                                                                               |
-| width? ^1^               | integer | Width of image                                                                                                |
-| flags? ^1^               | integer | The [image's attachment flags](#attachment-flags)                                                             |
-| placeholder_version? ^1^ | integer | The attachment placeholder protocol version (currently 1)                                                     |
-| placeholder? ^1^         | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the image, to display before it is loaded |
+| Field                      | Type    | Description                                                                                                   |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| url                        | string  | Source URL of media (only supports http(s) and attachments) (max 2048 characters)                             |
+| proxy_url? ^1^             | string  | A proxied URL of the media                                                                                    |
+| height? ^1^                | integer | Height of media                                                                                               |
+| width? ^1^                 | integer | Width of media                                                                                                |
+| flags? ^1^                 | integer | The [media's attachment flags](#attachment-flags)                                                             |
+| description? ^1^           | string  | The description for the media                                                                                 |
+| content_type? ^1^          | string  | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                       |
+| content_scan_metadata? ^1^ | string  | The content scan metadata for the media                                                                       |
+| placeholder_version? ^1^   | integer | The attachment placeholder protocol version (currently 1)                                                     |
+| placeholder? ^1^           | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the media, to display before it is loaded |
 
 ^1^ This field is received only and cannot be set.
 
@@ -751,6 +760,19 @@ Most embed types are "loosely defined" and, for the most part, are not used by o
 | value   | string  | The value of the field (max 1024 characters)             |
 | inline? | boolean | Whether this field should display inline (default false) |
 
+###### Content Scan Metadata Structure
+
+| Field   | Type    | Description                                                                 |
+| ------- | ------- | --------------------------------------------------------------------------- |
+| flags   | integer | The [content scan flags](#content-scan-flags) of the media                  |
+| version | integer | The version of the explicit content scan filter this media was scanned with |
+
+###### Content Scan Flags
+
+| Value  | Name     | Description                               |
+| ------ | -------- | ----------------------------------------- |
+| 1 << 0 | EXPLICIT | The media was flagged as explicit content |
+
 ### Attachment Object
 
 ###### Attachment Structure
@@ -774,21 +796,22 @@ When sending/editing messages, only `id` is required. `filename` is also require
 | proxy_url ^2^ ^4^             | string                                                                  | A proxied url of the file                                                                                                                                                                     |
 | height? ^2^                   | ?integer                                                                | Height of image                                                                                                                                                                               |
 | width? ^2^                    | ?integer                                                                | Width of image                                                                                                                                                                                |
+| content_scan_version? ^2^ ^5^ | integer                                                                 | The version of the explicit content scan filter this attachment was scanned with                                                                                                              |
 | placeholder_version? ^2^      | integer                                                                 | The attachment placeholder protocol version (currently 1)                                                                                                                                     |
 | placeholder? ^2^              | string                                                                  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the attachment, to display before it is loaded                                                                            |
 | ephemeral? ^1^ ^2^            | boolean                                                                 | Whether this attachment is ephemeral                                                                                                                                                          |
 | duration_secs?                | float                                                                   | Duration of the audio file (if [voice message](#voice-messages))                                                                                                                              |
 | waveform?                     | string                                                                  | Base64 encoded bytearray representing a sampled waveform (if [voice message](#voice-messages))                                                                                                |
-| flags? ^5^                    | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                                                                   |
-| is_clip? ^5^ ^6^ ^7^          | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)                                                      |
-| is_thumbnail? ^5^             | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                                                                                |
-| is_remix? ^5^                 | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment                                                  |
-| is_spoiler? ^5^               | boolean                                                                 | Whether this attachment is a spoiler                                                                                                                                                          |
-| clip_created_at? ^6^          | ISO8601 timestamp                                                       | When the clip was created                                                                                                                                                                     |
-| clip_participant_ids? ^6^ ^7^ | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                                                                             |
-| clip_participants? ^7^        | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                                                                        |
-| application_id? ^7^           | snowflake                                                               | The ID of the application the clip was taken in                                                                                                                                               |
-| application? ^7^              | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                                                                         |
+| flags? ^6^                    | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                                                                   |
+| is_clip? ^6^ ^7^ ^8^          | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)                                                      |
+| is_thumbnail? ^6^             | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                                                                                |
+| is_remix? ^6^                 | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment                                                  |
+| is_spoiler? ^6^               | boolean                                                                 | Whether this attachment is a spoiler                                                                                                                                                          |
+| clip_created_at? ^8^          | ISO8601 timestamp                                                       | When the clip was created                                                                                                                                                                     |
+| clip_participant_ids? ^7^ ^8^ | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                                                                             |
+| clip_participants? ^8^        | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                                                                        |
+| application_id? ^8^           | snowflake                                                               | The ID of the application the clip was taken in                                                                                                                                               |
+| application? ^8^              | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                                                                         |
 
 ^1^ Ephemeral attachments will automatically be removed after a set period of time. Ephemeral attachments on messages are guaranteed to be available as long as the message itself exists.
 
@@ -798,22 +821,24 @@ When sending/editing messages, only `id` is required. `filename` is also require
 
 ^4^ The proxy URL only supports attachments with a defined `width` and `height`, such as images and videos. For all other attachments, the proxy returns a 415 unsupported media type error.
 
-^5^ The `flags` field is received only and cannot be set directly. To set flags, use the `is_clip`, `is_thumbnail`, and `is_remix` send-only fields.
+^5^ This field will be missing if the attachment has not yet been scanned. In this case, a scan can be triggered with the [Explicit Content Scan](#scan-explicit-media) endpoint. If the field is present and set to `0`, the attachment is not eligible for a scan.
 
-^6^ When sending a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
+^6^ The `flags` field is received only and cannot be set directly. To set flags, use the `is_clip`, `is_thumbnail`, `is_remix`, and `is_spoiler` send-only fields.
 
-^7^ The `clip_participant_ids` and `application_id` fields are send-only. You will receive the `clip_participants` and `application` fields back when retrieving the [message](#message-object).
+^7^ When sending a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
+
+^8^ The `clip_participant_ids` and `application_id` fields are send-only. You will receive the `clip_participants` and `application` fields back when retrieving the [message](#message-object).
 
 ###### Attachment Flags
 
-| Value  | Name                    | Description                                                                                                              |
-| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 1 << 0 | IS_CLIP                 | This attachment is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
-| 1 << 1 | IS_THUMBNAIL            | This attachment is a thumbnail                                                                                           |
-| 1 << 2 | IS_REMIX                | This attachment has been [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ)               |
-| 1 << 3 | IS_SPOILER              | This attachment is a spoiler                                                                                             |
-| 1 << 4 | CONTAINS_EXPLICIT_MEDIA | This attachment was flagged as [sensitive content](https://support.discord.com/hc/en-us/articles/18210995019671)         |
-| 1 << 5 | IS_ANIMATED             | This attachment is an animated image                                                                                     |
+| Value  | Name                    | Description                                                                                                         |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 1 << 0 | IS_CLIP                 | Attachment is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
+| 1 << 1 | IS_THUMBNAIL            | Attachment is a thumbnail                                                                                           |
+| 1 << 2 | IS_REMIX                | Attachment has been [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ)               |
+| 1 << 3 | IS_SPOILER              | Attachment is a spoiler                                                                                             |
+| 1 << 4 | CONTAINS_EXPLICIT_MEDIA | Attachment was flagged as [sensitive content](https://support.discord.com/hc/en-us/articles/18210995019671)         |
+| 1 << 5 | IS_ANIMATED             | Attachment is an animated image                                                                                     |
 
 ### Allowed Mentions Object
 
@@ -967,10 +992,10 @@ Different layouts for polls will come in the future. For now though, this value 
 The poll media object is a common object that backs both the question and answers.
 For now, `question` only supports `text`, while answers can have an optional `emoji`.
 
-| Field      | Type                                           | Description                                                                       |
-| ---------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
-| text? ^1^  | string                                         | The text of the field (max 300 characters for question, 55 characters for answer) |
-| emoji? ^2^ | partial [emoji](/resources/emoji#emoji-object) | The emoji of the field                                                            |
+| Field      | Type                                                  | Description                                                                       |
+| ---------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| text? ^1^  | string                                                | The text of the field (max 300 characters for question, 55 characters for answer) |
+| emoji? ^2^ | partial [emoji](/resources/emoji#emoji-object) object | The emoji of the field                                                            |
 
 ^1^ `text` should always be non-`null` for both questions and answers, but do not depend on that in the future.
 
@@ -1239,6 +1264,15 @@ Conversation summaries are short, LLM-generated descriptions of a channel's acti
 }
 ```
 
+### Message Pin Object
+
+###### Message Pin Structure
+
+| Field     | Type                              | Description                                 |
+| --------- | --------------------------------- | ------------------------------------------- |
+| pinned_at | ISO8601 timestamp                 | When the message was pinned                 |
+| message   | [message](#message-object) object | The pinned message, without `reactions` key |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/channels/{channel.id}/messages">
@@ -1272,11 +1306,11 @@ Preloads the last message sent in a series of private channels. Returns a list o
   Search Messages
 </RouteHeader>
 
-Returns a list of [message](#message-object) objects without the `reactions` key that match a search query in the guild or channel. The messages that are direct results will have an extra `hit` key set to `true`. Requires the `READ_MESSAGE_HISTORY` permission if operating on a guild channel.
+Returns a list of messages without the `reactions` key that match a search query in the guild or private channel. Requires the `READ_MESSAGE_HISTORY` permission if operating on a guild channel.
 
 <Alert type="warn">
 
-If the guild/channel you are searching is not yet indexed, the endpoint will return a 202 accepted response. The response body will not contain any search results, and will look similar to an error response:
+If the entity you are searching is not yet indexed, the endpoint will return a 202 accepted response. The response body will not contain any search results, and will look similar to an error response:
 
 ```json
 {
@@ -1294,40 +1328,44 @@ See [the unavailable resources section](/topics/rate-limits#unavailable-resource
 
 <Alert type="info">
 
-Due to speed optimizations, search may return slightly less results than the limit specified.
-This should only happen on pages of messages that have not been accessed for a long time.
+Due to speed optimizations, search may return slightly less results than the limit specified when messages have not been accessed for a long time.
+Clients should not rely on the length of the `messages` array to paginate results.
+
+Additionally, when messages are actively being created or deleted, the `total_results` field may not be accurate.
 
 </Alert>
 
 ###### Query String Params
 
-| Field                 | Type             | Description                                                              |
-| --------------------- | ---------------- | ------------------------------------------------------------------------ |
-| limit?                | integer          | Max number of messages to return (1-25, default 25)                      |
-| offset?               | integer          | Number to offset the returned messages by (max 9975)                     |
-| max_id?               | snowflake        | Get messages before this message ID                                      |
-| min_id?               | snowflake        | Get messages after this message ID                                       |
-| include_nsfw?         | boolean          | Whether to include results from NSFW channels (default false)            |
-| content?              | string           | Filter messages by content                                               |
-| channel_id? ^1^       | array[snowflake] | Filter messages by these channels                                        |
-| author_type?          | array[string]    | Filter messages by [author type](#author-type)                           |
-| author_id?            | array[snowflake] | Filter messages by these authors                                         |
-| mentions?             | array[snowflake] | Filter messages that mention these users                                 |
-| mention_everyone?     | boolean          | Filter messages that do or do not mention @everyone                      |
-| pinned?               | boolean          | Filter messages by whether they are or are not pinned                    |
-| has?                  | array[string]    | Filter messages by whether or not they [have specific things](#has-type) |
-| embed_type?           | array[string]    | Filter messages by [embed type](#embed-type)                             |
-| embed_provider?       | array[string]    | Filter messages by embed provider (e.g. `tenor`)                         |
-| link_hostname?        | array[string]    | Filter messages by link hostname (e.g. `google.com`)                     |
-| attachment_filename?  | array[string]    | Filter messages by attachment filename                                   |
-| attachment_extension? | array[string]    | Filter messages by attachment extension (e.g. `txt`)                     |
-| command_id?           | array[snowflake] | Filter messages by these application command IDs                         |
-| sort_by? ^2^          | string           | The [sorting algorithm](#message-sort-type) to use                       |
-| sort_order? ^2^       | string           | The direction to sort (`asc` or `desc`, default `desc`)                  |
+| Field                    | Type             | Description                                                                     |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------- |
+| limit?                   | integer          | Max number of messages to return (1-25, default 25)                             |
+| offset?                  | integer          | Number to offset the returned messages by (max 9975)                            |
+| max_id?                  | snowflake        | Get messages before this message ID                                             |
+| min_id?                  | snowflake        | Get messages after this message ID                                              |
+| include_nsfw?            | boolean          | Whether to include results from NSFW channels (default false)                   |
+| content?                 | string           | Filter messages by content                                                      |
+| channel_id? ^1^          | array[snowflake] | Filter messages by these channels                                               |
+| author_type?             | array[string]    | Filter messages by [author type](#author-type)                                  |
+| author_id?               | array[snowflake] | Filter messages by these authors                                                |
+| mentions?                | array[snowflake] | Filter messages that mention these users                                        |
+| mention_everyone?        | boolean          | Filter messages that do or do not mention @everyone                             |
+| pinned?                  | boolean          | Filter messages by whether they are or are not pinned                           |
+| has?                     | array[string]    | Filter messages by whether or not they [have specific things](#search-has-type) |
+| embed_type?              | array[string]    | Filter messages by [embed type](#search-embed-type)                             |
+| embed_provider?          | array[string]    | Filter messages by embed provider (case-sensitive, e.g. `Tenor`)                |
+| link_hostname?           | array[string]    | Filter messages by link hostname (case-sensitive, e.g. `discordapp.com`)        |
+| attachment_filename? ^3^ | string           | Filter messages by attachment filename                                          |
+| attachment_extension?    | array[string]    | Filter messages by attachment extension (e.g. `txt`)                            |
+| command_id? ^3^          | snowflake        | Filter messages by application command ID                                       |
+| sort_by? ^2^             | string           | The [sorting algorithm](#search-sort-type) to use                               |
+| sort_order? ^2^          | string           | The direction to sort (`asc` or `desc`, default `desc`)                         |
 
-^1^ Not applicable when using the `GET /channels/{channel.id}/messages/search` endpoint.
+^1^ Not applicable when operating on a private channel.
 
 ^2^ Sort order is not respected when sorting by relevance.
+
+^3^ Parameter is unstable and should not be relied on.
 
 ###### Author Type
 
@@ -1339,7 +1377,7 @@ All types can be negated by prefixing them with `-`, which means results will no
 | bot     | Return messages sent by bot accounts  |
 | webhook | Return messages sent by webhooks      |
 
-###### Has Type
+###### Search Has Type
 
 All types can be negated by prefixing them with `-`, which means results will not include messages that match the type.
 
@@ -1355,7 +1393,18 @@ All types can be negated by prefixing them with `-`, which means results will no
 | poll     | Return messages that have a poll              |
 | snapshot | Return messages that have a forwarded message |
 
-###### Message Sort Type
+###### Search Embed Type
+
+These do not correspond 1:1 to actual [embed types](#embed-type) and encompass a wider range of actual types.
+
+| Value                | Description                                |
+| -------------------- | ------------------------------------------ |
+| image                | Return messages that have an image embed   |
+| video                | Return messages that have a video embed    |
+| article              | Return messages that have an article embed |
+| gif **(deprecated)** | Return messages that have a gif embed      |
+
+###### Search Sort Type
 
 | Value     | Description                                              |
 | --------- | -------------------------------------------------------- |
@@ -1364,22 +1413,27 @@ All types can be negated by prefixing them with `-`, which means results will no
 
 ###### Response Body
 
-| Field                        | Type                                                                   | Description                                                                               |
-| ---------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| messages                     | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context) ^1^ that match the query   |
-| threads?                     | array[[channel](/resources/channel#channel-object) object]             | The threads that are the channels of the returned messages                                |
-| members?                     | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined               |
-| total_results                | integer                                                                | The total number of results that match the query                                          |
-| analytics_id                 | string                                                                 | The analytics ID for the search query                                                     |
-| documents_indexed?           | integer                                                                | The number of documents that have been indexed during the current index operation, if any |
-| doing_deep_historical_index? | boolean                                                                | The status of the guild/channel's deep historical indexing operation, if any              |
+| Field                       | Type                                                                   | Description                                                                               |
+| --------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| analytics_id                | string                                                                 | The analytics ID for the search query                                                     |
+| doing_deep_historical_index | boolean                                                                | The status of the guild/channel's deep historical indexing operation, if any              |
+| documents_indexed?          | integer                                                                | The number of documents that have been indexed during the current index operation, if any |
+| total_results               | integer                                                                | The total number of results that match the query                                          |
+| messages                    | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context)^1^ that match the query    |
+| channels? ^2^               | array[[channel](/resources/channel#channel-object) object]             | The channels that contain the returned messages                                           |
+| threads?                    | array[[channel](/resources/channel#channel-object) object]             | The threads that contain the returned messages                                            |
+| members?                    | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined               |
 
 ^1^ Surrounding context messages are no longer returned.
+
+^2^ Only applicable when operating on a private channel.
 
 ###### Example Response
 
 ```json
 {
+  "analytics_id": "67ab1d6e97c631025fbba32d4eb82a16",
+  "doing_deep_historical_index": false,
   "total_results": 1,
   "messages": [
     [
@@ -1394,6 +1448,7 @@ All types can be negated by prefixing them with `-`, which means results will no
           "global_name": "Alien",
           "avatar": "60387de43133809b083fb0f7458d2708",
           "avatar_decoration_data": null,
+          "collectibles": null,
           "discriminator": "0",
           "public_flags": 4194432,
           "primary_guild": null
@@ -1412,10 +1467,149 @@ All types can be negated by prefixing them with `-`, which means results will no
         "hit": true
       }
     ]
-  ],
-  "analytics_id": "largealienalphanumericstring"
+  ]
 }
 ```
+
+<RouteHeader
+  method="POST"
+  url="/guilds/{guild.id}/messages/search/tabs OR /channels/{channel.id}/messages/search/tabs OR /users/@me/messages/search/tabs"
+>
+  Search Messages by Tab
+</RouteHeader>
+
+Returns a list of messages without the `reactions` key that match a set of parallelized search queries in the guild, private channel, or globally across all user private channels.
+Requires the `READ_MESSAGE_HISTORY` permission if operating on a guild channel.
+
+<Alert type="warn">
+
+If the entity you are searching is not yet indexed, the endpoint will return a 202 accepted response. The response body will not contain any search results, and will look similar to an error response:
+
+```json
+{
+  "message": "Index not yet available. Try again later",
+  "code": 110000,
+  "documents_indexed": 0,
+  "retry_after": 2
+}
+```
+
+You should retry the request after the timeframe specified in the `retry_after` field. If the `retry_after` field is `0`, you should retry the request after a short delay.
+See [the unavailable resources section](/topics/rate-limits#unavailable-resources) for more information.
+
+</Alert>
+
+<Alert type="info">
+
+Due to speed optimizations, search may return slightly less results than the limit specified when messages have not been accessed for a long time.
+Clients should not rely on the length of the `messages` array to paginate results.
+
+Additionally, when messages are actively being created or deleted, the `total_results` field may not be accurate.
+
+</Alert>
+
+###### JSON Params
+
+| Field                   | Type                                                    | Description                                                                                          |
+| ----------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| tabs                    | map[string, [search tab](#search-tab-structure) object] | A map of [predefined tab names](#search-tab-type) to search queries                                  |
+| channel_ids? ^1^        | array[snowflake]                                        | Filter messages by these channels (max 500)                                                          |
+| include_nsfw?           | boolean                                                 | Whether to include results from NSFW channels (default false)                                        |
+| track_exact_total_hits? | boolean                                                 | Whether to return accurate total result count information at the cost of performance (default false) |
+
+^1^ Only applicable when operating on a guild.
+
+###### Search Tab Type
+
+While the tab names themselves are enforced, what they are used for is not. Clients are free to use any combinations of filters even if they don't follow the spirit of the tab name.
+
+| Value    | Description  |
+| -------- | ------------ |
+| messages | Messages tab |
+| links    | Links tab    |
+| media    | Media tab    |
+| files    | Files tab    |
+| pins     | Pins tab     |
+
+###### Search Tab Structure
+
+| Field                    | Type                                              | Description                                                                     |
+| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| limit?                   | integer                                           | Max number of messages to return (1-25, default 25)                             |
+| cursor? ^1^              | ?[search cursor](#search-cursor-structure) object | The cursor to use for pagination                                                |
+| offset? ^1^              | integer                                           | Number to offset the returned messages by (max 9975)                            |
+| max_id?                  | snowflake                                         | Get messages before this message ID                                             |
+| min_id?                  | snowflake                                         | Get messages after this message ID                                              |
+| content?                 | string                                            | Filter messages by content                                                      |
+| author_type?             | array[string]                                     | Filter messages by [author type](#author-type)                                  |
+| author_id?               | array[snowflake]                                  | Filter messages by these authors                                                |
+| mentions?                | array[snowflake]                                  | Filter messages that mention these users                                        |
+| mention_everyone?        | boolean                                           | Filter messages that do or do not mention @everyone                             |
+| pinned?                  | boolean                                           | Filter messages by whether they are or are not pinned                           |
+| has?                     | array[string]                                     | Filter messages by whether or not they [have specific things](#search-has-type) |
+| embed_type?              | array[string]                                     | Filter messages by [embed type](#search-embed-type)                             |
+| embed_provider?          | array[string]                                     | Filter messages by embed provider (case-sensitive, e.g. `Tenor`)                |
+| link_hostname?           | array[string]                                     | Filter messages by link hostname (case-sensitive, e.g. `discordapp.com`)        |
+| attachment_filename? ^3^ | string                                            | Filter messages by attachment filename                                          |
+| attachment_extension?    | array[string]                                     | Filter messages by attachment extension (e.g. `txt`)                            |
+| command_id? ^3^          | snowflake                                         | Filter messages by application command ID                                       |
+| sort_by? ^2^             | string                                            | The [sorting algorithm](#search-sort-type) to use                               |
+| sort_order? ^2^          | string                                            | The direction to sort (`asc` or `desc`, default `desc`)                         |
+
+^1^ You may only paginate with either `offset` or `cursor`, not both. If `cursor` is provided, the [search cursor type](#search-cursor-type) should match the [sorting algorithm](#search-sort-type) used in `sort_by`.
+
+^2^ Sort order is not respected when sorting by relevance.
+
+^3^ Parameter is unstable and should not be relied on.
+
+###### Search Cursor Structure
+
+| Field      | Type                                                         | Description                                                                                           |
+| ---------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| type       | string                                                       | The [type of the cursor](#search-cursor-type)                                                         |
+| timestamp? | snowflake                                                    | The ID of the last message in this page of results; used for pagination by timestamp                  |
+| score?     | [search cursor score](#search-cursor-score-structure) object | The relevance metadata for the last message in this page of results; used for pagination by relevance |
+
+###### Search Cursor Score Structure
+
+| Field     | Type      | Description                                                     |
+| --------- | --------- | --------------------------------------------------------------- |
+| timestamp | snowflake | The ID of the last message in this page of results              |
+| score?    | float     | The relevance score of the last message in this page of results |
+
+###### Search Cursor Type
+
+| Value     | Description                   |
+| --------- | ----------------------------- |
+| timestamp | Paginate results by timestamp |
+| score     | Paginate results by relevance |
+
+###### Response Body
+
+| Field                       | Type                                                                   | Description                                                                               |
+| --------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| analytics_id                | string                                                                 | The analytics ID for the search query                                                     |
+| doing_deep_historical_index | boolean                                                                | The status of the guild/channel's deep historical indexing operation, if any              |
+| documents_indexed?          | integer                                                                | The number of documents that have been indexed during the current index operation, if any |
+| tabs                        | map[string, [search tab results](#search-tab-results-structure) object | A map of [requested tab names](#search-tab-type) to search results                        |
+
+###### Search Tab Results Structure
+
+| Field             | Type                                                                   | Description                                                                            |
+| ----------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| messages          | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context)^1^ that match the query |
+| channels          | array[[channel](/resources/channel#channel-object) object]             | The channels that contain the returned messages                                        |
+| threads?          | array[[channel](/resources/channel#channel-object) object]             | The threads that contain the returned messages                                         |
+| members?          | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined            |
+| cursor ^2^        | [search cursor](#search-cursor-structure) object                       | The cursor for the next page of results                                                |
+| total_results ^3^ | integer                                                                | The total number of results that match the query                                       |
+| time_spent_ms     | integer                                                                | Duration taken (in milliseconds) processing the search query                           |
+
+^1^ Surrounding context messages are no longer returned.
+
+^2^ Will be an empty object if there is no more data to paginate.
+
+^3^ Amount will be capped at 1001 if `track_exact_total_hits` is set to `false`.
 
 <RouteHeader method="GET" url="/channels/{channel.id}/messages/{message.id}">
   Get Message
@@ -1463,25 +1657,24 @@ Note that when sending a message, you must provide a value for **at least one of
 
 ###### JSON/Form Params
 
-| Field                       | Type                                                                                 | Description                                                                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| content?                    | string                                                                               | The message contents (up to 2000 characters)                                                                                                                                |
-| tts?                        | boolean                                                                              | Whether this is a TTS message                                                                                                                                               |
-| embeds? ^2^                 | array[[embed](#embed-object) object]                                                 | Embedded `rich` content (max 6000 characters, max 10)                                                                                                                       |
-| embed? ^2^ **(deprecated)** | [embed](#embed-object) object                                                        | Embedded `rich` content (max 6000 characters), deprecated in favor of `embeds`                                                                                              |
-| nonce? ^3^                  | integer \| string                                                                    | The message's nonce, used for message deduplication (will be present in the returned object and accompanying [Message Create](/topics/gateway-events#message-create) event) |
-| allowed_mentions?           | [allowed mention](#allowed-mentions-object) object                                   | Allowed mentions for the message                                                                                                                                            |
-| message_reference?          | [message reference](#message-reference-structure) object                             | The message being replied to or forwarded                                                                                                                                   |
-| components? ^2^             | array[[message component](/interactions/message-components#component-object) object] | The components to include with the message                                                                                                                                  |
-| sticker_ids?                | array[snowflake]                                                                     | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                                                                                         |
-| activity?                   | [message activity](#message-activity-object) object                                  | The rich presence activity to invite users to                                                                                                                               |
-| application_id?             | snowflake                                                                            | The application ID of the activity to create a rich presence invite for (defaults to the primary activity if unspecified)                                                   |
-| flags?                      | integer                                                                              | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set)                                  |
-| files[n]? ^1^               | file contents                                                                        | Contents of the file being sent (max 10)                                                                                                                                    |
-| payload_json? ^1^           | string                                                                               | JSON-encoded body of non-file params                                                                                                                                        |
-| attachments? ^1^            | array[partial [attachment](#attachment-object) object]                               | Partial attachment objects with `filename` and `description` (max 10)                                                                                                       |
-| poll?                       | [poll create](#poll-create-structure) object                                         | A poll!                                                                                                                                                                     |
-| confetti_potion?            | [confetti potion](#confetti-potion-structure) object                                 | A confetti potion to apply to the message                                                                                                                                   |
+| Field              | Type                                                                      | Description                                                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| content?           | string                                                                    | The message contents (up to 2000 characters)                                                                                                                                |
+| tts?               | boolean                                                                   | Whether this is a TTS message                                                                                                                                               |
+| embeds? ^2^        | array[[embed](#embed-object) object]                                      | Embedded `rich` content (max 6000 characters, max 10)                                                                                                                       |
+| nonce? ^3^         | integer \| string                                                         | The message's nonce, used for message deduplication (will be present in the returned object and accompanying [Message Create](/topics/gateway-events#message-create) event) |
+| allowed_mentions?  | [allowed mention](#allowed-mentions-object) object                        | Allowed mentions for the message                                                                                                                                            |
+| message_reference? | [message reference](#message-reference-structure) object                  | The message being replied to or forwarded                                                                                                                                   |
+| components? ^2^    | array[[message component](/resources/components#component-object) object] | The components to include with the message                                                                                                                                  |
+| sticker_ids?       | array[snowflake]                                                          | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                                                                                         |
+| activity?          | [message activity](#message-activity-object) object                       | The rich presence activity to invite users to                                                                                                                               |
+| application_id?    | snowflake                                                                 | The application ID of the activity to create a rich presence invite for (defaults to the primary activity if unspecified)                                                   |
+| flags?             | integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set)                                  |
+| files[n]? ^1^      | file contents                                                             | Contents of the file being sent (max 10)                                                                                                                                    |
+| payload_json? ^1^  | string                                                                    | JSON-encoded body of non-file params                                                                                                                                        |
+| attachments? ^1^   | array[partial [attachment](#attachment-object) object]                    | Partial attachment objects with `filename` and `description` (max 10)                                                                                                       |
+| poll?              | [poll create](#poll-create-structure) object                              | A poll!                                                                                                                                                                     |
+| confetti_potion?   | [confetti potion](#confetti-potion-structure) object                      | A confetti potion to apply to the message                                                                                                                                   |
 
 ^1^ See [Uploading Files](/reference#uploading-files) for details.
 
@@ -1506,7 +1699,11 @@ Note that when sending a message, you must provide a value for **at least one of
 
 Examples for file uploads are available in [Uploading Files](/reference#uploading-files).
 
-<RouteHeader method="POST" url="/users/{user.id}/messages" supportsOAuth2="dm_channels.messages.write">
+<RouteHeader
+  method="POST"
+  url="/users/{user.id}/messages"
+  supportsOAuth2="dm_channels.messages.write or activities.invites.write"
+>
   Create DM Message
 </RouteHeader>
 
@@ -1521,7 +1718,9 @@ A message can be sent between two users in the following situations:
 
 <Alert type="warn">
 
-This endpoint is only usable with an OAuth2 access token with the `dm_channels.messages.write` scope.
+This endpoint is only usable with an OAuth2 access token with the `dm_channels.messages.write` or `activities.invites.write` scope.
+
+If the `activities.invites.write` scope is used, only the `activity` and `application_id` fields may be provided.
 
 </Alert>
 
@@ -1559,18 +1758,14 @@ Creates attachment URLs to upload the intended attachments directly to Discord's
 
 ###### Upload Attachment Structure
 
-| Field                     | Type              | Description                                                                                                                              |
-| ------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| id?                       | ?string           | The ID of the attachment to reference in the response                                                                                    |
-| filename                  | string            | The name of the file being uploaded                                                                                                      |
-| file_size                 | integer           | The size of the file being uploaded in bytes                                                                                             |
-| is_clip? ^1^              | boolean           | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
-| clip_created_at? ^1^      | ISO8601 timestamp | When the clip was created                                                                                                                |
-| clip_participant_ids? ^1^ | array[snowflake]  | The IDs of the participants in the clip (max 100)                                                                                        |
-| title?                    | string            | The title of the clip                                                                                                                    |
-| application_id?           | snowflake         | The ID of the application the clip was taken in                                                                                          |
+| Field        | Type    | Description                                                                                                                              |
+| ------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| id?          | ?string | The ID of the attachment to reference in the response                                                                                    |
+| filename     | string  | The name of the file being uploaded                                                                                                      |
+| file_size    | integer | The size of the file being uploaded in bytes                                                                                             |
+| is_clip? ^1^ | boolean | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
 
-^1^ When uploading a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
+^1^ When uploading a clip, `is_clip` must be `true`. [See message types](#clips) for more information.
 
 ###### Cloud Attachment Structure
 
@@ -1639,6 +1834,89 @@ Refreshes the URLs of attachments that were uploaded to Discord's CDN. The provi
   ]
 }
 ```
+
+<RouteHeader method="PATCH" url="/channels/{channel.id}/explicit-media">
+  Scan Explicit Media
+</RouteHeader>
+
+Scans for explicit media in a list of messages. Returns a 204 empty response on success. Fires multiple [Message Update](/topics/gateway-events#message-update) Gateway events.
+
+This endpoint should be used by users with explicit content filtering enabled to scan for explicit media on messages that have embeds or attachments with a missing or outdated `content_filter_version`. Invalid message IDs are ignored.
+
+<Alert type="info">
+
+The latest explicit content filter version is provided in the [`explicit_content_scan_version` field of the Ready event](/topics/gateway-events#ready).
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type             | Description                    |
+| ----------- | ---------------- | ------------------------------ |
+| message_ids | array[snowflake] | The message IDs to scan (1-75) |
+
+/messages/explicit-media
+
+<RouteHeader method="PATCH" url="/messages/explicit-media">
+  Bulk Scan Explicit Media
+</RouteHeader>
+
+Scans for explicit media in a list of messages in multiple channels. Returns a 204 empty response on success. Fires multiple [Message Update](/topics/gateway-events#message-update) Gateway events.
+
+Similar to [Scan Explicit Media](#scan-explicit-media), but allows scanning messages in multiple channels at once. Invalid channel and message IDs are ignored.
+
+###### JSON Params
+
+| Field    | Type                                                            | Description                  |
+| -------- | --------------------------------------------------------------- | ---------------------------- |
+| messages | array[[bulk scan message](#bulk-scan-message-structure) object] | The messages to scan (1-100) |
+
+###### Bulk Scan Message Structure
+
+| Field      | Type      | Description                             |
+| ---------- | --------- | --------------------------------------- |
+| channel_id | snowflake | The ID of the channel the message is in |
+| message_id | snowflake | The ID of the message to scan           |
+
+<RouteHeader method="POST" url="/attachments/sender-report-false-positive">
+  Report Sent Explicit Content False Positive
+</RouteHeader>
+
+Reports an explicit content false positive for a list of uploaded attachments. Returns a 204 empty response on success.
+
+This endpoint should be used after the user attempts to send an message containing attachments but receives a 400 bad request with a [`20009` JSON error code](/topics/opcodes-and-status-codes#json-error-codes).
+
+<Alert type="info">
+
+The error structure for `20009` will contain an additional `attachments` key with [attachment](#attachment-object) objects for each attachment that was flagged as explicit content.
+
+</Alert>
+
+###### JSON Params
+
+| Field          | Type             | Description                                                                      |
+| -------------- | ---------------- | -------------------------------------------------------------------------------- |
+| channel_id     | snowflake        | The ID of the channel the message is in                                          |
+| message_id     | snowflake        | A locally-generated ID representing the message                                  |
+| attachment_ids | array[snowflake] | The IDs of the attachments that were flagged as explicit content (max 100)       |
+| filenames      | array[string]    | The filenames of the attachments that were flagged as explicit content (max 100) |
+
+<RouteHeader method="POST" url="/attachments/report-false-positive">
+  Report Explicit Content False Positive
+</RouteHeader>
+
+Reports an explicit content false positive for a message. Returns a 204 empty response on success.
+
+This endpoint should be used upon viewing a message that was flagged as explicit content but was determined to be a false positive.
+
+##### JSON Params
+
+| Field          | Type             | Description                                                                                                                              |
+| -------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| channel_id     | snowflake        | The ID of the channel the message is in                                                                                                  |
+| message_id     | snowflake        | The ID of the message that was flagged as explicit content                                                                               |
+| attachment_ids | array[snowflake] | The IDs of the attachments that were flagged as explicit content (max 100)                                                               |
+| embed_ids      | array[string]    | Locally generated IDs representing the embeds that were flagged as explicit content, in the format `lodash.uniqueId("embed_")` (max 100) |
 
 <RouteHeader method="POST" url="/channels/{channel.id}/messages/{message.id}/ack">
   Acknowledge Message
@@ -1755,19 +2033,20 @@ Starting with API v10, the `attachments` array must contain all attachments that
 
 ###### JSON/Form Params
 
-| Field                       | Type                                                                                  | Description                                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| content?                    | ?string                                                                               | The message contents (up to 2000 characters)                                                   |
-| embeds? ^2^                 | ?array[[embed](#embed-object) object]                                                 | Embedded `rich` content (max 6000 characters)                                                  |
-| embed? ^2^ **(deprecated)** | ?[embed](#embed-object) object                                                        | Embedded `rich` content (max 6000 characters), deprecated in favor of `embeds`                 |
-| allowed_mentions?           | ?[allowed mention](#allowed-mentions-object) object                                   | Allowed mentions for the message                                                               |
-| components? ^2^             | ?array[[message component](/interactions/message-components#component-object) object] | The components to include with the message                                                     |
-| flags?                      | ?integer                                                                              | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS` can be set)    |
-| files[n] ^1^                | ?file contents                                                                        | Contents of the file being sent                                                                |
-| payload_json ^1^            | ?string                                                                               | JSON-encoded body of non-file params                                                           |
-| attachments ^1^             | ?array[partial [attachment](#attachment-object) object]                               | Partial attachment objects with `filename` and `description`, including attached files to keep |
+| Field             | Type                                                                       | Description                                                                                    |
+| ----------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| content?          | ?string                                                                    | The message contents (up to 2000 characters)                                                   |
+| embeds? ^2^       | ?array[[embed](#embed-object) object]                                      | Embedded `rich` content (max 6000 characters)                                                  |
+| allowed_mentions? | ?[allowed mention](#allowed-mentions-object) object                        | Allowed mentions for the message                                                               |
+| components? ^2^   | ?array[[message component](/resources/components#component-object) object] | The components to include with the message                                                     |
+| flags?            | ?integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS` can be set)    |
+| files[n] ^1^      | ?file contents                                                             | Contents of the file being sent                                                                |
+| payload_json ^1^  | ?string                                                                    | JSON-encoded body of non-file params                                                           |
+| attachments ^1^   | ?array[partial [attachment](#attachment-object) object]                    | Partial attachment objects with `filename` and `description`, including attached files to keep |
 
 ^1^ See [Uploading Files](/reference#uploading-files) for details.
+
+^2^ Cannot be used by user accounts.
 
 <RouteHeader method="PATCH" url="/users/{user.id}/messages/{message.id}" supportsOAuth2="dm_channels.messages.write">
   Edit DM Message
@@ -1777,7 +2056,7 @@ Edits a previously sent message. Messages can be edited by the original message 
 
 <Alert type="warn">
 
-This endpoint is only usable with an OAuth2 access token with the `dm_channels.messages.write` scope.
+This endpoint is only usable with an OAuth2 access token with the `dm_channels.messages.write` or `activities.invites.write` scope.
 
 </Alert>
 
@@ -1793,7 +2072,7 @@ This endpoint is only usable with an OAuth2 access token with the `dm_channels.m
 
 Deletes a message. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel and trying to delete a message that was not sent by the current user. Returns a 204 empty response on success. Fires a [Message Delete](/topics/gateway-events#message-delete) Gateway event.
 
-<RouteHeader method="POST" url="/users/@me/messages/{message.id}/delete" supportsOAuth2="dm_channels.messages.write">
+<RouteHeader method="DELETE" url="/users/@me/messages/{message.id}" supportsOAuth2="dm_channels.messages.write">
   Delete DM Message
 </RouteHeader>
 
@@ -1831,29 +2110,55 @@ This endpoint is not usable by user accounts.
 | -------- | ---------------- | --------------------------------- |
 | messages | array[snowflake] | The message IDs to delete (2-100) |
 
-<RouteHeader method="GET" url="/channels/{channel.id}/pins">
-  Get Pinned Messages
+<RouteHeader method="GET" url="/channels/{channel.id}/messages/pins">
+  Get Message Pins
 </RouteHeader>
 
-Returns all pinned messages in the channel as an array of [message](#message-object) objects without the `reactions` key.
+Returns all message pins in the channel. Requires the `VIEW_CHANNEL` permission.
 
-<RouteHeader method="PUT" url="/channels/{channel.id}/pins/{message.id}" supportsAuditReason>
-  Pin Message
-</RouteHeader>
+<Alert type="note">
 
-Pins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success.
-
-<Alert type="warn">
-
-The max pinned messages is 50.
+If the current user does not have `READ_MESSAGE_HISTORY` permission, an empty ``items`` array will be returned.
 
 </Alert>
 
-<RouteHeader method="DELETE" url="/channels/{channel.id}/pins/{message.id}" supportsAuditReason>
+###### Query String Params
+
+| Field   | Type              | Description                                     |
+| ------- | ----------------- | ----------------------------------------------- |
+| before? | ISO8601 timestamp | Get messages pinned before this timestamp       |
+| limit?  | integer           | Max number of pins to return (1-50, default 50) |
+
+###### Response Body
+
+| Field    | Type                                             | Description                                                                                       |
+| -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| items    | array[[message pin](#message-pin-object) object] | The message pins in the channel                                                                   |
+| has_more | boolean                                          | Whether there are potentially additional message pins that could be returned on a subsequent call |
+
+<RouteHeader method="GET" url="/channels/{channel.id}/pins" deprecated>
+  Get Pinned Messages
+</RouteHeader>
+
+Returns up to 50 pinned messages in the channel as an array of [message](#message-object) objects without the `reactions` key.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Get Message Pins](#get-message-pins).
+
+</Alert>
+
+<RouteHeader method="PUT" url="/channels/{channel.id}/messages/pins/{message.id}" supportsAuditReason>
+  Pin Message
+</RouteHeader>
+
+Pins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success. Fires a [Channel Pins Update](/topics/gateway-events#channel-pins-update) Gateway event.
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/messages/pins/{message.id}" supportsAuditReason>
   Unpin Message
 </RouteHeader>
 
-Unpins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success.
+Unpins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success. Fires a [Channel Pins Update](/topics/gateway-events#channel-pins-update) Gateway event.
 
 <RouteHeader method="POST" url="/channels/{channel.id}/pins/ack">
   Acknowledge Pinned Messages
@@ -1993,7 +2298,7 @@ Returns a [message](#message-object) object. Fires a [Message Update](/topics/ga
   Create Poll Vote
 </RouteHeader>
 
-Submits a poll vote for the current user. Returns a 204 empty response on success. Fires multiple [Message Poll Vote Add](/topics/gateway-events#message-poll-vote-add) and optionally [Message Poll Vote Remove](/topics/gateway-events#message-poll-vote-remove) Gateway events.
+Submits a poll vote for the current user. Returns a 204 empty response on success. May fire multiple [Message Poll Vote Add](/topics/gateway-events#message-poll-vote-add) and [Message Poll Vote Remove](/topics/gateway-events#message-poll-vote-remove) Gateway events.
 
 ###### JSON Params
 

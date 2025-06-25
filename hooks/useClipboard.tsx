@@ -14,6 +14,7 @@ export function useClipboard(text: string, duration = 2500) {
       await navigator.clipboard.writeText(text);
       setStatus(CopyStatus.SUCCESS);
     } catch (error) {
+      console.error("Failed to copy text to clipboard:", error);
       setStatus(CopyStatus.ERROR);
     }
   }, [text]);

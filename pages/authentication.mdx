@@ -135,7 +135,7 @@ When first logging into an account (without MFA enabled) from a new location, Di
 If logging in via email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-ip#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
 
 If logging in via phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
-A verification token should be retrieved by verifying the phone number. {/* todo: link this here */}
+A verification token should be retrieved by [verifying the phone number](/topics/phone-verification#verify-phone-number).
 
 After [IP authorization](#authorize-ip-address) with this verification token, the login request should be retried. A new CAPTCHA challenge should not be required.
 
@@ -158,13 +158,13 @@ Suspended authentication tokens cannot be used as a regular authentication token
 
 ###### JSON Params
 
-| Field             | Type    | Description                                                                                                                                |
-| ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| login             | string  | The user's email or E.164-formatted phone number                                                                                           |
-| password          | string  | The user's password (8-72 characters)                                                                                                      |
-| undelete? ^1^     | boolean | Whether to undelete a [self-disabled](/resources/user#disable-user) or [self-deleted](/resources/user#delete-user) account (default false) |
-| login_source?     | ?string | The [source of the login request](#login-source)                                                                                           |
-| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request                                                                               |
+| Field             | Type    | Description                                                                                                                                                |
+| ----------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| login             | string  | The user's email or E.164-formatted phone number                                                                                                           |
+| password          | string  | The user's password (8-72 characters)                                                                                                                      |
+| undelete? ^1^     | boolean | Whether to undelete a [self-disabled](/resources/user#disable-user-account) or [self-deleted](/resources/user#delete-user-account) account (default false) |
+| login_source?     | ?string | The [source of the login request](#login-source)                                                                                                           |
+| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request                                                                                               |
 
 ^1^ If you get an account disabled (`20013`) or marked for deletion (`20011`) [JSON error code](/topics/opcodes-and-status-codes#json-error-codes), you can undelete the account by setting this parameter.
 
@@ -201,10 +201,10 @@ Where a login is initiated from outside of the normal login flow.
 
 A partial settings object to bootstrap the client with.
 
-| Field  | Type   | Description                                                                           |
-| ------ | ------ | ------------------------------------------------------------------------------------- |
-| locale | string | The [language option](/reference#locales) chosen by the user                          |
-| theme  | string | The [client theme](/resources/user-settings#legacy-client-theme) selected by the user |
+| Field  | Type   | Description                                                                                                   |
+| ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
+| locale | string | The [language option](/reference#locales) chosen by the user                                                  |
+| theme  | string | The [client theme](/resources/user-settings#theme) selected by the user (only `dark` or `light` are returned) |
 
 ###### Login Required Action Type
 
@@ -238,8 +238,7 @@ Actions the user must complete after a successful login.
   "ticket": "ODUyODkyMjk3NjYxOTA2OTkz.H2Rpq0.WrhGhYEhM3lHUPN61xF6JcQKwVutk8fBvcoHjo",
   "backup": true,
   "totp": true,
-  "webauthn": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}",
-  "required_actions": ["update_password"]
+  "webauthn": "{\"publicKey\":{\"challenge\":\"a8a1cHP7_zYheggFG68zKUkl8DwnEqfKvPE-GOMvhss\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"izrvF80ogrfg9dC3RmWWwW1VxBVBG0TzJVXKOJl__6FvMa555dH4Trt2Ub8AdHxNLkQsc0unAGcn4-hrJHDKSO\"}],\"userVerification\":\"preferred\"}}"
 }
 ```
 
@@ -257,7 +256,7 @@ To verify using SMS MFA, you must first send a code to the user's phone number u
 
 <Alert type="warn">
 
-If the user's account is disabled by Discord, the login request will fail with a special error response body, similar to a success response:
+If the user's account is suspended by Discord, the login request will fail with a special error response body, similar to a success response:
 
 ```json
 { "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e" }
@@ -339,7 +338,7 @@ If this endpoint is requested with a valid authentication token, a success respo
 
 <Alert type="warn">
 
-If the user's account is disabled by Discord, the login request will fail with a special error response body, similar to a success response:
+If the user's account is suspended by Discord, the login request will fail with a special error response body, similar to a success response:
 
 ```json
 { "suspended_user_token": "ODUyODkyMjk3NjYxOTA2OTkz.Hcj0Nl.YEJSsjeq_vJKLpOofd5QMksqw32e" }
@@ -446,8 +445,8 @@ Once the user is registered, the client should store the authentication token to
 
 ### Phone Registration
 
-Clients can alternatively register an account using a phone number. To do so, the client must first use the [Register by Phone Number](#register-by-phone-number) endpoint to send a verification code to the user's phone number.
-Then, the client must verify the phone number using the received code before completing the registration using the [Register Account](#register-account) endpoint as usual. {/* todo: link this here */}
+Clients can alternatively register an account using a phone number. To do so, the client must first use the [Register Account with Phone Number](#register-account-with-phone-number) endpoint to send a verification code to the user's phone number.
+Then, the client must [verify the phone number](/topics/phone-verification#verify-phone-number) using the received code before completing the registration using the [Register Account](#register-account) endpoint as usual.
 
 ### Endpoints
 
@@ -477,7 +476,7 @@ Suspicious account creations may be flagged by Discord and require [additional v
 | username? ^1^                 | string       | The username to register (default random)                                                                                            |
 | global_name? ^1^              | ?string      | The display name to register                                                                                                         |
 | email?                        | string       | The user's email address                                                                                                             |
-| phone_token?                  | string       | The phone number verification token received from the [phone registration flow](#phone-registration)                                 |
+| phone_token?                  | string       | The phone verification token received from the [phone registration flow](#phone-registration)                                        |
 | password?                     | string       | The user's password (8-72 characters)                                                                                                |
 | date_of_birth?                | ISO8601 date | The user's date of birth                                                                                                             |
 | fingerprint? ^2^              | string       | The fingerprint to use for registration                                                                                              |
@@ -512,10 +511,10 @@ Suspicious account creations may be flagged by Discord and require [additional v
 ```
 
 <RouteHeader method="POST" url="/auth/register/phone" unauthenticated>
-  Register by Phone Number
+  Register Account with Phone Number
 </RouteHeader>
 
-Sends a verification code to the user's phone number to register an account. Returns a 204 empty response on success. The verification code should be first used to verify the phone number before [completing the registration](#register-account). {/* todo: link this here */}
+Sends a verification code to the user's phone number to register an account. Returns a 204 empty response on success. The verification code should be first used to [verify the phone number](/topics/phone-verification#verify-phone-number) before [completing the registration](#register-account).
 
 ###### JSON Params
 
@@ -556,6 +555,25 @@ Returns the location metadata for the user's IP address.
   }
 }
 ```
+
+<RouteHeader method="POST" url="/auth/password/validate" unauthenticated>
+  Get Password Strength
+</RouteHeader>
+
+Validates the strength of a password and returns a score based on its complexity. This is used to ensure that the user's password meets Discord's security requirements.
+
+###### JSON Params
+
+| Field    | Type   | Description                                |
+| -------- | ------ | ------------------------------------------ |
+| password | string | The password to validate (8-72 characters) |
+
+###### Response Body
+
+| Field             | Type    | Description                                                                |
+| ----------------- | ------- | -------------------------------------------------------------------------- |
+| valid             | boolean | Whether the password is valid according to Discord's security requirements |
+| password_strength | integer | The password strength score (0-4)                                          |
 
 <RouteHeader method="GET" url="/unique-username/username-suggestions-unauthed" unauthenticated>
   Get Unique Username Suggestions
@@ -601,9 +619,9 @@ See the [Usernames and Nicknames section](/resources/user#usernames-and-nickname
 
 ###### Response Body
 
-| Field | Type    | Description                   |
-| ----- | ------- | ----------------------------- |
-| taken | boolean | Whether the username is taken |
+| Field | Type     | Description                   |
+| ----- | -------- | ----------------------------- |
+| taken | ?boolean | Whether the username is taken |
 
 ###### Example Response
 
@@ -651,10 +669,10 @@ Initiates the password reset process for the given email or phone number. Return
 
 <Alert type="info">
 
-If providing an email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/reset#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiMTI3LjAuMC4x8J+RvSJd.kdI8zppMIeTZsIBva3zZslaz_58`).
+If providing an email, the user will receive a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/reset#token=eyJpZCI6ODUyODkyMjk3NjYxOTA2OTkzLCJlbWFpbCI6Im5lbGx5QGRpc2NvcmRhcHAuY29tIn0.Z6pQDg.pKCZBaaiodflO6FZhdttm6B_z74`).
 
 If providing a phone number, the request will fail with a [`70007` JSON error code](/topics/opcodes-and-status-codes#json-error-codes), and the user will receive a verification code via SMS.
-A verification token should be retrieved by verifying the phone number. {/* todo: link this here */}
+A verification token should be retrieved by [verifying the phone number](/topics/phone-verification#verify-phone-number).
 
 If the user is ineligible to reset their password via phone number, the phone number verification request will fail with a [`70009` JSON error code](/topics/opcodes-and-status-codes#json-error-codes) and the user will receive a link to reset their password via email.
 
@@ -687,6 +705,7 @@ To complete the password reset, the client must retry the request with the `tick
 | token     | string | The password reset token received from the email or phone number verification |
 | password  | string | The user's new password (8-72 characters)                                     |
 | source?   | string | The source path the password reset was initiated from (e.g. `/reset`)         |
+| method?   | string | The [authenticator type](#authenticator-type) to use for MFA verification     |
 | ticket?   | string | The MFA ticket received from the previous request                             |
 | code? ^1^ | string | The MFA code (TOTP, SMS, backup, or WebAuthn) to be verified                  |
 

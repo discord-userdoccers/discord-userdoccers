@@ -50,13 +50,16 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
 
 ###### Premium Referral Eligibility Structure
 
-| Field                | Type                    | Description                                                                          |
-| -------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
-| referrals_remaining  | integer                 | The amount of referrals remaining                                                    |
-| sent_user_ids        | array[snowflake]        | The IDs of users that have been referred                                             |
-| refresh_at           | ?ISO8601 timestamp      | When the referral count will refresh                                                 |
-| has_eligible_friends | boolean                 | Whether the user has friends that are eligible for a referral                        |
-| recipient_status     | map[snowflake, integer] | The [redemption status](#premium-referral-recipient-status) of each referred user ID |
+| Field                      | Type                    | Description                                                                          |
+| -------------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| referrals_remaining        | integer                 | The amount of referrals remaining                                                    |
+| sent_user_ids              | array[snowflake]        | The IDs of users that have been referred                                             |
+| refresh_at                 | ?ISO8601 timestamp      | When the referral count will refresh                                                 |
+| has_eligible_friends       | boolean                 | Whether the user has friends that are eligible for a referral                        |
+| recipient_status           | map[snowflake, integer] | The [redemption status](#premium-referral-recipient-status) of each referred user ID |
+| is_eligible_for_incentive  | boolean                 | Whether the user is eligible for a personal discount upon referral redemption        |
+| is_qualified_for_incentive | boolean                 | Whether the user will receive an incentivized discount on their next Nitro purchase  |
+| referral_incentive_status  | integer                 | The [incentive status](#premium-referral-incentive-status) of the user               |
 
 ###### Premium Referral Recipient Status
 
@@ -64,6 +67,16 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
 | ----- | -------- | -------------------------------------------- |
 | 1     | REDEEMED | The recipient has redeemed the referral      |
 | 2     | PENDING  | The recipient has yet to redeem the referral |
+
+###### Premium Referral Incentive Status
+
+| Value | Name         | Description                                                                 |
+| ----- | ------------ | --------------------------------------------------------------------------- |
+| 0     | NOT_ELIGIBLE | The user is not eligible for an incentive                                   |
+| 1     | ELIGIBLE     | The user is eligible for an incentive                                       |
+| 2     | QUALIFIED    | The user will receive an incentivized discount on their next Nitro purchase |
+| 3     | COOLDOWN     | The user is on cooldown and cannot receive an incentive                     |
+| 4     | UNAPPLIED    | The user has not applied their incentive yet                                |
 
 ###### Example Premium Referral Eligibility
 
@@ -77,7 +90,10 @@ Premium referrals, or Nitro trials, allow Nitro subscribers to share up to three
     "159985870458322944": 2,
     "563434444321587202": 2,
     "296776625432035328": 2
-  }
+  },
+  "is_eligible_for_incentive": false,
+  "is_qualified_for_incentive": false,
+  "referral_incentive_status": 0
 }
 ```
 
@@ -107,6 +123,18 @@ Only users with an applicable premium (Nitro) plan can create referrals.
 
 </Alert>
 
+<RouteHeader method="GET" url="/users/@me/referrals/incentive-eligibility">
+  Get Premium Referral Incentive Eligibility
+</RouteHeader>
+
+Returns a subset of the [premium referral eligibility](#premium-referral-eligibility-object) object for the user with their eligibility for a personal discount upon referral redemption.
+
+###### Response Body
+
+| Field                     | Type    | Description                                                                   |
+| ------------------------- | ------- | ----------------------------------------------------------------------------- |
+| is_eligible_for_incentive | boolean | Whether the user is eligible for a personal discount upon referral redemption |
+
 <RouteHeader method="POST" url="/users/@me/referrals/eligible-users">
   Get Premium Referral Eligible Users
 </RouteHeader>
@@ -127,24 +155,6 @@ Returns an object containing a list of users who are eligible to receive a refer
 | ----------- | --------------------------------------------------------- | ------------------------------- |
 | users       | array[partial [user](/resources/user#user-object) object] | The eligible users              |
 | next_index? | integer                                                   | The next index to paginate from |
-
-<RouteHeader method="POST" url="/users/@me/referrals/{user.id}/preview">
-  Preview Premium Referral
-</RouteHeader>
-
-Checks whether you can send a referral to the user specified.
-
-<Alert type="info">
-
-Only users with an applicable premium (Nitro) plan can create referrals.
-
-</Alert>
-
-###### Response Body
-
-| Field       | Type    | Description                                           |
-| ----------- | ------- | ----------------------------------------------------- |
-| is_eligible | boolean | Whether you can send a referral to the user specified |
 
 <RouteHeader method="POST" url="/users/@me/referrals/{user.id}">
   Create Premium Referral

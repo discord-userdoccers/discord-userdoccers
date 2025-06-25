@@ -3,6 +3,7 @@ import path from "path";
 import * as github from "@actions/core";
 import chalk from "chalk";
 import { JSDOM } from "jsdom";
+
 const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE! : process.cwd();
 
 function importDirectory(directory: string, extension: string, subdirectories = true) {

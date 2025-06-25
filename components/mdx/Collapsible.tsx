@@ -1,7 +1,7 @@
 import { createElement, PropsWithChildren, ReactNode, useMemo, useState } from "react";
-import Paragraph from "./Paragraph";
-import MDX_ICONS from "./icons";
 import Chevron from "../icons/Chevron";
+import MDX_ICONS from "./icons";
+import Paragraph from "./Paragraph";
 
 interface CollapsibleProps {
   icon?: Exclude<React.ReactNode, string> | keyof typeof MDX_ICONS;

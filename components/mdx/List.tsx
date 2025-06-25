@@ -1,6 +1,7 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
+import React from "react";
 
-export function ListItem(props: JSX.IntrinsicElements["li"]) {
+export function ListItem(props: React.JSX.IntrinsicElements["li"]) {
   return <li className="mb-4 ml-4 mt-2" {...props} />;
 }
 
@@ -15,10 +16,10 @@ function List({ className, as: As, ...props }: ListProps) {
   return <As className={classes} {...props} />;
 }
 
-export function UnorderedList(props: JSX.IntrinsicElements["ul"]) {
+export function UnorderedList(props: React.JSX.IntrinsicElements["ul"]) {
   return <List as="ul" className="list-disc" {...props} />;
 }
 
-export function OrderedList(props: JSX.IntrinsicElements["ol"]) {
+export function OrderedList(props: React.JSX.IntrinsicElements["ol"]) {
   return <List as="ol" className="list-decimal" {...props} />;
 }
