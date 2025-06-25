@@ -55,6 +55,9 @@ export default async function errorCodes(req: Request, res: Response) {
   const gistContent = await data.text();
 
   const errorCodes = parseContent(gistContent);
+  await new Promise((res) => {
+    setTimeout(res, 1000);
+  });
   return Response.json(errorCodes, {
     headers: {
       "Cache-Control": "public, max-age=1800",
