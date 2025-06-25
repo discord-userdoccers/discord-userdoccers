@@ -35,6 +35,9 @@ const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename
   .map((file) => file.slice(root.length + 1, -4).replaceAll(sep, "/"))
   .sort((a, b) => a.split("/").length - b.split("/").length);
 
+// SPECIAL ERROR CODES PAGE
+files.push("datamining/errors");
+
 // SITEMAP
 
 const BASE_DOMAIN = process.env.CF_PAGES_URL ?? "docs.discord.food";
@@ -74,7 +77,21 @@ for (const file of files) {
     section = "__ROOT__";
   }
 
-  const parsed = await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
+  const parsed =
+    file === "datamining/errors"
+      ? {
+          content: "",
+          data: {
+            "name": "Error Codes",
+            "sort": 1,
+            "sort-name": "error-codes",
+            "show-sublinks": false,
+            // TODO: fetch it here and create sublinks
+            "sublinks": [],
+            "max-sublink-level": 3,
+          },
+        }
+      : await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
 
   navigationLinks[section] ??= {
     name: section ? section.replaceAll("-", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()) : null,
