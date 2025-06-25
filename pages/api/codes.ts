@@ -39,11 +39,9 @@ function parseContent(content: string) {
   return Object.values(errorCodes);
 }
 
-export default async function errorCodes(req: NextApiRequest, res: NextApiResponse) {
+export default async function errorCodes(req: Request, res: Response) {
   if (req.method !== "GET") {
-    res.statusCode = 405;
-    res.send("Method Not Allowed");
-    return;
+    return new Response("Method Not Allowed", { status: 405 });
   }
 
   // fetch raw gist
@@ -51,17 +49,15 @@ export default async function errorCodes(req: NextApiRequest, res: NextApiRespon
 
   if (!data.ok) {
     console.error("GIST ERROR -", data.statusText);
-    res.statusCode = 502;
-    res.send("Bad Gateway");
-    return;
+    return new Response("Bad Gateway", { status: 502 });
   }
 
   const gistContent = await data.text();
 
   const errorCodes = parseContent(gistContent);
-  res.statusCode = 200;
-  // 30 mins
-  res.setHeader("Cache-Control", "public, max-age=1800");
-
-  res.json(errorCodes);
+  return Response.json(errorCodes, {
+    headers: {
+      "Cache-Control": "public, max-age=1800",
+    },
+  });
 }
