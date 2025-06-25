@@ -4,6 +4,8 @@ const GIST_URL = "https://gist.githubusercontent.com/Dziurwa14/de2498e5ee28d2089
 
 const ERRORS_REGEX = /\|\s*(\d{1,7})\s*\|\s*(.+)\|/;
 
+export const runtime = "edge";
+
 // modified from lightbulb/cogs/aliens.py#L231
 function parseContent(content: string) {
   const errorCodes: Record<number, { name: string | null; index: number; codes: Record<number, string> }> = {};
