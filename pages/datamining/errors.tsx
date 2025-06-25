@@ -4,8 +4,9 @@ import { H1, H3 } from "../../components/mdx/Heading";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "../../components/mdx/Table";
 
 export default function Errors() {
-  const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string> }[]>("/api/codes", (url) =>
-    fetch(url).then((res) => res.json()),
+  const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string> }[]>(
+    "/api/codes",
+    (url: string) => fetch(url).then((res) => res.json()),
   );
 
   return (
