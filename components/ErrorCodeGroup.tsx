@@ -7,10 +7,12 @@ export default function ErrorCodeGroup({
   name,
   codes,
   index,
+  search,
 }: {
   name: string;
   codes: Record<string, string>;
   index: number;
+  search: string;
 }) {
   const [showTable, setShowTable] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
@@ -29,6 +31,17 @@ export default function ErrorCodeGroup({
       }
     }
   }, [sectionRef, window.location.hash]);
+
+  const filteredCodes = Object.entries(codes)
+    .filter(([K, V]) => K.includes(search) || V.toLowerCase().includes(search))
+    .map(([K, V]) => (
+      <TableRow key={K}>
+        <TableData>{K}</TableData>
+        <TableData>{V}</TableData>
+      </TableRow>
+    ));
+
+  if (!filteredCodes.length) return null;
 
   return (
     <section ref={sectionRef}>
@@ -52,14 +65,7 @@ export default function ErrorCodeGroup({
               <TableHeader>Message</TableHeader>
             </TableRow>
           </TableHead>
-          <tbody>
-            {Object.entries(codes).map(([K, V]) => (
-              <TableRow key={K}>
-                <TableData>{K}</TableData>
-                <TableData>{V}</TableData>
-              </TableRow>
-            ))}
-          </tbody>
+          <tbody>{filteredCodes}</tbody>
         </Table>
       )}
     </section>

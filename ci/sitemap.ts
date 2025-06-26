@@ -85,9 +85,15 @@ for (const file of files) {
             "name": "Error Codes",
             "sort": 1,
             "sort-name": "error-codes",
-            "show-sublinks": false,
+            "show-sublinks": true,
             // TODO: fetch it here and create sublinks
-            "sublinks": [],
+            "sublinks": [
+              {
+                link: "submit",
+                name: "Submit an Error",
+                level: 1,
+              },
+            ],
             "max-sublink-level": 3,
           },
         }
