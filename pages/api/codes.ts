@@ -42,19 +42,20 @@ function parseContent(content: string) {
 }
 
 export default async function errorCodes(req: Request) {
+  // fetch raw gist
+  const data = await fetch(GIST_URL);
+
+  if (!data.ok) {
+    console.error("GIST ERROR -", data.statusText);
+    return new Response("Bad Gateway", { status: 502 });
+  }
+
+  const gistContent = await data.text();
+
+  const errorCodes = parseContent(gistContent);
+
   switch (req.method) {
     case "GET": {
-      // fetch raw gist
-      const data = await fetch(GIST_URL);
-
-      if (!data.ok) {
-        console.error("GIST ERROR -", data.statusText);
-        return new Response("Bad Gateway", { status: 502 });
-      }
-
-      const gistContent = await data.text();
-
-      const errorCodes = parseContent(gistContent);
       return Response.json(errorCodes, {
         headers: {
           "Cache-Control": "public, max-age=1800",
@@ -79,29 +80,41 @@ export default async function errorCodes(req: Request) {
         return new Response("Missing Required Field: 'message'", { status: 400 });
       }
 
+      if (typeof submissionType !== "string" || typeof code !== "string") {
+        return new Response("Bad Request", { status: 400 });
+      }
+
+      // Given code like 10007, get the group (first digit(s) before the last 4 digits)
+      const originalGroup = errorCodes.find((x) => x.index === parseInt(code.padStart(7, "0").slice(0, 3)));
+      const originalCode = originalGroup?.codes[parseInt(code)];
+
       await fetch(process.env.ERROR_CODES_WEBHOOK, {
         method: "POST",
         body: JSON.stringify({
           embeds: [
             {
-              title: "New Submission",
+              color: submissionType === "new" ? 0x90ff43 : 0xffa500,
+              title: `${submissionType[0].toUpperCase()}${submissionType.slice(1)} Error ${code}`,
               description: reason,
               fields: [
-                {
-                  name: "Error Code",
-                  value: code,
-                  inline: true,
-                },
-                {
-                  name: "Message",
-                  value: message,
-                  inline: true,
-                },
-                {
-                  name: "Submission Type",
-                  value: submissionType,
-                },
-              ],
+                originalCode
+                  ? {
+                      name: "Original Message",
+                      value: originalCode,
+                      inline: true,
+                    }
+                  : null,
+                message
+                  ? {
+                      name: "New Message",
+                      value: message,
+                      inline: true,
+                    }
+                  : null,
+              ].filter(Boolean),
+              footer: {
+                text: `Group: ${originalGroup?.name || "Unknown"}`,
+              },
             },
           ],
         }),

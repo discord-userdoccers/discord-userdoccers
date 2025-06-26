@@ -106,26 +106,18 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     </datalist>
                   </div>
 
-                  <div>
+                  <div className="hidden" aria-hidden hidden>
                     <label htmlFor="submissionType" className={labelClass}>
                       Submission Type
                     </label>
-                    <select
+                    <input
+                      type="text"
                       id="submission_type"
                       name="submission_type"
-                      value={submissionType}
-                      onChange={(e) => setSubmissionType(e.target.value)}
+                      value={errorCode in props.codes ? "update" : "new"}
                       className={inputClass}
-                    >
-                      <option value="">Choose an option</option>
-                      {errorCode in props.codes && (
-                        <>
-                          <option value="update">Update Error Message</option>
-                          <option value="delete">Remove Error Code</option>
-                        </>
-                      )}
-                      {errorCode && !(errorCode in props.codes) && <option value="new">New Error Code</option>}
-                    </select>
+                      disabled
+                    />
                   </div>
 
                   {["update", "new"].includes(submissionType) && (
@@ -151,13 +143,9 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                         Reason for Change
                       </label>
                       <p className="text-sm text-text-light/70 dark:text-text-dark/80 mb-3">
-                        {submissionType === "update"
+                        {errorCode in props.codes
                           ? "Explain why this error code is being updated, including endpoints or features if applicable."
-                          : submissionType === "new"
-                            ? "Describe where this error code is used, e.g. the endpoint you encountered it at or the feature in the Discord app you were using."
-                            : submissionType === "delete"
-                              ? "Explain why this error code is being removed."
-                              : ""}{" "}
+                          : "Describe where this error code is used, e.g. the endpoint you encountered it at or the feature in the Discord app you were using."}{" "}
                         You can include a way for us to contact you directly, such as a Discord ID, if you want.
                       </p>
 
