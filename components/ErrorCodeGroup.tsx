@@ -29,7 +29,7 @@ export default function ErrorCodeGroup({
         sectionRef.current.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [sectionRef, window.location.hash, index, name]);
+  }, [sectionRef, index, name]);
 
   const processedCodes = useMemo(
     () =>
@@ -57,7 +57,7 @@ export default function ErrorCodeGroup({
         .map(([code, { message, isUnknown }]) => (
           <ErrorCode key={code} code={code} message={message} isUnknown={isUnknown} />
         )),
-    [codes, unknownOnly, search],
+    [search, unknownOnly, processedCodes],
   );
 
   if (filteredCodes.length === 0) {
