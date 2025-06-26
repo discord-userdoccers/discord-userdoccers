@@ -95,7 +95,7 @@ export default function ErrorCodeGroup({
         </H3>
       </button>
       {showTable && (
-        <Table id={tableId} aria-describedby={headingId}>
+        <Table id={tableId} aria-describedby={headingId} useCodegen={false}>
           <caption className="sr-only">Error codes for {name}</caption>
           <TableHead>
             <TableRow>
