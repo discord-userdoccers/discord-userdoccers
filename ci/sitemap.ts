@@ -51,7 +51,7 @@ const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename
   .map((file) => file.slice(root.length + 1, -4).replaceAll(sep, "/"))
   .sort((a, b) => a.split("/").length - b.split("/").length);
 
-// SPECIAL ERROR CODES PAGE
+// NATIVE NEXTJS PAGES
 files.push(...Object.keys(SPECIAL_PAGES));
 
 // SITEMAP

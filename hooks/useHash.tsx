@@ -8,7 +8,7 @@ export function HashProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash);
 
-    window.addEventListener("hashchange", handleHashChange); // Better compatibility
+    window.addEventListener("hashchange", handleHashChange);
 
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
