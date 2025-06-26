@@ -1,13 +1,37 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Chevron from "./icons/Chevron";
-import { H3 } from "./mdx/Heading";
+import { getNormalisedText, H3 } from "./mdx/Heading";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
 
-export default function ErrorCodeGroup({ name, codes }: { name: string; codes: Record<string, string> }) {
+export default function ErrorCodeGroup({
+  name,
+  codes,
+  index,
+}: {
+  name: string;
+  codes: Record<string, string>;
+  index: number;
+}) {
   const [showTable, setShowTable] = useState(true);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (sectionRef.current) {
+      // check if the hash is #{name} or #group-{name}
+      const hash = window.location.hash;
+      if (
+        hash === `#${getNormalisedText(name)}` ||
+        hash === `#group-${getNormalisedText(name)}` ||
+        hash === `#${index}` ||
+        hash === `#group-${index}`
+      ) {
+        sectionRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [sectionRef, window.location.hash]);
 
   return (
-    <section>
+    <section ref={sectionRef}>
       <button onClick={() => setShowTable(!showTable)}>
         <H3 useAnchor={false} useCopy={false} className="flex justify-start items-start cursor-pointer gap-2">
           <div>{name}</div>
@@ -30,8 +54,8 @@ export default function ErrorCodeGroup({ name, codes }: { name: string; codes: R
           </TableHead>
           <tbody>
             {Object.entries(codes).map(([K, V]) => (
-              <TableRow key={K} id={`error-code-${K}`}>
-                <TableData id={K}>{K}</TableData>
+              <TableRow key={K}>
+                <TableData>{K}</TableData>
                 <TableData>{V}</TableData>
               </TableRow>
             ))}

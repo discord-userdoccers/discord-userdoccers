@@ -3,7 +3,7 @@ import React, { isValidElement, ReactNode, use } from "react";
 import HyperlinkIcon from "../icons/Hyperlink";
 import TickIcon from "../icons/Tick";
 
-function getText(node: ReactNode): string {
+export function getNormalisedText(node: ReactNode): string {
   if (typeof node === "string") {
     return node.toLowerCase().replaceAll(" ", "-");
   }
@@ -14,11 +14,11 @@ function getText(node: ReactNode): string {
 
   if (isValidElement(node)) {
     const element = node as React.ReactElement<{ children?: ReactNode }>;
-    return getText(element.props.children ?? "");
+    return getNormalisedText(element.props.children ?? "");
   }
 
   if (Array.isArray(node)) {
-    return node.map((element) => getText(element)).join("");
+    return node.map((element) => getNormalisedText(element)).join("");
   }
 
   return "";
@@ -33,7 +33,7 @@ export interface HeadingProps {
 }
 
 function Heading({ as: As, className, children, useAnchor = true, useCopy = true }: HeadingProps) {
-  const anchor = getText(children);
+  const anchor = getNormalisedText(children);
   const classes = classNames("flex items-center text-black dark:text-white", className);
   const [showingCopied, setShowingCopied] = React.useState(false);
 
