@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import Alert from "../../components/Alert";
-import ErrorCodeGroup from "../../components/ErrorCodeGroup";
+import ErrorCodeGroup from "../../components/ErrorCodes";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
 import Emphasis from "../../components/mdx/Emphasis";
 import { H1 } from "../../components/mdx/Heading";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
+import { HashProvider } from "../../hooks/useHash";
 
 export default function Errors() {
   const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string>; index: number }[]>(
@@ -35,11 +36,7 @@ export default function Errors() {
     <ContentWrapper>
       <H1>Error Codes</H1>
 
-      <Paragraph
-        style={{
-          paddingRight: !codes ? "1rem" : undefined,
-        }}
-      >
+      <Paragraph>
         Along with the HTTP error code, the Discord API can also return more detailed error codes through a{" "}
         <InlineCode>code</InlineCode> key in the JSON error response. The response will also contain a{" "}
         <InlineCode>message</InlineCode> key containing a more friendly error string. Some of these errors may include
@@ -47,11 +44,7 @@ export default function Errors() {
         an <InlineCode>errors</InlineCode> object.
       </Paragraph>
 
-      <Paragraph
-        style={{
-          paddingRight: !codes ? "1rem" : undefined,
-        }}
-      >
+      <Paragraph>
         We maintain an unofficial updated list of error codes seen in the wild, which is significantly more
         comprehensive than the official documentation. You can find the gist that contains this list on{" "}
         <Anchor href="https://gist.github.com/Dziurwa14/de2498e5ee28d2089f095aa037957cbb/">GitHub</Anchor>. If you found
@@ -80,7 +73,7 @@ export default function Errors() {
             type="text"
             placeholder="Search error codes..."
             // FIXME(splatter): This is disgusting styling
-            className="DocSearch DocSearch-Button py-3.5 px-4 h-full w-full sm:min-w-64 md:min-w-96 rounded-md dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
+            className="DocSearch DocSearch-Button py-3.5 px-4 h-full w-full sm:min-w-64 md:min-w-96 rounded-md text-text-light dark:text-text-dark dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
             onChange={(e) => setSearch(e.target.value.toLowerCase())}
           />
 
@@ -102,14 +95,16 @@ export default function Errors() {
       {error ? <p className="italic mt-5">{error.message}</p> : null}
       {codes
         ? codes.map(({ name, codes, index }) => (
-            <ErrorCodeGroup
-              key={name}
-              name={name}
-              codes={codes}
-              index={index}
-              search={search}
-              unknownOnly={filterByUnknown}
-            />
+            <HashProvider>
+              <ErrorCodeGroup
+                key={name}
+                name={name}
+                codes={codes}
+                index={index}
+                search={search}
+                unknownOnly={filterByUnknown}
+              />
+            </HashProvider>
           ))
         : null}
     </ContentWrapper>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useHash } from "../hooks/useHash";
 import Chevron from "./icons/Chevron";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
@@ -19,17 +20,17 @@ export default function ErrorCodeGroup({
   unknownOnly: boolean;
 }) {
   const [showTable, setShowTable] = useState(true);
-  const sectionRef = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement>(null);
+  const hash = useHash();
 
   useEffect(() => {
-    if (sectionRef.current) {
+    if (ref.current) {
       // check if the hash is #{name} or #group-{name}
-      const hash = window.location.hash;
       if (hash === `#${getNormalisedText(name)}` || hash === `#${index}`) {
-        sectionRef.current.scrollIntoView({ behavior: "smooth" });
+        ref.current.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [sectionRef, index, name]);
+  }, [index, name, hash]);
 
   const processedCodes = useMemo(
     () =>
@@ -65,7 +66,7 @@ export default function ErrorCodeGroup({
   }
 
   return (
-    <section ref={sectionRef}>
+    <section ref={ref}>
       <button onClick={() => setShowTable(!showTable)}>
         <H3 useAnchor={false} useCopy={false} className="flex justify-start items-start cursor-pointer gap-2">
           <div>{name}</div>
@@ -94,8 +95,17 @@ export default function ErrorCodeGroup({
 }
 
 const ErrorCode = ({ code, message, isUnknown }: { code: string; message: string; isUnknown: boolean }) => {
+  const ref = useRef<HTMLTableRowElement>(null);
+  const hash = useHash();
+
+  useEffect(() => {
+    if (ref.current && hash === `#${code}`) {
+      ref.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [hash, code]);
+
   return (
-    <TableRow key={code}>
+    <TableRow key={code} ref={ref}>
       <TableData>{code}</TableData>
       <TableData>
         {isUnknown ? "⚠️" : ""} {message}
