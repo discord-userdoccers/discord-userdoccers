@@ -46,15 +46,13 @@ export default function Errors() {
 
       <Paragraph>
         We maintain an unofficial updated list of error codes seen in the wild, which is significantly more
-        comprehensive than the official documentation. You can find the gist that contains this list on{" "}
-        <Anchor href="https://gist.github.com/Dziurwa14/de2498e5ee28d2089f095aa037957cbb/">GitHub</Anchor>. If you found
-        an error which is not listed, you can submit it here with reproduction steps and we will add it to the list.
-        Thanks for your contribution!
+        comprehensive than the official documentation. If you found an error which is incorrect or not listed,
+        you can submit it here with reproduction steps, and we will add it to the list. Thanks for your contribution!
       </Paragraph>
 
       <Alert type="info">
         <Paragraph>
-          <Emphasis>Note:</Emphasis> Items marked with &apos;⚠️&apos; indicate unknown error messages. We appreciate
+          Items marked with &apos;⚠️&apos; indicate unknown error messages. We appreciate
           your help in identifying the correct message for these errors!
         </Paragraph>
       </Alert>
