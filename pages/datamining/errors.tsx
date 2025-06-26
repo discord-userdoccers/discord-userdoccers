@@ -6,6 +6,7 @@ import { SubmitErrorDialog } from "../../components/error-codes/ErrorSubmitDialo
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
 import { H1 } from "../../components/mdx/Heading";
+import { SearchIcon } from "../../components/mdx/icons/SearchIcon";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
 import { HashProvider } from "../../hooks/useHash";
@@ -58,48 +59,46 @@ export default function Errors() {
 
       <Alert type="info">
         <Paragraph>
-          Items marked with &apos;⚠️&apos; indicate unknown error messages. We appreciate your help in identifying the
-          correct message for these errors!
+          Items marked with &apos;⚠️&apos; indicate unknown error messages. Found one?{" "}
+          <Anchor role="button" onClick={() => setIsDialogOpen(true)} style={{ cursor: "pointer" }}>
+            Submit it here
+          </Anchor>
+          .
         </Paragraph>
       </Alert>
+      <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codesFlat} />
 
-      <div className="flex justify-start">
-        <button
-          className="inline-flex items-center gap-2 rounded-md px-4 md:px-5 py-2 md:py-2.5 text-lg/70 md:text-md/80 bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700"
-          onClick={() => {
-            setIsDialogOpen(true);
-          }}
-          aria-label="Submit a new error code for review"
-        >
-          Submit Error
-        </button>
-        <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codesFlat} />
+      <div className="flex flex-col flex-start gap-3 w-full">
+        <div className="flex w-full md:self-end items-center gap-2 px-1">
+          <input
+            type="checkbox"
+            id="filter-by-unknown"
+            checked={filterByUnknown}
+            aria-checked={filterByUnknown}
+            onChange={(e) => setFilterByUnknown(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
+          ></input>
 
-        <div className="flex flex-col lg:flex-row flex-start gap-1 lg:gap-0">
+          <label htmlFor="filter-by-unknown" className="cursor-pointer">
+            Filter by Unknown
+          </label>
+        </div>
+
+        <div role="search">
           <label id="error-search-description" htmlFor="error-search" className="sr-only">
             Search error codes
           </label>
-          <input
-            id="error-search"
-            type="text"
-            placeholder="Search error codes..."
-            aria-describedby="error-search-description"
-            // FIXME(splatter): This is disgusting styling
-            className="DocSearch DocSearch-Button py-3.5 px-4 h-full w-full sm:min-w-64 md:min-w-96 rounded-md text-text-light dark:text-text-dark bg-gray-200 border border-gray-300 dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
-            onChange={(e) => setSearch(e.target.value.toLowerCase())}
-          />
-
-          <div className="flex w-full md:self-end items-center gap-2 px-4">
+          <div className="flex flex-row justify-start items-center">
+            <SearchIcon className="ml-3 -mr-7 size-4 z-10 text-text-light dark:text-text-dark" />
             <input
-              type="checkbox"
-              id="filter-by-unknown"
-              checked={filterByUnknown}
-              aria-checked={filterByUnknown}
-              onChange={(e) => setFilterByUnknown(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
+              id="error-search"
+              type="search"
+              placeholder="Search error codes..."
+              aria-describedby="error-search-description"
+              // FIXME(splatter): This is disgusting styling
+              className="DocSearch DocSearch-Button ml-0 py-3.5 px-4 pl-9 h-full w-full md:max-w-96 rounded-md text-text-light dark:text-text-dark bg-gray-200 border border-gray-300 dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
+              onChange={(e) => setSearch(e.target.value.toLowerCase())}
             />
-
-            <label htmlFor="filter-by-unknown">Filter by Unknown</label>
           </div>
         </div>
       </div>
