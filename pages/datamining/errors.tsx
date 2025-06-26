@@ -4,8 +4,8 @@ import Alert from "../../components/Alert";
 import ErrorCodeGroup from "../../components/ErrorCodes";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
-import Emphasis from "../../components/mdx/Emphasis";
 import { H1 } from "../../components/mdx/Heading";
+import { RobotIcon } from "../../components/mdx/icons/RobotIcon";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
 import { HashProvider } from "../../hooks/useHash";
@@ -34,7 +34,12 @@ export default function Errors() {
 
   return (
     <ContentWrapper>
-      <H1>Error Codes</H1>
+      <H1>
+        <div className="flex flex-row items-center gap-2">
+          Error Codes
+          <RobotIcon className="size-8" />
+        </div>
+      </H1>
 
       <Paragraph>
         Along with the HTTP error code, the Discord API can also return more detailed error codes through a{" "}
@@ -46,14 +51,14 @@ export default function Errors() {
 
       <Paragraph>
         We maintain an unofficial updated list of error codes seen in the wild, which is significantly more
-        comprehensive than the official documentation. If you found an error which is incorrect or not listed,
-        you can submit it here with reproduction steps, and we will add it to the list. Thanks for your contribution!
+        comprehensive than the official documentation. If you found an error which is incorrect or not listed, you can
+        submit it here with reproduction steps, and we will add it to the list. Thanks for your contribution!
       </Paragraph>
 
       <Alert type="info">
         <Paragraph>
-          Items marked with &apos;⚠️&apos; indicate unknown error messages. We appreciate
-          your help in identifying the correct message for these errors!
+          Items marked with &apos;⚠️&apos; indicate unknown error messages. We appreciate your help in identifying the
+          correct message for these errors!
         </Paragraph>
       </Alert>
 
@@ -66,7 +71,6 @@ export default function Errors() {
         </button>
 
         <div className="flex flex-col lg:flex-row flex-start gap-1 lg:gap-0">
-          {/* this searchbar is very laggy, any fix? -- maybe debounce */}
           <input
             type="text"
             placeholder="Search error codes..."

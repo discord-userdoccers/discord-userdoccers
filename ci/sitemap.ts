@@ -22,6 +22,7 @@ const SPECIAL_PAGES: Record<string, { content: string; data: any }> = {
       // TODO: fetch it here and create sublinks
       "sublinks": [],
       "max-sublink-level": 3,
+      "icon": "Robot",
     },
   },
 };
@@ -79,6 +80,7 @@ interface Page {
   link: `/${string}`;
   subLinks: any[];
   sort: number;
+  icon: string | null;
 }
 
 const navigationLinks: Record<string, { name: string | null; items?: Record<string, Page>; pages: Page[] }> = {};
@@ -116,6 +118,7 @@ for (const file of files) {
     link: file === "index" ? "/" : `/${file}`,
     subLinks: [],
     sort: parsed.data.sort ?? 99999,
+    icon: parsed.data.icon ?? null,
   };
   const page = sectionList.items![link];
 
