@@ -59,7 +59,7 @@ export default function Errors() {
 
       <Alert type="info">
         <Paragraph>
-          Items marked with &apos;⚠️&apos; indicate unknown error messages. Found one?{" "}
+          Items marked with ⚠️ indicate unknown error messages. Found one?{" "}
           <Anchor role="button" onClick={() => setIsDialogOpen(true)} style={{ cursor: "pointer" }}>
             Submit it here
           </Anchor>
