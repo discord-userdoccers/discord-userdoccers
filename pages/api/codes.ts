@@ -131,11 +131,7 @@ export default async function errorCodes(req: Request) {
       return new Response(null, { status: 201 });
     }
     default: {
-      if (["GET", "PUT"].includes(req.method)) {
-        return new Response("Internal Server Error", { status: 500 });
-      } else {
-        return new Response("Method Not Allowed", { status: 405 });
-      }
+      return new Response("Method Not Allowed", { status: 405 });
     }
   }
 }
