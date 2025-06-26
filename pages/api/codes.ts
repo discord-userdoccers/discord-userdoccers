@@ -64,6 +64,8 @@ export default async function errorCodes(req: Request) {
     }
     case "PUT": {
       if (!process.env.ERROR_CODES_WEBHOOK) return new Response("Submission Not Allowed", { status: 422 });
+      if (!req.headers.get("Content-Type")?.startsWith("multipart/form-data"))
+        return new Response("Unsupported Media Type", { status: 415 });
 
       const data = await req.formData();
 
@@ -72,15 +74,20 @@ export default async function errorCodes(req: Request) {
       const reason = data.get("change_description");
       const message = data.get("message");
 
-      if (!code || !submissionType || !reason) {
-        return new Response("Missing Required Field", { status: 400 });
-      }
-
-      if (submissionType !== "delete" && !message) {
-        return new Response("Missing Required Field: 'message'", { status: 400 });
-      }
-
-      if (typeof submissionType !== "string" || typeof code !== "string") {
+      // type safety & validation
+      if (
+        typeof code !== "string" ||
+        typeof submissionType !== "string" ||
+        typeof reason !== "string" ||
+        typeof message !== "string" ||
+        code.length < 4 ||
+        !/^[0-9]+$/.test(code) ||
+        reason.length < 10 ||
+        reason.length > 500 ||
+        message.length < 3 ||
+        message.length > 200 ||
+        !["new", "update"].includes(submissionType)
+      ) {
         return new Response("Bad Request", { status: 400 });
       }
 
@@ -104,13 +111,11 @@ export default async function errorCodes(req: Request) {
                       inline: true,
                     }
                   : null,
-                message
-                  ? {
-                      name: "New Message",
-                      value: message,
-                      inline: true,
-                    }
-                  : null,
+                {
+                  name: "New Message",
+                  value: message,
+                  inline: true,
+                },
               ].filter(Boolean),
               footer: {
                 text: `Group: ${originalGroup?.name || "Unknown"}`,
