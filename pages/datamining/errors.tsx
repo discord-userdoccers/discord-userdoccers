@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import Alert from "../../components/Alert";
 import ErrorCodeGroup from "../../components/error-codes/ErrorCodeGroups";
-import { SubmitErrorDialog } from "../../components/error-codes/SubmitErrorDialog";
+import { SubmitErrorDialog } from "../../components/error-codes/ErrorSubmitDialog";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
 import { H1 } from "../../components/mdx/Heading";
