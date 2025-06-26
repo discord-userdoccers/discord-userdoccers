@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Chevron from "./icons/Chevron";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
@@ -31,21 +31,38 @@ export default function ErrorCodeGroup({
     }
   }, [sectionRef, window.location.hash, index, name]);
 
-  const filteredCodes = Object.entries(codes)
-    .filter(
-      ([K, V]) =>
-        (K.includes(search) || V.toLowerCase().includes(search)) && (unknownOnly ? UNKNOWN_REGEX.test(V) : true),
-    )
-    .map(([K, V]) => (
-      <TableRow key={K}>
-        <TableData>{K}</TableData>
-        <TableData>
-          {UNKNOWN_REGEX.test(V) ? "⚠️" : ""} {V.replace(/ \(UNKNOWN\)$/, "")}
-        </TableData>
-      </TableRow>
-    ));
+  const processedCodes = useMemo(
+    () =>
+      Object.entries(codes).map(([K, V]): [string, { message: string; isUnknown: boolean }] => {
+        const isUnknown = UNKNOWN_REGEX.test(V);
+        const message = V.replace(/ \(UNKNOWN\)$/i, "");
+        return [K, { message, isUnknown }];
+      }),
+    [codes],
+  );
 
-  if (!filteredCodes.length) return null;
+  const filteredCodes = useMemo(
+    () =>
+      processedCodes
+        .filter(([code, { message, isUnknown }]) => {
+          if (unknownOnly && !isUnknown) return false;
+          if (
+            search &&
+            !message.toLowerCase().includes(search.toLowerCase()) &&
+            !code.toLowerCase().includes(search.toLowerCase())
+          )
+            return false;
+          return true;
+        })
+        .map(([code, { message, isUnknown }]) => (
+          <ErrorCode key={code} code={code} message={message} isUnknown={isUnknown} />
+        )),
+    [codes, unknownOnly, search],
+  );
+
+  if (filteredCodes.length === 0) {
+    return null;
+  }
 
   return (
     <section ref={sectionRef}>
@@ -75,3 +92,14 @@ export default function ErrorCodeGroup({
     </section>
   );
 }
+
+const ErrorCode = ({ code, message, isUnknown }: { code: string; message: string; isUnknown: boolean }) => {
+  return (
+    <TableRow key={code}>
+      <TableData>{code}</TableData>
+      <TableData>
+        {isUnknown ? "⚠️" : ""} {message}
+      </TableData>
+    </TableRow>
+  );
+};
