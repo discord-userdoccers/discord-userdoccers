@@ -71,18 +71,13 @@ export default function ErrorCodeGroup({
 
   return (
     <section ref={ref} aria-labelledby={headingId} role="region">
-      <button
-        role="heading"
-        onClick={() => setShowTable(!showTable)}
-        aria-expanded={showTable}
-        aria-controls={tableId}
-        className="focus:outline-none"
-      >
-        <H3
-          id={headingId}
-          useAnchor={false}
-          useCopy={false}
-          className="flex justify-start items-start cursor-pointer gap-2"
+      <H3 role="heading" id={headingId} useAnchor={false} useCopy={false}>
+        <button
+          aria-expanded={showTable}
+          aria-controls={tableId}
+          aria-label={`Expand group: ${name}`}
+          onClick={() => setShowTable(!showTable)}
+          className="flex justify-start items-center cursor-pointer gap-2 focus:outline-none"
         >
           <div>{name}</div>
           <Chevron
@@ -92,8 +87,8 @@ export default function ErrorCodeGroup({
               transition: "transform 0.2s ease-in-out",
             }}
           />
-        </H3>
-      </button>
+        </button>
+      </H3>
       {showTable && (
         <Table id={tableId} aria-describedby={headingId} useCodegen={false}>
           <caption className="sr-only">Error codes for {name}</caption>
