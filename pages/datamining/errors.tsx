@@ -10,7 +10,13 @@ import Paragraph from "../../components/mdx/Paragraph";
 export default function Errors() {
   const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string>; index: number }[]>(
     "/api/codes",
-    (url: string) => fetch(url).then((res) => res.json()),
+    (url: string) =>
+      fetch(url).then((res) => {
+        if (res.ok) {
+          return res.json();
+        }
+        return res.text().then((text) => Promise.reject(new Error(`Server Error: ${text}`)));
+      }),
   );
 
   const [showLoading, setShowLoading] = useState(false);
@@ -68,8 +74,8 @@ export default function Errors() {
         />
       </div>
 
-      {!codes && !error && showLoading ? <p className="italic">Loading...</p> : null}
-      {error ? <p className="italic">{error.message}</p> : null}
+      {!codes && !error && showLoading ? <p className="italic mt-5">Loading...</p> : null}
+      {error ? <p className="italic mt-5">{error.message}</p> : null}
       {codes
         ? codes.map(({ name, codes, index }) => (
             <ErrorCodeGroup key={name} name={name} codes={codes} index={index} search={search} />
