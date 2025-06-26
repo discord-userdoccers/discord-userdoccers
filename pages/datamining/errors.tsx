@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import Alert from "../../components/Alert";
-import ErrorCodeGroup from "../../components/ErrorCodes";
+import ErrorCodeGroup from "../../components/error-codes/ErrorCodeGroups";
+import { SubmitErrorDialog } from "../../components/error-codes/SubmitErrorDialog";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
 import { H1 } from "../../components/mdx/Heading";
@@ -31,6 +32,12 @@ export default function Errors() {
     return () => clearTimeout(timer);
   }, []);
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const codesFlat = useMemo(
+    () => (codes ? Object.fromEntries(codes.flatMap((x) => Object.entries(x.codes))) : {}),
+    [codes],
+  );
+
   return (
     <ContentWrapper>
       <H1>Error Codes</H1>
@@ -59,22 +66,26 @@ export default function Errors() {
       <div className="flex justify-start">
         <button
           className="inline-flex items-center gap-2 rounded-md px-4 md:px-5 py-2 md:py-2.5 text-lg/70 md:text-md/80 bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700"
-          onClick={() => {}}
+          onClick={() => {
+            setIsDialogOpen(true);
+          }}
           aria-label="Submit a new error code for review"
         >
           Submit Error
         </button>
+        <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codesFlat} />
 
         <div className="flex flex-col lg:flex-row flex-start gap-1 lg:gap-0">
-          <label htmlFor="error-search" className="sr-only">
+          <label id="error-search-description" htmlFor="error-search" className="sr-only">
             Search error codes
           </label>
           <input
             id="error-search"
             type="text"
             placeholder="Search error codes..."
+            aria-describedby="error-search-description"
             // FIXME(splatter): This is disgusting styling
-            className="DocSearch DocSearch-Button py-3.5 px-4 h-full w-full sm:min-w-64 md:min-w-96 rounded-md text-text-light dark:text-text-dark dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
+            className="DocSearch DocSearch-Button py-3.5 px-4 h-full w-full sm:min-w-64 md:min-w-96 rounded-md text-text-light dark:text-text-dark bg-gray-200 border border-gray-300 dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
             onChange={(e) => setSearch(e.target.value.toLowerCase())}
           />
 

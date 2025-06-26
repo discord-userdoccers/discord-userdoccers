@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useHash } from "../hooks/useHash";
-import Chevron from "./icons/Chevron";
-import { getNormalisedText, H3 } from "./mdx/Heading";
-import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
+import { useHash } from "../../hooks/useHash";
+import Chevron from "../icons/Chevron";
+import { getNormalisedText, H3 } from "../mdx/Heading";
+import { Table, TableData, TableHead, TableHeader, TableRow } from "../mdx/Table";
 
 const UNKNOWN_REGEX = /^[A-Z0-9_ ()]+$/;
 
@@ -70,8 +70,9 @@ export default function ErrorCodeGroup({
   const tableId = `error-group-table-${index}`;
 
   return (
-    <section ref={ref} aria-labelledby={headingId}>
+    <section ref={ref} aria-labelledby={headingId} role="region">
       <button
+        role="heading"
         onClick={() => setShowTable(!showTable)}
         aria-expanded={showTable}
         aria-controls={tableId}

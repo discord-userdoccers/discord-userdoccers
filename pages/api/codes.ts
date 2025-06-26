@@ -19,16 +19,21 @@ function parseContent(content: string) {
       const [, code, name] = match;
       const group = parseInt(code.padStart(7, "0").slice(0, 3));
       const codeNum = parseInt(code);
+      let value = name.trim();
+
+      if (/^[A-Z0-9_ ()]+$/.test(value) && !value.endsWith(" (UNKNOWN)")) {
+        value += " (UNKNOWN)";
+      }
 
       if (group !== currentGroup) {
         currentGroup = group;
         errorCodes[currentGroup] = {
           name: currentGroupName,
           index: currentGroup,
-          codes: { [codeNum]: name.trim() },
+          codes: { [codeNum]: value },
         };
       } else {
-        errorCodes[currentGroup].codes[codeNum] = name.trim();
+        errorCodes[currentGroup].codes[codeNum] = value;
       }
     }
   }
