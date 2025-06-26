@@ -1,14 +1,15 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Fragment, useState } from "react";
-import classNames from "../../lib/classnames";
+import { toast } from "react-toastify";
 import Emphasis from "../mdx/Emphasis";
 import { H2 } from "../mdx/Heading";
-import InlineCode from "../mdx/InlineCode";
 import Strong from "../mdx/Strong";
 
 export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void; codes: Record<string, string> }) {
   const [submissionType, setSubmissionType] = useState("");
   const [errorCode, setErrorCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const labelClass = "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200";
   const inputClass =
@@ -56,11 +57,24 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                   onSubmit={(e) => {
                     e.preventDefault();
 
+                    setIsSubmitting(true);
                     // PUT to /api/codes
                     fetch("/api/codes", {
                       method: "PUT",
                       body: new FormData(e.currentTarget),
-                    }).then((res) => (res.ok ? props.onClose() : null));
+                    }).then((res) => {
+                      if (res.ok) {
+                        setIsSubmitting(false);
+                        setError("");
+                        props.onClose();
+                        toast.success("Your error code has been submitted. Thank you!");
+                      } else {
+                        res.text().then((text) => {
+                          setIsSubmitting(false);
+                          setError(text);
+                        });
+                      }
+                    });
                   }}
                 >
                   <div>
@@ -97,8 +111,8 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       Submission Type
                     </label>
                     <select
-                      id="submissionType"
-                      name="submissionType"
+                      id="submission_type"
+                      name="submission_type"
                       value={submissionType}
                       onChange={(e) => setSubmissionType(e.target.value)}
                       className={inputClass}
@@ -158,13 +172,17 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     </div>
                   )}
 
-                  <button
-                    className="inline-flex justify-center items-center gap-2 rounded-md px-4 md:px-5 py-2 md:py-2.5 text-lg/80 md:text-md/80 text-center bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700"
-                    type="submit"
-                    aria-label="Submit a new error code for review"
-                  >
-                    Finish
-                  </button>
+                  <div className="w-full flex flex-col gap-2">
+                    <button
+                      className="inline-flex justify-center items-center gap-2 rounded-md px-4 md:px-5 py-2 md:py-2.5 text-lg/80 md:text-md/80 text-center bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700 disabled:opacity-50"
+                      type="submit"
+                      aria-label="Finish your submission"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Finishing..." : "Finish"}
+                    </button>
+                    <p className="text-center text-red-500 dark:text-red-400">{error}</p>
+                  </div>
                 </form>
               </DialogPanel>
             </TransitionChild>

@@ -42,24 +42,82 @@ function parseContent(content: string) {
 }
 
 export default async function errorCodes(req: Request) {
-  if (req.method !== "GET") {
-    return new Response("Method Not Allowed", { status: 405 });
+  switch (req.method) {
+    case "GET": {
+      // fetch raw gist
+      const data = await fetch(GIST_URL);
+
+      if (!data.ok) {
+        console.error("GIST ERROR -", data.statusText);
+        return new Response("Bad Gateway", { status: 502 });
+      }
+
+      const gistContent = await data.text();
+
+      const errorCodes = parseContent(gistContent);
+      return Response.json(errorCodes, {
+        headers: {
+          "Cache-Control": "public, max-age=1800",
+        },
+      });
+    }
+    case "PUT": {
+      if (!process.env.ERROR_CODES_WEBHOOK) return new Response("Submission Not Allowed", { status: 422 });
+
+      const data = await req.formData();
+
+      const code = data.get("code");
+      const submissionType = data.get("submission_type");
+      const reason = data.get("change_description");
+      const message = data.get("message");
+
+      if (!code || !submissionType || !reason) {
+        return new Response("Missing Required Field", { status: 400 });
+      }
+
+      if (submissionType !== "delete" && !message) {
+        return new Response("Missing Required Field: 'message'", { status: 400 });
+      }
+
+      await fetch(process.env.ERROR_CODES_WEBHOOK, {
+        method: "POST",
+        body: JSON.stringify({
+          embeds: [
+            {
+              title: "New Submission",
+              description: reason,
+              fields: [
+                {
+                  name: "Error Code",
+                  value: code,
+                  inline: true,
+                },
+                {
+                  name: "Message",
+                  value: message,
+                  inline: true,
+                },
+                {
+                  name: "Submission Type",
+                  value: submissionType,
+                },
+              ],
+            },
+          ],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return new Response(null, { status: 201 });
+    }
+    default: {
+      if (["GET", "PUT"].includes(req.method)) {
+        return new Response("Internal Server Error", { status: 500 });
+      } else {
+        return new Response("Method Not Allowed", { status: 405 });
+      }
+    }
   }
-
-  // fetch raw gist
-  const data = await fetch(GIST_URL);
-
-  if (!data.ok) {
-    console.error("GIST ERROR -", data.statusText);
-    return new Response("Bad Gateway", { status: 502 });
-  }
-
-  const gistContent = await data.text();
-
-  const errorCodes = parseContent(gistContent);
-  return Response.json(errorCodes, {
-    headers: {
-      "Cache-Control": "public, max-age=1800",
-    },
-  });
 }
