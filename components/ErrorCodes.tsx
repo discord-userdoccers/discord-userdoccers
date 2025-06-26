@@ -65,10 +65,24 @@ export default function ErrorCodeGroup({
     return null;
   }
 
+  // Generate unique ids for accessibility
+  const headingId = `error-group-heading-${index}`;
+  const tableId = `error-group-table-${index}`;
+
   return (
-    <section ref={ref}>
-      <button onClick={() => setShowTable(!showTable)}>
-        <H3 useAnchor={false} useCopy={false} className="flex justify-start items-start cursor-pointer gap-2">
+    <section ref={ref} aria-labelledby={headingId}>
+      <button
+        onClick={() => setShowTable(!showTable)}
+        aria-expanded={showTable}
+        aria-controls={tableId}
+        className="focus:outline-none"
+      >
+        <H3
+          id={headingId}
+          useAnchor={false}
+          useCopy={false}
+          className="flex justify-start items-start cursor-pointer gap-2"
+        >
           <div>{name}</div>
           <Chevron
             className="h-5 w-4 text-black dark:text-white"
@@ -80,7 +94,8 @@ export default function ErrorCodeGroup({
         </H3>
       </button>
       {showTable && (
-        <Table>
+        <Table id={tableId} aria-describedby={headingId}>
+          <caption className="sr-only">Error codes for {name}</caption>
           <TableHead>
             <TableRow>
               <TableHeader>Code</TableHeader>
@@ -108,7 +123,13 @@ const ErrorCode = ({ code, message, isUnknown }: { code: string; message: string
     <TableRow key={code} ref={ref}>
       <TableData>{code}</TableData>
       <TableData>
-        {isUnknown ? "⚠️" : ""} {message}
+        {isUnknown ? (
+          <>
+            <span aria-hidden="true">⚠️</span>
+            <span className="sr-only">Unknown message</span>
+          </>
+        ) : null}{" "}
+        {message}
       </TableData>
     </TableRow>
   );

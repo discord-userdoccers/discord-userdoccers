@@ -5,7 +5,6 @@ import ErrorCodeGroup from "../../components/ErrorCodes";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
 import { H1 } from "../../components/mdx/Heading";
-import { RobotIcon } from "../../components/mdx/icons/RobotIcon";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
 import { HashProvider } from "../../hooks/useHash";
@@ -34,12 +33,7 @@ export default function Errors() {
 
   return (
     <ContentWrapper>
-      <H1>
-        <div className="flex flex-row items-center gap-2">
-          Error Codes
-          <RobotIcon className="size-8" />
-        </div>
-      </H1>
+      <H1>Error Codes</H1>
 
       <Paragraph>
         Along with the HTTP error code, the Discord API can also return more detailed error codes through a{" "}
@@ -66,12 +60,17 @@ export default function Errors() {
         <button
           className="inline-flex items-center gap-2 rounded-md px-4 md:px-5 py-2 md:py-2.5 text-lg/70 md:text-md/80 bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700"
           onClick={() => {}}
+          aria-label="Submit a new error code for review"
         >
           Submit Error
         </button>
 
         <div className="flex flex-col lg:flex-row flex-start gap-1 lg:gap-0">
+          <label htmlFor="error-search" className="sr-only">
+            Search error codes
+          </label>
           <input
+            id="error-search"
             type="text"
             placeholder="Search error codes..."
             // FIXME(splatter): This is disgusting styling
@@ -84,6 +83,7 @@ export default function Errors() {
               type="checkbox"
               id="filter-by-unknown"
               checked={filterByUnknown}
+              aria-checked={filterByUnknown}
               onChange={(e) => setFilterByUnknown(e.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
             />
@@ -93,8 +93,24 @@ export default function Errors() {
         </div>
       </div>
 
-      {!codes && !error && showLoading ? <p className="italic mt-5">Loading...</p> : null}
-      {error ? <p className="italic mt-5">{error.message}</p> : null}
+      {!codes && !error ? (
+        <p
+          className="italic mt-5"
+          aria-busy
+          role="status"
+          aria-live="polite"
+          style={{
+            visibility: showLoading ? "visible" : "hidden",
+          }}
+        >
+          Loading...
+        </p>
+      ) : null}
+      {error ? (
+        <p className="italic mt-5" role="alert">
+          {error.message}
+        </p>
+      ) : null}
       <HashProvider>
         {codes
           ? codes.map(({ name, codes, index }) => (
