@@ -6,7 +6,6 @@ import { H2 } from "../mdx/Heading";
 import Strong from "../mdx/Strong";
 
 export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void; codes: Record<string, string> }) {
-  const [submissionType, setSubmissionType] = useState("");
   const [errorCode, setErrorCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -120,45 +119,43 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     />
                   </div>
 
-                  {["update", "new"].includes(submissionType) && (
-                    <div>
-                      <label htmlFor="message" className={labelClass}>
-                        {submissionType === "update" && "New"} Error Message
-                      </label>
-                      <input
-                        type="text"
-                        autoComplete="off"
-                        id="message"
-                        name="message"
-                        required
-                        defaultValue={props.codes[errorCode] || ""}
-                        className={inputClass}
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label htmlFor="message" className={labelClass}>
+                      {errorCode in props.codes && "Updated"} Error Message
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      id="message"
+                      name="message"
+                      required
+                      defaultValue={props.codes[errorCode] || ""}
+                      className={inputClass}
+                    />
+                  </div>
 
-                  {submissionType && (
-                    <div>
-                      <label htmlFor="change_description" className={labelClass}>
-                        Reason for Change
-                      </label>
-                      <p className="text-sm text-text-light/70 dark:text-text-dark/80 mb-3">
-                        {errorCode in props.codes
-                          ? "Explain why this error code is being updated, including endpoints or features if applicable."
-                          : "Describe where this error code is used, e.g. the endpoint you encountered it at or the feature in the Discord app you were using."}{" "}
-                        You can include a way for us to contact you directly, such as a Discord ID, if you want.
-                      </p>
+                  <div>
+                    <label htmlFor="change_description" className={labelClass}>
+                      Reason for Change
+                    </label>
+                    <p className="text-sm text-text-light/70 dark:text-text-dark/80 mb-3">
+                      {errorCode in props.codes
+                        ? "Explain why this error code is being updated"
+                        : "Describe where this error code is used"}
+                      , including {errorCode in props.codes ? "screenshots or videos" : "endpoints or features"} if
+                      applicable. You can include a way for us to contact you directly, such as a Discord ID, if you
+                      want.
+                    </p>
 
-                      <textarea
-                        id="change_description"
-                        name="change_description"
-                        required
-                        className={inputClass}
-                        autoComplete="off"
-                        rows={3}
-                      />
-                    </div>
-                  )}
+                    <textarea
+                      id="change_description"
+                      name="change_description"
+                      required
+                      className={inputClass}
+                      autoComplete="off"
+                      rows={3}
+                    />
+                  </div>
 
                   <div className="w-full flex flex-col gap-2">
                     <button
