@@ -113,3 +113,9 @@ export default function Errors() {
     </ContentWrapper>
   );
 }
+
+Errors.meta = {
+  title: "Error Codes",
+  description:
+    "We maintain an unofficial updated list of error codes seen in the wild, which is significantly more comprehensive than Discord's official documentation. If you found an error which is not listed, you can submit it here with reproduction steps and we will add it to the list.",
+};
