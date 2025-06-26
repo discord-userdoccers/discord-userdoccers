@@ -93,9 +93,9 @@ export default function Errors() {
 
       {!codes && !error && showLoading ? <p className="italic mt-5">Loading...</p> : null}
       {error ? <p className="italic mt-5">{error.message}</p> : null}
-      {codes
-        ? codes.map(({ name, codes, index }) => (
-            <HashProvider>
+      <HashProvider>
+        {codes
+          ? codes.map(({ name, codes, index }) => (
               <ErrorCodeGroup
                 key={name}
                 name={name}
@@ -104,9 +104,9 @@ export default function Errors() {
                 search={search}
                 unknownOnly={filterByUnknown}
               />
-            </HashProvider>
-          ))
-        : null}
+            ))
+          : null}
+      </HashProvider>
     </ContentWrapper>
   );
 }
