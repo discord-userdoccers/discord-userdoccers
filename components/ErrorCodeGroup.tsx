@@ -3,16 +3,20 @@ import Chevron from "./icons/Chevron";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
 
+const UNKNOWN_REGEX = /^[A-Z0-9_ ()]+$/;
+
 export default function ErrorCodeGroup({
   name,
   codes,
   index,
   search,
+  unknownOnly,
 }: {
   name: string;
   codes: Record<string, string>;
   index: number;
   search: string;
+  unknownOnly: boolean;
 }) {
   const [showTable, setShowTable] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
@@ -28,11 +32,16 @@ export default function ErrorCodeGroup({
   }, [sectionRef, window.location.hash, index, name]);
 
   const filteredCodes = Object.entries(codes)
-    .filter(([K, V]) => K.includes(search) || V.toLowerCase().includes(search))
+    .filter(
+      ([K, V]) =>
+        (K.includes(search) || V.toLowerCase().includes(search)) && (unknownOnly ? UNKNOWN_REGEX.test(V) : true),
+    )
     .map(([K, V]) => (
       <TableRow key={K}>
         <TableData>{K}</TableData>
-        <TableData>{V}</TableData>
+        <TableData>
+          {UNKNOWN_REGEX.test(V) ? "⚠️" : ""} {V.replace(/ \(UNKNOWN\)$/, "")}
+        </TableData>
       </TableRow>
     ));
 

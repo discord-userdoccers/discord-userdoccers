@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
+import Alert from "../../components/Alert";
 import ErrorCodeGroup from "../../components/ErrorCodeGroup";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
+import Emphasis from "../../components/mdx/Emphasis";
 import { H1 } from "../../components/mdx/Heading";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
@@ -21,6 +23,7 @@ export default function Errors() {
 
   const [showLoading, setShowLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterByUnknown, setFilterByUnknown] = useState(false);
 
   // Show loading indicator after 500ms -- only if request is taking a while
   useEffect(() => {
@@ -56,6 +59,13 @@ export default function Errors() {
         Thanks for your contribution!
       </Paragraph>
 
+      <Alert type="info">
+        <Paragraph>
+          <Emphasis>Note:</Emphasis> Items marked with &apos;⚠️&apos; indicate unknown error messages. We appreciate
+          your help in identifying the correct message for these errors!
+        </Paragraph>
+      </Alert>
+
       <div className="flex justify-start">
         <button
           className="inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-md/80 bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700"
@@ -72,13 +82,32 @@ export default function Errors() {
           className="DocSearch DocSearch-Button py-3.5 px-4 h-full min-w-96 rounded-md dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
           onChange={(e) => setSearch(e.target.value.toLowerCase())}
         />
+
+        <div className="flex self-end items-center gap-2 px-4">
+          <input
+            type="checkbox"
+            id="filter-by-unknown"
+            checked={filterByUnknown}
+            onChange={(e) => setFilterByUnknown(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
+          />
+
+          <label htmlFor="filter-by-unknown">Filter by Unknown</label>
+        </div>
       </div>
 
       {!codes && !error && showLoading ? <p className="italic mt-5">Loading...</p> : null}
       {error ? <p className="italic mt-5">{error.message}</p> : null}
       {codes
         ? codes.map(({ name, codes, index }) => (
-            <ErrorCodeGroup key={name} name={name} codes={codes} index={index} search={search} />
+            <ErrorCodeGroup
+              key={name}
+              name={name}
+              codes={codes}
+              index={index}
+              search={search}
+              unknownOnly={filterByUnknown}
+            />
           ))
         : null}
     </ContentWrapper>
