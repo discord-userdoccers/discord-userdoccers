@@ -115,7 +115,6 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       name="submission_type"
                       value={errorCode in props.codes ? "update" : "new"}
                       className={inputClass}
-                      disabled
                     />
                   </div>
 
