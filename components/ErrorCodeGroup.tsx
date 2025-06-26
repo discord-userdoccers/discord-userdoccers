@@ -21,16 +21,11 @@ export default function ErrorCodeGroup({
     if (sectionRef.current) {
       // check if the hash is #{name} or #group-{name}
       const hash = window.location.hash;
-      if (
-        hash === `#${getNormalisedText(name)}` ||
-        hash === `#group-${getNormalisedText(name)}` ||
-        hash === `#${index}` ||
-        hash === `#group-${index}`
-      ) {
+      if (hash === `#${getNormalisedText(name)}` || hash === `#${index}`) {
         sectionRef.current.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [sectionRef, window.location.hash]);
+  }, [sectionRef, window.location.hash, index, name]);
 
   const filteredCodes = Object.entries(codes)
     .filter(([K, V]) => K.includes(search) || V.toLowerCase().includes(search))

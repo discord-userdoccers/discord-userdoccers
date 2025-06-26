@@ -1,5 +1,3 @@
-import { NextApiRequest, NextApiResponse } from "next";
-
 const GIST_URL = "https://gist.githubusercontent.com/Dziurwa14/de2498e5ee28d2089f095aa037957cbb/raw/codes.md";
 
 const ERRORS_REGEX = /\|\s*(\d{1,7})\s*\|\s*(.+)\|/;
@@ -39,7 +37,7 @@ function parseContent(content: string) {
   return Object.values(errorCodes);
 }
 
-export default async function errorCodes(req: Request, res: Response) {
+export default async function errorCodes(req: Request) {
   if (req.method !== "GET") {
     return new Response("Method Not Allowed", { status: 405 });
   }
@@ -55,9 +53,6 @@ export default async function errorCodes(req: Request, res: Response) {
   const gistContent = await data.text();
 
   const errorCodes = parseContent(gistContent);
-  await new Promise((res) => {
-    setTimeout(res, 1000);
-  });
   return Response.json(errorCodes, {
     headers: {
       "Cache-Control": "public, max-age=1800",

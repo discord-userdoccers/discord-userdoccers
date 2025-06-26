@@ -1,13 +1,11 @@
-import { Button } from "@headlessui/react";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import ErrorCodeGroup from "../../components/ErrorCodeGroup";
 import Anchor from "../../components/mdx/Anchor";
 import ContentWrapper from "../../components/mdx/ContentWrapper";
-import { H1, H3 } from "../../components/mdx/Heading";
+import { H1 } from "../../components/mdx/Heading";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
-import { Table, TableData, TableHead, TableHeader, TableRow } from "../../components/mdx/Table";
 
 export default function Errors() {
   const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string>; index: number }[]>(
