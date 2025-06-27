@@ -1,4 +1,6 @@
-export default function Rust(props: JSX.IntrinsicElements["svg"]) {
+import React from "react";
+
+export default function Rust(props: React.JSX.IntrinsicElements["svg"]) {
   return (
     <svg viewBox="0 0 128 128" {...props}>
       <path
