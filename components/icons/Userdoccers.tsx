@@ -1,4 +1,6 @@
-export default function Userdoccers(props: JSX.IntrinsicElements["svg"]) {
+import React from "react";
+
+export default function Userdoccers(props: React.JSX.IntrinsicElements["svg"]) {
   return (
     <svg fill="currentColor" viewBox="0 0 292 80" xmlns="http://www.w3.org/2000/svg" {...props}>
       <g clipPath="url(#_clipPath_AyjB8WKiIRx1n7AKQ3s8LGNWPvV0uHZC)">

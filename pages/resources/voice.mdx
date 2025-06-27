@@ -12,6 +12,7 @@ Used to represent a user's voice connection status.
 | -------------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
 | guild_id? ^1^              | ?snowflake                                                  | The guild ID this voice state is for               |
 | channel_id                 | ?snowflake                                                  | The channel ID this user is connected to           |
+| lobby_id?                  | snowflake                                                   | The ID of the lobby this user is connected to      |
 | user_id                    | snowflake                                                   | The user ID this voice state is for                |
 | member? ^1^                | [guild member](/resources/guild#guild-member-object) object | The guild member this voice state is for           |
 | session_id                 | string                                                      | The session ID this voice state is from            |
@@ -23,8 +24,11 @@ Used to represent a user's voice connection status.
 | self_video                 | boolean                                                     | Whether this user's camera is enabled              |
 | suppress                   | boolean                                                     | Whether this user's permission to speak is denied  |
 | request_to_speak_timestamp | ?ISO8601 timestamp                                          | When which the user requested to speak             |
+| user_volume? ^2^           | float                                                       | Volume level of the user (0-100)                   |
 
 ^1^ Omitted in the [Gateway guild](/topics/gateway-events#gateway-guild-object) object.
+
+^2^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway). For regular connections, user volumes are available in [audio settings](/resources/user-settings-proto#audio-settings-structure).
 
 ###### Example Voice State
 
@@ -98,7 +102,7 @@ private_key = ec.generate_private_key(ec.SECP256R1())
 public_key = private_key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.CompressedPoint)
 
 # https://datatracker.ietf.org/doc/html/rfc9000#name-variable-length-integer-enc
-def encode_quic_varint(data):
+def encode_quic_varint(data: bytes) -> bytes:
     length = len(data)
     if length < 2**6:
         return bytes([length]) + data
@@ -110,7 +114,7 @@ def encode_quic_varint(data):
         return bytes([(3 << 6) | (length >> 56), (length >> 48) & 0xFF, (length >> 40) & 0xFF, (length >> 32) & 0xFF, (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]) + data
 
 # https://datatracker.ietf.org/doc/html/rfc9420/#name-signing
-def sign_with_label(private_key, label, content) -> bytes:
+def sign_with_label(private_key: ec.EllipticCurvePrivateKey, label: str, content: bytes) -> bytes:
     label_bytes = b'MLS 1.0 ' + label.encode('ascii')
     sign_content = encode_quic_varint(label_bytes) + encode_quic_varint(content)
     signature = private_key.sign(sign_content, ec.ECDSA(hashes.SHA256()))
@@ -177,16 +181,31 @@ Returns the voice filters that can be used by the client.
 
 ###### Query String Params
 
-| Field       | Type    | Description                                                                  |
-| ----------- | ------- | ---------------------------------------------------------------------------- |
-| vfm_version | integer | The version of the [voice filter native module](/topics/client-distribution) |
+| Field       | Type          | Description                                                                  |
+| ----------- | ------------- | ---------------------------------------------------------------------------- |
+| vfm_version | integer       | The version of the [voice filter native module](/topics/client-distribution) |
+| models?     | array[string] | The IDs of the ONNX models to return in the response                         |
 
 ###### Response Body
 
-| Field   | Type                                                                 | Description                                                |
-| ------- | -------------------------------------------------------------------- | ---------------------------------------------------------- |
-| models? | map[str, [voice filter model](#voice-filter-model-structure) object] | The ONNX machine learning models used by the voice filters |
-| voices? | array[[voice filter](#voice-filter-structure)]                       | The voice filters available to the client                  |
+| Field               | Type                                                                 | Description                                                |
+| ------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| limited_time_voices | [limited time voices](#limited-time-voices-structure) object         | The current sets of limited time voice filters available   |
+| models? ^1^         | map[str, [voice filter model](#voice-filter-model-structure) object] | The ONNX machine learning models used by the voice filters |
+| voices?             | array[[voice filter](#voice-filter-structure) object]                | The voice filters available to the client                  |
+
+^1^ This field is empty if no models were provided in the `models` query parameter in voice filter module versions 6 and above.
+
+###### Limited Time Voices Structure
+
+| Field             | Type              | Description                                     |
+| ----------------- | ----------------- | ----------------------------------------------- |
+| current_set       | array[string]     | The currently free voice filters                |
+| current_set_end   | ISO8601 timestamp | When the current set will no longer be free     |
+| current_set_start | ISO8601 timestamp | When the current set will start being free      |
+| next_set          | array[string]     | The next set of voice filters that will be free |
+| next_set_end      | ISO8601 timestamp | When the next set ends                          |
+| next_set_start    | ISO8601 timestamp | When the next set starts                        |
 
 ###### Voice Filter Model Structure
 
@@ -196,17 +215,29 @@ Returns the voice filters that can be used by the client.
 
 ###### Voice Filter Structure
 
-| Field            | Type          | Description                                                      |
-| ---------------- | ------------- | ---------------------------------------------------------------- |
-| id               | string        | The ID of the voice filter                                       |
-| models?          | array[string] | The IDs of the ONNX models used by the voice filter              |
-| requires_premium | boolean       | Whether the voice filter requires a premium (Nitro) subscription |
-| available        | boolean       | Whether the voice filter is available to use                     |
+| Field                     | Type              | Description                                                      |
+| ------------------------- | ----------------- | ---------------------------------------------------------------- |
+| id                        | string            | The ID of the voice filter                                       |
+| models? ^1^               | array[string]     | The IDs of the ONNX models used by the voice filter              |
+| requires_premium          | boolean           | Whether the voice filter requires a premium (Nitro) subscription |
+| limited_time_free_ends?   | ISO8601 timestamp | When the voice filter will no longer be free to use              |
+| limited_time_free_starts? | ISO8601 timestamp | When the voice filter will start being free to use               |
+| available                 | boolean           | Whether the voice filter is available to use                     |
+
+^1^ This field is no longer used and is serialized as an empty object in voice filter module versions 6 and above.
 
 ###### Example Response
 
 ```json
 {
+  "limited_time_voices": {
+    "current_set": ["solara", "robot"],
+    "current_set_start": "2025-05-22T00:00:00+00:00",
+    "current_set_end": "2025-05-22T23:59:59+00:00",
+    "next_set": ["tunes", "robot"],
+    "next_set_start": "2025-05-23T00:00:00+00:00",
+    "next_set_end": "2025-05-23T23:59:59+00:00"
+  },
   "models": {
     "vocoder_large_1": {
       "url": "https://cdn.discordapp.com/assets/content/XXX.onnx"
@@ -223,6 +254,8 @@ Returns the voice filters that can be used by the client.
       "id": "skye",
       "models": ["vocoder_large_1", "asr_large", "pitch_small_3"],
       "requires_premium": true,
+      "limited_time_free_ends": "2025-05-22T23:59:59+00:00",
+      "limited_time_free_starts": "2025-05-22T00:00:00+00:00",
       "available": true
     }
   ]
@@ -332,6 +365,18 @@ Sending a voice channel effect requires the current user to be connected to the 
 | 0     | PREMIUM | A fun animation, requires a premium (Nitro) subscription |
 | 1     | BASIC   | The standard animation                                   |
 
+<RouteHeader method="PATCH" url="/streams/{stream_key}/stream">
+  Modify Stream
+</RouteHeader>
+
+Modifies the stream. User must be the owner of the stream. Returns a 204 empty response on success. Fires a [Stream Update](/topics/gateway-events#stream-update) Gateway event.
+
+###### JSON Params
+
+| Field   | Type   | Description                                                                |
+| ------- | ------ | -------------------------------------------------------------------------- |
+| region? | string | The [voice region](/resources/voice#voice-region-object) ID for the stream |
+
 <RouteHeader method="GET" url="/streams/{stream_key}/preview">
   Get Stream Preview
 </RouteHeader>
@@ -360,7 +405,7 @@ Uploads a stream preview for the given [stream key](/topics/gateway-events#strea
   Upload Video Stream Preview
 </RouteHeader>
 
-Uploads a stream preview for the given [stream key](/topics/gateway-events#stream-key). User must be the owner of the stream. Returns a 204 empty response on success.
+Uploads a stream preview video for the given [stream key](/topics/gateway-events#stream-key). User must be the owner of the stream. Returns a 204 empty response on success.
 
 ###### Form Params
 

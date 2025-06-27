@@ -1,6 +1,6 @@
-import classNames from "classnames";
-import type { AppProps } from "next/app";
+import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
+import type { AppProps } from "next/app";
 import { useCallback, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
@@ -8,7 +8,6 @@ import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
-
 import "@docsearch/css";
 import "../stylesheets/tailwind.css";
 import "../stylesheets/styles.css";
@@ -64,7 +63,6 @@ export default function App({ Component, pageProps, router }: AppProps) {
       <ThemeProvider defaultTheme="system" attribute="data-theme">
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
           <CodegenLanguageProvider>
-            {/* eslint-disable-next-line react/jsx-pascal-case */}
             <MDX>
               <OpenGraph description={meta?.description} section={meta?.title} />
               <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">

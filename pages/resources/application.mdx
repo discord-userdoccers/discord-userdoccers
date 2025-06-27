@@ -44,7 +44,8 @@ Applications are Discord entities that represent games, services, and other inte
 | bot_disabled?                                | boolean                                                                                                                   | Whether the application's bot is disabled by Discord (default false)                                                                                                                                                             |
 | bot_quarantined?                             | boolean                                                                                                                   | Whether the application's bot is [quarantined](https://support.discord.com/hc/en-us/articles/6461420677527-Limited-Access-FAQ) by Discord; quarantined bots cannot join more guilds or start new direct messages (default false) |
 | approximate_guild_count?                     | integer                                                                                                                   | Approximate count of guilds the application's bot is in                                                                                                                                                                          |
-| approximate_user_install_count               | integer                                                                                                                   | Approximate count of OAuth2 authorizations the application has                                                                                                                                                                   |
+| approximate_user_install_count               | integer                                                                                                                   | Approximate count of users that have authorized the application with the `applications.commands` scope                                                                                                                           |
+| approximate_user_authorization_count         | integer                                                                                                                   | Approximate count of users that have OAuth2 authorizations for the application                                                                                                                                                   |
 | internal_guild_restriction                   | integer                                                                                                                   | What guilds the [application can be authorized in](#internal-guild-restriction)                                                                                                                                                  |
 | terms_of_service_url?                        | string                                                                                                                    | The URL to the application's terms of service                                                                                                                                                                                    |
 | privacy_policy_url?                          | string                                                                                                                    | The URL to the application's privacy policy                                                                                                                                                                                      |
@@ -176,12 +177,12 @@ Further complicating things, some optional fields may be omitted if their value 
 | ~~1 << 5~~  | ~~RPC_PRIVATE_BETA~~                   | ~~Application can access the client RPC server~~                                                                                                           | ~~No~~  |
 | 1 << 6      | AUTO_MODERATION_RULE_CREATE_BADGE      | Application has created 100+ AutoMod rules                                                                                                                 | Yes     |
 | 1 << 7      | GAME_PROFILE_DISABLED                  | Application has its game profile page disabled                                                                                                             | Yes     |
-| 1 << 8      | PUBLIC_OAUTH2_CLIENT                   | Application's OAuth2 credentials are public                                                                                                                | Yes     |
-| 1 << 9      | CONTEXTLESS_ACTIVITY                   | Embedded application's activity can be launched without a context                                                                                          | Yes     |
-| 1 << 10     | SOCIAL_LAYER_INTEGRATION_LIMITED       | Application has limited access to the social layer SDK                                                                                                     | Yes     |
 | ~~1 << 8~~  | ~~ALLOW_ASSETS~~                       | ~~Application can use activity assets~~                                                                                                                    | ~~No~~  |
+| 1 << 8      | PUBLIC_OAUTH2_CLIENT                   | Application's OAuth2 credentials are considered public and a client secret is not required                                                                 | Yes     |
 | ~~1 << 9~~  | ~~ALLOW_ACTIVITY_ACTION_SPECTATE~~     | ~~Application can enable spectating activities~~                                                                                                           | ~~No~~  |
+| ~~1 << 9~~  | ~~CONTEXTLESS_ACTIVITY~~               | ~~Embedded application's activity can be launched without a context~~                                                                                      | ~~Yes~~ |
 | ~~1 << 10~~ | ~~ALLOW_ACTIVITY_ACTION_JOIN_REQUEST~~ | ~~Application can enable activity join requests~~                                                                                                          | ~~No~~  |
+| 1 << 10     | SOCIAL_LAYER_INTEGRATION_LIMITED       | Application has limited access to the social layer SDK                                                                                                     | Yes     |
 | ~~1 << 11~~ | ~~RPC_HAS_CONNECTED~~                  | ~~Application has accessed the client RPC server before~~                                                                                                  | ~~Yes~~ |
 | 1 << 12     | GATEWAY_PRESENCE                       | Intent required for bots in **100 or more guilds** to receive [Presence Update](/topics/gateway-events#presence-update) Gateway events                     | Yes     |
 | 1 << 13     | GATEWAY_PRESENCE_LIMITED               | Intent required for bots in **under 100 guilds** to receive [Presence Update](/topics/gateway-events#presence-update) Gateway events                       | Yes     |
@@ -527,17 +528,18 @@ The values of this enum are currently unknown. Help us by figuring them out and 
 
 ##### Distributor Type
 
-| Value       | Description       |
-| ----------- | ----------------- |
-| discord     | Discord Store     |
-| steam       | Steam             |
-| twitch      | Twitch            |
-| uplay       | Ubisoft Connect   |
-| battlenet   | Battle.net        |
-| origin      | Origin            |
-| gog         | GOG.com           |
-| epic        | Epic Games Store  |
-| google_play | Google Play Store |
+| Value          | Description         |
+| -------------- | ------------------- |
+| discord        | Discord Store       |
+| steam          | Steam               |
+| twitch         | Twitch              |
+| uplay          | Ubisoft Connect     |
+| battlenet      | Battle.net          |
+| origin         | Origin              |
+| gog            | GOG.com             |
+| epic           | Epic Games Store    |
+| google_play    | Google Play Store   |
+| nvidia_gdn_app | NVIDIA Cloud Gaming |
 
 ###### Example Application SKU
 
@@ -797,6 +799,46 @@ Each metadata type offers a comparison operation that allows guilds to configure
 
 </Alert>
 
+### Activity Link Object
+
+###### Activity Link Structure
+
+| Field                         | Type      | Description                                      |
+| ----------------------------- | --------- | ------------------------------------------------ |
+| application_id                | snowflake | The application ID                               |
+| link_id ^1^                   | string    | The link ID                                      |
+| asset_path? ^2^               | string    | The hash of the application quick link asset     |
+| asset_id? ^2^                 | snowflake | The ID of the application asset                  |
+| title                         | string    | The title of the activity link                   |
+| description                   | string    | The description of the activity link             |
+| custom_id?                    | ?string   | A custom ID for the activity link                |
+| primary_cta? **(deprecated)** | ?string   | The primary call to action for the activity link |
+
+^1^ The link ID is in the format `<type>-<id>` where `type` is the [activity link type](#activity-link-type) and `id` is the snowflake ID.
+
+^2^ `asset_path` is only present on quick links, while `asset_id` is only present on managed links.
+
+###### Activity Link Type
+
+| Value | Name         | Description                                      |
+| ----- | ------------ | ------------------------------------------------ |
+| 0     | MANAGED_LINK | Managed by the application and last indefinitely |
+| 1     | QUICK_LINK   | Made by the user and last for 30 days            |
+
+###### Example Activity Link
+
+```json
+{
+  "application_id": "891436233903964161",
+  "link_id": "1-1385320255148003439",
+  "asset_path": "74420086a1aee57564cd6fc9a28461b1",
+  "title": "Alien",
+  "description": "aliens",
+  "primary_cta": null,
+  "custom_id": "button"
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/applications">
@@ -839,7 +881,7 @@ Returns a list of [application](#application-object) objects that the current us
       "id": "891436243903728565",
       "name": "Lightbulb",
       "icon": "546242649e3b09a97af7e8f29983837b",
-      "description": "\ud83d\udca1 Let there be light",
+      "description": "💡 Let there be light",
       "summary": "",
       "type": null,
       "is_monetized": false,
@@ -1103,6 +1145,71 @@ Resets the application's client secret. This revokes all previous secrets and re
 }
 ```
 
+<RouteHeader method="GET" url="/oauth2/applications/{application.id}/allowlist">
+  Get Application Testers
+</RouteHeader>
+
+Returns a list of [whitelisted user](#whitelisted-user-structure) objects representing the invited testers for the given application ID. User must be the owner of the application or member of the current team.
+
+###### Whitelisted User Structure
+
+| Field | Type                                               | Description                                                        |
+| ----- | -------------------------------------------------- | ------------------------------------------------------------------ |
+| user  | partial [user](/resources/user#user-object) object | The user that is whitelisted for the application                   |
+| state | integer                                            | The [state of the whitelisted user](#application-membership-state) |
+
+###### Application Membership State
+
+| Value | Name     | Description                                                                |
+| ----- | -------- | -------------------------------------------------------------------------- |
+| 1     | INVITED  | The user has been invited to the application but has not yet accepted      |
+| 2     | ACCEPTED | The user has accepted the invitation to the application and is whitelisted |
+
+<RouteHeader method="POST" url="/oauth2/applications/{application.id}/allowlist">
+  Add Application Tester
+</RouteHeader>
+
+Adds a user to the application's list of testers. User must be the owner of the application or developer of the current team. Returns a [whitelisted user](#whitelisted-user-structure) object on success.
+
+<Alert type="warn">
+
+You must be friends with the user you are inviting.
+
+</Alert>
+
+<Alert type="warn">
+
+Applications may have a maximum of 50 whitelisted users.
+
+</Alert>
+
+###### JSON Params
+
+| Field              | Type    | Description                          |
+| ------------------ | ------- | ------------------------------------ |
+| username           | string  | The username of the user to add      |
+| discriminator? ^1^ | ?string | The discriminator of the user to add |
+
+^1^ Not applicable for migrated users. See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
+
+<RouteHeader method="POST" url="/oauth2/allowlist/accept">
+  Accept Application Tester Invitation
+</RouteHeader>
+
+Accepts an application tester invitation received via email. Invited users will receive an email with a link that redirects to the official Discord client with a verification token present in the URL's query (e.g. `https://discord.com/oauth2/allowlist/accept?token=h9sYyrafnMhhObX4nGi9VOugCa9CSt`). Returns a 204 empty response on success.
+
+###### Query String Params
+
+| Field | Type   | Description                         |
+| ----- | ------ | ----------------------------------- |
+| token | string | The verification token from the URL |
+
+<RouteHeader method="DELETE" url="/oauth2/applications/{application.id}/allowlist/{user.id}">
+  Remove Application Tester
+</RouteHeader>
+
+Removes a user from the application's list of testers. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
+
 <RouteHeader method="POST" url="/applications/{application.id}/bot" mfa deprecated>
   Create Application Bot
 </RouteHeader>
@@ -1207,6 +1314,12 @@ Returns information about the application's eligibility for application director
 | discoverability_state       | integer                                                                                            | The current application directory [discoverability state](#application-discoverability-state) of the application    |
 | discovery_eligibility_flags | integer                                                                                            | The current application directory [eligibility flags](#application-discovery-eligibility-flags) for the application |
 | bad_commands                | array[[application command](/interactions/application-commands#application-command-object) object] | Not safe for work commands that are not allowed in the application directory                                        |
+
+<RouteHeader method="GET" url="/activities/{application.id}/test-mode">
+  Query Application Test Mode
+</RouteHeader>
+
+Queries whether the user can use test mode for the application. Test mode allows completing purchases without payment. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
 
 <RouteHeader method="GET" url="/activities/shelf">
   Get Embedded Activities
@@ -1362,7 +1475,7 @@ Proxies a list of URLs for the given application ID. Returns a list of [external
   Create Application Attachment
 </RouteHeader>
 
-Uploads an ephemeral attachment to the application. Must be a `multipart/form-data` body.
+Uploads an ephemeral attachment to the application. Must be a `multipart/form-data` body. Requires the [`EMBEDDED` application flag](#application-flags).
 
 ###### Form Params
 
@@ -1460,9 +1573,9 @@ Returns a partial [application](#application-object) object for the given ID wit
 
 ###### Query String Params
 
-| Field       | Type    | Description                                                                       |
-| ----------- | ------- | --------------------------------------------------------------------------------- |
-| with_guild? | boolean | Whether to include the `guild` field if the guild is discoverable (default false) |
+| Field       | Type    | Description                                                                                      |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------ |
+| with_guild? | boolean | Whether to include the guild object in the response if the guild is discoverable (default false) |
 
 <RouteHeader method="GET" url="/applications/{application.id}/rpc" unauthenticated>
   Get Rich Presence Application
@@ -1659,3 +1772,69 @@ Updates an application's role connection for the user. Returns the updated [appl
 | platform_name?     | string              | The vanity name of the platform a bot has connected (max 50 characters)                                                                                                                                      |
 | platform_username? | string              | The username on the platform a bot has connected (max 100 characters)                                                                                                                                        |
 | metadata?          | map[string, string] | Object mapping [application role connection metadata](#application-role-connection-metadata-object) keys to their `string`-ified value (max 100 characters) for the user on the platform a bot has connected |
+
+<RouteHeader method="GET" url="/applications/{application.id}/managed-links/">
+  Get Application Managed Links
+</RouteHeader>
+
+Returns a list of [activity link](#activity-link-object) objects for the given application ID. User must be the owner of the application or developer of the current team.
+
+<RouteHeader method="POST" url="/applications/{application.id}/managed-links/">
+  Create Application Managed Link
+</RouteHeader>
+
+Creates a new activity managed link. User must be the owner of the application or developer of the current team. Returns an [activity link](#activity-link-object) object on success.
+
+###### JSON Params
+
+| Field       | Type                              | Description                                            |
+| ----------- | --------------------------------- | ------------------------------------------------------ |
+| custom_id?  | ?string                           | A custom id for the activity link (1-256 characters)   |
+| description | string                            | The description of the activity link (1-64 characters) |
+| image       | [image data](/reference#cdn-data) | The activity link asset                                |
+| title       | string                            | The title of the activity link (1-32 characters)       |
+
+<RouteHeader method="GET" url="/applications/{application.id}/managed-links/{link_id}">
+  Get Application Managed Link
+</RouteHeader>
+
+Returns an [activity link](#activity-link-object) object for the given ID.
+
+<RouteHeader method="PATCH" url="/applications/{application.id}/managed-links/{link_id}">
+  Update Application Managed Link
+</RouteHeader>
+
+Updates the specified activity link for the given application ID. User must be the owner of the application or developer of the current team. Returns an [activity link](#activity-link-object) object on success.
+
+<RouteHeader method="DELETE" url="/applications/{application.id}/managed-links/{link_id}">
+  Delete Application Managed Link
+</RouteHeader>
+
+Deletes the specified activity link for the given application ID. User must be the owner of the application or developer of the current team. Returns a 204 empty response on success.
+
+<RouteHeader method="POST" url="/applications/{application.id}/quick-links/" supportsOAuth2>
+  Create Application Quick Link
+</RouteHeader>
+
+Creates a new activity quick link. Returns an [activity link](#activity-link-object) object on success.
+
+<Alert type="warn">
+
+When using OAuth2, quick links can be only created for the application that the access token belongs to.
+
+</Alert>
+
+###### JSON Params
+
+| Field       | Type                              | Description                                            |
+| ----------- | --------------------------------- | ------------------------------------------------------ |
+| custom_id?  | ?string                           | A custom id for the activity link (1-256 characters)   |
+| description | string                            | The description of the activity link (1-64 characters) |
+| image       | [image data](/reference#cdn-data) | The activity link asset                                |
+| title       | string                            | The title of the activity link (1-32 characters)       |
+
+<RouteHeader method="GET" url="/applications/{application.id}/quick-links/{link_id}" unauthenticated>
+  Get Application Quick Link
+</RouteHeader>
+
+Returns an [activity link](#activity-link-object) object for the given ID.

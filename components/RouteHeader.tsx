@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import { Fragment } from "react";
 import Badge from "./Badge";
 import { H3 } from "./mdx/Heading";

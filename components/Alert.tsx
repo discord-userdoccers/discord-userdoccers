@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 
 type AlertType = "danger" | "warn" | "info";
 

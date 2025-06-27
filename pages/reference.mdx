@@ -139,7 +139,7 @@ Authorization: Bot MTk4NjIyNDgzNDcxOTI1MjQ4.Cl2FMQ.ZnCjm1XVW7vRze4b7Cq4se7kKWs
 ###### Example Bearer Token Authorization Header
 
 ```
-Authorization: Bearer CZhtkLDpNYXgPH9Ml6shqh2OwykChw
+Authorization: Bearer ODkxNDM2MjMzOTAzOTY0MTYx.pXvaXIpme43oSHZLXDCK7IiKA8iAjr
 ```
 
 ## Encryption
@@ -148,7 +148,7 @@ All HTTP-layer services and protocols (e.g. HTTP, WebSocket) within the Discord 
 
 ## Snowflake Format
 
-Discord utilizes Twitter's [snowflake](https://github.com/twitter/snowflake/tree/snowflake-2010) format for uniquely identifiable descriptors (IDs). These IDs are guaranteed to be unique across all of Discord, except in some unique scenarios in which child objects share their parent's ID. Because Snowflake IDs are up to 64 bits in size (e.g. a uint64), they are always returned as strings in the HTTP API to prevent integer overflows in some languages. See [the Gateway documentation](/topics/gateway#encoding-and-compression) for more information regarding Gateway encoding.
+Discord utilizes Twitter's [snowflake](https://github.com/twitter/snowflake/tree/snowflake-2010) format for uniquely identifiable descriptors (IDs). These IDs are guaranteed to be unique across all of Discord, except in some specific scenarios in which child objects share their parent's ID. Because Snowflake IDs are up to 64 bits in size (e.g. a uint64), they are always returned as strings in the HTTP API to prevent integer overflows in some languages. See [the Gateway documentation](/topics/gateway#encoding-and-compression) for more information regarding Gateway encoding.
 
 ###### Snowflake ID Broken Down in Binary
 
@@ -265,6 +265,8 @@ The HTTP API accepts an optional `X-Debug-Options` header with a comma-delimited
 | canary | Forcefully routes the request to the canary API        |
 | trace  | Forcefully [traces the request with APM](#apm-tracing) |
 
+All API responses include a `X-Discord-Features` header which contains the name of the API feature that the request was routed to.
+
 ###### APM Tracing
 
 Discord offers an APM (Application Performance Monitoring) service that allows Discord employees to view traces of requests made to the API. This is useful for debugging issues with the API, and can be enabled by setting `trace` in the `X-Debug-Options` header as described above.
@@ -334,7 +336,7 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | Field                                           | Type     | Description                                                                                                                                                                     |
 | ----------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | os ^1^                                          | string   | The [operating system of the client](#operating-system-type)                                                                                                                    |
-| os_version                                      | string   | The operating system version (kernel version for Linux, SDK version for Android)                                                                                                |
+| os_version?                                     | string   | The operating system version (kernel version for Linux, SDK version for Android)                                                                                                |
 | os_sdk_version?                                 | string   | The operating system SDK version                                                                                                                                                |
 | os_arch?                                        | string   | The architecture of the operating system                                                                                                                                        |
 | app_arch?                                       | string   | The architecture of the desktop application                                                                                                                                     |
@@ -381,6 +383,7 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | utm_term_current?                               | string   | Same as `utm_term` but for the current session                                                                                                                                  |
 | has_client_mods?                                | boolean  | Whether the connecting client has modifications (e.g. BetterDiscord)                                                                                                            |
 | is_fast_connect? ^3^                            | boolean  | Whether the Gateway session sent the [identified](/topics/gateway#identifying) using fast connect (a preload script ran before the client was loaded)                           |
+| version? ^3^                                    | string   | The version of the client properties protocol                                                                                                                                   |
 
 ^1^ These properties are used to gate experimental features and may be required for certain endpoints. `client_version` is used instead of `client_build_number` for mobile experiments. See the [experiments documentation](/topics/experiments) for more information.
 
@@ -399,6 +402,9 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | Linux          | The client is running on a Linux distribution |
 | Windows Mobile | The client is running on Windows Mobile       |
 | Windows        | The client is running on Windows              |
+| Playstation    | The client is running on PlayStation          |
+| Xbox           | The client is running on Xbox                 |
+| Unknown        | The client is running on an unknown OS        |
 
 ###### Browser Type
 
@@ -657,26 +663,39 @@ Given a client version of 280.2 and a release channel of alpha, the user agent v
 }
 ```
 
+###### Example Client Properties (Embedded)
+
+```json
+{
+  "browser": "Discord Embedded",
+  "browser_user_agent": "Discord Embedded/0.0.8",
+  "browser_version": "0.0.8",
+  "client_build_number": 4440,
+  "design_id": 0,
+  "os": "Windows",
+  "release_channel": "unknown"
+}
+```
+
 ## Message Formatting
 
 Discord utilizes a subset of markdown for rendering message content on its clients, while also adding some custom functionality to enable things like mentioning users and channels. This functionality uses the following formats:
 
 ###### Formats
 
-| Type                    | Structure                      | Example                                           |
-| ----------------------- | ------------------------------ | ------------------------------------------------- |
-| User                    | `<@USER_ID>`                   | `<@80351110224678912>`                            |
-| User ^1^                | `<@!USER_ID>`                  | `<@!80351110224678912>`                           |
-| Channel                 | `<#CHANNEL_ID>`                | `<#103735883630395392>`                           |
-| Role                    | `<@&ROLE_ID>`                  | `<@&165511591545143296>`                          |
-| Slash Command ^2^       | `</NAME:COMMAND_ID>`           | `</airhorn:816437322781949972>`                   |
-| Standard Emoji          | Unicode Characters or `:NAME:` | 💯 or `:100:`                                     |
-| Custom Emoji            | `<:NAME:ID>`                   | `<:mmLol:216154654256398347>`                     |
-| Custom Emoji (Animated) | `<a:NAME:ID>`                  | `<a:b1nzy:392938283556143104>`                    |
-| Soundmoji ^3^           | `<sound:GUILD_ID:SOUND_ID:>`   | `<sound:1029315212005888060:1147975697353150494>` |
-| Unix Timestamp          | `<t:TIMESTAMP>`                | `<t:1618953630>`                                  |
-| Unix Timestamp (Styled) | `<t:TIMESTAMP:STYLE>`          | `<t:1618953630:d>`                                |
-| Guild Navigation        | `<id:TYPE>`                    | `<id:customize>`                                  |
+| Type                    | Structure                      | Example                         |
+| ----------------------- | ------------------------------ | ------------------------------- |
+| User                    | `<@USER_ID>`                   | `<@80351110224678912>`          |
+| User ^1^                | `<@!USER_ID>`                  | `<@!80351110224678912>`         |
+| Channel                 | `<#CHANNEL_ID>`                | `<#103735883630395392>`         |
+| Role                    | `<@&ROLE_ID>`                  | `<@&165511591545143296>`        |
+| Slash Command ^2^       | `</NAME:COMMAND_ID>`           | `</airhorn:816437322781949972>` |
+| Standard Emoji          | Unicode Characters or `:NAME:` | 💯 or `:100:`                   |
+| Custom Emoji            | `<:NAME:ID>`                   | `<:mmLol:216154654256398347>`   |
+| Custom Emoji (Animated) | `<a:NAME:ID>`                  | `<a:b1nzy:392938283556143104>`  |
+| Unix Timestamp          | `<t:TIMESTAMP>`                | `<t:1618953630>`                |
+| Unix Timestamp (Styled) | `<t:TIMESTAMP:STYLE>`          | `<t:1618953630:d>`              |
+| Guild Navigation        | `<id:TYPE>`                    | `<id:customize>`                |
 
 Using the markdown for either users, roles, or channels will usually mention the target(s) accordingly, but this can be suppressed using the `allowed_mentions` parameter when creating a message. Standard emoji are currently rendered using [Twemoji](https://twemoji.twitter.com/) for Desktop/Android and Apple's native emoji on iOS.
 
@@ -685,8 +704,6 @@ Timestamps are expressed in seconds and display the given timestamp in the user'
 ^1^ User mentions with an exclamation mark are deprecated and should be handled like any other user mention.
 
 ^2^ Subcommands and subcommand groups can also be mentioned by using respectively `</NAME SUBCOMMAND:ID>` and `</NAME SUBCOMMAND_GROUP SUBCOMMAND:ID>`.
-
-^3^ Default sounds use `0` in place for `GUILD_ID`.
 
 ###### Timestamp Styles
 
@@ -746,6 +763,7 @@ In the case of endpoints that support animated images, the hash will begin with 
 
 | Type                             | Path                                                                                                                                                                                                                                                                                 | Supports                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Activity Link Asset              | /attachments-quick-links/[{asset_path}](/resources/application#activity-link-object)                                                                                                                                                                                                 | Uploaded format ^4^                                  |
 | Achievement Icon                 | /app-assets/[{application_id}](/resources/application#application-object)/achievements/{achievement_id}/icons/icon_hash.png                                                                                                                                                          | PNG, JPEG, WebP                                      |
 | Application Icon                 | /app-icons/[{application_id}](/resources/application#application-object)/[{application_icon}](/resources/application#application-object).png                                                                                                                                         | PNG, JPEG, WebP                                      |
 | Application Cover                | /app-icons/[{application_id}](/resources/application#application-object)/[{application_cover_image}](/resources/application#application-object).png                                                                                                                                  | PNG, JPEG, WebP                                      |

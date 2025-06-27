@@ -71,6 +71,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Ping Stream Server](#ping-stream-server)                     | Ping a user's stream voice server                                 |
 | [Request Guild Members](#request-guild-members)               | Request members for one or more guilds                            |
 | [Request Call Connect](#request-call-connect)                 | Request a private channels's pre-existing call information        |
+| [Update Lobby Voice States](#update-lobby-voice-states)       | Update voice states for multiple lobbies                          |
 | Update Guild Subscriptions                                    | Update subscriptions for a guild                                  |
 | Request Forum Unreads                                         | Request thread-only channel unread counts                         |
 | [Remote Command](<#remote-command-(send)>)                    | Send a message to another Gateway session                         |
@@ -89,21 +90,23 @@ Details about identifying is in the [Gateway documentation](/topics/gateway#iden
 
 ###### Identify Structure
 
-| Field            | Type                                                     | Description                                                                                                                                                                                                                                                                     |
-| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| token            | string                                                   | Authentication token                                                                                                                                                                                                                                                            |
-| properties       | [client properties](/reference#client-properties) object | Client and system information                                                                                                                                                                                                                                                   |
-| compress?        | boolean                                                  | Whether this connection uses legacy payload compression (default false)                                                                                                                                                                                                         |
-| large_threshold? | integer                                                  | Total number of members where, for bots, the Gateway will stop sending offline members in the guild member list, or, for users, stop sending non-stateful events for guilds without a subscription (25-250, default 25 for bots and 250 for users) {/* TODO: Verify default */} |
-| shard?           | array[integer, integer]                                  | The connection's shard (shard_id, num_shards), used for [connection sharding](/topics/gateway#sharding)                                                                                                                                                                         |
-| presence? ^1^    | [update presence](#update-presence-structure) object     | Initial presence information                                                                                                                                                                                                                                                    |
-| intents? ^2^     | integer                                                  | The [Gateway intents](/topics/gateway#gateway-intents) you wish to receive                                                                                                                                                                                                      |
-| capabilities?    | integer                                                  | The [Gateway capabilities](/topics/gateway#gateway-capabilities) you wish to enable                                                                                                                                                                                             |
-| client_state?    | client state object                                      | The client's current cache state, used for reducing unneeded information transmission on re-identify                                                                                                                                                                            |
+| Field             | Type                                                     | Description                                                                                                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| token             | string                                                   | Authentication token                                                                                                                                                                                                                               |
+| properties        | [client properties](/reference#client-properties) object | Client and system information                                                                                                                                                                                                                      |
+| compress?         | boolean                                                  | Whether this connection uses legacy payload compression (default false)                                                                                                                                                                            |
+| large_threshold?  | integer                                                  | Total number of members where, for bots, the Gateway will stop sending offline members in the guild member list, or, for users, stop sending non-stateful events for guilds without a subscription (25-250, default 25 for bots and 250 for users) |
+| shard?            | array[integer, integer]                                  | The connection's shard (shard_id, num_shards), used for [connection sharding](/topics/gateway#sharding)                                                                                                                                            |
+| presence? ^1^ ^3^ | [update presence](#update-presence-structure) object     | Initial presence information                                                                                                                                                                                                                       |
+| intents? ^2^      | integer                                                  | The [Gateway intents](/topics/gateway#gateway-intents) you wish to receive                                                                                                                                                                         |
+| capabilities?     | integer                                                  | The [Gateway capabilities](/topics/gateway#gateway-capabilities) you wish to enable                                                                                                                                                                |
+| client_state? ^3^ | client state object                                      | The client's current cache state, used for reducing unneeded information transmission on re-identify                                                                                                                                               |
 
 ^1^ For user accounts, the `status` and `activities` specified may not always be respected. The field should only be used when re-identifying to communicate the last known presence of the user. Otherwise, the status should be `unknown` and activities an empty array.
 
 ^2^ Required for bots on API v8 and above.
+
+^3^ Not supported in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
 ###### Example Identify
 
@@ -238,7 +241,7 @@ All incoming Gateway events will be paused until the updated presence is propaga
 
 #### Update Voice State
 
-Sent when a client wants to join, move, or disconnect from a voice channel. Fires a [Voice State Update](#voice-state-update) and optionally [Voice Server Update](#voice-server-update) Gateway event.
+Sent when a client wants to join, move, or disconnect from a voice channel. Fires a [Voice State Update](#voice-state-update) and optionally a [Voice Server Update](#voice-server-update) Gateway event.
 
 ###### Update Voice State Structure
 
@@ -283,6 +286,23 @@ Sent when a client wants to request that the Gateway pings a misbehaving voice s
   "d": null
 }
 ```
+
+#### Update Lobby Voice States
+
+Sent by the client to update the user's voice state in multiple lobbies. Fires a [Lobby Voice State Update](#lobby-voice-state-update) and optionally [Lobby Voice Server Update](#lobby-voice-server-update) Gateway event.
+
+The inner `d` key is an array of the following objects:
+
+###### Update Lobby Voice State Structure
+
+| Field              | Type          | Description                                                                         |
+| ------------------ | ------------- | ----------------------------------------------------------------------------------- |
+| lobby_id           | snowflake     | The ID of the lobby                                                                 |
+| self_mute          | boolean       | Whether the client is muted                                                         |
+| self_deaf          | boolean       | Whether the client is deafened                                                      |
+| self_video?        | boolean       | Whether the client is streaming video to the channel                                |
+| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
+| preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the lobby   |
 
 #### Create Stream
 
@@ -747,6 +767,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Pins Update](#channel-pins-update)                                         | Message was pinned or unpinned                                                                  |
 | [Channel Recipient Add](#channel-recipient-add)                                     | User joined a group DM channel                                                                  |
 | [Channel Recipient Remove](#channel-recipient-remove)                               | User was removed from a group DM channel                                                        |
+| [Console Command Update](#console-command-update)                                   | Console command was updated                                                                     |
 | [Conversation Summary Update](#conversation-summary-update)                         | Conversation summaries were updated for a text channel                                          |
 | [DM Settings Upsell Show](#dm-settings-upsell-show)                                 | DM privacy settings upsell modal was triggered                                                  |
 | [Thread Create](#thread-create)                                                     | Thread was created, also sent when being added to a private thread                              |
@@ -755,11 +776,17 @@ These events directly correspond with a specific action or state change that has
 | [Thread List Sync](#thread-list-sync)                                               | Sent when gaining access to a channel, contains all active threads in that channel              |
 | [Thread Member Update](#thread-member-update)                                       | [Thread member](/resources/channel#thread-member-object) for the current user was updated       |
 | [Thread Members Update](#thread-members-update)                                     | User(s) were added to or removed from a thread                                                  |
+| [Entitlement Create](#entitlement-create)                                           | Entitlement was created                                                                         |
+| [Entitlement Update](#entitlement-update)                                           | Entitlement was updated                                                                         |
+| [Entitlement Delete](#entitlement-delete)                                           | Entitlement was deleted                                                                         |
 | [Friend Suggestion Create](#friend-suggestion-create)                               | Friend suggestion was created                                                                   |
 | [Friend Suggestion Delete](#friend-suggestion-delete)                               | Friend suggestion was deleted                                                                   |
+| [Gift Code Create](#gift-code-create)                                               | Gift code was created                                                                           |
+| [Gift Code Update](#gift-code-update)                                               | Gift code was updated                                                                           |
 | [Guild Create](#guild-create)                                                       | Guild became available or user joined a new guild                                               |
 | [Guild Update](#guild-update)                                                       | Guild was updated                                                                               |
 | [Guild Delete](#guild-delete)                                                       | Guild became unavailable, or user left/was removed from a guild                                 |
+| [Guild Applied Boosts Update](#guild-applied-boosts-update)                         | Premium guild subscription was created or updated                                               |
 | [Guild Audit Log Entry Create](#guild-audit-log-entry-create)                       | Guild audit log entry was created                                                               |
 | [Guild Ban Add](#guild-ban-add)                                                     | User was banned from a guild                                                                    |
 | [Guild Ban Remove](#guild-ban-remove)                                               | User was unbanned from a guild                                                                  |
@@ -772,9 +799,11 @@ These events directly correspond with a specific action or state change that has
 | [Guild Join Request Update](#guild-join-request-update)                             | Guild join request was updated                                                                  |
 | [Guild Join Request Delete](#guild-join-request-delete)                             | Guild join request was deleted                                                                  |
 | [Guild Member Add](#guild-member-add)                                               | User joined a guild                                                                             |
-| [Guild Member Remove](#guild-member-remove)                                         | User was removed from a guild                                                                   |
 | [Guild Member Update](#guild-member-update)                                         | Guild member was updated                                                                        |
+| [Guild Member Remove](#guild-member-remove)                                         | User was removed from a guild                                                                   |
 | [Guild Members Chunk](#guild-members-chunk)                                         | Response to [Request Guild Members](#request-guild-members)                                     |
+| [Guild Powerup Entitlements Create](#guild-powerup-entitlements-create)             | Guild powerups were added                                                                       |
+| [Guild Powerup Entitlements Delete](#guild-powerup-entitlements-delete)             | Guild powerups were removed                                                                     |
 | [Guild Role Create](#guild-role-create)                                             | Guild role was created                                                                          |
 | [Guild Role Update](#guild-role-update)                                             | Guild role was updated                                                                          |
 | [Guild Role Delete](#guild-role-delete)                                             | Guild role was deleted                                                                          |
@@ -821,6 +850,17 @@ These events directly correspond with a specific action or state change that has
 | [Relationship Remove](#relationship-remove)                                         | User had a relationship removed                                                                 |
 | [Game Relationship Add](#game-relationship-add)                                     | User had a game relationship added                                                              |
 | [Game Relationship Remove](#game-relationship-remove)                               | User had a game relationship removed                                                            |
+| [Lobby Create](#lobby-create)                                                       | Lobby was created                                                                               |
+| [Lobby Update](#lobby-update)                                                       | Lobby was updated                                                                               |
+| [Lobby Delete](#lobby-delete)                                                       | Lobby was deleted                                                                               |
+| [Lobby Member Add](#lobby-member-add)                                               | User was added to a lobby                                                                       |
+| [Lobby Member Update](#lobby-member-update)                                         | Lobby member was updated                                                                        |
+| [Lobby Member Remove](#lobby-member-remove)                                         | User was removed from a lobby                                                                   |
+| [Lobby Message Create](#lobby-message-create)                                       | Message was created in a lobby                                                                  |
+| [Lobby Message Update](#lobby-message-update)                                       | Message was updated in a lobby                                                                  |
+| [Lobby Message Delete](#lobby-message-delete)                                       | Message was deleted in a lobby                                                                  |
+| [Lobby Voice State Update](#lobby-voice-state-update)                               | User joined, left, or moved lobbies                                                             |
+| [Lobby Voice Server Update](#lobby-voice-server-update)                             | Lobby voice connection server was updated                                                       |
 | [Saved Message Create](#saved-message-create)                                       | Message was bookmarked                                                                          |
 | [Saved Message Delete](#saved-message-delete)                                       | Bookmarked message was deleted                                                                  |
 | [Sessions Replace](#sessions-replace)                                               | User session list was updated                                                                   |
@@ -836,11 +876,12 @@ These events directly correspond with a specific action or state change that has
 | [User Application Update](#user-application-update)                                 | User installed an application or application was updated                                        |
 | [User Application Remove](#user-application-remove)                                 | User uninstalled an application                                                                 |
 | [User Connections Update](#user-connections-update)                                 | User connection was created, updated, or deleted                                                |
+| [User Guild Settings Update](#user-guild-settings-update)                           | User guild settings were updated                                                                |
 | [User Merge Operation Completed](#user-merge-operation-completed)                   | User has been merged with a provisional account                                                 |
 | [User Note Update](#user-note-update)                                               | User note was updated                                                                           |
 | [User Required Action Update](#user-required-action-update)                         | User's required action was updated                                                              |
-| [User Guild Settings Update](#user-guild-settings-update)                           | User guild settings were updated                                                                |
 | [User Settings Update](#user-settings-update)                                       | User settings were updated                                                                      |
+| [Audio Settings Update](#audio-settings-update)                                     | Audio settings were updated                                                                     |
 | [Voice State Update](#voice-state-update)                                           | User joined, left, or moved a voice channel                                                     |
 | [Voice Server Update](#voice-server-update)                                         | Voice connection server was updated                                                             |
 | [Voice Channel Effect Send](#voice-channel-effect-send)                             | User sent an effect in a voice channel the current user is connected to                         |
@@ -867,13 +908,14 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | game_relationships ^1^                 | array[[game relationship](/resources/relationships#game-relationship-object)]                                              | The game relationships the user has with other users                                                                                                                                                                                                                   |
 | friend_suggestion_count? ^1^           | integer                                                                                                                    | The number of friend suggestions the user has                                                                                                                                                                                                                          |
 | private_channels ^1^                   | array[[channel](/resources/channel#channel-object) object]                                                                 | The DMs and group DMs the user is participating in                                                                                                                                                                                                                     |
-| connected_accounts                     | array[[connection](/resources/user#connection-object)]                                                                     | The third-party accounts the user has linked                                                                                                                                                                                                                           |
+| connected_accounts                     | array[[connection](/resources/connected-accounts#connection-object)]                                                       | The third-party accounts the user has linked                                                                                                                                                                                                                           |
 | notes ^1^ ^5^                          | map[snowflake, string]                                                                                                     | A mapping of user IDs to notes the user has made for them                                                                                                                                                                                                              |
 | presences ^6^                          | array[[presence](/resources/presence#presence-object) object]                                                              | The presences of the user's non-offline [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)).                                         |
 | merged_presences ^6^                   | [merged presences](#merged-presences-structure) object                                                                     | The presences of the user's non-offline [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), and any guild presences sent at startup |
 | merged_members ^6^ ^7^                 | array[array[[guild member](/resources/guild#guild-member-object) object]]                                                  | The members of the user's guilds, in the same order as the `guilds` array                                                                                                                                                                                              |
 | users ^6^                              | array[partial [user](/resources/user#user-object) object]                                                                  | The deduped users across all objects in the event                                                                                                                                                                                                                      |
-| application?                           | [gateway application](#gateway-application-structure) object                                                               | The application of the connected user, if it is a bot                                                                                                                                                                                                                  |
+| application?                           | [gateway application](#gateway-application-structure) object                                                               | The application of the connected user or OAuth2 application                                                                                                                                                                                                            |
+| scopes? ^10^                           | array[string]                                                                                                              | The [OAuth2 scopes](/topics/oauth2#oauth2-scopes) the user has authorized for the application                                                                                                                                                                          |
 | session_id                             | string                                                                                                                     | Unique session ID, used for resuming connections                                                                                                                                                                                                                       |
 | session_type                           | string                                                                                                                     | The [type of session](#session-type) that was started                                                                                                                                                                                                                  |
 | sessions ^1^                           | array[[session](/resources/presence#session-object) object]                                                                | The sessions that are currently active for the user                                                                                                                                                                                                                    |
@@ -893,6 +935,9 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | experiments ^1^                        | array[[user experiment](/topics/experiments#user-experiments) object]                                                      | User experiment rollouts for the user                                                                                                                                                                                                                                  |
 | guild_experiments ^1^                  | array[[guild experiment](/topics/experiments#guild-experiments) object]                                                    | Guild experiment rollouts for the user                                                                                                                                                                                                                                 |
 | explicit_content_scan_version          | integer                                                                                                                    | The latest version of the explicit content scan filter feature                                                                                                                                                                                                         |
+| av_sf_protocol_floor? ^10^             | integer                                                                                                                    | The minimum supported version of the DAVE protocol in eligible voice connection                                                                                                                                                                                        |
+| feature_flags? ^10^                    | [gateway feature flags](#gateway-feature-flags-structure) object                                                           | Social layer SDK feature flags                                                                                                                                                                                                                                         |
+| lobbies? ^10^ ^11^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -912,11 +957,19 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 ^9^ The field will be a [versioned array](#versioned-structure) if the `VERSIONED_USER_GUILD_SETTINGS` [Gateway capability](/topics/gateway#gateway-capabilities) is enabled. Otherwise, it will be a regular array.
 
-###### Session Type
+^10^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
-| Value  | Description             |
-| ------ | ----------------------- |
-| normal | A normal client session |
+^11^ Requires the `AUTO_LOBBY_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+###### Versioned Structure
+
+A generic object used to represent versioned data. Depends on specific capabilities to enable versioning for certain fields in the [Ready](#ready) event.
+
+| Field   | Type          | Description                            |
+| ------- | ------------- | -------------------------------------- |
+| entries | array[object] | The entries                            |
+| partial | boolean       | Whether the `entries` field is partial |
+| version | integer       | The version of the object              |
 
 ###### Merged Presences Structure
 
@@ -936,20 +989,27 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 ###### Gateway Application Structure
 
-| Field | Type      | Description                                                         |
-| ----- | --------- | ------------------------------------------------------------------- |
-| id    | snowflake | The ID of the application                                           |
-| flags | integer   | The [application's flags](/resources/application#application-flags) |
+| Field     | Type      | Description                                                         |
+| --------- | --------- | ------------------------------------------------------------------- |
+| id        | snowflake | The ID of the application                                           |
+| flags     | integer   | The [application's flags](/resources/application#application-flags) |
+| name? ^1^ | string    | The name of the application                                         |
 
-###### Versioned Structure
+^1^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
-A generic object used to represent versioned data. Depends on specific capabilities to enable versioning for certain fields in the [Ready](#ready) event.
+###### Gateway Feature Flags Structure
 
-| Field   | Type          | Description                            |
-| ------- | ------------- | -------------------------------------- |
-| entries | array[object] | The entries                            |
-| partial | boolean       | Whether the `entries` field is partial |
-| version | integer       | The version of the object              |
+| Field                   | Type          | Description                                                              |
+| ----------------------- | ------------- | ------------------------------------------------------------------------ |
+| disabled_functions      | array[string] | Functions that are currently disabled in the SDK due to instability      |
+| disabled_gateway_events | array[string] | Gateway events that are currently disabled in the SDK due to instability |
+
+###### Session Type
+
+| Value  | Description               |
+| ------ | ------------------------- |
+| normal | A normal Gateway session  |
+| oauth  | An OAuth2 Gateway session |
 
 #### Ready Supplemental
 
@@ -1183,6 +1243,12 @@ This event may reference roles or guild members that no longer exist in a guild.
 
 Sent when a channel relevant to the current user is deleted. The inner payload is a [channel](/resources/channel#channel-object) object.
 
+<Alert type="warn">
+
+For private channels, the received channel object will be partial.
+
+</Alert>
+
 #### Channel Statuses
 
 Sent in response to [Request Channel Statuses](#request-channel-statuses). Contains the statuses for all voice channels that have one set.
@@ -1260,6 +1326,24 @@ Sent when a user is removed from a group direct message channel.
 | ---------- | -------------------------------------------------- | ------------------------ |
 | channel_id | snowflake                                          | The ID of the channel    |
 | user       | partial [user](/resources/user#user-object) object | The user who was removed |
+
+### Consoles
+
+#### Console Command Update
+
+Sent when a console command is updated.
+
+###### Console Command Update Structure
+
+| Field      | Type                                                                                                | Description               |
+| ---------- | --------------------------------------------------------------------------------------------------- | ------------------------- |
+| id         | snowflake                                                                                           | The ID of the command     |
+| result ^1^ | string                                                                                              | The result of the command |
+| error ^2^  | ?partial [JSON error response](/topics/opcodes-and-status-codes#example-json-error-response) object | The error                 |
+
+^1^ If command failed, `result` will be set to either `failed`, or `n/a`.
+
+^2^ The object will contain only a `code` key.
 
 #### Conversation Summary Update
 
@@ -1345,6 +1429,31 @@ Sent when anyone is added to or removed from a thread. If the current user does 
 
 ^1^ Also include [`member`](/resources/guild#guild-member-object) and nullable [`presence`](/resources/presence#presence-object) fields.
 
+### Entitlements
+
+#### Entitlement Create
+
+Sent when an entitlement is created. The inner payload is an [entitlement](/resources/entitlement#entitlement-object) object.
+
+#### Entitlement Update
+
+Sent when an entitlement is updated. The inner payload is an [entitlement](/resources/entitlement#entitlement-object) object.
+
+For subscription entitlements, this event is triggered only when a user's subscription ends, providing an `ends_at` timestamp that indicates the end of the entitlement.
+
+#### Entitlement Delete
+
+Sent when an entitlement is deleted. The inner payload is an [entitlement](/resources/entitlement#entitlement-object) object.
+
+Entitlement deletions are infrequent, and occur when:
+
+- Discord issues a refund for a subscription
+- Discord removes an entitlement from a user via internal tooling
+- Discord deletes an app-managed entitlement they created
+- A test entitlement is deleted
+
+Entitlements are _not_ deleted when they expire.
+
 ### Friend Suggestions
 
 #### Friend Suggestion Create
@@ -1360,6 +1469,30 @@ Sent when a friend suggestion is deleted.
 | Field             | Type      | Description                  |
 | ----------------- | --------- | ---------------------------- |
 | suggested_user_id | snowflake | The ID of the suggested user |
+
+### Gift Codes
+
+#### Gateway Gift Code Object
+
+A gift code object received over the Gateway has different attributes than the REST API.
+
+###### Gateway Gift Code Structure
+
+| Field       | Type      | Description                                     |
+| ----------- | --------- | ----------------------------------------------- |
+| code        | string    | The gift code                                   |
+| sku_id      | snowflake | The ID of the SKU that the gift code grants     |
+| uses        | integer   | The number of times the gift code has been used |
+| channel_id? | snowflake | The ID of the channel the gift code was sent in |
+| guild_id?   | snowflake | The ID of the guild the gift code was sent in   |
+
+#### Gift Code Create
+
+Sent when the user creates a gift code. The inner payload is a [gateway gift code](#gateway-gift-code-object) object.
+
+#### Gift Code Update
+
+Sent when a gift code is updated, either by the user or in a channel the user can see. The inner payload is a [gateway gift code](#gateway-gift-code-object) object.
 
 ### Guilds
 
@@ -1462,6 +1595,10 @@ Sent when a guild is updated. The inner payload is a [guild](/resources/guild#gu
 
 Sent when a guild becomes or was already unavailable due to an outage, or when the user leaves or is removed from a guild. The inner payload is an [unavailable guild](#unavailable-guild-object) object. If the `unavailable` field is not set, the user was removed from the guild.
 
+#### Guild Applied Boosts Update
+
+Sent when a premium guild subscription is updated, meaning a user applied a boost or an existing boost was updated. The inner payload is a [premium guild subscription](/resources/guild#premium-guild-subscription-object) object.
+
 #### Guild Audit Log Entry Create
 
 Sent when a guild audit log entry is created. The inner payload is an [Audit Log Entry](/resources/audit-log#audit-log-entry-object) object. Requires the `VIEW_AUDIT_LOG` permission.
@@ -1472,10 +1609,11 @@ Sent when a user is banned from a guild.
 
 ###### Guild Ban Add Structure
 
-| Field    | Type                                               | Description         |
-| -------- | -------------------------------------------------- | ------------------- |
-| guild_id | snowflake                                          | The ID of the guild |
-| user     | partial [user](/resources/user#user-object) object | The banned user     |
+| Field               | Type                                               | Description                                 |
+| ------------------- | -------------------------------------------------- | ------------------------------------------- |
+| guild_id            | snowflake                                          | The ID of the guild                         |
+| user                | partial [user](/resources/user#user-object) object | The banned user                             |
+| delete_message_secs | integer                                            | Number of seconds messages were deleted for |
 
 #### Guild Ban Remove
 
@@ -1593,7 +1731,7 @@ Sent when a guild join request is deleted. Requires the `KICK_MEMBERS` permissio
 
 <Alert type="warn">
 
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+If using [Gateway intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
 
 </Alert>
 
@@ -1601,36 +1739,17 @@ Sent when a new user joins a guild. The inner payload is a [guild member](/resou
 
 For user accounts, this event is only sent for themselves. Users are not automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) or users they have an open DM with upon them joining.
 
-###### Guild Member Add Extra Fields
+###### Guild Member Add Structure Extra Fields
 
 | Field    | Type      | Description         |
 | -------- | --------- | ------------------- |
 | guild_id | snowflake | The ID of the guild |
 
-#### Guild Member Remove
-
-<Alert type="warn">
-
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
-
-</Alert>
-
-Sent when a user is removed from a guild (leave/kick/ban).
-
-For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
-
-###### Guild Member Remove Structure
-
-| Field    | Type                                       | Description         |
-| -------- | ------------------------------------------ | ------------------- |
-| guild_id | snowflake                                  | The ID of the guild |
-| user     | [user](/resources/user#user-object) object | The removed user    |
-
 #### Guild Member Update
 
 <Alert type="warn">
 
-If using [Gateway Intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+If using [Gateway intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
 
 </Alert>
 
@@ -1660,6 +1779,25 @@ For user accounts, this event is only sent for members they are subscribed to, a
 
 ^2^ If the value is a time in the past, the member's timeout has expired and they can communicate again. An event will not be sent when this happens.
 
+#### Guild Member Remove
+
+<Alert type="warn">
+
+If using [Gateway intents](/topics/gateway#gateway-intents), the `GUILD_MEMBERS` intent will be required to receive this event.
+
+</Alert>
+
+Sent when a user is removed from a guild (leave/kick/ban).
+
+For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/topics/gateway#gateway-capabilities)), as well as users they have an open DM with.
+
+###### Guild Member Remove Structure
+
+| Field    | Type                                       | Description         |
+| -------- | ------------------------------------------ | ------------------- |
+| guild_id | snowflake                                  | The ID of the guild |
+| user     | [user](/resources/user#user-object) object | The removed user    |
+
 #### Guild Members Chunk
 
 Sent in response to [Request Guild Members](#request-guild-members).
@@ -1676,6 +1814,28 @@ You can use the `chunk_index` and `chunk_count` to calculate how many chunks are
 | not_found?  | array                                                              | The passed IDs that were not found                                                                                           |
 | presences?  | array[[presence](/resources/presence#presence-object) object]      | The presences of the returned members, if requested                                                                          |
 | nonce?      | string                                                             | The nonce used in [Request Guild Members](#request-guild-members) or [Search Recent Members](#search-recent-members), if any |
+
+#### Guild Powerup Entitlements Create
+
+Sent when guild powerup entitlements are created.
+
+###### Guild Powerup Entitlements Create Structure
+
+| Field        | Type                                                                   | Description                      |
+| ------------ | ---------------------------------------------------------------------- | -------------------------------- |
+| guild_id     | snowflake                                                              | The ID of the guild              |
+| entitlements | array[[entitlement](/resources/entitlement#entitlement-object) object] | The created powerup entitlements |
+
+#### Guild Powerup Entitlements Delete
+
+Sent when guild powerup entitlements are deleted.
+
+###### Guild Powerup Entitlements Delete Structure
+
+| Field        | Type                                                                   | Description                      |
+| ------------ | ---------------------------------------------------------------------- | -------------------------------- |
+| guild_id     | snowflake                                                              | The ID of the guild              |
+| entitlements | array[[entitlement](/resources/entitlement#entitlement-object) object] | The deleted powerup entitlements |
 
 #### Guild Role Create
 
@@ -2096,7 +2256,7 @@ For user accounts, this event is only sent for presences they are subscribed to.
 
 <Alert type="warn">
 
-If you are using [Gateway Intents](/topics/gateway#gateway-intents), you _must_ specify the `GUILD_PRESENCES` intent in order to receive Presence Update events.
+If you are using [Gateway intents](/topics/gateway#gateway-intents), you _must_ specify the `GUILD_PRESENCES` intent in order to receive Presence Update events.
 
 </Alert>
 
@@ -2190,6 +2350,173 @@ Sent when a game relationship is removed, relevant to the current user.
 | since          | ISO8601 timestamp | When the user requested a relationship                                              |
 | dm_access_type | integer           | The [DM access level](/resources/relationships#dm-access-type) for the relationship |
 | user_id        | snowflake         | The ID of the current user                                                          |
+
+### Lobbies
+
+#### Gateway Lobby Object
+
+[Lobby](/resources/lobby#lobby-object) objects received over the Gateway have extended attributes that are not provided in the REST API.
+
+###### Gateway Lobby Structure Extra Fields
+
+| Field        | Type                                                                   | Description                                                                          |
+| ------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| voice_states | array[[lobby voice state](/resources/voice#voice-state-object) object] | The voice states of the users already in the lobby                                   |
+| region       | string                                                                 | The [voice region](/resources/voice#voice-region-object) ID the lobby is hosted from |
+| metadata     | ?map[string, string]                                                   | The metadata of the lobby                                                            |
+
+###### Lobby Deletion Reason
+
+| Value   | Description           |
+| ------- | --------------------- |
+| deleted | The lobby was deleted |
+| removed | The user was removed  |
+
+#### Lobby Create
+
+Sent when a lobby is updated. The inner payload is a [gateway lobby](#gateway-lobby-object) object.
+
+#### Lobby Update
+
+Sent when a lobby is updated. The inner payload is a [gateway lobby](#gateway-lobby-object) object.
+
+#### Lobby Delete
+
+Sent when a lobby is deleted or the user is removed from a lobby.
+
+###### Lobby Delete Structure
+
+| Field  | Type      | Description                                         |
+| ------ | --------- | --------------------------------------------------- |
+| id     | snowflake | The ID of the lobby                                 |
+| reason | string    | The [lobby deletion reason](#lobby-deletion-reason) |
+
+#### Lobby Member Add
+
+Sent when an user joins a lobby.
+
+###### Lobby Member Add Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The added member                                 |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Member Connect
+
+Sent when an user joins a lobby call.
+
+###### Lobby Member Connect Structure
+
+| Field    | Type                                                        | Description                       |
+| -------- | ----------------------------------------------------------- | --------------------------------- |
+| member   | [lobby member](/resources/lobby#lobby-member-object) object | The member that joined lobby call |
+| lobby_id | snowflake                                                   | The ID of the lobby               |
+
+#### Lobby Member Disconnect
+
+Sent when an user leaves a lobby call.
+
+###### Lobby Member Disconnect Structure
+
+| Field    | Type                                                        | Description                     |
+| -------- | ----------------------------------------------------------- | ------------------------------- |
+| member   | [lobby member](/resources/lobby#lobby-member-object) object | The member that left lobby call |
+| lobby_id | snowflake                                                   | The ID of the lobby             |
+
+#### Lobby Member Update
+
+Sent when a lobby member is updated.
+
+###### Lobby Member Update Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The updated member                               |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Member Remove
+
+Sent when a lobby member is removed.
+
+###### Lobby Member Remove Structure
+
+| Field          | Type                                                        | Description                                      |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| member         | [lobby member](/resources/lobby#lobby-member-object) object | The removed member                               |
+| lobby_id       | snowflake                                                   | The ID of the lobby                              |
+| application_id | snowflake                                                   | The ID of the application that created the lobby |
+
+#### Lobby Message Create
+
+Sent when a lobby message is created. The inner payload is a [message](/resources/message#message-object) object with the [extra structure](#message-object-extra-fields) above.
+
+<Alert type="warn">
+
+When the lobby does not have a channel linked, the message will be a partial [message](/resources/message#message-object) object.
+
+</Alert>
+
+#### Lobby Message Update
+
+Sent when a lobby message is updated. The inner payload is a [message](/resources/message#message-object) object with the [extra structure](#message-object-extra-fields) above.
+
+<Alert type="warn">
+
+When the lobby does not have a channel linked, the message will be a partial [message](/resources/message#message-object) object.
+
+</Alert>
+
+<Alert type="warn">
+
+The value for `tts` will always be `false` in message updates.
+
+</Alert>
+
+#### Lobby Message Delete
+
+Sent when a lobby message is deleted.
+
+###### Message Delete Structure
+
+| Field    | Type      | Description           |
+| -------- | --------- | --------------------- |
+| id       | snowflake | The ID of the message |
+| lobby_id | snowflake | The ID of the lobby   |
+
+#### Lobby Voice State Update
+
+Sent when someone joins/leaves/moves lobbies. Inner payload is a [lobby voice state](/resources/voice#voice-state-object) object.
+
+#### Lobby Voice Server Update
+
+Sent when a lobby's voice server is updated. This is sent when initially connecting to voice, and when the current voice instance fails over to a new server.
+
+<Alert type="warn">
+
+A `null` endpoint means that the voice server allocated has gone away and is trying to be reallocated. You should attempt to disconnect from the currently connected voice server, and not attempt to reconnect until a new voice server is allocated.
+
+</Alert>
+
+###### Lobby Voice Server Update Structure
+
+| Field    | Type      | Description                               |
+| -------- | --------- | ----------------------------------------- |
+| token    | string    | The voice connection token                |
+| lobby_id | snowflake | The lobby this voice server update is for |
+| endpoint | ?string   | The voice server host                     |
+
+###### Example Lobby Voice Server Update Payload
+
+```json
+{
+  "token": "66d29164ee8cd919",
+  "lobby_id": "41771983423143937",
+  "endpoint": "smart.loyal.discord.media:443"
+}
+```
 
 ### Saved Messages
 
@@ -2399,7 +2726,7 @@ Sent when the current user deauthorizes an integrated application.
 
 #### User Connections Update
 
-Sent when the current user has their connections updated. Inner payload is either a [connection](/resources/user#connection-object) object, or the following object:
+Sent when the current user has their connections updated. Inner payload is either a [connection](/resources/connected-accounts#connection-object) object, or the following object:
 
 ###### User Connections Update Structure
 
@@ -2466,6 +2793,17 @@ Sent when the client user settings are modified. Inner payload is a [user settin
 This event is not sent when using the `USER_SETTINGS_PROTO` [Gateway capability](/topics/gateway#gateway-capabilities).
 
 </Alert>
+
+#### Audio Settings Update
+
+Sent when audio context settings are modified. Only modified settings are sent.
+
+###### Audio Settings Update Structure
+
+| Field  | Type                                                                                          | Description                             |
+| ------ | --------------------------------------------------------------------------------------------- | --------------------------------------- |
+| user   | map[snowflake, [audio context setting](/resources/user-settings#audio-context-object) object] | Audio context settings for users        |
+| stream | map[snowflake, [audio context setting](/resources/user-settings#audio-context-object) object] | Audio context settings for user streams |
 
 #### User Required Action Update
 
@@ -2565,4 +2903,4 @@ Sent when a guild channel's webhook is created, updated, or deleted.
 
 #### Interaction Create
 
-Sent when a user uses an [Application Command](/interactions/application-commands/) or [Message Component](/interactions/message-components/). Inner payload is an [Interaction](/interactions/receiving-and-responding#interaction-structure).
+Sent when a user uses an [Application Command](/interactions/application-commands/) or [Message Component](/resources/components). Inner payload is an [Interaction](/interactions/receiving-and-responding#interaction-structure).

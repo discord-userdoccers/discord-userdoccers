@@ -1,6 +1,6 @@
 import { FC } from "react";
 
-export const QuestionIcon: FC<JSX.IntrinsicElements["svg"]> = (props) => (
+export const QuestionIcon: FC<React.JSX.IntrinsicElements["svg"]> = (props) => (
   <svg
     aria-label="CircleQuestionIcon"
     aria-hidden="false"

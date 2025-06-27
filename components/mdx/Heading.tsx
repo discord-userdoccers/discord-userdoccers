@@ -1,9 +1,9 @@
-import classNames from "classnames";
+import classNames from "@lib/classnames";
 import React, { isValidElement, ReactNode } from "react";
 import HyperlinkIcon from "../icons/Hyperlink";
 import TickIcon from "../icons/Tick";
 
-function getText(node: React.ReactNode): string {
+function getText(node: ReactNode): string {
   if (typeof node === "string") {
     return node.toLowerCase().replaceAll(" ", "-");
   }
@@ -13,17 +13,19 @@ function getText(node: React.ReactNode): string {
   }
 
   if (isValidElement(node)) {
-    return getText(node.props.children as ReactNode);
+    const element = node as React.ReactElement<{ children?: ReactNode }>;
+    return getText(element.props.children ?? "");
   }
 
   if (Array.isArray(node)) {
-    return node.map((element) => getText(element as ReactNode)).join("");
+    return node.map((element) => getText(element)).join("");
   }
+
   return "";
 }
 
 export interface HeadingProps {
-  as: any;
+  as: keyof React.JSX.IntrinsicElements;
   className: string;
   children?: React.ReactNode;
 }
@@ -73,7 +75,7 @@ function Heading({ as: As, className, children }: HeadingProps) {
   );
 }
 
-export function H1({ className, ...props }: JSX.IntrinsicElements["h1"]) {
+export function H1({ className, ...props }: React.JSX.IntrinsicElements["h1"]) {
   const classes = classNames(
     "not:first-of-type:mt-2 mb-2 mt-3 text-4xl font-bold leading-tight sm:leading-loose",
     className,
@@ -81,27 +83,27 @@ export function H1({ className, ...props }: JSX.IntrinsicElements["h1"]) {
   return <Heading as="h1" className={classes} {...props} />;
 }
 
-export function H2({ className, ...props }: JSX.IntrinsicElements["h2"]) {
+export function H2({ className, ...props }: React.JSX.IntrinsicElements["h2"]) {
   const classes = classNames("mb-4 mt-6 text-2xl font-semibold leading-relaxed", className);
   return <Heading as="h2" className={classes} {...props} />;
 }
 
-export function H3({ className, ...props }: JSX.IntrinsicElements["h3"]) {
+export function H3({ className, ...props }: React.JSX.IntrinsicElements["h3"]) {
   const classes = classNames("mb-2 mt-6 text-xl font-medium leading-normal", className);
   return <Heading as="h3" className={classes} {...props} />;
 }
 
-export function H4({ className, ...props }: JSX.IntrinsicElements["h4"]) {
+export function H4({ className, ...props }: React.JSX.IntrinsicElements["h4"]) {
   const classes = classNames("mb-2 mt-4 text-lg font-medium leading-normal", className);
   return <Heading as="h4" className={classes} {...props} />;
 }
 
-export function H5({ className, ...props }: JSX.IntrinsicElements["h5"]) {
+export function H5({ className, ...props }: React.JSX.IntrinsicElements["h5"]) {
   const classes = classNames("mb-4 mt-6 text-base font-medium leading-normal", className);
   return <Heading as="h5" className={classes} {...props} />;
 }
 
-export function H6({ className, ...props }: JSX.IntrinsicElements["h6"]) {
+export function H6({ className, ...props }: React.JSX.IntrinsicElements["h6"]) {
   const classes = classNames("mb-4 mt-6 text-base font-medium leading-normal", className);
   return <Heading as="h6" className={classes} {...props} />;
 }

@@ -1,5 +1,5 @@
-import { NavigationSection, NavigationLink, NavigationSubLink, SearchItem } from "./NavigationItems";
 import data from "./data.json" with { type: "json" };
+import { NavigationLink, NavigationSection, NavigationSubLink, SearchItem } from "./NavigationItems";
 
 export interface NavigationData {
   name: string | null;
@@ -23,6 +23,7 @@ export interface SubLink {
 export default function NavigationList() {
   return (
     <>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {(data as any as NavigationData[]).map((section) => (
         <NavigationSection title={section.name ?? undefined} key={section.section}>
           {section.name === null ? SearchItem : null}

@@ -10,7 +10,7 @@ A guild or private channel within Discord.
 
 | Field                               | Type                                                               | Description                                                                                                                                                                                  |
 | ----------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id                                  | snowflake                                                          | The ID of the channel                                                                                                                                                                        |
+| id ^8^                              | snowflake                                                          | The ID of the channel                                                                                                                                                                        |
 | type                                | integer                                                            | The [type of channel](#channel-type)                                                                                                                                                         |
 | guild_id?                           | snowflake                                                          | The ID of the guild the channel is in                                                                                                                                                        |
 | position?                           | integer                                                            | Sorting position of the channel                                                                                                                                                              |
@@ -60,6 +60,7 @@ A guild or private channel within Discord.
 | status? ^6^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
 | hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming entitlement expires for the voice channel                                                                                                                              |
 | hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming entitlement to the voice channel                                                                                                             |
+| linked_lobby?                       | ?[linked lobby](#linked-lobby-object) object                       | The lobby linked to the channel                                                                                                                                                              |
 
 ^1^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
 
@@ -74,6 +75,8 @@ A guild or private channel within Discord.
 ^6^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
 
 ^7^ Only included in [Gateway events](/topics/gateway-events#channels) and when fetched from the [Get Private Channels](#get-private-channels) endpoint.
+
+^8^ For ephemeral DM channels, the channel ID will always equal the ID of the other recipient.
 
 ###### Partial Channel Structure
 
@@ -451,6 +454,39 @@ The [threads](/topics/threads) topic has some more information.
 }
 ```
 
+###### Example Ephemeral DM Channel
+
+```json
+{
+  "flags": 0,
+  "id": "1001086404203389018",
+  "last_message_id": "1356768681543209051",
+  "recipients": [
+    {
+      "avatar": "c78ef8fb1db15a3d5f1b4c057856c5c9",
+      "avatar_decoration_data": null,
+      "discriminator": "0",
+      "global_name": "Dolfies",
+      "id": "852892297661906993",
+      "primary_guild": null,
+      "public_flags": 136,
+      "username": "dolfies"
+    },
+    {
+      "avatar": "f6c0363fbab45668fcf8f88fea56db9c",
+      "avatar_decoration_data": null,
+      "discriminator": "0",
+      "global_name": "Dziurwa💕",
+      "id": "1001086404203389018",
+      "primary_guild": null,
+      "public_flags": 4210944,
+      "username": ".dziurwa"
+    }
+  ],
+  "type": 18
+}
+```
+
 ###### Example Partial Channel
 
 ```json
@@ -596,6 +632,19 @@ An object that represents a tag that is able to be applied to a thread in a `GUI
 | emoji_name ^1^ | ?string    | The unicode character of the emoji                                                                            |
 
 ^1^ At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+### Linked Lobby Object
+
+A lobby linked to a channel.
+
+###### Linked Lobby Structure
+
+| Field          | Type              | Description                             |
+| -------------- | ----------------- | --------------------------------------- |
+| application_id | snowflake         | The ID of the application               |
+| lobby_id       | snowflake         | The ID of the lobby                     |
+| linked_by      | snowflake         | The ID of the user who linked the lobby |
+| linked_at      | ISO8601 timestamp | When the lobby was linked to channel    |
 
 ## Endpoints
 
@@ -1353,20 +1402,19 @@ Note that when sending a message, you must provide a value for **at least one of
 
 </Alert>
 
-| Field                       | Type                                                                                 | Description                                                                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| content?                    | string                                                                               | The message contents (max 2000 characters)                                                                                                 |
-| embeds? ^2^                 | array[[embed](/resources/message#embed-object) object]                               | Embedded `rich` content (max 6000 characters, max 10)                                                                                      |
-| embed? ^2^ **(deprecated)** | [embed](/resources/message#embed-object) object                                      | Embedded `rich` content (max 6000 characters), deprecated in favor of `embeds`                                                             |
-| allowed_mentions?           | [allowed mention](/resources/message#allowed-mentions-object) object                 | Allowed mentions for the message                                                                                                           |
-| components? ^2^             | array[[message component](/interactions/message-components#component-object) object] | Components to include with the message                                                                                                     |
-| sticker_ids?                | array[snowflake]                                                                     | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                                                        |
-| activity?                   | [message activity](/resources/message#message-activity-object) object                | The rich presence activity to invite users to                                                                                              |
-| application_id?             | snowflake                                                                            | The application ID of the activity to create a rich presence invite for (defaults to the primary activity if unspecified)                  |
-| flags?                      | integer                                                                              | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set) |
-| files[n]? ^1^               | file contents                                                                        | Contents of the file being sent (max 10)                                                                                                   |
-| payload_json? ^1^           | string                                                                               | JSON-encoded body of non-file params                                                                                                       |
-| attachments? ^1^            | array[partial [attachment](/resources/message#attachment-object) object]             | Partial attachment objects with `filename` and `description` (max 10)                                                                      |
+| Field             | Type                                                                      | Description                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| content?          | string                                                                    | The message contents (max 2000 characters)                                                                                                 |
+| embeds? ^2^       | array[[embed](/resources/message#embed-object) object]                    | Embedded `rich` content (max 6000 characters, max 10)                                                                                      |
+| allowed_mentions? | [allowed mention](/resources/message#allowed-mentions-object) object      | Allowed mentions for the message                                                                                                           |
+| components? ^2^   | array[[message component](/resources/components#component-object) object] | Components to include with the message                                                                                                     |
+| sticker_ids?      | array[snowflake]                                                          | IDs of up to 3 [stickers](/resources/sticker#sticker-object) to send in the message                                                        |
+| activity?         | [message activity](/resources/message#message-activity-object) object     | The rich presence activity to invite users to                                                                                              |
+| application_id?   | snowflake                                                                 | The application ID of the activity to create a rich presence invite for (defaults to the primary activity if unspecified)                  |
+| flags?            | integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set) |
+| files[n]? ^1^     | file contents                                                             | Contents of the file being sent (max 10)                                                                                                   |
+| payload_json? ^1^ | string                                                                    | JSON-encoded body of non-file params                                                                                                       |
+| attachments? ^1^  | array[partial [attachment](/resources/message#attachment-object) object]  | Partial attachment objects with `filename` and `description` (max 10)                                                                      |
 
 ^1^ See [Uploading Files](/reference#uploading-files) for details.
 
@@ -1589,3 +1637,9 @@ Returns the linked accounts for users in a group DM.
   }
 }
 ```
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/linked-lobby">
+  Remove Lobby Link
+</RouteHeader>
+
+Unlinks the linked lobby from the channel. Requires the `MANAGE_CHANNELS` permission. Returns the updated [channel](#channel-object) object on success. Fires a [Lobby Update](/topics/gateway-events#lobby-update) and [Channel Update](/topics/gateway-events#channel-update) Gateway event.

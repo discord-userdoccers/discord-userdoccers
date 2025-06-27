@@ -1,6 +1,6 @@
 import { FC } from "react";
 
-export const ListIcon: FC<JSX.IntrinsicElements["svg"]> = (props) => (
+export const ListIcon: FC<React.JSX.IntrinsicElements["svg"]> = (props) => (
   <svg
     aria-label="ListBulletsIcon"
     aria-hidden="false"

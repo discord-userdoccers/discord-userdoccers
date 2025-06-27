@@ -217,6 +217,13 @@ If successful, the Gateway will send the missed events in order, finishing with 
 
 If the client does not reconnect in time, the replay buffer will overfill and the session will be invalidated. In this case, the client will receive an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) and should disconnect. After disconnect, the client should create a new connection with the cached URL from the [Get Gateway](#get-gateway) or the [Get Gateway Bot](#get-gateway-bot) endpoint, then [identify](#identifying).
 
+## OAuth2 and the Gateway
+
+Bearer tokens with the `identify` and either the `gateway.connect` or `voice` [OAuth2 scopes](/topics/oauth2#oauth2-scopes) can be used to connect to the Gateway on behalf of a user. The token must be prefixed with `Bearer ` when [identifying](#identifying), as in HTTP requests.
+The available [Gateway intents](/topics/gateway#gateway-intents) and [events](/topics/gateway-events) will differ depending on the authorized scopes.
+
+Note that supported commands and payload structures may differ from those outlined in this documentation. Objects may be more partial than expected or may not contain required fields. As this feature is not stable, these differences are often changing and not yet documented. Proceed with caution.
+
 ## Gateway Capabilities
 
 <Alert type="info">
@@ -237,19 +244,20 @@ Below is a list of all capabilities and a general description of their effects. 
 | ------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1 << 0  | LAZY_USER_NOTES                       | Removes the `notes` field from the [Ready](/topics/gateway-events#ready) event,                                                                                                                                                                                                                                                                |
 | 1 << 1  | NO_AFFINE_USER_IDS                    | Prevents member/presence syncing and [Presence Update](/topics/gateway-events#presence-update) events for [implicit relationships](/resources/relationships#relationship-object)                                                                                                                                                               |
-| 1 << 2  | VERSIONED_READ_STATES                 | Enables versioned read states, changing the `read_state` field in the [Ready](/topics/gateway-events#ready) event to an object, allowing it to be cached when re-identifying                                                                                                                                                                   |
-| 1 << 3  | VERSIONED_USER_GUILD_SETTINGS         | Enables versioned user guild settings, changing the `user_guild_settings` field in the [Ready](/topics/gateway-events#ready) event to an object, allowing it to be cached when re-identifying                                                                                                                                                  |
+| 1 << 2  | VERSIONED_READ_STATES                 | Enables versioned read states, changing the `read_state` field in the [Ready](/topics/gateway-events#ready) event to an object and allowing it to be cached when re-identifying                                                                                                                                                                |
+| 1 << 3  | VERSIONED_USER_GUILD_SETTINGS         | Enables versioned user guild settings, changing the `user_guild_settings` field in the [Ready](/topics/gateway-events#ready) event to an object and allowing it to be cached when re-identifying                                                                                                                                               |
 | 1 << 4  | DEDUPE_USER_OBJECTS                   | Dehydrates the [Ready](/topics/gateway-events#ready) payload, moving all user objects to the `users` field and replacing them in various places in the payload with `user_id` or `recipient_id`, and merging the `members` fields of all guilds into a single `merged_members` field                                                           |
 | 1 << 5  | PRIORITIZED_READY_PAYLOAD ^1^         | Separates the [Ready](/topics/gateway-events#ready) payload into two parts ([Ready](/topics/gateway-events#ready) and [Ready Supplemental](/topics/gateway-events#ready-supplemental)) allowing the client to receive the [Ready](/topics/gateway-events#ready) payload faster and then receive the rest of the payload later                  |
 | 1 << 6  | MULTIPLE_GUILD_EXPERIMENT_POPULATIONS | Changes the `populations` entry of [`guild_experiments`](/topics/experiments#guild-experiments) in the [Ready](/topics/gateway-events#ready) event to be an array of populations rather than a single population                                                                                                                               |
 | 1 << 7  | NON_CHANNEL_READ_STATES               | Includes read states tied to non-channel resources (e.g. guild scheduled events and notification center) in the `read_states` field of the [Ready](/topics/gateway-events#ready) event                                                                                                                                                         |
 | 1 << 8  | AUTH_TOKEN_REFRESH                    | Enables auth token refresh, allowing the client to optionally receive a new auth token in the `auth_token` field of the [Ready](/topics/gateway-events#ready) event                                                                                                                                                                            |
-| 1 << 9  | USER_SETTINGS_PROTO                   | Removes the `user_settings` field from the [Ready](/topics/gateway-events#ready) event, and prevents [User Settings Update](/topics/gateway-events#user-settings-update) events; the `user_settings_proto` field and [User Settings Proto Update](/topics/gateway-events#user-settings-proto-update) event is used instead                     |
+| 1 << 9  | USER_SETTINGS_PROTO                   | Removes the `user_settings` field from the [Ready](/topics/gateway-events#ready) event and prevents [User Settings Update](/topics/gateway-events#user-settings-update) events; the `user_settings_proto` field and [User Settings Proto Update](/topics/gateway-events#user-settings-proto-update) event is used instead                      |
 | 1 << 10 | CLIENT_STATE_V2                       | Enables client state caching v2                                                                                                                                                                                                                                                                                                                |
 | 1 << 11 | PASSIVE_GUILD_UPDATE                  | Enables passive guild updates, allowing the client to receive Passive Update v1 events instead of Channel Unreads Update events for guilds it is not subscribed to                                                                                                                                                                             |
 | 1 << 12 | AUTO_CALL_CONNECT                     | Connects the client to all pre-existing calls upon connecting to the Gateway; this means clients will receive [Call Create](/topics/gateway-events#call-create) events for all calls created before the Gateway connection was established without needing to send a [Request Call Connect](/topics/gateway-events#request-call-connect) first |
 | 1 << 13 | DEBOUNCE_MESSAGE_REACTIONS            | Debounces message reaction events, preventing the client from receiving multiple [Message Reaction Add](/topics/gateway-events#message-reaction-add) events for the same message within a short period of time; clients will receive a single [Message Reaction Add Many](/topics/gateway-events#message-reaction-add-many) event instead      |
 | 1 << 14 | PASSIVE_GUILD_UPDATE_V2 ^2^           | Enables passive guild updates v2, allowing the client to receive Passive Update v2 events instead of Channel Unreads Update events for guilds it is not subscribed to                                                                                                                                                                          |
+| 1 << 16 | AUTO_LOBBY_CONNECT                    | Adds a `lobbies` field to the [Ready](/topics/gateway-events#ready) event containing pre-existing lobbies and stops sending [Lobby Create](/topics/gateway-events#lobby-create) events upon connecting to the Gateway                                                                                                                          |
 
 ^1^ Requires `DEDUPE_USER_OBJECTS`. Without it, the capability will be ignored.
 
@@ -389,6 +397,13 @@ PRIVATE_CHANNELS (1 << 18) ⁴
   - CHANNEL_RECIPIENT_ADD
   - CHANNEL_RECIPIENT_REMOVE
 
+CALLS (1 << 19) ⁴ ⁵
+  - AUDIO_SETTINGS_UPDATE
+  - CALL_CREATE
+  - CALL_UPDATE
+  - CALL_DELETE
+  - VOICE_STATE_UPDATE
+
 AUTO_MODERATION_CONFIGURATION (1 << 20)
   - AUTO_MODERATION_RULE_CREATE
   - AUTO_MODERATION_RULE_UPDATE
@@ -417,6 +432,21 @@ DIRECT_MESSAGE_POLLS (1 << 25)
 
 DIRECT_EMBEDDED_ACTIVITIES (1 << 26)
   - EMBEDDED_ACTIVITY_UPDATE_V2
+
+LOBBIES (1 << 27)
+  - LOBBY_CREATE
+  - LOBBY_UPDATE
+  - LOBBY_MEMBER_ADD
+  - LOBBY_MEMBER_UPDATE
+  - LOBBY_MEMBER_REMOVE
+  - LOBBY_MESSAGE_CREATE
+  - LOBBY_MESSAGE_UPDATE
+  - LOBBY_MESSAGE_DELETE
+  - LOBBY_VOICE_SERVER_UPDATE
+  - LOBBY_VOICE_STATE_UPDATE
+
+LOBBY_DELETE (1 << 28)
+  - LOBBY_DELETE
 ```
 
 ^1^ [Thread Members Update](/topics/gateway-events#thread-members-update) contains different data depending on which intents are used.
@@ -426,6 +456,8 @@ DIRECT_EMBEDDED_ACTIVITIES (1 << 26)
 ^3^ `MESSAGE_CONTENT` does not represent individual events, but rather affects what data is present for events that could contain message content fields. More information is in the [message content intent](#message-content-intent) section.
 
 ^4^ This intent cannot be used by bots.
+
+^5^ This intent is only applicable in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
 ### Caveats
 
@@ -437,7 +469,7 @@ Any [events not defined in an intent](#gateway-events) are considered "passthrou
 
 [Guild Create](/topics/gateway-events#guild-create) and [Request Guild Members](/topics/gateway-events#request-guild-members) are uniquely affected by intents. See these sections for more information.
 
-[Thread Members Update](/topics/gateway-events#thread-members-update) by default only includes if the current user was added to or removed from a thread. To receive these updates for other users, request the `GUILD_MEMBERS` [Gateway Intent](#gateway-intents).
+[Thread Members Update](/topics/gateway-events#thread-members-update) by default only includes if the current user was added to or removed from a thread. To receive these updates for other users, request the `GUILD_MEMBERS` [Gateway intent](#gateway-intents).
 
 ### Privileged Intents
 

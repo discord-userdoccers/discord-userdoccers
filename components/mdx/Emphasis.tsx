@@ -1,3 +1,5 @@
-export default function Emphasis(props: JSX.IntrinsicElements["em"]) {
+import React from "react";
+
+export default function Emphasis(props: React.JSX.IntrinsicElements["em"]) {
   return <em {...props} />;
 }
