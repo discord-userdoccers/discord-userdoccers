@@ -126,7 +126,8 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   );
 }
 
-export function Table(props: React.JSX.IntrinsicElements["table"]) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- needed to avoid react bug
+export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"]) {
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
