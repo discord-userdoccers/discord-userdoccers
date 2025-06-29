@@ -134,7 +134,7 @@ export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"]
     <div className="group relative mt-0 max-w-full overflow-auto">
       <table
         ref={tableRef}
-        className="w-full border-collapse overflow-hidden break-words rounded-md rounded-t-none align-middle text-sm"
+        className="w-full border-collapse overflow-hidden break-words rounded-md align-middle text-sm"
         {...props}
       />
       <div className="absolute right-0 top-0 p-2 px-2">
