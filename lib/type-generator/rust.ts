@@ -146,9 +146,13 @@ export class RustGenerator {
       throw new Error("Invalid TypeInfo provided.");
     }
 
-    if (type.optional || isUndefinable) {
+    if (type.optional) {
       stringType = `Option<${stringType}>`;
     }
+    if (isUndefinable) {
+      stringType = `Option<${stringType}>`;
+    }
+
 
     return stringType;
   }
