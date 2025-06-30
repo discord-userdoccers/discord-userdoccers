@@ -69,6 +69,7 @@ export class RustGenerator {
 
     let prefix = "\t";
     if (layout.type === TableType.Struct) {
+      output += `#[derive(Serialize, Deserialize)]\n`;
       output += `pub struct ${title} {\n`;
     } else if (layout.type === TableType.Bitfield) {
       output += `bitflags! {\n`;
@@ -79,6 +80,7 @@ export class RustGenerator {
       output += `#[repr(u8)]\n`;
       output += `pub enum ${title} {\n`;
     } else {
+      output += `#[derive(Serialize, Deserialize)]\n`;
       output += `pub enum ${title} {\n`;
     }
 
