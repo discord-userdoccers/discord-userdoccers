@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHash } from "../../hooks/useHash";
+import Styles from "../../stylesheets/modules/Errors.module.css";
 import Chevron from "../icons/Chevron";
 import { getNormalisedText, H3 } from "../mdx/Heading";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "../mdx/Table";
@@ -77,14 +78,13 @@ export default function ErrorCodeGroup({
           aria-controls={tableId}
           aria-label={`Expand group: ${name}`}
           onClick={() => setShowTable(!showTable)}
-          className="flex justify-start items-center cursor-pointer gap-2 focus:outline-none"
+          className={Styles.groupButton}
         >
           <div>{name}</div>
           <Chevron
-            className="h-5 w-4 text-black dark:text-white"
+            className={Styles.groupIcon}
             style={{
               transform: showTable ? "rotate(0deg)" : "rotate(-180deg)",
-              transition: "transform 0.2s ease-in-out",
             }}
           />
         </button>

@@ -1,6 +1,8 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Fragment, useState } from "react";
 import { toast } from "react-toastify";
+import classNames from "../../lib/classnames";
+import Styles from "../../stylesheets/modules/Errors.module.css";
 import Emphasis from "../mdx/Emphasis";
 import { H2 } from "../mdx/Heading";
 import Strong from "../mdx/Strong";
@@ -9,10 +11,6 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
   const [errorCode, setErrorCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  const labelClass = "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200";
-  const inputClass =
-    '"block w-full rounded-md bg-gray-100 dark:bg-table-row-background-secondary-dark border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:text-white"';
 
   return (
     <Transition appear show={props.isOpen} as={Fragment}>
@@ -40,14 +38,14 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-md transform overflow-hidden rounded-md bg-white dark:bg-background-dark py-3 pb-6 px-5 text-left align-middle shadow-xl transition-all">
+              <DialogPanel className={Styles.dialogPanel}>
                 <DialogTitle as={H2} useAnchor={false} useCopy={false}>
                   Submit an Error
                 </DialogTitle>
-                <p className="text-text-light/80 dark:text-text-dark/80 -mt-3 ">
+                <p className={classNames(Styles.dialogText, "-mt-3")}>
                   Thanks for your contribution! Please fill out the form below to add your error code.
                 </p>
-                <p className="text-text-light/80 dark:text-text-dark/80 mt-2 mb-5">
+                <p className={classNames(Styles.dialogText, "mt-2 mb-5")}>
                   <Emphasis>Note:</Emphasis> Please ensure that your client/API locale is set to{" "}
                   <Strong>English (US)</Strong>.
                 </p>
@@ -76,7 +74,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                   }}
                 >
                   <div>
-                    <label htmlFor="code" className={labelClass}>
+                    <label htmlFor="code" className={Styles.dialogLabel}>
                       Error Code{" "}
                       {errorCode && (
                         <span className="text-sm opacity-60">
@@ -92,7 +90,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       value={errorCode}
                       onChange={(e) => setErrorCode(e.target.value)}
                       required
-                      className={inputClass}
+                      className={Styles.dialogInput}
                       list="error-codes-list"
                     />
                     <datalist id="error-codes-list">
@@ -105,7 +103,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                   </div>
 
                   <div className="hidden" aria-hidden hidden>
-                    <label htmlFor="submissionType" className={labelClass}>
+                    <label htmlFor="submissionType" className={Styles.dialogLabel}>
                       Submission Type
                     </label>
                     <input
@@ -113,12 +111,12 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       id="submission_type"
                       name="submission_type"
                       value={errorCode in props.codes ? "update" : "new"}
-                      className={inputClass}
+                      className={Styles.dialogInput}
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="message" className={labelClass}>
+                    <label htmlFor="message" className={Styles.dialogLabel}>
                       {errorCode in props.codes && "Updated"} Error Message
                     </label>
                     <input
@@ -128,15 +126,15 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       name="message"
                       required
                       defaultValue={props.codes[errorCode] || ""}
-                      className={inputClass}
+                      className={Styles.dialogInput}
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="change_description" className={labelClass}>
+                    <label htmlFor="change_description" className={Styles.dialogLabel}>
                       Reason for Change
                     </label>
-                    <p className="text-sm text-text-light/70 dark:text-text-dark/80 mb-3">
+                    <p className={classNames(Styles.dialogText, "text-sm mb-3")}>
                       {errorCode in props.codes
                         ? "Explain why this error code is being updated"
                         : "Describe where this error code is used"}
@@ -149,7 +147,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       id="change_description"
                       name="change_description"
                       required
-                      className={inputClass}
+                      className={Styles.dialogInput}
                       autoComplete="off"
                       rows={3}
                     />

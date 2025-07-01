@@ -10,6 +10,8 @@ import { SearchIcon } from "../../components/mdx/icons/SearchIcon";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
 import { HashProvider } from "../../hooks/useHash";
+import classNames from "../../lib/classnames";
+import Styles from "../../stylesheets/modules/Errors.module.css";
 
 export default function Errors() {
   const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string>; index: number }[]>(
@@ -96,7 +98,7 @@ export default function Errors() {
               placeholder="Search error codes..."
               aria-describedby="error-search-description"
               // FIXME(splatter): This is disgusting styling
-              className="DocSearch DocSearch-Button ml-0 py-3.5 px-4 pl-9 h-full w-full md:max-w-96 rounded-md text-text-light dark:text-text-dark bg-gray-200 border border-gray-300 dark:bg-table-row-background-secondary-dark focus:outline-none focus:ring-2 focus:ring-brand-blurple"
+              className={classNames("DocSearch", "DocSearch-Button", Styles.searchbar)}
               onChange={(e) => setSearch(e.target.value.toLowerCase())}
             />
           </div>
@@ -105,7 +107,7 @@ export default function Errors() {
 
       {!codes && !error ? (
         <p
-          className="italic mt-5"
+          className={Styles.statusText}
           aria-busy
           role="status"
           aria-live="polite"
@@ -117,7 +119,7 @@ export default function Errors() {
         </p>
       ) : null}
       {error ? (
-        <p className="italic mt-5" role="alert">
+        <p className={Styles.statusText} role="alert">
           {error.message}
         </p>
       ) : null}
