@@ -339,9 +339,9 @@ export class Tokenizer {
     }
 
     for (const row of bodyRows) {
-        if (row.children[0].children[0].elem.tagName?.toLocaleLowerCase() === "del") {
-          continue;
-        }
+      if (row.children[0].children[0].elem.tagName?.toLocaleLowerCase() === "del") {
+        continue;
+      }
 
       let field: TypeInfo | undefined;
       let type: TypeInfo | undefined;

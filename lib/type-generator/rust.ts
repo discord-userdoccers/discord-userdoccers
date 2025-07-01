@@ -155,7 +155,6 @@ export class RustGenerator {
       stringType = `Option<${stringType}>`;
     }
 
-
     return stringType;
   }
 
