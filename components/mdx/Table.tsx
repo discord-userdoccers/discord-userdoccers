@@ -127,7 +127,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- needed to avoid react bug
-export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"]) {
+export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"] & { useCodegen?: boolean }) {
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
@@ -137,9 +137,11 @@ export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"]
         className="w-full border-collapse overflow-hidden break-words rounded-md align-middle text-sm"
         {...props}
       />
-      <div className="absolute right-0 top-0 p-2 px-2">
-        <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
-      </div>
+      {props.useCodegen !== false && (
+        <div className="absolute right-0 top-0 p-2 px-2">
+          <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
+        </div>
+      )}
     </div>
   );
 }

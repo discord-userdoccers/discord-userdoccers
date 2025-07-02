@@ -20,7 +20,11 @@ import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
 const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
 
-export default function App({ Component, pageProps, router }: AppProps) {
+export default function App({
+  Component,
+  pageProps,
+  router,
+}: AppProps & { Component: AppProps["Component"] & { meta?: { title: string; description: string } } }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
@@ -37,8 +41,8 @@ export default function App({ Component, pageProps, router }: AppProps) {
 
   const getText = () => {
     if (router.pathname !== "/404") {
-      const str = ReactDOMServer.renderToString(component);
-      const title = TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
+      const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
+      const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
 
       return {
         description: `${str
