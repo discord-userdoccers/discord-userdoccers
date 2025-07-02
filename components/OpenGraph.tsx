@@ -85,7 +85,7 @@ export default function OpenGraph({
         <meta property="og:title" content={title} key="og-title" />
         <meta property="og:description" content={description} key="og-desc" />
         {image && <meta property="og:image" content={image} key="og-image" />}
-        <meta property="og:locale" content="en_US" />
+        <meta property="og:locale" content="en" />
 
         {/* FIXME: theme color contrasts with page body in safari */}
         <meta name="theme-color" content="#5864F2" />
