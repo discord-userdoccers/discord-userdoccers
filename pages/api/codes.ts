@@ -67,6 +67,8 @@ export default async function errorCodes(req: Request) {
       if (!req.headers.get("Content-Type")?.startsWith("multipart/form-data"))
         return new Response("Unsupported Media Type", { status: 415 });
 
+      const remoteAddr =
+        req.headers.get("X-Forwarded-For") || req.headers.get("X-Real-IP") || req.headers.get("CF-Connecting-IP");
       const data = await req.formData();
 
       const code = data.get("code");
@@ -114,6 +116,11 @@ export default async function errorCodes(req: Request) {
                 {
                   name: "New Message",
                   value: message,
+                  inline: true,
+                },
+                {
+                  name: "Submitted By",
+                  value: remoteAddr,
                   inline: true,
                 },
               ].filter(Boolean),
