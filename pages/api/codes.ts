@@ -63,7 +63,7 @@ export default async function errorCodes(req: Request) {
       });
     }
     case "PUT": {
-      if (!process.env.ERROR_CODES_WEBHOOK) return new Response("Submission Not Allowed", { status: 422 });
+      if (!process.env.ERROR_CODES_WEBHOOK) return new Response("Submission service unavailable", { status: 503 });
       if (!req.headers.get("Content-Type")?.startsWith("multipart/form-data"))
         return new Response("Unsupported Media Type", { status: 415 });
 
@@ -82,15 +82,21 @@ export default async function errorCodes(req: Request) {
         typeof submissionType !== "string" ||
         typeof reason !== "string" ||
         typeof message !== "string" ||
-        code.length < 4 ||
-        !/^[0-9]+$/.test(code) ||
-        reason.length < 10 ||
-        reason.length > 500 ||
-        message.length < 3 ||
-        message.length > 200 ||
         !["new", "update"].includes(submissionType)
       ) {
-        return new Response("Bad Request", { status: 400 });
+        return new Response("Bad request", { status: 400 });
+      }
+
+      if (code.length < 4 || !/^[0-9]+$/.test(code)) {
+        return new Response("Invalid error code", { status: 422 });
+      }
+
+      if (message.length < 10 || message.length > 200) {
+        return new Response("Error message must be between 10 and 200 characters", { status: 422 });
+      }
+
+      if (reason.length < 10 || reason.length > 500) {
+        return new Response("Reason must be between 10 and 500 characters", { status: 422 });
       }
 
       // Given code like 10007, get the group (first digit(s) before the last 4 digits)
@@ -135,7 +141,12 @@ export default async function errorCodes(req: Request) {
         },
       });
 
-      return new Response(null, { status: 201 });
+      return new Response(JSON.stringify({ code, message, group: originalGroup?.name || "Unknown" }), {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
     }
     default: {
       return new Response("Method Not Allowed", { status: 405 });

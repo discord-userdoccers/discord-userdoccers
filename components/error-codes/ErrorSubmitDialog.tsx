@@ -2,12 +2,23 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@
 import { Fragment, useState } from "react";
 import { toast } from "react-toastify";
 import classNames from "../../lib/classnames";
+import { ErrorGroup } from "../../pages/datamining/errors";
 import Styles from "../../stylesheets/modules/Errors.module.css";
-import Emphasis from "../mdx/Emphasis";
 import { H2 } from "../mdx/Heading";
 import Strong from "../mdx/Strong";
 
-export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void; codes: Record<string, string> }) {
+function getErrorGroup(code: string, groups: ErrorGroup[]): ErrorGroup | undefined {
+  const groupIndex = parseInt(code.slice(0, -4), 10);
+  console.debug(`Finding group for code ${code} (index: ${groupIndex})`);
+  return groups.find((group) => group.index === groupIndex);
+}
+
+export function SubmitErrorDialog(props: {
+  isOpen: boolean;
+  onClose: () => void;
+  codes: Record<string, string>;
+  groups: ErrorGroup[];
+}) {
   const [errorCode, setErrorCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -43,11 +54,11 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                   Submit an Error
                 </DialogTitle>
                 <p className={classNames(Styles.dialogText, "-mt-3")}>
-                  Thanks for your contribution! Please fill out the form below to add your error code.
+                  Thanks for your contribution! Fill out the form below to add your error code.
                 </p>
                 <p className={classNames(Styles.dialogText, "mt-2 mb-5")}>
-                  <Emphasis>Note:</Emphasis> Please ensure that your client/API locale is set to{" "}
-                  <Strong>English (US)</Strong>.
+                  Please ensure that your client or API locale is set to <Strong>English (US)</Strong> before
+                  submitting.
                 </p>
                 <form
                   className="flex flex-col gap-4"
@@ -78,7 +89,8 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       Error Code{" "}
                       {errorCode && (
                         <span className="text-sm opacity-60">
-                          {props.codes[errorCode] && `— ${props.codes[errorCode]}`}
+                          {props.codes[errorCode] &&
+                            `— ${getErrorGroup(errorCode, props.groups)?.name ?? "Unknown Group"}`}
                         </span>
                       )}
                     </label>
@@ -138,9 +150,8 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       {errorCode in props.codes
                         ? "Explain why this error code is being updated"
                         : "Describe where this error code is used"}
-                      , including {errorCode in props.codes ? "screenshots or videos" : "endpoints or features"} if
-                      applicable. You can include a way for us to contact you directly, such as a Discord ID, if you
-                      want.
+                      , including screenshots or API requests if applicable. You may include a way for us to contact you
+                      directly, such as a Discord ID.
                     </p>
 
                     <textarea

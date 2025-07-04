@@ -13,16 +13,20 @@ import { HashProvider } from "../../hooks/useHash";
 import classNames from "../../lib/classnames";
 import Styles from "../../stylesheets/modules/Errors.module.css";
 
+export interface ErrorGroup {
+  name: string;
+  index: number;
+  codes: Record<string, string>;
+}
+
 export default function Errors() {
-  const { data: codes, error } = useSWR<{ name: string; codes: Record<string, string>; index: number }[]>(
-    "/api/codes",
-    (url: string) =>
-      fetch(url).then((res) => {
-        if (res.ok) {
-          return res.json();
-        }
-        return res.text().then((text) => Promise.reject(new Error(`Server Error: ${text}`)));
-      }),
+  const { data: codes, error } = useSWR<ErrorGroup[]>("/api/codes", (url: string) =>
+    fetch(url).then((res) => {
+      if (res.ok) {
+        return res.json();
+      }
+      return res.text().then((text) => Promise.reject(new Error(`Server Error: ${text}`)));
+    }),
   );
 
   const [showLoading, setShowLoading] = useState(false);
@@ -68,7 +72,12 @@ export default function Errors() {
           .
         </Paragraph>
       </Alert>
-      <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codesFlat} />
+      <SubmitErrorDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        codes={codesFlat}
+        groups={codes ?? []}
+      />
 
       <div className="flex flex-col flex-start gap-3 w-full">
         <div className="flex w-full md:self-end items-center gap-2 px-1">
