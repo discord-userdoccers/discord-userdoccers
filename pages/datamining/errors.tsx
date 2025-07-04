@@ -97,7 +97,6 @@ export default function Errors() {
               type="search"
               placeholder="Search error codes..."
               aria-describedby="error-search-description"
-              // FIXME(splatter): This is disgusting styling
               className={classNames("DocSearch", "DocSearch-Button", Styles.searchbar)}
               onChange={(e) => setSearch(e.target.value.toLowerCase())}
             />

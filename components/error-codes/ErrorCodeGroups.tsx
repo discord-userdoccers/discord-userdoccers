@@ -33,6 +33,7 @@ export default function ErrorCodeGroup({
     }
   }, [index, name, hash]);
 
+  const isGroupMatch = search ? name.toLowerCase().includes(search) : true;
   const processedCodes = useMemo(
     () =>
       Object.entries(codes).map(([K, V]): [string, { message: string; isUnknown: boolean }] => {
@@ -42,18 +43,14 @@ export default function ErrorCodeGroup({
       }),
     [codes],
   );
-
   const filteredCodes = useMemo(
     () =>
       processedCodes
         .filter(([code, { message, isUnknown }]) => {
           if (unknownOnly && !isUnknown) return false;
-          if (
-            search &&
-            !message.toLowerCase().includes(search.toLowerCase()) &&
-            !code.toLowerCase().includes(search.toLowerCase())
-          )
-            return false;
+          if (isGroupMatch) return true;
+          if (code.toString() === search || code.includes(search)) return true;
+          if (search && !message.toLowerCase().includes(search)) return false;
           return true;
         })
         .map(([code, { message, isUnknown }]) => (

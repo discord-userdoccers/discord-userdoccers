@@ -23,9 +23,8 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
     [props.codes],
   );
   const selectedGroup = useMemo(() => getErrorGroup(errorCode, props.codes), [errorCode, props.codes]);
-
   return (
-    <Transition appear show={props.isOpen} as={Fragment}>
+    <Transition appear unmount show={props.isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-10" onClose={props.onClose}>
         <TransitionChild
           as={Fragment}
@@ -103,13 +102,15 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       className={Styles.dialogInput}
                       list="error-codes-list"
                     />
-                    <datalist id="error-codes-list">
-                      {Object.entries(codesFlat).map(([code, message]) => (
-                        <option key={code} value={code}>
-                          {message}
-                        </option>
-                      ))}
-                    </datalist>
+                    {props.isOpen && (
+                      <datalist id="error-codes-list">
+                        {Object.entries(codesFlat).map(([code, message]) => (
+                          <option key={code} value={code}>
+                            {message}
+                          </option>
+                        ))}
+                      </datalist>
+                    )}
                   </div>
 
                   <div className="hidden" aria-hidden hidden>
@@ -120,14 +121,14 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       type="text"
                       id="submission_type"
                       name="submission_type"
-                      value={errorCode in props.codes ? "update" : "new"}
+                      value={errorCode in codesFlat ? "update" : "new"}
                       className={Styles.dialogInput}
                     />
                   </div>
 
                   <div>
                     <label htmlFor="message" className={Styles.dialogLabel}>
-                      {errorCode in props.codes && "Updated"} Error Message
+                      {errorCode in codesFlat && "Updated"} Error Message
                     </label>
                     <input
                       type="text"
@@ -145,7 +146,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       Reason for Change
                     </label>
                     <p className={classNames(Styles.dialogText, "text-sm mb-3")}>
-                      {errorCode in props.codes
+                      {errorCode in codesFlat
                         ? "Explain why this error code is being updated"
                         : "Describe where this error code is used"}
                       , including screenshots or API requests if applicable. You may include a way for us to contact you
