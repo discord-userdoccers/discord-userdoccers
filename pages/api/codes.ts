@@ -1,8 +1,15 @@
-const GIST_URL = "https://gist.githubusercontent.com/Dziurwa14/de2498e5ee28d2089f095aa037957cbb/raw/codes.md";
+import { getRequestContext } from "@cloudflare/next-on-pages";
 
+const GIST_URL = "https://gist.githubusercontent.com/Dziurwa14/de2498e5ee28d2089f095aa037957cbb/raw/codes.md";
 const ERRORS_REGEX = /\|\s*(\d{1,7})\s*\|\s*(.+)\|/;
 
 export const runtime = "edge";
+
+// wrangler types
+interface Env {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ERROR_CODES_RATELIMIT: any;
+}
 
 function parseContent(content: string) {
   const errorCodes: Record<number, { name: string | null; index: number; codes: Record<number, string> }> = {};
@@ -64,12 +71,24 @@ export default async function errorCodes(req: Request) {
     }
     case "PUT": {
       if (!process.env.ERROR_CODES_WEBHOOK) return new Response("Submission service unavailable", { status: 503 });
+
       if (!req.headers.get("Content-Type")?.startsWith("multipart/form-data"))
         return new Response("Unsupported Media Type", { status: 415 });
 
       const remoteAddr =
         req.headers.get("X-Forwarded-For") || req.headers.get("X-Real-IP") || req.headers.get("CF-Connecting-IP");
       const data = await req.formData();
+
+      // rate limits
+      if (process.env.CF_PAGES === "1") {
+        const limiter = (<Env>getRequestContext().env).ERROR_CODES_RATELIMIT;
+
+        const { success } = await limiter.limit({ key: remoteAddr });
+
+        if (!success) {
+          return new Response("Rate limit exceeded", { status: 429 });
+        }
+      }
 
       const code = data.get("code");
       const submissionType = data.get("submission_type");
@@ -108,6 +127,9 @@ export default async function errorCodes(req: Request) {
         body: JSON.stringify({
           embeds: [
             {
+              author: {
+                name: remoteAddr || "Unknown remote address",
+              },
               color: submissionType === "new" ? 0x90ff43 : 0xffa500,
               title: `${submissionType[0].toUpperCase()}${submissionType.slice(1)} Error ${code}`,
               description: reason,
@@ -122,11 +144,6 @@ export default async function errorCodes(req: Request) {
                 {
                   name: "New Message",
                   value: message,
-                  inline: true,
-                },
-                {
-                  name: "Submitted By",
-                  value: remoteAddr,
                   inline: true,
                 },
               ].filter(Boolean),

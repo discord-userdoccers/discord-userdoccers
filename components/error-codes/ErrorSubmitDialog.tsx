@@ -1,5 +1,5 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import classNames from "../../lib/classnames";
 import { ErrorGroup } from "../../pages/datamining/errors";
@@ -9,19 +9,20 @@ import Strong from "../mdx/Strong";
 
 function getErrorGroup(code: string, groups: ErrorGroup[]): ErrorGroup | undefined {
   const groupIndex = parseInt(code.slice(0, -4), 10);
-  console.debug(`Finding group for code ${code} (index: ${groupIndex})`);
+
   return groups.find((group) => group.index === groupIndex);
 }
 
-export function SubmitErrorDialog(props: {
-  isOpen: boolean;
-  onClose: () => void;
-  codes: Record<string, string>;
-  groups: ErrorGroup[];
-}) {
+export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void; codes: ErrorGroup[] }) {
   const [errorCode, setErrorCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const codesFlat = useMemo(
+    () => (props.codes ? Object.fromEntries(props.codes.flatMap((x) => Object.entries(x.codes))) : {}),
+    [props.codes],
+  );
+  const selectedGroup = useMemo(() => getErrorGroup(errorCode, props.codes), [errorCode, props.codes]);
 
   return (
     <Transition appear show={props.isOpen} as={Fragment}>
@@ -88,10 +89,7 @@ export function SubmitErrorDialog(props: {
                     <label htmlFor="code" className={Styles.dialogLabel}>
                       Error Code{" "}
                       {errorCode && (
-                        <span className="text-sm opacity-60">
-                          {props.codes[errorCode] &&
-                            `— ${getErrorGroup(errorCode, props.groups)?.name ?? "Unknown Group"}`}
-                        </span>
+                        <span className="text-sm opacity-60">{selectedGroup && `— ${selectedGroup.name}`}</span>
                       )}
                     </label>
                     <input
@@ -106,9 +104,9 @@ export function SubmitErrorDialog(props: {
                       list="error-codes-list"
                     />
                     <datalist id="error-codes-list">
-                      {Object.keys(props.codes).map((code) => (
+                      {Object.entries(codesFlat).map(([code, message]) => (
                         <option key={code} value={code}>
-                          {props.codes[code]}
+                          {message}
                         </option>
                       ))}
                     </datalist>
@@ -137,7 +135,7 @@ export function SubmitErrorDialog(props: {
                       id="message"
                       name="message"
                       required
-                      defaultValue={props.codes[errorCode] || ""}
+                      defaultValue={codesFlat[errorCode] || ""}
                       className={Styles.dialogInput}
                     />
                   </div>

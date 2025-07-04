@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import Alert from "../../components/Alert";
 import ErrorCodeGroup from "../../components/error-codes/ErrorCodeGroups";
@@ -21,7 +21,7 @@ export interface ErrorGroup {
 
 export default function Errors() {
   const { data: codes, error } = useSWR<ErrorGroup[]>("/api/codes", (url: string) =>
-    fetch(url).then((res) => {
+    fetch(url).then((res): Promise<ErrorGroup[]> => {
       if (res.ok) {
         return res.json();
       }
@@ -40,10 +40,6 @@ export default function Errors() {
   }, []);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const codesFlat = useMemo(
-    () => (codes ? Object.fromEntries(codes.flatMap((x) => Object.entries(x.codes))) : {}),
-    [codes],
-  );
 
   return (
     <ContentWrapper>
@@ -72,12 +68,7 @@ export default function Errors() {
           .
         </Paragraph>
       </Alert>
-      <SubmitErrorDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        codes={codesFlat}
-        groups={codes ?? []}
-      />
+      <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codes ?? []} />
 
       <div className="flex flex-col flex-start gap-3 w-full">
         <div className="flex w-full md:self-end items-center gap-2 px-1">
