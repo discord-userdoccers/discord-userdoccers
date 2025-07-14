@@ -30,16 +30,17 @@ The voice server does not provide a default version. You must explicitly pass a 
 
 </Alert>
 
-| Version | Status      | Change                                                                            |
-| ------- | ----------- | --------------------------------------------------------------------------------- |
-| 8       | Recommended | Added buffered resuming                                                           |
-| 7       | Available   | Added [Opcode 17 Channel Options Update](#gateway-events)                         |
-| 6       | Available   | Added [Opcode 16 Voice Backend Version](#gateway-events)                          |
-| 5       | Available   | Added [Opcode 15 Media Sink Wants](#gateway-events)                               |
-| 4       | Available   | Changed [speaking status](#speaking-flags) from boolean to bitmask                |
-| 3       | Deprecated  | Added video functionality, consolidated [Opcode 1 Hello](#gateway-events) payload |
-| 2       | Deprecated  | Changed Gateway heartbeat reply to [Opcode 6 Heartbeak ACK](#gateway-events)      |
-| 1       | Deprecated  | Initial version                                                                   |
+| Version | Status      | Change                                                                                                  |
+| ------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| 9       | Recommended | Added `channel_id` to [Opcode 0 Identify](#identify-structure) and [Opcode 7 Resume](#resume-structure) |
+| 8       | Recommended | Added buffered resuming                                                                                 |
+| 7       | Available   | Added [Opcode 17 Channel Options Update](#gateway-events)                                               |
+| 6       | Available   | Added [Opcode 16 Voice Backend Version](#gateway-events)                                                |
+| 5       | Available   | Added [Opcode 15 Media Sink Wants](#gateway-events)                                                     |
+| 4       | Available   | Changed [speaking status](#speaking-flags) from boolean to bitmask                                      |
+| 3       | Deprecated  | Added video functionality, consolidated [Opcode 1 Hello](#gateway-events) payload                       |
+| 2       | Deprecated  | Changed Gateway heartbeat reply to [Opcode 6 Heartbeak ACK](#gateway-events)                            |
+| 1       | Deprecated  | Initial version                                                                                         |
 
 ###### Gateway Commands
 
@@ -124,14 +125,17 @@ so some libraries may require manually prepending it with `wss://` before connec
 
 ###### Identify Structure
 
-| Field      | Type                                      | Description                                                               |
-| ---------- | ----------------------------------------- | ------------------------------------------------------------------------- |
-| server_id  | snowflake                                 | The ID of the guild, private channel, stream, or lobby being connected to |
-| user_id    | snowflake                                 | The ID of the current user                                                |
-| session_id | string                                    | The session ID of the current session                                     |
-| token      | string                                    | The voice token for the current session                                   |
-| video?     | boolean                                   | Whether this connection supports video (default false)                    |
-| streams?   | array[[stream](#stream-structure) object] | [Simulcast](#simulcasting) streams to send                                |
+| Field          | Type                                      | Description                                                               |
+| -------------- | ----------------------------------------- | ------------------------------------------------------------------------- |
+| server_id      | snowflake                                 | The ID of the guild, private channel, stream, or lobby being connected to |
+| channel_id ^1^ | snowflake                                 | The ID of the channel being connected to                                  |
+| user_id        | snowflake                                 | The ID of the current user                                                |
+| session_id     | string                                    | The session ID of the current session                                     |
+| token          | string                                    | The voice token for the current session                                   |
+| video?         | boolean                                   | Whether this connection supports video (default false)                    |
+| streams?       | array[[stream](#stream-structure) object] | [Simulcast](#simulcasting) streams to send                                |
+
+^1^ Only required for Gateway v9 and above.
 
 ###### Stream Structure
 
@@ -710,14 +714,17 @@ When your client detects that its connection has been severed, it should open a 
 
 ###### Resume Structure
 
-| Field        | Type      | Description                                               |
-| ------------ | --------- | --------------------------------------------------------- |
-| server_id    | snowflake | The ID of the guild or private channel being connected to |
-| session_id   | string    | The session ID of the current session                     |
-| token        | string    | The voice token for the current session                   |
-| seq_ack? ^1^ | integer   | The last received sequence number                         |
+| Field          | Type      | Description                                               |
+| -------------- | --------- | --------------------------------------------------------- |
+| server_id      | snowflake | The ID of the guild or private channel being connected to |
+| channel_id ^2^ | snowflake | The ID of the channel being connected to                  |
+| session_id     | string    | The session ID of the current session                     |
+| token          | string    | The voice token for the current session                   |
+| seq_ack? ^1^   | integer   | The last received sequence number                         |
 
 ^1^ Only available on Gateway v8 and above.
+
+^2^ Only required for Gateway v9 and above.
 
 ###### Example Resume
 
@@ -891,6 +898,7 @@ Additionally, if the user offers multiple streams for a given media type, the cl
 A special SSRC value of `any` can be used to request a quality level for all streams.
 
 Clients may request the media quality they want per SSRC by sending an [Opcode 15 Media Sink Wants](#gateway-commands) payload with a mapping of SSRCs to quality levels.
+Clients may also specify a `pixelCounts` field to indicate the preferred resolution of the video stream for each SSRC, which can be used by the voice server to determine the best quality level to send based on the client's capabilities and preferences.
 
 Likewise, the voice server may send a [Opcode 15 Media Sink Wants](#gateway-events) payload to inform the client of the quality levels it should be sending for each SSRC.
 
@@ -906,7 +914,10 @@ This functionality is only available on [Gateway version 5 and above](#gateway-v
 {
   "op": 15,
   "d": {
-    "any": 100
+    "8964": 100,
+    "pixelCounts": {
+      "8964": 1189844.5769597634
+    }
   }
 }
 ```
