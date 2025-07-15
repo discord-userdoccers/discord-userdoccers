@@ -1,7 +1,7 @@
 import React from "react";
-import NavigationList from "./NavigationList";
-import ThemeSwitcher from "../ThemeSwitcher";
 import Userdoccers from "../icons/Userdoccers";
+import ThemeSwitcher from "../ThemeSwitcher";
+import NavigationList from "./NavigationList";
 
 export default function Navigation() {
   return (

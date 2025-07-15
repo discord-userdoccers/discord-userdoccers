@@ -1,6 +1,6 @@
 import classNames from "@lib/classnames";
-import type { AppProps } from "next/app";
 import { ThemeProvider } from "next-themes";
+import type { AppProps } from "next/app";
 import { useCallback, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
@@ -8,7 +8,6 @@ import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
-
 import "@docsearch/css";
 import "../stylesheets/tailwind.css";
 import "../stylesheets/styles.css";
@@ -21,7 +20,11 @@ import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
 const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
 
-export default function App({ Component, pageProps, router }: AppProps) {
+export default function App({
+  Component,
+  pageProps,
+  router,
+}: AppProps & { Component: AppProps["Component"] & { meta?: { title: string; description: string } } }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
@@ -38,8 +41,8 @@ export default function App({ Component, pageProps, router }: AppProps) {
 
   const getText = () => {
     if (router.pathname !== "/404") {
-      const str = ReactDOMServer.renderToString(component);
-      const title = TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
+      const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
+      const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
 
       return {
         description: `${str

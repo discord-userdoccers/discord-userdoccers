@@ -6,26 +6,9 @@ When an administrative action is performed in a guild, an entry is added to its 
 
 When performing an eligible action using the API, users can pass an `X-Audit-Log-Reason` header to indicate why the action was taken. More information is in the [audit log entry](#audit-log-entry-object) section.
 
-### Audit Log Object
-
-###### Audit Log Structure
-
-| Field                  | Type                                                                                                 | Description                                        |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| audit_log_entries      | array[[audit log entry](#audit-log-entry-object) object]                                             | Audit log entries                                  |
-| application_commands   | array[[application command](/interactions/application-commands#application-command-object) object]   | Application commands referenced in the audit log   |
-| auto_moderation_rules  | array[[automod rule](/resources/auto-moderation#automod-rule-object) object]                         | AutoMod rules referenced in the audit log          |
-| guild_scheduled_events | array[[guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object] | Guild scheduled events referenced in the audit log |
-| integrations           | array[partial [integration](#partial-integration-object) object]                                     | Partial integrations referenced in the audit log   |
-| threads ^1^            | array[thread-specific [channel](/resources/channel#channel-object) object]                           | Threads referenced in the audit log                |
-| users                  | array[partial [user](/resources/user#user-object) object]                                            | Users referenced in the audit log                  |
-| webhooks               | array[[webhook](/resources/webhook#webhook-object) object]                                           | Webhooks referenced in the audit log               |
-
-^1^ Threads referenced in `THREAD_CREATE` and `THREAD_UPDATE` events are included in the threads map, since archived threads might not be kept in memory by clients.
-
 ### Audit Log Entry Object
 
-Each audit log entry represents a single administrative action (or [event](#audit-log-events)), indicated by `action_type`. Most entries contain one to many changes in the `changes` array that affected an entity in Discord—whether that's a user, channel, guild, emoji, or something else.
+Each audit log entry represents a single administrative action (or [event](#audit-log-action-type)), indicated by `action_type`. Most entries contain one to many changes in the `changes` array that affected an entity in Discord—whether that's a user, channel, guild, emoji, or something else.
 
 The information (and structure) of an entry's changes will be different depending on its type. For example, in `MEMBER_ROLE_UPDATE` events there is only one change: a member is either added or removed from a specific role. However, in `CHANNEL_CREATE` events there are many changes, including (but not limited to) the channel's name, type, and permission overwrites added. More details are in the [change object](#audit-log-change-object) section.
 
@@ -33,15 +16,15 @@ Users can specify why an administrative action is being taken by passing an `X-A
 
 ###### Audit Log Entry Structure
 
-| Field       | Type                                                       | Description                                           |
-| ----------- | ---------------------------------------------------------- | ----------------------------------------------------- |
-| target_id   | ?string                                                    | ID of the affected entity (webhook, user, role, etc.) |
-| changes?    | array[[audit log change](#audit-log-change-object) object] | Changes made to the `target_id``                      |
-| user_id     | ?snowflake                                                 | The user who made the changes                         |
-| id          | snowflake                                                  | The ID of the entry                                   |
-| action_type | integer                                                    | The [type of action](#audit-log-events) that occurred |
-| options?    | [optional audit entry info](#optional-audit-entry-info)    | Additional info for certain action types              |
-| reason?     | string                                                     | The reason for the change (max 512 characters)        |
+| Field       | Type                                                           | Description                                                |
+| ----------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
+| target_id   | ?snowflake                                                     | ID of the affected entity (webhook, user, role, etc.)      |
+| changes?    | array[[audit log change](#audit-log-change-object) object]     | Changes made to the `target_id``                           |
+| user_id     | ?snowflake                                                     | The user who made the changes                              |
+| id          | snowflake                                                      | The ID of the entry                                        |
+| action_type | integer                                                        | The [type of action](#audit-log-action-type) that occurred |
+| options?    | [optional audit entry info](#optional-audit-entry-info) object | Additional info for certain action types                   |
+| reason?     | string                                                         | The reason for the change (max 512 characters)             |
 
 <Alert type="warn">
 
@@ -49,7 +32,7 @@ For `APPLICATION_COMMAND_PERMISSION_UPDATE` events, the `target_id` is the comma
 
 </Alert>
 
-###### Audit Log Events
+###### Audit Log Action Type
 
 The table below lists audit log events and values (the `action_type` field) that you may receive.
 
@@ -63,82 +46,86 @@ You should assume that you may run into any field for the changed object, though
 
 </Alert>
 
-| Event                                       | Value   | Description                                               | Object Changed                                                                                                  |
-| ------------------------------------------- | ------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| GUILD_UPDATE                                | 1       | Guild settings were updated                               | [Guild](/resources/guild#guild-object)                                                                          |
-| CHANNEL_CREATE                              | 10      | Channel was created                                       | [Channel](/resources/channel#channel-object)                                                                    |
-| CHANNEL_UPDATE                              | 11      | Channel settings were updated                             | [Channel](/resources/channel#channel-object)                                                                    |
-| CHANNEL_DELETE                              | 12      | Channel was deleted                                       | [Channel](/resources/channel#channel-object)                                                                    |
-| CHANNEL_OVERWRITE_CREATE                    | 13      | Permission overwrite was added to a channel               | [Channel Overwrite](/resources/channel#permission-overwrite-object)                                             |
-| CHANNEL_OVERWRITE_UPDATE                    | 14      | Permission overwrite was updated for a channel            | [Channel Overwrite](/resources/channel#permission-overwrite-object)                                             |
-| CHANNEL_OVERWRITE_DELETE                    | 15      | Permission overwrite was deleted from a channel           | [Channel Overwrite](/resources/channel#permission-overwrite-object)                                             |
-| MEMBER_KICK                                 | 20      | Member was removed from guild                             |                                                                                                                 |
-| MEMBER_PRUNE                                | 21      | Members were pruned from guild                            |                                                                                                                 |
-| MEMBER_BAN_ADD                              | 22      | Member was banned from guild                              |                                                                                                                 |
-| MEMBER_BAN_REMOVE                           | 23      | Member was unbanned from guild                            |                                                                                                                 |
-| MEMBER_UPDATE                               | 24      | Member was updated in guild                               | [Member](/resources/guild#guild-member-object)                                                                  |
-| MEMBER_ROLE_UPDATE                          | 25      | Member was added or removed from a role                   | [Partial Role](#partial-role-object) ^1^                                                                        |
-| MEMBER_MOVE                                 | 26      | Member was moved to a different voice channel             |                                                                                                                 |
-| MEMBER_DISCONNECT                           | 27      | Member was disconnected from a voice channel              |                                                                                                                 |
-| BOT_ADD                                     | 28      | Bot user was added to guild                               |                                                                                                                 |
-| ROLE_CREATE                                 | 30      | Role was created                                          | [Role](/resources/guild#role-object)                                                                            |
-| ROLE_UPDATE                                 | 31      | Role was edited                                           | [Role](/resources/guild#role-object)                                                                            |
-| ROLE_DELETE                                 | 32      | Role was deleted                                          | [Role](/resources/guild#role-object)                                                                            |
-| INVITE_CREATE                               | 40      | Guild invite was created                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) ^1^   |
-| INVITE_UPDATE                               | 41      | Guild invite was updated                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) ^1^   |
-| INVITE_DELETE                               | 42      | Guild invite was deleted                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) ^1^   |
-| WEBHOOK_CREATE                              | 50      | Webhook was created                                       | [Webhook](/resources/webhook#webhook-object) ^1^                                                                |
-| WEBHOOK_UPDATE                              | 51      | Webhook properties or channel were updated                | [Webhook](/resources/webhook#webhook-object) ^1^                                                                |
-| WEBHOOK_DELETE                              | 52      | Webhook was deleted                                       | [Webhook](/resources/webhook#webhook-object) ^1^                                                                |
-| EMOJI_CREATE                                | 60      | Emoji was created                                         | [Emoji](/resources/emoji#emoji-object)                                                                          |
-| EMOJI_UPDATE                                | 61      | Emoji name was updated                                    | [Emoji](/resources/emoji#emoji-object)                                                                          |
-| EMOJI_DELETE                                | 62      | Emoji was deleted                                         | [Emoji](/resources/emoji#emoji-object)                                                                          |
-| MESSAGE_DELETE                              | 72      | Single message was deleted                                |                                                                                                                 |
-| MESSAGE_BULK_DELETE                         | 73      | Multiple messages were deleted                            |                                                                                                                 |
-| MESSAGE_PIN                                 | 74      | Message was pinned to a channel                           |                                                                                                                 |
-| MESSAGE_UNPIN                               | 75      | Message was unpinned from a channel                       |                                                                                                                 |
-| INTEGRATION_CREATE                          | 80      | Integration was added to guild                            | [Integration](/resources/integration#integration-object)                                                        |
-| INTEGRATION_UPDATE                          | 81      | Integration was updated (e.g. its scopes were updated)    | [Integration](/resources/integration#integration-object)                                                        |
-| INTEGRATION_DELETE                          | 82      | Integration was removed from guild                        | [Integration](/resources/integration#integration-object)                                                        |
-| STAGE_INSTANCE_CREATE                       | 83      | Stage instance was created (stage channel becomes live)   | [Stage Instance](/resources/stage-instance#stage-instance-object)                                               |
-| STAGE_INSTANCE_UPDATE                       | 84      | Stage instance details were updated                       | [Stage Instance](/resources/stage-instance#stage-instance-object)                                               |
-| STAGE_INSTANCE_DELETE                       | 85      | Stage instance was deleted (stage channel no longer live) | [Stage Instance](/resources/stage-instance#stage-instance-object)                                               |
-| STICKER_CREATE                              | 90      | Sticker was created                                       | [Sticker](/resources/sticker#sticker-object)                                                                    |
-| STICKER_UPDATE                              | 91      | Sticker details were updated                              | [Sticker](/resources/sticker#sticker-object)                                                                    |
-| STICKER_DELETE                              | 92      | Sticker was deleted                                       | [Sticker](/resources/sticker#sticker-object)                                                                    |
-| GUILD_SCHEDULED_EVENT_CREATE                | 100     | Event was created                                         | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                          |
-| GUILD_SCHEDULED_EVENT_UPDATE                | 101     | Event was updated                                         | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                          |
-| GUILD_SCHEDULED_EVENT_DELETE                | 102     | Event was cancelled                                       | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                          |
-| THREAD_CREATE                               | 110     | Thread was created in a channel                           | [Thread](/resources/channel#thread-metadata-object)                                                             |
-| THREAD_UPDATE                               | 111     | Thread was updated                                        | [Thread](/resources/channel#thread-metadata-object)                                                             |
-| THREAD_DELETE                               | 112     | Thread was deleted                                        | [Thread](/resources/channel#thread-metadata-object)                                                             |
-| APPLICATION_COMMAND_PERMISSION_UPDATE       | 121     | Permissions were updated for a command                    | [Application Command Permission](/interactions/application-commands#application-command-permissions-object) ^1^ |
-| SOUNDBOARD_SOUND_CREATE                     | 130     | Soundboard sound was created                              | [Soundboard Sound](/resources/soundboard#soundboard-sound-object)                                               |
-| SOUNDBOARD_SOUND_UPDATE                     | 131     | Soundboard sound was updated                              | [Soundboard Sound](/resources/soundboard#soundboard-sound-object)                                               |
-| SOUNDBOARD_SOUND_DELETE                     | 132     | Soundboard sound was deleted                              | [Soundboard Sound](/resources/soundboard#soundboard-sound-object)                                               |
-| AUTO_MODERATION_RULE_CREATE                 | 140     | AutoMod rule was created                                  | [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                                  |
-| AUTO_MODERATION_RULE_UPDATE                 | 141     | AutoMod rule was updated                                  | [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                                  |
-| AUTO_MODERATION_RULE_DELETE                 | 142     | AutoMod rule was deleted                                  | [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                                  |
-| AUTO_MODERATION_BLOCK_MESSAGE               | 143     | Message was blocked by AutoMod                            |                                                                                                                 |
-| AUTO_MODERATION_FLAG_TO_CHANNEL             | 144     | Message was flagged by AutoMod                            |                                                                                                                 |
-| AUTO_MODERATION_USER_COMMUNICATION_DISABLED | 145     | Member was timed out by AutoMod                           |                                                                                                                 |
-| AUTO_MODERATION_QUARANTINE_USER             | 146     | Member was quarantined by AutoMod                         |                                                                                                                 |
-| CREATOR_MONETIZATION_REQUEST_CREATED        | 150     | Creator monetization request was created                  |                                                                                                                 |
-| CREATOR_MONETIZATION_TERMS_ACCEPTED         | 151     | Creator monetization terms were accepted                  |                                                                                                                 |
-| ONBOARDING_PROMPT_CREATE                    | 163     | Onboarding prompt was created                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
-| ONBOARDING_PROMPT_UPDATE                    | 164     | Onboarding prompt was updated                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
-| ONBOARDING_PROMPT_DELETE                    | 165     | Onboarding prompt was deleted                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
-| ONBOARDING_CREATE                           | 166     | Onboarding was created                                    | [Onboarding](/resources/guild#onboarding-object)                                                                |
-| ONBOARDING_UPDATE                           | 167     | Onboarding was updated                                    | [Onboarding](/resources/guild#onboarding-object)                                                                |
-| ~~HARMFUL_LINKS_BLOCKED_MESSAGE~~           | ~~180~~ | ~~Message blocked by harmful links filter~~               |                                                                                                                 |
-| VOICE_CHANNEL_STATUS_CREATE                 | 192     | Voice channel status was updated                          | [Channel](/resources/channel#channel-object)                                                                    |
-| VOICE_CHANNEL_STATUS_DELETE                 | 193     | Voice channel status was deleted                          | [Channel](/resources/channel#channel-object)                                                                    |
-| ~~CLYDE_AI_PROFILE_UPDATE~~                 | ~~194~~ | ~~Clyde AI profile was updated~~                          |                                                                                                                 |
-| GUILD_SCHEDULED_EVENT_EXCEPTION_CREATE      | 200     | Exception was created for a guild scheduled event         | [Guild Scheduled Event Exception](/resources/guild-scheduled-event#guild-scheduled-event-exception-object)      |
-| GUILD_SCHEDULED_EVENT_EXCEPTION_UPDATE      | 201     | Exception was updated for a guild scheduled event         | [Guild Scheduled Event Exception](/resources/guild-scheduled-event#guild-scheduled-event-exception-object)      |
-| GUILD_SCHEDULED_EVENT_EXCEPTION_DELETE      | 202     | Exception was deleted for a guild scheduled event         | [Guild Scheduled Event Exception](/resources/guild-scheduled-event#guild-scheduled-event-exception-object)      |
-| GUILD_MEMBER_VERIFICATION_UPDATE            | 210     | Member verification settings were updated                 | [Member Verification](/resources/guild#member-verification-object) ^1^                                          |
-| GUILD_PROFILE_UPDATE                        | 211     | Guild profile was updated                                 | [Guild Profile](/resources/discovery#guild-profile-object) ^1^                                                  |
+| Value   | Name                                        | Description                                               | Object Changed                                                                                                  |
+| ------- | ------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1       | GUILD_UPDATE                                | Guild settings were updated                               | [Guild](/resources/guild#guild-object)                                                                          |
+| 10      | CHANNEL_CREATE                              | Channel was created                                       | [Channel](/resources/channel#channel-object)                                                                    |
+| 11      | CHANNEL_UPDATE                              | Channel settings were updated                             | [Channel](/resources/channel#channel-object)                                                                    |
+| 12      | CHANNEL_DELETE                              | Channel was deleted                                       | [Channel](/resources/channel#channel-object)                                                                    |
+| 13      | CHANNEL_OVERWRITE_CREATE                    | Permission overwrite was added to a channel               | [Channel Overwrite](/resources/channel#permission-overwrite-object)                                             |
+| 14      | CHANNEL_OVERWRITE_UPDATE                    | Permission overwrite was updated for a channel            | [Channel Overwrite](/resources/channel#permission-overwrite-object)                                             |
+| 15      | CHANNEL_OVERWRITE_DELETE                    | Permission overwrite was deleted from a channel           | [Channel Overwrite](/resources/channel#permission-overwrite-object)                                             |
+| 20      | MEMBER_KICK                                 | Member was removed from guild                             |                                                                                                                 |
+| 21      | MEMBER_PRUNE                                | Members were pruned from guild                            |                                                                                                                 |
+| 22      | MEMBER_BAN_ADD                              | Member was banned from guild                              |                                                                                                                 |
+| 23      | MEMBER_BAN_REMOVE                           | Member was unbanned from guild                            |                                                                                                                 |
+| 24      | MEMBER_UPDATE                               | Member was updated in guild                               | [Member](/resources/guild#guild-member-object)                                                                  |
+| 25      | MEMBER_ROLE_UPDATE                          | Member was added or removed from a role                   | [Partial Role](#partial-role-object) ^1^                                                                        |
+| 26      | MEMBER_MOVE                                 | Member was moved to a different voice channel             |                                                                                                                 |
+| 27      | MEMBER_DISCONNECT                           | Member was disconnected from a voice channel              |                                                                                                                 |
+| 28      | BOT_ADD                                     | Bot user was added to guild                               |                                                                                                                 |
+| 30      | ROLE_CREATE                                 | Role was created                                          | [Role](/resources/guild#role-object)                                                                            |
+| 31      | ROLE_UPDATE                                 | Role was edited                                           | [Role](/resources/guild#role-object)                                                                            |
+| 32      | ROLE_DELETE                                 | Role was deleted                                          | [Role](/resources/guild#role-object)                                                                            |
+| 40      | INVITE_CREATE                               | Guild invite was created                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) ^1^   |
+| 41      | INVITE_UPDATE                               | Guild invite was updated                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) ^1^   |
+| 42      | INVITE_DELETE                               | Guild invite was deleted                                  | [Invite](/resources/invite#invite-object) and [Invite Metadata](/resources/invite#invite-metadata-object) ^1^   |
+| 50      | WEBHOOK_CREATE                              | Webhook was created                                       | [Webhook](/resources/webhook#webhook-object) ^1^                                                                |
+| 51      | WEBHOOK_UPDATE                              | Webhook properties or channel were updated                | [Webhook](/resources/webhook#webhook-object) ^1^                                                                |
+| 52      | WEBHOOK_DELETE                              | Webhook was deleted                                       | [Webhook](/resources/webhook#webhook-object) ^1^                                                                |
+| 60      | EMOJI_CREATE                                | Emoji was created                                         | [Emoji](/resources/emoji#emoji-object)                                                                          |
+| 61      | EMOJI_UPDATE                                | Emoji name was updated                                    | [Emoji](/resources/emoji#emoji-object)                                                                          |
+| 62      | EMOJI_DELETE                                | Emoji was deleted                                         | [Emoji](/resources/emoji#emoji-object)                                                                          |
+| 72      | MESSAGE_DELETE                              | Single message was deleted                                |                                                                                                                 |
+| 73      | MESSAGE_BULK_DELETE                         | Multiple messages were deleted                            |                                                                                                                 |
+| 74      | MESSAGE_PIN                                 | Message was pinned to a channel                           |                                                                                                                 |
+| 75      | MESSAGE_UNPIN                               | Message was unpinned from a channel                       |                                                                                                                 |
+| 80      | INTEGRATION_CREATE                          | Integration was added to guild                            | [Integration](/resources/integration#integration-object)                                                        |
+| 81      | INTEGRATION_UPDATE                          | Integration was updated (e.g. its scopes were updated)    | [Integration](/resources/integration#integration-object)                                                        |
+| 82      | INTEGRATION_DELETE                          | Integration was removed from guild                        | [Integration](/resources/integration#integration-object)                                                        |
+| 83      | STAGE_INSTANCE_CREATE                       | Stage instance was created (stage channel becomes live)   | [Stage Instance](/resources/stage-instance#stage-instance-object)                                               |
+| 84      | STAGE_INSTANCE_UPDATE                       | Stage instance details were updated                       | [Stage Instance](/resources/stage-instance#stage-instance-object)                                               |
+| 85      | STAGE_INSTANCE_DELETE                       | Stage instance was deleted (stage channel no longer live) | [Stage Instance](/resources/stage-instance#stage-instance-object)                                               |
+| 90      | STICKER_CREATE                              | Sticker was created                                       | [Sticker](/resources/sticker#sticker-object)                                                                    |
+| 91      | STICKER_UPDATE                              | Sticker details were updated                              | [Sticker](/resources/sticker#sticker-object)                                                                    |
+| 92      | STICKER_DELETE                              | Sticker was deleted                                       | [Sticker](/resources/sticker#sticker-object)                                                                    |
+| 100     | GUILD_SCHEDULED_EVENT_CREATE                | Event was created                                         | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                          |
+| 101     | GUILD_SCHEDULED_EVENT_UPDATE                | Event was updated                                         | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                          |
+| 102     | GUILD_SCHEDULED_EVENT_DELETE                | Event was cancelled                                       | [Guild Scheduled Event](/resources/guild-scheduled-event#guild-scheduled-event-object)                          |
+| 110     | THREAD_CREATE                               | Thread was created in a channel                           | [Thread](/resources/channel#thread-metadata-object)                                                             |
+| 111     | THREAD_UPDATE                               | Thread was updated                                        | [Thread](/resources/channel#thread-metadata-object)                                                             |
+| 112     | THREAD_DELETE                               | Thread was deleted                                        | [Thread](/resources/channel#thread-metadata-object)                                                             |
+| 121     | APPLICATION_COMMAND_PERMISSION_UPDATE       | Permissions were updated for a command                    | [Application Command Permission](/interactions/application-commands#application-command-permissions-object) ^1^ |
+| 130     | SOUNDBOARD_SOUND_CREATE                     | Soundboard sound was created                              | [Soundboard Sound](/resources/soundboard#soundboard-sound-object)                                               |
+| 131     | SOUNDBOARD_SOUND_UPDATE                     | Soundboard sound was updated                              | [Soundboard Sound](/resources/soundboard#soundboard-sound-object)                                               |
+| 132     | SOUNDBOARD_SOUND_DELETE                     | Soundboard sound was deleted                              | [Soundboard Sound](/resources/soundboard#soundboard-sound-object)                                               |
+| 140     | AUTO_MODERATION_RULE_CREATE                 | AutoMod rule was created                                  | [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                                  |
+| 141     | AUTO_MODERATION_RULE_UPDATE                 | AutoMod rule was updated                                  | [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                                  |
+| 142     | AUTO_MODERATION_RULE_DELETE                 | AutoMod rule was deleted                                  | [AutoMod Rule](/resources/auto-moderation#automod-rule-object)                                                  |
+| 143     | AUTO_MODERATION_BLOCK_MESSAGE               | Message was blocked by AutoMod                            |                                                                                                                 |
+| 144     | AUTO_MODERATION_FLAG_TO_CHANNEL             | Message was flagged by AutoMod                            |                                                                                                                 |
+| 145     | AUTO_MODERATION_USER_COMMUNICATION_DISABLED | Member was timed out by AutoMod                           |                                                                                                                 |
+| 146     | AUTO_MODERATION_QUARANTINE_USER             | Member was quarantined by AutoMod                         |                                                                                                                 |
+| 150     | CREATOR_MONETIZATION_REQUEST_CREATED        | Creator monetization request was created                  |                                                                                                                 |
+| 151     | CREATOR_MONETIZATION_TERMS_ACCEPTED         | Creator monetization terms were accepted                  |                                                                                                                 |
+| 163     | ONBOARDING_PROMPT_CREATE                    | Onboarding prompt was created                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
+| 164     | ONBOARDING_PROMPT_UPDATE                    | Onboarding prompt was updated                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
+| 165     | ONBOARDING_PROMPT_DELETE                    | Onboarding prompt was deleted                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
+| 166     | ONBOARDING_CREATE                           | Onboarding was initialized                                | [Onboarding](/resources/guild#onboarding-object)                                                                |
+| 167     | ONBOARDING_UPDATE                           | Onboarding was updated                                    | [Onboarding](/resources/guild#onboarding-object)                                                                |
+| ~~171~~ | ~~GUILD_HOME_FEATURE_ITEM~~                 | ~~Item was featured in guild home~~                       |                                                                                                                 |
+| ~~172~~ | ~~GUILD_HOME_REMOVE_ITEM~~                  | ~~Item was removed from guild home~~                      |                                                                                                                 |
+| ~~180~~ | ~~HARMFUL_LINKS_BLOCKED_MESSAGE~~           | ~~Message blocked by harmful links filter~~               |                                                                                                                 |
+| 190     | HOME_SETTINGS_CREATE                        | New member welcome was initialized                        | [New Member Welcome](/resources/guild#new-member-welcome-object)                                                |
+| 191     | HOME_SETTINGS_UPDATE                        | New member welcome was updated                            | [New Member Welcome](/resources/guild#new-member-welcome-object)                                                |
+| 192     | VOICE_CHANNEL_STATUS_CREATE                 | Voice channel status was updated                          | [Channel](/resources/channel#channel-object)                                                                    |
+| 193     | VOICE_CHANNEL_STATUS_DELETE                 | Voice channel status was deleted                          | [Channel](/resources/channel#channel-object)                                                                    |
+| ~~194~~ | ~~CLYDE_AI_PROFILE_UPDATE~~                 | ~~Clyde AI profile was updated~~                          |                                                                                                                 |
+| 200     | GUILD_SCHEDULED_EVENT_EXCEPTION_CREATE      | Exception was created for a guild scheduled event         | [Guild Scheduled Event Exception](/resources/guild-scheduled-event#guild-scheduled-event-exception-object)      |
+| 201     | GUILD_SCHEDULED_EVENT_EXCEPTION_UPDATE      | Exception was updated for a guild scheduled event         | [Guild Scheduled Event Exception](/resources/guild-scheduled-event#guild-scheduled-event-exception-object)      |
+| 202     | GUILD_SCHEDULED_EVENT_EXCEPTION_DELETE      | Exception was deleted for a guild scheduled event         | [Guild Scheduled Event Exception](/resources/guild-scheduled-event#guild-scheduled-event-exception-object)      |
+| 210     | GUILD_MEMBER_VERIFICATION_UPDATE            | Member verification settings were updated                 | [Member Verification](/resources/guild#member-verification-object) ^1^                                          |
+| 211     | GUILD_PROFILE_UPDATE                        | Guild profile was updated                                 | [Guild Profile](/resources/discovery#guild-profile-object) ^1^                                                  |
 
 ^1^ Object has exception(s) to available keys. See the [exceptions](#audit-log-change-exceptions) section below for details.
 
@@ -254,15 +241,28 @@ In addition to the exceptions below, the `key` field may be appended with `_hash
   Get Guild Audit Log
 </RouteHeader>
 
-Returns an [audit log](#audit-log-object) object for the guild. Requires the `VIEW_AUDIT_LOG` permission.
+Returns the audit log for the guild. Requires the `VIEW_AUDIT_LOG` permission.
 
 ###### Query String Params
 
-| Field        | Type      | Description                                                   |
-| ------------ | --------- | ------------------------------------------------------------- |
-| before?      | snowflake | Get entries before this entry ID                              |
-| after?       | snowflake | Get entries after this entry ID                               |
-| limit?       | integer   | Max number of entries to return (1-100, default 50)           |
-| user_id?     | snowflake | Get actions made by a specific user                           |
-| target_id?   | snowflake | Get actions affecting a specific entity                       |
-| action_type? | integer   | The [type of audit log event](#audit-log-events) to filter by |
+| Field        | Type      | Description                                                        |
+| ------------ | --------- | ------------------------------------------------------------------ |
+| before?      | snowflake | Get entries before this entry ID                                   |
+| after?       | snowflake | Get entries after this entry ID                                    |
+| limit?       | integer   | Max number of entries to return (1-100, default 50)                |
+| user_id?     | snowflake | Get actions made by a specific user                                |
+| target_id?   | snowflake | Get actions affecting a specific entity                            |
+| action_type? | integer   | The [type of audit log event](#audit-log-action-type) to filter by |
+
+###### Response Body
+
+| Field                  | Type                                                                                                 | Description                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| audit_log_entries      | array[[audit log entry](#audit-log-entry-object) object]                                             | Audit log entries                                  |
+| application_commands   | array[[application command](/interactions/application-commands#application-command-object) object]   | Application commands referenced in the audit log   |
+| auto_moderation_rules  | array[[automod rule](/resources/auto-moderation#automod-rule-object) object]                         | AutoMod rules referenced in the audit log          |
+| guild_scheduled_events | array[[guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object] | Guild scheduled events referenced in the audit log |
+| integrations           | array[partial [integration](#partial-integration-object) object]                                     | Partial integrations referenced in the audit log   |
+| threads                | array[[channel](/resources/channel#channel-object) object]                                           | Threads referenced in the audit log                |
+| users                  | array[partial [user](/resources/user#user-object) object]                                            | Users referenced in the audit log                  |
+| webhooks               | array[[webhook](/resources/webhook#webhook-object) object]                                           | Webhooks referenced in the audit log               |

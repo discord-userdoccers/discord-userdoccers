@@ -1,9 +1,9 @@
 import classNames from "@lib/classnames";
 import { Highlight, type Language as TLanguage } from "prism-react-renderer";
 import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
-
 import CopyButton from "../Copy";
 import CopyIcon from "../icons/Copy";
+
 // import FileIcon from "../icons/File";
 
 // this isn't exported for some reason
@@ -92,7 +92,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
   return (
     <div className="code-block relative my-3 rounded-md font-mono">
       {/* <InfoBar fileName={file} language={language} /> */}
-      <Highlight code={children} language={language! as TLanguage}>
+      <Highlight code={children} language={language! as TLanguage} theme={{ styles: [], plain: {} }}>
         {({
           className: blockClassName,
           tokens,

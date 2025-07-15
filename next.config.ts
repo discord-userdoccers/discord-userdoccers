@@ -1,10 +1,10 @@
-import createMDX from "@next/mdx";
-import supersub from "remark-supersub";
-import frontmatter from "./lib/frontmatter.mjs";
 import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
+import frontmatter from "@lib/frontmatter";
+import createMDX from "@next/mdx";
+import type { NextConfig } from "next";
+import supersub from "remark-supersub";
 
-/** @type {import('next').NextConfig} */
-const config = {
+const config: NextConfig = {
   reactStrictMode: true,
   basePath: "",
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
@@ -38,7 +38,7 @@ const withMDX = createMDX({
 });
 
 if (process.env.NODE_ENV === "development") {
-  await setupDevPlatform();
+  setupDevPlatform();
 }
 
 export default withMDX(config);

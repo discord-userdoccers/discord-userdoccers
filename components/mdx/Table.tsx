@@ -1,10 +1,9 @@
-import React, { RefObject, useEffect, useRef, useState } from "react";
-
 import Chevron from "@components/icons/Chevron";
 import CopyIcon from "@components/icons/Copy";
 import TickIcon from "@components/icons/Tick";
 import { Language, LANGUAGE_CONFIG } from "@lib/type-generator/languageConfig";
 import { useCodegenLanguage, useToast } from "@lib/type-generator/store";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 
 const cn = (...c: string[]) => c.join(" ");
 
@@ -127,19 +126,22 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   );
 }
 
-export function Table(props: React.JSX.IntrinsicElements["table"]) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- needed to avoid react bug
+export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"] & { useCodegen?: boolean }) {
   const tableRef = useRef<HTMLTableElement>(null);
 
   return (
     <div className="group relative mt-0 max-w-full overflow-auto">
       <table
         ref={tableRef}
-        className="w-full border-collapse overflow-hidden break-words rounded-md rounded-t-none align-middle text-sm"
+        className="w-full border-collapse overflow-hidden break-words rounded-md align-middle text-sm"
         {...props}
       />
-      <div className="absolute right-0 top-0 p-2 px-2">
-        <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
-      </div>
+      {props.useCodegen !== false && (
+        <div className="absolute right-0 top-0 p-2 px-2">
+          <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
+        </div>
+      )}
     </div>
   );
 }

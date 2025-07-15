@@ -1,6 +1,6 @@
 import classNames from "@lib/classnames";
-import React from "react";
 import Link, { LinkProps } from "next/link";
+import React from "react";
 
 // hack to make the props like each other
 type DocLinkProps = React.ForwardRefExoticComponent<

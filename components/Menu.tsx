@@ -1,10 +1,10 @@
 import classNames from "@lib/classnames";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useRef } from "react";
-import Bars from "./icons/Bars";
-import Navigation from "./navigation/Navigation";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
+import Bars from "./icons/Bars";
+import Navigation from "./navigation/Navigation";
 
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);

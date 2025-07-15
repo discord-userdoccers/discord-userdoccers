@@ -19,6 +19,9 @@ A relationship between the current user and another user.
 | user_ignored           | boolean                                     | Whether the target user has been [ignored](https://support.discord.com/hc/en-us/articles/28084948873623) by the current user |
 | origin_application_id? | ?snowflake                                  | The ID of the application that created the relationship                                                                      |
 | since?                 | ISO8601 timestamp                           | When the user requested a relationship                                                                                       |
+| has_played_game? ^1^   | boolean                                     | Whether the target user has authorized the same application the current user's session is associated with                    |
+
+^1^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
 ###### Relationship Type
 
@@ -252,10 +255,43 @@ Removes multiple relationships. Returns a 204 empty response on success. May fir
 
 ###### Query Params
 
-| Field              | Type    | Description                                                                                                                             |
-| ------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| relationship_type? | integer | Remove relationships with this [relationship type](#relationship-type) (default `INCOMING_REQUEST`, only `INCOMING_REQUEST` is allowed) |
-| only_spam?         | boolean | Whether to remove relationships that were flagged as spam (default false)                                                               |
+| Field                       | Type    | Description                                                                                                                             |
+| --------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| relationship_type?          | integer | Remove relationships with this [relationship type](#relationship-type) (default `INCOMING_REQUEST`, only `INCOMING_REQUEST` is allowed) |
+| only_spam? **(deprecated)** | boolean | Whether to remove relationships that were flagged as spam (default false)                                                               |
+
+###### JSON Params
+
+| Field    | Type           | Description                                                                                        |
+| -------- | -------------- | -------------------------------------------------------------------------------------------------- |
+| filters? | array[integer] | The [relationship removal filters](#relationship-removal-filter) to match against, using AND logic |
+
+###### Relationship Removal Filter
+
+| Value | Name    | Description                                |
+| ----- | ------- | ------------------------------------------ |
+| 1     | SPAM    | Friend requests flagged by Discord as spam |
+| 2     | IGNORED | Ignored users                              |
+
+<RouteHeader method="POST" url="/users/@me/relationships/bulk">
+  Bulk Add Relationships
+</RouteHeader>
+
+Adds multiple relationships from [contact sync](/resources/connected-accounts#update-external-friend-list-entries). May fire multiple [Relationship Add](/topics/gateway-events#relationship-add) Gateway events.
+
+###### JSON Params
+
+| Field    | Type             | Description                                                                                          |
+| -------- | ---------------- | ---------------------------------------------------------------------------------------------------- |
+| user_ids | array[snowflake] | IDs of users to add                                                                                  |
+| token    | string           | The [contact sync](/resources/connected-accounts#update-external-friend-list-entries) bulk add token |
+
+###### Response Body
+
+| Field               | Type             | Description                                        |
+| ------------------- | ---------------- | -------------------------------------------------- |
+| failed_requests     | array[snowflake] | IDs of the users who could not be friend requested |
+| successful_requests | array[snowflake] | IDs of the users who were friend requested         |
 
 <RouteHeader method="GET" url="/users/@me/game-relationships" supportsOAuth2="relationships.read">
   Get Game Relationships
