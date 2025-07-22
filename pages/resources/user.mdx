@@ -685,6 +685,51 @@ How a user's name gets displayed, such as font, colors, gradient, glow.
 | 4     | TOON     | Subtle vertical gradient and stroke |
 | 5     | POP      | Colored dropshadow                  |
 
+### User Identity Verification Object
+
+An Identity Verification used for application verification.
+
+###### User Identity Verification Structure
+
+| Field         | Type      | Description                                                                           |
+| ------------- | --------- | ------------------------------------------------------------------------------------- |
+| id            | snowflake | The ID for the team verification                                                      |
+| status        | number    | The current [status of the identity verification](#user-identity-verification-status) |
+| last_error    | ?number   | The [error code of the last verification attempt](#user-identity-verification-error)  |
+| redirect_url? | string    | The Stripe identity verification URL to redirect the user to                          |
+
+###### User Identity Verification Status
+
+| Value | Name                   | Description                                                         |
+| ----- | ---------------------- | ------------------------------------------------------------------- |
+| 1     | REQUIRES_ACTION        | User action is required to complete verification                    |
+| 2     | PROCESSING             | The verification is currently in progress                           |
+| 3     | CANCELED               | The verification was cancelled before completion                    |
+| 4     | SUCCEEDED              | The verification succeeded                                          |
+| 5     | MANUALLY_SUCCEEDED     | The verification was manually approved by staff                     |
+| 6     | DELETED                | The verification was deleted                                        |
+| 7     | SUCCEEDED_GRACE_PERIOD | The verification is currently in a grace period before finalization |
+
+###### User Identity Verification Error
+
+| Value | Name                                     | Description                                                                        |
+| ----- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| 1     | CONSENT_DECLINED                         | User declined consent at the beginning of verification                             |
+| 2     | UNVERIFIED                               | Verification was aborted or Stripe failed to verify the user's identity            |
+| 3     | DEVICE_UNSUPPORTED                       | The device used for verification is unsupported                                    |
+| 4     | VERIFICATION_DOCUMENT_EXPIRED            | The submitted document has expired                                                 |
+| 5     | VERIFICATION_DOCUMENT_INVALID            | The submitted document is invalid                                                  |
+| 6     | VERIFICATION_UNEXPECTED_DOCUMENT_COUNTRY | The submitted document has an unexpected issuing country                           |
+| 7     | VERIFICATION_UNEXPECTED_DOCUMENT_TYPE    | The submitted document has an unexpected document type                             |
+| 8     | VERIFICATION_SCAN_NOT_READABLE           | The scan is not readable by the verification system                                |
+| 9     | VERIFICATION_SCAN_MISSING_BACK           | The scan is missing the back side of the document                                  |
+| 10    | VERIFICATION_SCAN_ID_TYPE_NOT_SUPPORTED  | The scan contains a document type that is not supported by the verification system |
+| 11    | VERIFICATION_SCAN_CORRUPT                | The scan is incomplete or corrupted                                                |
+| 12    | VERIFICATION_SCAN_FAILED_COPY            | The verification system determined the scan is a copy of the original document     |
+| 13    | VERIFICATION_SCAN_MANIPULATED_DOCUMENT   | The verification system determined the document was manipulated or damaged with    |
+| 14    | VERIFICATION_SCAN_FAILED_GRAYSCALE       | The scan failed due to the uploaded document having been uploaded in grayscale     |
+| 15    | VERIFICATION_UNDER_SUPPORTED_AGE         | The user is under the minimum supported age for verification                       |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me" supportsOAuth2="identify">
@@ -2079,11 +2124,11 @@ Starts the age verification process using a third-party age verification provide
 | verification_vendor_name | string | The third party age verification provider (currently always `K_ID`)        |
 | verification_webview_url | string | The webview URL to iframe into the client                                  |
 
-<RouteHeader method="POST" url="/users/@me/identity/verification">
-  Verify User Identity
+<RouteHeader method="POST" url="/users/@me/identity/verification" deprecated>
+  Create User Identity Verification
 </RouteHeader>
 
-Returns the status and errors of the user verification and a redirect link to Stripe identity verification.
+Returns a [User Identity Verification Object](#user-identity-verification-object).
 
 <Alert type="warn">
 
@@ -2097,32 +2142,14 @@ This endpoint is deprecated. Applications must now belong to a team to be verifi
 | ---------- | ------ | --------------------------------------------------------- |
 | return_url | string | The URL to redirect to after Stripe verification succeeds |
 
-###### Response Body
-
-| Field        | Type      | Description                                                                            |
-| ------------ | --------- | -------------------------------------------------------------------------------------- |
-| id           | snowflake | The ID for the team verification                                                       |
-| status       | number    | The current [status of the identity verification](/resources/team#verification-status) |
-| last_error   | number    | The [error code of the last verification attempt](/resources/team#verification-error)  |
-| redirect_url | string    | The Stripe identity verification URL to redirect the user to                           |
-
-<RouteHeader method="GET" url="/users/@me/identity/verification">
-  Get User Verification Status
+<RouteHeader method="GET" url="/users/@me/identity/verification" deprecated>
+  Get User Identity Verification
 </RouteHeader>
 
-Returns the status and errors of the user identity verification, without a Stripe identity verification link.
-May only be used after initiating a [user identity verification](#verify-user-identity).
+Returns a [User Identity Verification Object](#user-identity-verification-object), without a Stripe identity verification link.
 
 <Alert type="warn">
 
 This endpoint is deprecated. Applications must now belong to a team to be verified. As such it is replaced by [Get Team Verification Status](/resources/team#get-team-verification-status).
 
 </Alert>
-
-###### Response Body
-
-| Field      | Type      | Description                                                                            |
-| ---------- | --------- | -------------------------------------------------------------------------------------- |
-| id         | snowflake | The ID for the team verification                                                       |
-| status     | number    | The current [status of the identity verification](/resources/team#verification-status) |
-| last_error | ?number   | The [error code of the last verification attempt](/resources/team#verification-error)  |
