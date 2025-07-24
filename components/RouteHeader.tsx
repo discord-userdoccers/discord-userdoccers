@@ -9,7 +9,7 @@ import { H3 } from "./mdx/Heading";
 
 function CopyButton(props: { info: RouteHeaderProps; ref: RefObject<HTMLDivElement> }) {
   const { showSuccessToast, showErrorToast } = useToast();
-  const { selectedLanguage, setSelectedLanguage } = useCodegenLanguage();
+  const { selectedLanguage } = useCodegenLanguage();
 
   const [showCopyIcon, setShowCopyIcon] = useState(false);
 
