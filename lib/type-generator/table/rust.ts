@@ -11,8 +11,8 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["file contents", "Vec<u8>"],
   [/^binary data/i, "Vec<u8>"],
   // i64 just to be safe
+  [/^unsigned\s?(byte|short|integer)/i, "u64"],
   [/^signed?\s?(byte|short|integer)/i, "i64"],
-  [/^unsigned?\s?(byte|short|integer)/i, "u64"],
 ];
 
 export class RustTableGenerator {
