@@ -52,7 +52,7 @@ export class RustEndpointGenerator {
   private parsePath(path: string): [string, string[]] {
     const paramNames: string[] = [];
 
-    const parsedPath = path.replaceAll(/{(.+)}/g, (_, param) => {
+    const parsedPath = path.replaceAll(/{((?:\w|\.)+)}/g, (_, param) => {
       paramNames.push(param.replaceAll(".", "_").toLowerCase());
       return "{}";
     });

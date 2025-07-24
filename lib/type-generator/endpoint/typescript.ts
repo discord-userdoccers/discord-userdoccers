@@ -52,7 +52,7 @@ export class TypescriptEndpointGenerator {
   private parsePath(path: string): [string, string[]] {
     const paramNames: string[] = [];
 
-    const parsedPath = path.replaceAll(/{(.+)}/g, (_, param) => {
+    const parsedPath = path.replaceAll(/{((?:\w|\.)+)}/g, (_, param) => {
       const name = new Name(param.replace(".", " ")).toCamelCase();
       paramNames.push(name);
       return `\${${name}}`;
