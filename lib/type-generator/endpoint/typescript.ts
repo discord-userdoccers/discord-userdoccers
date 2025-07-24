@@ -55,4 +55,3 @@ export class TypescriptEndpointGenerator {
     return [parsedPath, paramNames];
   }
 }
-``

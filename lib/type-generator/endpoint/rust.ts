@@ -54,4 +54,3 @@ export class RustEndpointGenerator {
     return [parsedPath, paramNames];
   }
 }
-``
