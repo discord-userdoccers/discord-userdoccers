@@ -56,7 +56,7 @@ export class Tokenizer {
     while (tableTitleElement && tableTitleElement.tagName !== "H6") {
       if (tableTitleElement !== this.root.parentElement) intermediateElements.push(tableTitleElement);
       tableTitleElement = tableTitleElement.nextElementSibling as HTMLElement;
-      if (tableTitleElement.firstElementChild?.tagName === "H3") {
+      if (!tableTitleElement || tableTitleElement.firstElementChild?.tagName === "H3") {
         // if the endpoint doesnt have any tables at all then it obviously has no params
         hasQueryParams = false;
         break;
