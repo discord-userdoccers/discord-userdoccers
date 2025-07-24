@@ -39,7 +39,6 @@ export class RustEndpointGenerator {
         })
         .join(", ")}) -> String {\n`;
 
-      console.log(params.length);
       output += `\tformat!("${cleanPath}${data.hasQueryParams ? "?{}" : ""}"${params.length ? ", " + params.join(", ") : ""}${data.hasQueryParams ? ", serde_urlencoded::to_string(query).unwrap_or_default()" : ""})\n`;
 
       output += "}\n";
