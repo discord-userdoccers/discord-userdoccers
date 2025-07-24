@@ -55,9 +55,11 @@ export class Tokenizer {
     let tableTitleElement = this.root.parentElement;
     while (tableTitleElement && tableTitleElement.tagName !== "H6") {
       if (tableTitleElement !== this.root.parentElement) intermediateElements.push(tableTitleElement);
-      // if the endpoint doesnt have any tables at all then it obviously has no params
-      if (tableTitleElement.tagName === "H3") hasQueryParams = false;
       tableTitleElement = tableTitleElement.nextElementSibling as HTMLElement;
+      if (tableTitleElement.firstElementChild?.tagName === "H3") {
+        // if the endpoint doesnt have any tables at all then it obviously has no params
+        hasQueryParams = false;
+      }
     }
 
     hasQueryParams = tableTitleElement?.textContent?.split(" ")[0].toLowerCase() === "query" && hasQueryParams;

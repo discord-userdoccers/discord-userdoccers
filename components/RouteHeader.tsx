@@ -100,8 +100,8 @@ export default function RouteHeader({
 
   return (
     <div>
+      <H3 className="mb-0">{children}</H3>
       <div ref={ref} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-        <H3 className="mb-0">{children}</H3>
         <div className="flex">
           <div className="mt-1 flex items-center">
             <MethodBadge method={method} />
