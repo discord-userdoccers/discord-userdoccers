@@ -83,7 +83,6 @@ export interface RouteHeaderProps {
   mfa?: boolean;
   supportsOAuth2?: string | boolean;
   deprecated?: boolean;
-  ref: React.RefObject<HTMLDivElement>
 }
 
 export default function RouteHeader({
