@@ -10,9 +10,7 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["ISO8601 date", "Timestamp"],
   ["file contents", "Vec<u8>"],
   [/^binary data/i, "Vec<u8>"],
-  // i64 just to be safe
-  [/^unsigned\s?(byte|short|integer)/i, "u64"],
-  [/^signed?\s?(byte|short|integer)/i, "i64"],
+  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "i64"],
 ];
 
 export class RustTableGenerator {
