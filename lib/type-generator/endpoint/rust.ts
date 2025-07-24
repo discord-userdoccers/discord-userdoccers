@@ -43,7 +43,7 @@ export class RustEndpointGenerator {
 
       output += "}\n";
     } else {
-      output = `pub const ${data.name.toSnakeCase().toUpperCase()}: &str = "${data.endpoint}";\n`;
+      output += `pub const ${data.name.toSnakeCase().toUpperCase()}: &str = "${data.endpoint}";\n`;
     }
 
     return output;
