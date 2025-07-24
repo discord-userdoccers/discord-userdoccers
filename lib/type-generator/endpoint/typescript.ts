@@ -16,14 +16,14 @@ export class TypescriptEndpointGenerator {
 
     comment.push(` * Method: \`${data.method}\``);
 
+    if (data.flags.deprecated) comment.push(" * @deprecated")
+
     if (data.flags.mfa) comment.push(" * Valid MFA code is required for some actions");
     if (data.flags.supportsAuditReason) comment.push(" * Supports the `X-Audit-Log-Reason header`");
     if (data.flags.unauthenticated) comment.push(" * Does not require authentication");
     if (data.flags.supportsOAuth2) comment.push(` * Supports OAuth2 for authentication${typeof data.flags.supportsOAuth2 === "string" ? ` with the \`${data.flags.supportsOAuth2}\` scope` : ""}`);
     
     for (const line of data.description) comment.push(` * ${line}`);
-
-    if (data.flags.deprecated) comment.push("* @deprecated\n")
 
     output += "/**\n" + comment.join("\n *\n") + "\n */\n";
 
