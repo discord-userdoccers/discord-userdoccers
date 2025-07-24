@@ -40,7 +40,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 
   function tryCopyCodeToClipboard() {
     const table = props.tableRef.current;
-    const generator = LANGUAGE_CONFIG[selectedLanguage].generator;
+    const generator = LANGUAGE_CONFIG[selectedLanguage].tableGenerator;
 
     if (table) {
       const code: string = generator(table);

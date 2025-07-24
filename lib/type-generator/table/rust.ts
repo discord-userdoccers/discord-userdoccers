@@ -4,16 +4,18 @@ const TYPE_MAP: [string | RegExp, string][] = [
   ["string", "String"],
   ["str", "String"],
   ["boolean", "bool"],
+  ["float", "f64"],
   ["snowflake", "Snowflake"],
   ["ISO8601 timestamp", "Timestamp"],
   ["ISO8601 date", "Timestamp"],
   ["file contents", "Vec<u8>"],
   [/^binary data/i, "Vec<u8>"],
   // i64 just to be safe
-  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "i64"],
+  [/^signed?\s?(byte|short|integer)/i, "i64"],
+  [/^unsigned?\s?(byte|short|integer)/i, "u64"],
 ];
 
-export class RustGenerator {
+export class RustTableGenerator {
   public readonly tokenizer: Tokenizer;
 
   public constructor(rootElement: HTMLTableElement) {

@@ -1,25 +1,32 @@
 import Python from "@components/icons/Python";
 import Rust from "@components/icons/Rust";
 import TypeScript from "@components/icons/TypeScript";
-import { PythonGenerator } from "@lib/type-generator/python";
-import { RustGenerator } from "@lib/type-generator/rust";
-import { TypescriptGenerator } from "@lib/type-generator/typescript";
+import { RouteHeaderProps } from "@components/RouteHeader";
+import { PythonTableGenerator } from "./table/python";
+import { PythonEndpointGenerator } from "./endpoint/python";
+import { TypescriptTableGenerator } from "./table/typescript";
+import { TypescriptEndpointGenerator } from "./endpoint/typescript";
+import { RustTableGenerator } from "./table/rust";
+import { RustEndpointGenerator } from "./endpoint/rust";
 
 export const LANGUAGE_CONFIG = {
   Python: {
     label: "Python",
     icon: Python,
-    generator: (ref: HTMLTableElement) => new PythonGenerator(ref).generateCode(),
+    tableGenerator: (ref: HTMLTableElement) => new PythonTableGenerator(ref).generateCode(),
+    endpointGenerator: (ref: HTMLDivElement, info: RouteHeaderProps) => new PythonEndpointGenerator(ref, info).generateCode(),
   },
   TypeScript: {
     label: "TypeScript",
     icon: TypeScript,
-    generator: (ref: HTMLTableElement) => new TypescriptGenerator(ref).generateCode(),
+    tableGenerator: (ref: HTMLTableElement) => new TypescriptTableGenerator(ref).generateCode(),
+    endpointGenerator: (ref: HTMLDivElement, info: RouteHeaderProps) => new TypescriptEndpointGenerator(ref, info).generateCode(),
   },
   Rust: {
     label: "Rust",
     icon: Rust,
-    generator: (ref: HTMLTableElement) => new RustGenerator(ref).generateCode(),
+    tableGenerator: (ref: HTMLTableElement) => new RustTableGenerator(ref).generateCode(),
+    endpointGenerator: (ref: HTMLDivElement, info: RouteHeaderProps) => new RustEndpointGenerator(ref, info).generateCode(),
   },
 } as const;
 
