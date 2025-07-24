@@ -43,7 +43,7 @@ export class TypescriptEndpointGenerator {
 
       output += "}\n";
     } else {
-      output = `pub const ${data.name.toSnakeCase().toUpperCase()}: &str = "${data.endpoint}"\n`;
+      output = `export const ${data.name.toSnakeCase().toUpperCase()} = "${data.endpoint}";\n`;
     }
 
     return output;
