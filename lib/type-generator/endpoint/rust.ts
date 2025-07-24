@@ -12,7 +12,7 @@ export class RustEndpointGenerator {
     const data = this.tokenizer.getData();
 
     let output = "";
-    let comment: string[] = [];
+    const comment: string[] = [];
 
     comment.push(`/// Method: \`${data.method}\``);
 
@@ -31,7 +31,7 @@ export class RustEndpointGenerator {
     if (data.flags.deprecated) output += "#[deprecated]\n";
 
     if (data.endpoint.includes("{") || data.hasQueryParams) {
-      let [cleanPath, params] = this.parsePath(data.endpoint);
+      const [cleanPath, params] = this.parsePath(data.endpoint);
 
       output += `pub fn ${data.name.toSnakeCase().toUpperCase()}(${data.hasQueryParams ? `query: &${data.name.toPascalCase()}QueryParams${params.length ? ", " : ""}` : ""}${params
         .map((s) => {

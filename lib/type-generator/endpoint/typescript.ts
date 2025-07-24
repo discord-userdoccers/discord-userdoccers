@@ -12,7 +12,7 @@ export class TypescriptEndpointGenerator {
     const data = this.tokenizer.getData();
 
     let output = "";
-    let comment: string[] = [];
+    const comment: string[] = [];
 
     if (data.flags.deprecated) comment.push(" * @deprecated");
 
@@ -31,7 +31,7 @@ export class TypescriptEndpointGenerator {
     output += "/**\n" + comment.join("\n *\n") + "\n */\n";
 
     if (data.endpoint.includes("{") || data.hasQueryParams) {
-      let [cleanPath, params] = this.parsePath(data.endpoint);
+      const [cleanPath, params] = this.parsePath(data.endpoint);
 
       output += `export function ${data.name.toSnakeCase().toUpperCase()}(${data.hasQueryParams ? `query: ${data.name.toPascalCase()}QueryParams${params.length ? ", " : ""}` : ""}${params
         .map((s) => {
