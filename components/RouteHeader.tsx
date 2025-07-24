@@ -96,14 +96,36 @@ export default function RouteHeader({
   deprecated,
 }: RouteHeaderProps ) {
   const ref = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState(false);
 
   return (
     <div>
-      <div ref={ref}>
+      <div ref={ref} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
         <H3 className="mb-0">{children}</H3>
-        <div className="mt-1 flex items-center">
-          <MethodBadge method={method} />
-          <code className="break-all p-2 text-text-light dark:text-text-dark">{url}</code>
+        <div className="flex">
+          <div className="mt-1 flex items-center">
+            <MethodBadge method={method} />
+            <code className="break-all p-2 text-text-light dark:text-text-dark">{url}</code>
+          </div>
+          {hover ? (
+            <div className="mt-1 flex items-center">
+              <CopyButton
+                info={
+                  {
+                    method,
+                    url,
+                    children,
+                    supportsAuditReason,
+                    unauthenticated,
+                    mfa,
+                    supportsOAuth2,
+                    deprecated,
+                  } as RouteHeaderProps
+                }
+                ref={ref as React.RefObject<HTMLDivElement>}
+                />
+            </div>
+          ) : null}
         </div>
         <div className="mt-2 flex items-center gap-2">
           {mfa ? (
@@ -143,23 +165,6 @@ export default function RouteHeader({
               tooltip="This endpoint is still active but should be avoided as it is considered deprecated"
             />
           ) : null}
-        </div>
-        <div className="mt-3 flex items-center">
-          <CopyButton
-            info={
-              {
-                method,
-                url,
-                children,
-                supportsAuditReason,
-                unauthenticated,
-                mfa,
-                supportsOAuth2,
-                deprecated,
-              } as RouteHeaderProps
-            }
-            ref={ref as React.RefObject<HTMLDivElement>}
-          />
         </div>
       </div>
     </div>

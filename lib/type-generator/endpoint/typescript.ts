@@ -14,9 +14,9 @@ export class TypescriptEndpointGenerator {
     let output= "";
     let comment: string[] = [];
 
-    comment.push(` * Method: \`${data.method}\``);
+    if (data.flags.deprecated) comment.push(" * @deprecated");
 
-    if (data.flags.deprecated) comment.push(" * @deprecated")
+    comment.push(` * Method: \`${data.method}\``);
 
     if (data.flags.mfa) comment.push(" * Valid MFA code is required for some actions");
     if (data.flags.supportsAuditReason) comment.push(" * Supports the `X-Audit-Log-Reason header`");
