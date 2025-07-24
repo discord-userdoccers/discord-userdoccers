@@ -59,6 +59,7 @@ export class Tokenizer {
       if (tableTitleElement.firstElementChild?.tagName === "H3") {
         // if the endpoint doesnt have any tables at all then it obviously has no params
         hasQueryParams = false;
+        break;
       }
     }
 
