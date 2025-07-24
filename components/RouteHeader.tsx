@@ -94,7 +94,7 @@ export default function RouteHeader({
   mfa,
   supportsOAuth2,
   deprecated,
-}: RouteHeaderProps ) {
+}: RouteHeaderProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState(false);
 
@@ -123,7 +123,7 @@ export default function RouteHeader({
                   } as RouteHeaderProps
                 }
                 ref={ref as React.RefObject<HTMLDivElement>}
-                />
+              />
             </div>
           ) : null}
         </div>

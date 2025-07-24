@@ -8,7 +8,5 @@ export class PythonEndpointGenerator {
     this.tokenizer = new Tokenizer(rootElement, info);
   }
 
-  public generateCode() {
-      
-  }
+  public generateCode() {}
 }
