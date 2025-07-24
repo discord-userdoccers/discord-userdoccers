@@ -95,7 +95,6 @@ export default function RouteHeader({
   mfa,
   supportsOAuth2,
   deprecated,
-  ref: _,
 }: RouteHeaderProps ) {
   const ref = useRef<HTMLDivElement>(null);
 
