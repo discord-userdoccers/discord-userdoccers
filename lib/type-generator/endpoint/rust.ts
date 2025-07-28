@@ -1,5 +1,5 @@
 import { RouteHeaderProps } from "@components/RouteHeader";
-import { Tokenizer } from "./tokenizer";
+import { Name, Tokenizer } from "./tokenizer";
 
 export class RustEndpointGenerator {
   public readonly tokenizer: Tokenizer;
@@ -35,11 +35,11 @@ export class RustEndpointGenerator {
 
       output += `pub fn ${data.name.toSnakeCase().toUpperCase()}(${data.hasQueryParams ? `query: &${data.name.toPascalCase()}QueryParams${params.length ? ", " : ""}` : ""}${params
         .map((s) => {
-          return s + ": &str";
+          return s.toSnakeCase() + ": &" + s.toPascalCase();
         })
         .join(", ")}) -> String {\n`;
 
-      output += `\tformat!("${cleanPath}${data.hasQueryParams ? "?{}" : ""}"${params.length ? ", " + params.join(", ") : ""}${data.hasQueryParams ? ", serde_urlencoded::to_string(query).unwrap_or_default()" : ""})\n`;
+      output += `\tformat!("${cleanPath}${data.hasQueryParams ? "?{}" : ""}"${params.length ? ", " + params.map((s) => {return s.toSnakeCase()}).join(", ") : ""}${data.hasQueryParams ? ", serde_urlencoded::to_string(query).unwrap_or_default()" : ""})\n`;
 
       output += "}\n";
     } else {
@@ -49,11 +49,11 @@ export class RustEndpointGenerator {
     return output;
   }
 
-  private parsePath(path: string): [string, string[]] {
-    const paramNames: string[] = [];
+  private parsePath(path: string): [string, Name[]] {
+    const paramNames: Name[] = [];
 
     const parsedPath = path.replaceAll(/{((?:\w|\.)+)}/g, (_, param) => {
-      paramNames.push(param.replaceAll(".", "_").toLowerCase());
+      paramNames.push(new Name(param.replaceAll(".", " ")));
       return "{}";
     });
 

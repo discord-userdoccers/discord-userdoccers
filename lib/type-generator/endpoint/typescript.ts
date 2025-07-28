@@ -35,7 +35,7 @@ export class TypescriptEndpointGenerator {
 
       output += `export function ${data.name.toSnakeCase().toUpperCase()}(${data.hasQueryParams ? `query: ${data.name.toPascalCase()}QueryParams${params.length ? ", " : ""}` : ""}${params
         .map((s) => {
-          return s + ": any";
+          return s.toCamelCase() + ": " + s.toPascalCase();
         })
         .join(", ")}): string {\n`;
 
@@ -49,13 +49,13 @@ export class TypescriptEndpointGenerator {
     return output;
   }
 
-  private parsePath(path: string): [string, string[]] {
-    const paramNames: string[] = [];
+  private parsePath(path: string): [string, Name[]] {
+    const paramNames: Name[] = [];
 
     const parsedPath = path.replaceAll(/{((?:\w|\.)+)}/g, (_, param) => {
-      const name = new Name(param.replace(".", " ")).toCamelCase();
+      const name = new Name(param.replace(".", " "));
       paramNames.push(name);
-      return `\${${name}}`;
+      return `\${${name.toCamelCase()}}`;
     });
 
     return [parsedPath, paramNames];
