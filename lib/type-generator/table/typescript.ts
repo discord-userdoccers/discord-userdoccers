@@ -1,25 +1,23 @@
 import { TableType, Tokenizer, TypeInfo } from "./tokenizer";
 
 const TYPE_MAP: [string | RegExp, string][] = [
-  ["string", "str"],
-  ["boolean", "bool"],
   ["snowflake", "Snowflake"],
-  ["ISO8601 timestamp", "str"],
-  ["ISO8601 date", "str"],
-  ["file contents", "bytes"],
-  [/^binary data/i, "bytes"],
+  ["ISO8601 timestamp", "string"],
+  ["ISO8601 date", "string"],
+  ["file contents", "UInt8Array"],
+  [/^binary data/i, "Uint8Array"],
   // Handles most numeric types.
-  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "int"],
+  [/^(signed|unsigned)?\s?(byte|short|integer)/i, "number"],
 ];
 
-export class PythonGenerator {
+export class TypescriptTableGenerator {
   public readonly tokenizer: Tokenizer;
 
   public constructor(rootElement: HTMLTableElement) {
     this.tokenizer = new Tokenizer(rootElement);
   }
 
-  public generateCode(): string {
+  public generateCode() {
     const layout = this.tokenizer.getLayout();
     if (!layout) throw new Error("Invalid layout received.");
 
@@ -30,9 +28,7 @@ export class PythonGenerator {
 
     for (const property of layout.contents) {
       const isEnum = layout.type === TableType.Enum;
-      let field = this.typeToString(property.field, true);
-      const isUndefinable = field.endsWith("?");
-      if (isUndefinable) field = this.stripQuestionMark(field);
+      const field = this.typeToString(property.field, true);
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
@@ -56,68 +52,64 @@ export class PythonGenerator {
         description,
         otherColumns,
         isDeprecated,
-        isUndefinable,
       });
     }
 
     let output = "";
 
     if (description.length) {
-      output += `"""\n`;
+      output += "/**\n";
       description.forEach((line, i) => {
-        output += `${line}\n`;
-        if (i < description.length - 1) output += `\n`;
+        output += ` * ${line}\n`;
+        if (i < description.length - 1) output += ` *\n`;
       });
-      output += `"""\n`;
+      output += " */\n";
     }
 
     if (layout.type === TableType.Struct) {
-      output += `class ${title}(TypedDict):\n`;
+      output += `export interface ${title} {\n`;
     } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
-      output += `class ${title}(Enum):\n`;
+      output += `export enum ${title} {\n`;
     } else {
       // TODO: Should I Object.freeze()?
-      output += `class ${title}(Flag):\n`;
+      output += `const ${title} = {\n`;
     }
 
     for (const property of properties) {
-      // if desc + other columns, use a multiline string.
-      if (property.otherColumns.length) {
-        output += `\t"""\n`;
-        output += `\t${property.description}\n`;
-        for (const [key, value] of property.otherColumns) {
-          output += `\t${key}: ${value}\n`;
+      if (property.description || property.otherColumns.length) {
+        output += `\t/**\n`;
+
+        if (property.description) output += `\t * ${property.description}\n`;
+        if (property.description && property.otherColumns.length) {
+          output += `\t *\n`; // add an extra newline for spacing.
         }
-        if (property.isDeprecated) output += `\t(deprecated)\n`;
-        output += `\t"""\n`;
-      } else if (property.description) {
-        const deprecatedStr = property.isDeprecated ? " (deprecated)" : "";
-        output += `\t#: ${property.description}${deprecatedStr}\n`;
-      } else if (property.otherColumns.length > 1) {
-        output += `\t"""\n`;
         for (const [key, value] of property.otherColumns) {
-          output += `\t${key}: ${value}\n`;
+          output += `\t * ${key}: ${value}\n`;
         }
-        if (property.isDeprecated) output += `\t(deprecated)\n`;
-        output += `\t"""\n`;
-      } else if (property.otherColumns.length) {
-        const [key, value] = property.otherColumns[0];
-        const deprecatedStr = property.isDeprecated ? " (deprecated)" : "";
-        output += `\t#: ${key}: ${value}${deprecatedStr}\n`;
+        if (property.isDeprecated) {
+          output += `\t * @deprecated\n`;
+        }
+        output += `\t */\n`;
       }
 
       if (layout.type === TableType.Struct) {
-        const type = property.isUndefinable ? `NotRequired[${property.type}]` : property.type;
-        output += `\t${property.field}: ${type}\n`;
+        output += `\t${property.field}: ${property.type};\n`;
       } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
         if (property.type) {
-          output += `\t${property.field} = ${property.type}\n`;
+          output += `\t${property.field} = ${property.type},\n`;
         } else {
-          output += `\t${property.field} = auto(),\n`;
+          output += `\t${property.field},\n`;
         }
       } else {
-        output += `\t${property.field} = ${property.type}\n`;
+        const [left, right] = property.type?.split("<<").map((s) => s.trim()) ?? [];
+        output += `\t${property.field}: ${left}n << ${right}n,\n`;
       }
+    }
+
+    if (layout.type === TableType.Struct || layout.type === TableType.Enum || layout.type === TableType.Event) {
+      output += `}\n`;
+    } else {
+      output += `} as const;\n`;
     }
 
     output += "\n";
@@ -139,48 +131,43 @@ export class PythonGenerator {
     return input;
   }
 
-  private stripQuestionMark(input: string): string {
-    if (input.startsWith("?")) {
-      input = input.slice(1);
-    }
-    if (input.endsWith("?")) {
-      input = input.slice(0, -1);
-    }
-    return input;
-  }
-
-  private typeToString(type: TypeInfo, onlyFirstWord = false): string {
+  private typeToString(type: TypeInfo, onlyFirstWord = false, isInArray = false): string {
     if (type.array) {
       if (type.array.length === 1) {
         // arrays in userdoccers are defined as array[T]
-        const inner = this.typeToString(type.array[0]);
-        return `list[${inner}]`;
+        const inner = this.typeToString(type.array[0], onlyFirstWord, true);
+        return `${inner}[]`;
       } else if (type.array.length > 1) {
         // tuples in userdoccers are defined as array[T1, T2, ...]
         const inner = type.array
-          .map((i) => this.typeToString(i))
+          .map((i) => this.typeToString(i, onlyFirstWord, true))
           .map((i) => this.typeMapper(i))
           .join(", ");
-        return `tuple[${inner}]`;
+        return `[${inner}]`;
       }
     }
     if (type.map) {
       const left = this.typeToString(type.map[0]);
       const right = this.typeToString(type.map[1]);
-      return `dict[${this.typeMapper(left)}, ${this.typeMapper(right)}]`;
+      return `Record<${this.typeMapper(left)}, ${this.typeMapper(right)}>`;
     }
     if (type.multiline) {
       return type.multiline.join("\n");
     }
     if (type.type && type.optional) {
-      return `${this.typeMapper(type.type)} | None`;
+      const t = this.typeMapper(type.type);
+      if (isInArray) {
+        return `(${t} | null)`;
+      }
+      return `${t} | null`;
     }
     if (type.type && onlyFirstWord) {
       return type.type.split(" ")[0];
     }
-    if (type.type) {
+    if (typeof type.type === "string") {
       return type.type;
     }
+
     throw new Error("Invalid TypeInfo provided.");
   }
 }
