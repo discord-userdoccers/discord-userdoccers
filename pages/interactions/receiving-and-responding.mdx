@@ -123,7 +123,7 @@ We're all used to the way that Discord bots have worked for a long time. You mak
 
 Interactions bring something entirely new to the table: the ability to interact with an application _without needing a bot user in the guild_. As you read through this documentation, you'll see that bot tokens are only referenced as a helpful alternative to doing a client credentials auth flow. Responding to interactions does not require a bot token.
 
-In many cases, you may still need a bot user. If you need to receive Gateway events, or need to interact with other parts of Discord API (like fetching a guild, or a channel, or updating permissions on a user), those actions are all still tied to having a bot token. However, if you don't need any of those things, you never have to add a bot user to your application at all.
+In many cases, you may still need a bot user. If you need to receive Gateway events, or need to interact with other parts of Discord API (like fetching a guild, or a channel, or updating permissions on an user), those actions are all still tied to having a bot token. However, if you don't need any of those things, you never have to add a bot user to your application at all.
 
 Welcome to the new world.
 
@@ -177,54 +177,64 @@ Interactions--both receiving and responding--are webhooks under the hood. So res
 
 There are a number of ways you can respond to an interaction:
 
-### Interaction Response Object
+###### Interaction Response Object
 
-###### Interaction Response Structure
+### Interaction Response Structure
 
-| Field | Type                                                              | Description                  |
-| ----- | ----------------------------------------------------------------- | ---------------------------- |
-| type  | [interaction callback type](#interaction-callback-type)           | the type of response         |
-| data? | [interaction callback data](#interaction-callback-data-structure) | an optional response message |
+| Field | Type    | Description                                                        |
+| ----- | ------- | ------------------------------------------------------------------ |
+| type  | integer | The [type of the interaction response](#interaction-callback-type) |
+| data? | object  | The [data of the interaction response](#interaction-callback-type) |
 
 ###### Interaction Callback Type
 
-| Name                                 | Value | Description                                                                                                   |
-| ------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------- |
-| PONG                                 | 1     | ACK a `Ping`                                                                                                  |
-| CHANNEL_MESSAGE_WITH_SOURCE          | 4     | respond to an interaction with a message                                                                      |
-| DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE | 5     | ACK an interaction and edit a response later, the user sees a loading state                                   |
-| DEFERRED_UPDATE_MESSAGE ^1^          | 6     | for components, ACK an interaction and edit the original message later; the user does not see a loading state |
-| UPDATE_MESSAGE ^1^                   | 7     | for components, edit the message the component was attached to                                                |
+Depending on the interaction type, not all callback types may be available. See `Target Interaction Types` column for interaction types that allow usage of specific callback type.
 
-^1^ Only valid for [component-based](/resources/components) interactions
+| Name                                    | Value | Description                                                                                                   | Data                                                                                               | Target Interaction Types                                                                      |
+| --------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| PONG                                    | 1     | Acknowledge a [`PING`](#interaction-type) interaction                                                         |                                                                                                    | `PING`                                                                                        |
+| CHANNEL_MESSAGE_WITH_SOURCE             | 4     | Respond to an interaction with a message                                                                      | [interaction callback message data](#interaction-callback-message-data-structure) object           | `APPLICATION_COMMAND, `MESSAGE_COMPONENT`, `MODAL_SUBMIT`                                     |
+| DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE    | 5     | Acknowledge an interaction and send a message later; the user sees a loading state                            | [interaction callback message data](#interaction-callback-message-data-structure) object           | `APPLICATION_COMMAND, `MESSAGE_COMPONENT`, `MODAL_SUBMIT`                                     |
+| DEFERRED_UPDATE_MESSAGE                 | 6     | Acknowledge an interaction and edit the original message later; the user does not see a loading state         | [interaction callback message data](#interaction-callback-message-data-structure) object           | `MESSAGE_COMPONENT`, `MODAL_SUBMIT` (only when the modal is triggered by a message component) |
+| UPDATE_MESSAGE                          | 7     | Edit the message that the interacted component was attached to                                                | [interaction callback message data](#interaction-callback-message-data-structure) object           | `MESSAGE_COMPONENT`, `MODAL_SUBMIT` (only when the modal is triggered by a message component) |
+| APPLICATION_COMMAND_AUTOCOMPLETE_RESULT | 8     | Respond to an autocomplete interaction with suggested choices                                                 | [interaction callback autocomplete data](#interaction-callback-autocomplete-data-structure) object | `APPLICATION_COMMAND_AUTOCOMPLETE`                                                            |
+| MODAL                                   | 9     | Respond to an interaction with a popup modal                                                                  | [interaction callback modal data](#interaction-callback-modal-data-structure) object               | `APPLICATION_COMMAND, `MESSAGE_COMPONENT`                                                     |
+| PREMIUM_REQUIRED ^1^ **(deprecated)**   | 10    | Respond to an interaction with an upgrade button                                                              |                                                                                                    | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`, `MODAL_SUBMIT`                                    |
+| IFRAME_MODAL ^2^                        | 11    | Respond to an interaction with an IFrame modal                                                                | [interaction callback iframe modal data](#interaction-callback-iframe-modal-data-structure) object | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`                                                    |
+| LAUNCH_ACTIVITY ^3^                     | 12    | Launch an embedded activity associated with the application                                                   |                                                                                                    | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`, `MODAL_SUBMIT`                                    |
 
-###### Interaction Callback Data Structure
+^1^ Only available if the application has access to monetization features.
+
+^2^ Only available if the application has [`IFRAME_MODAL`](/resources/application#application-flags) flag.
+
+^3^ Only available if the application is an embedded activity.
+
+###### Interaction Callback Message Data Structure
 
 Not all message fields are currently supported.
-
-| Name              | Type                                                                        | Description                                                           |
-| ----------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| tts?              | boolean                                                                     | is the response TTS                                                   |
-| content?          | string                                                                      | message content                                                       |
-| embeds?           | array of [embeds](/resources/message#embed-object)                          | supports up to 10 embeds                                              |
-| allowed_mentions? | [allowed mentions](/resources/message#allowed-mentions-object)              | [allowed mentions](/resources/message#allowed-mentions-object) object |
-| flags?            | integer                                                                     | [interaction callback data flags](#interaction-callback-data-flags)   |
-| components?       | array of [components](/resources/components)                                | message components                                                    |
-| attachments? ^1^  | array of partial [attachment](/resources/message#attachment-object) objects | attachment objects with filename and description                      |
-
-^1^ See [Uploading Files](/reference#uploading-files) for details.
-
-###### Interaction Callback Data Flags
-
-| Name      | Value  | Description                                    |
-| --------- | ------ | ---------------------------------------------- |
-| EPHEMERAL | 1 << 6 | only the user receiving the message can see it |
 
 <Alert type="warn">
 
 While interaction responses and followups are webhooks, they respect @everyone's ability to ping @everyone / @here . Nonetheless if your application responds with user data, you should still use [`allowed_mentions`](/resources/message#allowed-mentions-object) to filter which mentions in the content actually ping. Other differences include the ability to send named links in the message content (`[text](url)`).
 
 </Alert>
+
+| Field              | Type                                                                      | Description                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| content?           | string                                                                    | The message contents (up to 2000 characters)                                                                                                            |
+| tts?               | boolean                                                                   | Whether this is a TTS message                                                                                                                           |
+| embeds?            | array[[embed](#embed-object) object]                                      | Embedded `rich` content (max 6000 characters, max 10)                                                                                                   |
+| allowed_mentions?  | [allowed mention](#allowed-mentions-object) object                        | Allowed mentions for the message                                                                                                                        |
+| components?        | array[[message component](/resources/components#component-object) object] | The components to include with the message                                                                                                              |
+| flags?             | integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `EPHEMERAL`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set) |
+| attachments? ^1^   | array[partial [attachment](#attachment-object) object]                    | Partial attachment objects with `filename` and `description` (max 10)                                                                                   |
+| poll?              | [poll create](#poll-create-structure) object                              | A poll!                                                                                                                                                 |
+
+###### Interaction Callback Autocomplete Data Structure
+
+| Field   | Type                                                                                                                              | Description                        |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| choices | array[[application command option choice](/resources/interactions/application-commands#application-command-option-choice) object] | The autocompleted choices (max 25) |
 
 When responding to an interaction received **via webhook**, your server can simply respond to the received `POST` request. You'll want to respond with a `200` status code (if everything went well), as well as specifying a `type` and `data`, which is an [Interaction Response](#interaction-response-object) object:
 
@@ -236,24 +246,23 @@ def my_command():
             "type": 1
         })
 
-    else:
-        return jsonify({
-            "type": 4,
-            "data": {
-                "tts": False,
-                "content": "Congrats on sending your command!",
-                "embeds": [],
-                "allowed_mentions": { "parse": [] }
-            }
-        })
+    return jsonify({
+        "type": 4,
+        "data": {
+            "tts": False,
+            "content": "Congrats on sending your command!",
+            "embeds": [],
+            "allowed_mentions": {"parse": []}
+        }
+    })
 ```
 
 If you are receiving Interactions over the gateway, you will **also need to respond via HTTP**. Responses to Interactions **are not sent as commands over the gateway**.
 
-To respond to a gateway Interaction, make a `POST` request like this. `interaction_id` is the unique id of that individual Interaction from the received payload. `interaction_token` is the unique token for that interaction from the received payload. **This endpoint is only valid for Interactions received over the gateway. Otherwise, respond to the `POST` request to issue an initial response.**
+To respond to an interaction coming from the Gateway, make a `POST` request like this. `interaction_id` is the unique id of that individual interaction from the received payload. `interaction_token` is the unique token for that interaction from the received payload. **This endpoint is only valid for Interactions received over the Gateway. Otherwise, respond to the `POST` request to issue an initial response.**
 
 ```py
-url = "https://discord.com/api/v8/interactions/<interaction_id>/<interaction_token>/callback"
+url = "https://discord.com/api/v10/interactions/<interaction_id>/<interaction_token>/callback"
 
 json = {
     "type": 4,
