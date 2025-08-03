@@ -14,82 +14,135 @@ and can include spaces.
 
 ###### Application Command Structure
 
-| Field               | Type                                                                         | Description                                                                                           | Valid Types |
-| ------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------- |
-| id                  | snowflake                                                                    | unique id of the command                                                                              | all         |
-| type?               | one of [application command type](#application-command-types)                | the type of command, defaults `1` if not set                                                          | all         |
-| application_id      | snowflake                                                                    | unique id of the parent application                                                                   | all         |
-| guild_id?           | snowflake                                                                    | guild id of the command, if not global                                                                | all         |
-| name                | string                                                                       | 1-32 character name                                                                                   | all         |
-| description         | string                                                                       | 1-100 character description for `CHAT_INPUT` commands, empty string for `USER` and `MESSAGE` commands | all         |
-| options?            | array of [application command option](#application-command-option-structure) | the parameters for the command, max 25                                                                | CHAT_INPUT  |
-| default_permission? | boolean (default `true`)                                                     | whether the command is enabled by default when the app is added to a guild                            | all         |
+| Field                               | Type                                                                              | Description                                                                                                                                                 | Valid Types           |
+| ----------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| id? ^1^                             | snowflake                                                                         | The ID of the command                                                                                                                                       | All                   |
+| type?                               | integer                                                                           | The type of command (default `CHAT_INPUT`)                                                                                                                  | All                   |
+| application_id                      | snowflake                                                                         | The ID of the application that the command belongs to                                                                                                       | All                   |
+| guild_id?                           | snowflake                                                                         | The ID of the guild the command is for                                                                                                                      | All                   |
+| name                                | string                                                                            | The name of the option (1-100)                                                                                                                              | All                   |
+| name_localizations?                 | ?map[string, string]                                                              | The localized name for each [locale](/resources/reference/locales) (values follow same restrictions as `name`)                                              | All                   |
+| description                         | string                                                                            | The description of the option (1-100)                                                                                                                       | All                   |
+| description_localizations?          | ?map[string, string]                                                              | The localized description for each [locale](/resources/reference/locales) (values follow same restrictions as `description`)                                | All                   |
+| options?                            | array[[application command option](#application-command-option-structure) object] | The options for the command (max 25)                                                                                                                        | `CHAT_INPUT`          |
+| default_member_permissions          | ?string                                                                           | The default required permissions to call the command                                                                                                        | All                   |
+| dm_permission? ^2^ **(deprecated)** | boolean                                                                           | Whether the command is available in DMs with the application (only for globally-scoped commands, default true)                                              | All                   |
+| default_permission?                 | boolean                                                                           | Whether the command is enabled by default when the application is added to a guild (default true)                                                           | All                   |
+| nsfw?                               | boolean                                                                           | Whether the command is age-restricted (default false)                                                                                                       | All                   |
+| integration_types? ^2^              | array[integer]                                                                    | The [installation contexts](/resources/application#application-integration-type) where the command is available (default application's configured contexts) | All                   |
+| contexts? ^2^                       | ?array[integer]                                                                   | The [interaction context](/interactions/receiving-and-responding#interaction-context-type) where the command can be used                                    | All                   |
+| version ^3^                         | snowflake                                                                         | The autoincrementing version identifier updated during substantial record changes                                                                           | All                   |
+| handler? ^2^                        | integer                                                                           | [How the command should be handled when called](#application-command-handler)                                                                               | `PRIMARY_ENTRY_POINT` |
 
-###### Application Command Types
+^1^ This is always present when received.
 
-| Name       | Type | Description                                                               |
-| ---------- | ---- | ------------------------------------------------------------------------- |
-| CHAT_INPUT | 1    | Slash commands; a text-based command that shows up when a user types `/`  |
-| USER       | 2    | A UI-based command that shows up when you right click or tap on a user    |
-| MESSAGE    | 3    | A UI-based command that shows up when you right click or tap on a message |
+^2^ Only applicable for globally-scoped commands.
+
+^3^ This fields are received only and cannot be set.
+
+###### Application Command Type
+
+| Name                | Type | Description                                                                     |
+| ------------------- | ---- | ------------------------------------------------------------------------------- |
+| CHAT_INPUT          | 1    | Slash commands; a text-based command that shows up when a user types `/`        |
+| USER                | 2    | An UI-based command that shows up when you right click or tap on an user        |
+| MESSAGE             | 3    | An UI-based command that shows up when you right click or tap on a message      |
+| PRIMARY_ENTRY_POINT | 4    | An UI-based command that represents the primary way to invoke an app's activity |
 
 ###### Application Command Option Structure
 
 <Alert type="warn">
 
-Required `options` must be listed before optional options
+Options that are required must be listed before optional options.
 
 </Alert>
 
-| Field       | Type                                                                                       | Description                                                                                        |
-| ----------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| type        | one of [application command option type](#application-command-option-type)                 | the type of option                                                                                 |
-| name        | string                                                                                     | 1-32 lowercase character name matching `^[\w-]{1,32}$`                                             |
-| description | string                                                                                     | 1-100 character description                                                                        |
-| required?   | boolean                                                                                    | if the parameter is required or optional--default `false`                                          |
-| choices?    | array of [application command option choice](#application-command-option-choice-structure) | choices for `STRING`, `INTEGER`, and `NUMBER` types for the user to pick from, max 25              |
-| options?    | array of [application command option](#application-command-option-structure)               | if the option is a subcommand or subcommand group type, this nested options will be the parameters |
+| Field                      | Type                                                                                            | Description                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type                       | integer                                                                                         | The [type of the option](#application-command-option-type)                                                                                                  |
+| name                       | string                                                                                          | The name of the option (1-100)                                                                                                                              |
+| name_localizations?        | ?map[string, string]                                                                            | The localized name for each [locale](/resources/reference/locales) (values follow same restrictions as `name`)                                              |
+| description                | string                                                                                          | The description of the option (1-100)                                                                                                                       |
+| description_localizations? | ?map[string, string]                                                                            | The localized description for each [locale](/resources/reference/locales) (values follow same restrictions as `description`)                                |
+| required?                  | boolean                                                                                         | Whether the option is required (default false, only applicable when `type` is not [`SUB_COMMAND` or `SUB_COMMAND_GROUP`](#application-command-option-type)) |
+| choices? ^1^               | array[[application command option choice](#application-command-option-choice-structure) object] | The choices for the user to pick from (max 25)                                                                                                              |
+| options?                   | array[[application command option](#application-command-option-structure) object]               | The nested options (only applicable if the option is a subcommand or subcommand group)                                                                      |
+| channel_types?             | array[integer]                                                                                  | The allowed [channel types](/resources/channel#channel-type) (only applicable for [`CHANNEL`](#application-command-option-type) options)                    |
+| min_value?                 | float \| integer                                                                                | The minimum value permitted (only applicable for [`INTEGER` and `NUMBER`](#application-command-option-type) options)                                        |
+| max_value?                 | float \| integer                                                                                | The maximum value permitted (only applicable for [`INTEGER` and `NUMBER`](#application-command-option-type) options)                                        |
+| min_length?                | integer                                                                                         | The minimum length (0-6000, only applicable for [`STRING`](#application-command-option-type) options)                                                       |
+| max_length?                | integer                                                                                         | The maximum length (0-6000, only applicable for [`STRING`](#application-command-option-type) options)                                                       |
+| autocomplete?              | boolean                                                                                         | Whether the option can be autocompleted (only applicable for [`STRING`, `INTEGER`, and `NUMBER`](#application-command-option-type) options)                 |
 
-###### Application Command Option Type
-
-| Name              | Value | Note                                    |
-| ----------------- | ----- | --------------------------------------- |
-| SUB_COMMAND       | 1     |                                         |
-| SUB_COMMAND_GROUP | 2     |                                         |
-| STRING            | 3     |                                         |
-| INTEGER           | 4     | Any integer between -2^53^ and 2^53^    |
-| BOOLEAN           | 5     |                                         |
-| USER              | 6     |                                         |
-| CHANNEL           | 7     | Includes all channel types + categories |
-| ROLE              | 8     |                                         |
-| MENTIONABLE       | 9     | Includes users and roles                |
-| NUMBER            | 10    | Any double between -2^53^ and 2^53^     |
-
-###### Application Command Option Choice Structure
-
-If you specify `choices` for an option, they are the **only** valid values for a user to pick
-
-| Field | Type                       | Description                                         |
-| ----- | -------------------------- | --------------------------------------------------- |
-| name  | string                     | 1-100 character choice name                         |
-| value | string, integer, or double | value of the choice, up to 100 characters if string |
-
-###### Application Command Interaction Data Option Structure
+###### Partial Application Command Option Structure
 
 All options have names, and an option can either be a parameter and input value--in which case `value` will be set--or it can denote a subcommand or group--in which case it will contain a top-level key and another array of `options`.
 
 `value` and `options` are mutually exclusive.
 
-| Field    | Type                                                                                                           | Description                                                                  |
-| -------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| name     | string                                                                                                         | the name of the parameter                                                    |
-| type     | integer                                                                                                        | value of [application command option type](#application-command-option-type) |
-| value?   | [application command option type](#application-command-option-type)                                            | the value of the pair                                                        |
-| options? | array of [application command interaction data option](#application-command-interaction-data-option-structure) | present if this option is a group or subcommand                              |
+| Field        | Type                                                                                              | Description                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| type         | integer                                                                                           | The [type of the application command option](#application-command-option-type)         |
+| name         | string                                                                                            | The name of the option                                                                 |
+| value?       | boolean \| float \| integer \| string                                                             | The value of the option                                                                |
+| options?     | array[[partial application command option](#partial-application-command-option-structure) object] | The nested options (only applicable if the option is a subcommand or subcommand group) |
+| focused? ^1^ | boolean                                                                                           | Whether the option is the currently focused option for autocomplete                    |
+
+^1^ Only applicable for [`APPLICATION_COMMAND_AUTOCOMPLETE` interactions](/interactions/receiving-and-responding#interaction-type).
+
+###### Application Command Option Type
+
+| Value | Name              | Description                                           |
+| ----- | ----------------- | ----------------------------------------------------- |
+| 1     | SUB_COMMAND       | A subcommand                                          |
+| 2     | SUB_COMMAND_GROUP | A group of subcommands                                |
+| 3     | STRING            | A string                                              |
+| 4     | INTEGER           | An integer between -2^53^ and 2^53^                   |
+| 5     | BOOLEAN           | A boolean                                             |
+| 6     | USER              | An user                                               |
+| 7     | CHANNEL           | A channel (includes all channel types by default)     |
+| 8     | ROLE              | A role                                                |
+| 9     | MENTIONABLE       | A mentionable entity (currently only users and roles) |
+| 10    | NUMBER            | A float/integer between -2^53 and 2^53^               |
+| 11    | ATTACHMENT        | An [attachment](/resources/message#attachment-object) |
+
+###### Application Command Option Choice Structure
+
+If you specify `choices` for an option, they are the **only** valid values for an user to pick.
+
+| Field               | Type                       | Description                                                                                          |
+| ------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| name                | string                     | The name of the choice (1-100 characters)                                                            |
+| name_localizations? | ?map[string, string]       | The localized name for each [locale](/reference#locales) (values follow same restrictions as `name`) |
+| name_localized? ^1^ | ?string                    | The localized name of the choice (1-100 characters)                                                  |
+| value               | float \| integer \| string | The value of the choice (max 100 characters if string)                                               |
+
+^1^ This field is received only and cannot be set.
+
+###### Application Command Handler Type
+
+| Value | Name                    | Description                                                                                                                         |
+| ----- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | APP_HANDLER             | The application handles the interaction using an interaction token                                                                  |
+| 2     | DISCORD_LAUNCH_ACTIVITY | Discord handles the interaction by launching an embedded activity and sending a follow-up message without coordinating with the app |
+
+## Application Command Index Object
+
+Multiple different resources are queryable with the application command index structure, including guilds and applications themselves. Sometimes usable with channels.
+
+###### Application Command Index Structure
+
+| Field                    | Type                                                                                      | Description                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| applications             | array[[partial application](/resources/application#partial-application-structure) object] | The applications relevant to the requested resource      |
+| application_commands ^1^ | array[[application command](#application-command-structure) object]                       | The application commands                                 |
+| version                  | snowflake                                                                                 | As nowflake representing when commands were last updated |
+
+^1^ This field will sometimes be an empty array when requested via [Get Application Command Index](#get-application-command-index) even if the application has registered global commmands. For more reliability, actual global commands should be obtained via [Get Global Application Commands](#get-global-application-commands).
 
 ## Authorizing Your Application
 
-Application commands do not depend on a bot user in the guild; they use the [interactions](/interactions/receiving-and-responding/) model. To create commands in a guild, your app must be authorized with the `applications.commands` scope.
+Application commands do not depend on a bot user in the guild; they use the [interactions](/interactions/receiving-and-responding) model. To create commands in a guild, your application must be authorized with the `applications.commands` scope.
 
 <Alert type="danger">
 
@@ -148,7 +201,7 @@ To make a **global** command, make an HTTP POST call like this:
 import requests
 
 
-url = "https://discord.com/api/v8/applications/<my_application_id>/commands"
+url = "https://discord.com/api/v10/applications/<my_application_id>/commands"
 
 # This is an example CHAT_INPUT or Slash Command, with a type of 1
 json = {
@@ -208,7 +261,7 @@ To make a **guild** command, make a similar HTTP POST call, but scope it to a sp
 import requests
 
 
-url = "https://discord.com/api/v8/applications/<my_application_id>/guilds/<guild_id>/commands"
+url = "https://discord.com/api/v10/applications/<my_application_id>/guilds/<guild_id>/commands"
 
 # This is an example USER command, with a type of 2
 json = {
@@ -297,7 +350,7 @@ To enable it just for a moderator role:
 
 ```py
 MODERATOR_ROLE_ID = "<moderator_role_id>"
-url = "https://discord.com/api/v8/applications/<my_application_id>/guilds/<my_guild_id>/commands/<my_command_id>/permissions"
+url = "https://discord.com/api/v10/applications/<my_application_id>/guilds/<my_guild_id>/commands/<my_command_id>/permissions"
 
 json = {
     "permissions": [
@@ -1074,7 +1127,7 @@ FIRST_COMMAND_ID = "<first_command_id>"
 SECOND_COMMAND_ID = "<second_command_id>"
 ADMIN_ROLE_ID = "<admin_role_id>"
 
-url = "https://discord.com/api/v8/applications/<my_application_id>/guilds/<my_guild_id>/commands/permissions"
+url = "https://discord.com/api/v10/applications/<my_application_id>/guilds/<my_guild_id>/commands/permissions"
 
 json = [
     {
@@ -1104,4 +1157,5 @@ headers = {
 }
 
 r = requests.put(url, headers=headers, json=json)
+r.raise_for_status()
 ```
