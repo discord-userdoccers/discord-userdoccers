@@ -110,7 +110,7 @@ All options have names, and an option can either be a parameter and input value-
 | 7     | CHANNEL           | A channel (includes all channel types by default)     |
 | 8     | ROLE              | A role                                                |
 | 9     | MENTIONABLE       | A mentionable entity (currently only users and roles) |
-| 10    | NUMBER            | A float/integer between -2^53 and 2^53^               |
+| 10    | NUMBER            | A float/integer between -2^53^ and 2^53^              |
 | 11    | ATTACHMENT        | An [attachment](/resources/message#attachment-object) |
 
 ###### Application Command Option Choice Structure
@@ -152,13 +152,13 @@ Multiple different resources are queryable with the application command index st
 
 Application commands do not depend on a bot user in the guild; they use the [interactions](/interactions/receiving-and-responding) model. To create commands in a guild, your application must be authorized with the `applications.commands` scope.
 
-<Alert type="danger">
+<Alert type="note">
 
-**In order to make commands work within a guild, the guild must authorize your application with the `applications.commands` scope. The `bot` scope is not enough.**
+Requesting `bot` scope will implicitly include `applications.commands` scope as well.
 
 </Alert>
 
-When requesting this scope, we "shortcut" the OAuth2 flow similar to adding a bot. You don't need to complete the flow, exchange for a token, or any of that.
+When requesting this scope, Discord "shortcuts" the OAuth2 flow similar to adding a bot. You don't need to complete the flow, exchange for a token, or any of that.
 
 If your application does not require a bot user within the guild for its commands to work, **you no longer need to add for the bot scope or specific permissions**.
 
@@ -193,15 +193,15 @@ As well as the same amount of guild-specific commands per guild.
 
 <Alert type="danger">
 
-There is a global rate limit of 200 application command creates per day, per guild
+There is a global rate limit of 200 application command creates per day, per guild.
 
 </Alert>
 
 ### Making a Global Command
 
-Global commands are available on _all_ your app's guilds. Global commands are cached for **1 hour**. That means that new global commands will fan out slowly across all guilds, and will be guaranteed to be updated in an hour.
+Global commands are available on _all_ your app's guilds.
 
-Global commands have inherent read-repair functionality. That means that if you make an update to a global command, and a user tries to use that command before it has updated for them, Discord will do an internal version check and reject the command, and trigger a reload for that command.
+Global commands have inherent read-repair functionality. That means that if you make an update to a global command, and an user tries to use that command before it has updated for them, Discord will do an internal version check and reject the command, and trigger a reload for that command.
 
 To make a **global** command, make an HTTP POST call like this:
 
@@ -261,7 +261,7 @@ r = requests.post(url, headers=headers, json=json)
 
 ### Making a Guild Command
 
-Guild commands are available only within the guild specified on creation. Guild commands update **instantly**. We recommend you use guild commands for quick testing, and global commands when they're ready for public use.
+Guild commands are available only within the guild specified on creation. Guild commands update **instantly**. Discord recommends you use guild commands for quick testing, and global commands when they're ready for public use.
 
 To make a **guild** command, make a similar HTTP POST call, but scope it to a specific `guild_id`:
 
@@ -297,7 +297,7 @@ Commands can be deleted and updated by making `DELETE` and `PATCH` calls to the 
 - `/applications/{application.id}/commands/{command.id}` for global commands, or
 - `/applications/{application.id}/guilds/{guild.id}/commands/{command.id}` for guild commands
 
-Because commands have unique names within a type and scope, we treat `POST` requests for new commands as upserts. That means **making a new command with an already-used name for your application will update the existing command**.
+Because commands have unique names within a type and scope, Discord treats `POST` requests for new commands as upserts. That means **making a new command with an already-used name for your application will update the existing command**.
 
 Full documentation of endpoints can be found [here](#endpoints).
 
@@ -562,8 +562,6 @@ We'll start by defining the top-level information for `/permissions`:
 }
 ```
 
-![A command with no arguments. It says /permissions](command.png)
-
 Now we have a command named `permissions`. We want this command to be able to affect users and roles. Rather than making two separate commands, we can use subcommand groups. We want to use subcommand groups here because we are grouping commands on a similar resource: `user` or `role`.
 
 ```js
@@ -632,23 +630,21 @@ Now that we've effectively made `user` and `role` "folders", we want to be able 
 }
 ```
 
-![A command with grouped subcommands. It says /permissions user get](command-with-groups-subcommands.png)
-
 Now, we need some arguments! If we chose `user`, we need to be able to pick a user; if we chose `role`, we need to be able to pick a role. We also want to be able to pick between guild-level permissions and channel-specific permissions. For that, we can use optional arguments:
 
 ```js
 {
     "name": "permissions",
-    "description": "Get or edit permissions for a user or a role",
+    "description": "Get or edit permissions for an user or a role",
     "options": [
         {
             "name": "user",
-            "description": "Get or edit permissions for a user",
+            "description": "Get or edit permissions for an user",
             "type": 2, // 2 is type SUB_COMMAND_GROUP
             "options": [
                 {
                     "name": "get",
-                    "description": "Get permissions for a user",
+                    "description": "Get permissions for an user",
                     "type": 1, // 1 is type SUB_COMMAND
                     "options": [
                         {
@@ -667,7 +663,7 @@ Now, we need some arguments! If we chose `user`, we need to be able to pick a us
                 },
                 {
                     "name": "edit",
-                    "description": "Edit permissions for a user",
+                    "description": "Edit permissions for an user",
                     "type": 1,
                     "options": [
                         {
@@ -735,9 +731,7 @@ Now, we need some arguments! If we chose `user`, we need to be able to pick a us
 }
 ```
 
-And, done! The JSON looks a bit complicated, but what we've ended up with is a single command that can be scoped to multiple actions, and then further scoped to a particular resource, and then even _further_ scope with optional arguments. Here's what it looks like all put together.
-
-![A command with grouped subcommands and parameters. It says /permissions user get with arguments for a user and a channel.](command-with-groups-subcommands-parameters.png)
+And, done! The JSON looks a bit complicated, but what we've ended up with is a single command that can be scoped to multiple actions, and then further scoped to a particular resource, and then even _further_ scope with optional arguments. 
 
 ## User Commands
 
@@ -757,8 +751,6 @@ The `description` field is not allowed when creating user commands. However, to 
   "type": 2
 }
 ```
-
-![An example user command. The context menu has an Apps section open to a High Five command](user-command.png)
 
 When someone uses a user command, your application will receive an interaction:
 
@@ -847,8 +839,6 @@ The `description` field is not allowed when creating message commands. However, 
   "type": 3
 }
 ```
-
-![An example message command. The context menu has an Apps section open to a Bookmark command](message-command.png)
 
 When someone uses a message command, your application will receive an interaction:
 
