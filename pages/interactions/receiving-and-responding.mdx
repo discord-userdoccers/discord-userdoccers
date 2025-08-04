@@ -50,13 +50,13 @@ For [Message Components](/resources/components) it includes identifying informat
 
 ###### Interaction Type
 
-| Value | Name                             | Description                                                           | Data | Sendable Data |
-| ----- | -------------------------------- | --------------------------------------------------------------------- | ---- | ------------- |
-| 1     | PING                             | Discord is pinging the application                                    |      |               |
-| 2     | APPLICATION_COMMAND              | User uses an application command                                      |
-| 3     | MESSAGE_COMPONENT                | User triggers a message component                                     |
-| 4     | APPLICATION_COMMAND_AUTOCOMPLETE | User is requesting an application command option to be auto-completed |
-| 5     | MODAL_SUBMIT                     | User submits a modal                                                  |
+| Value | Name                             | Description                                                           | Data                                                                                           | Sendable Data                                                                                                    |
+| ----- | -------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 1     | PING                             | Discord is pinging the application                                    |                                                                                                |                                                                                                                  |
+| 2     | APPLICATION_COMMAND              | User uses an application command                                      | [application command interaction data](#application-command-interaction-data-structure) object | [sendable application command interaction data](#sendable-application-command-interaction-data-structure) object |
+| 3     | MESSAGE_COMPONENT                | User triggers a message component                                     | [message component interaction data](#message-component-interaction-data-structure) object     | [sendable message component interaction data](#sendable-message-component-interaction-data-structure) object     |
+| 4     | APPLICATION_COMMAND_AUTOCOMPLETE | User is requesting an application command option to be auto-completed | [application command interaction data](#application-command-interaction-data-structure) object | [sendable application command interaction data](#sendable-application-command-interaction-data-structure) object |
+| 5     | MODAL_SUBMIT                     | User submits a modal                                                  | [modal submit interaction data](#modal-submit-interaction-data-structure) object               | [sendable modal submit interaction data](#sendable-modal-submit-interaction-data-structure) object               |
 
 ###### Interaction Context Type
 
@@ -94,18 +94,60 @@ For [Message Components](/resources/components) it includes identifying informat
 
 | Field                | Type                                                                                                                        | Description                                                                                        |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| version              | snowflake                                                                                                                   | The autoincrementing version identifier updated during substantial record changes                  |
+| version              | snowflake                                                                                                                   | The autoincrementing version identifier updated during substantial command record changes          |
 | id                   | snowflake                                                                                                                   | The ID of the application command                                                                  |
 | name                 | string                                                                                                                      | The name of the application command                                                                |
-| type                 | integer                                                                                                                     | The [type of the application command](/interactions/application-commands#application-command-type) |
-| options? ^1^ ^2^     | array[partial [application command option](/interactions/application-commands#application-command-option-structure) object] | The options with their values                                                                      |
-| application_command? |
+| type?                | integer                                                                                                                     | The [type of the application command](/interactions/application-commands#application-command-type) |
+| options? ^1^ ^2^     | array[partial [application command option](/interactions/application-commands#application-command-option-structure) object] | The options with their values (max 25)                                                             |
+| application_command? | [application command](/interactions/application-commands#application-command-object) object                                 | The application command being called                                                               |
+| target_id? ^3^       | snowflake                                                                                                                   | The ID of the user or message targeted by a context menu                                           |
+| attachments? ^4^     | array[partial [attachment](#attachment-object) object]                                                                      | Partial attachment objects with `filename` and `description` (max 25)                              |
 
 ^1^ Only applicable when the application command type is [`CHAT_INPUT`](/interactions/application-commands#application-command-type).
 
 ^2^ Options can have only `type`, `name`, `value`, and optionally `focused` fields.
 
 ^3^ Only applicable when the application command type is [`USER` or `MESSAGE`](/interactions/application-commands#application-command-type).
+
+^4^ See [Uploading Files](/reference#uploading-files) for details.
+
+###### Message Component Interaction Data Structure
+
+| Field          | Type                                      | Description                                                      |
+| -------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| values? ^1^    | array[snowflake] \| array[string]         | The values that the user selected in a select menu               |
+| resolved? ^1^  | [resolved data](#resolved-data-structure) | The resolved entities                                            |
+| id             | integer                                   | The ID of the component                                          |
+| custom_id      | string                                    | The developer-defined identifier for the component               |
+| component_type | integer                                   | The [type of the component](/resources/component#component-type) |
+
+###### Sendable Message Component Interaction Data Structure
+
+| Field               | Type                              | Description                                                      |
+| ------------------- | --------------------------------- | ---------------------------------------------------------------- |
+| component_type? ^1^ | integer                           | The [type of the component](/resources/component#component-type) |
+| custom_id           | string                            | The developer-defined identifier for the component               |
+| type? ^1^           | integer                           | The [type of the component](/resources/component#component-type) |
+| values? ^2^         | array[snowflake] \| array[string] | The selected options in the select menu                          |
+
+^1^ At least or `component_type` or `type` must be provided.
+
+^2^ Only applicable for [`STRING_SELECT`/`USER_SELECT`/`ROLE_SELECT`/`MENTIONABLE_SELECT`/`CHANNEL_SELECT` components](/resources/component#component-type).
+
+###### Modal Submit Interaction Data Structure
+
+| Field      | Type                                                             | Description                                   |
+| ---------- | ---------------------------------------------------------------- | --------------------------------------------- |
+| custom_id  | string                                                           | The developer-defined identifier of the modal |
+| components | array[[component](/resources/component#component-object) object] | The submitted values                          |
+
+###### Sendable Modal Submit Interaction Data Structure
+
+| Field      | Type                                                             | Description                                        |
+| ---------- | ---------------------------------------------------------------- | -------------------------------------------------- |
+| id         | snowflake                                                        | The ID of the interaction that triggered the modal |
+| custom_id  | string                                                           | The developer-defined identifier of the modal      |
+| components | array[[component](/resources/component#component-object) object] | The values to submit                               |
 
 ###### Resolved Data Structure
 
@@ -121,11 +163,13 @@ If data for a member is included, data for its corresponding user will also be i
 | members? ^1^  | map[snowflake, partial [member](/resources/guild#guild-member-object) object] | The resolved members  |
 | roles?        | map[snowflake, [role](/resources/guild#role-object) object]                   | The resolved roles    |
 | channels? ^2^ | map[snowflake, partial [channel](/resources/channel#channel-object) object]   | The resolved channels |
-| messages?     | map[snowflake, [message](/resources/message#message-object) object]           | The resolved messages |
+| messages? ^3^ | map[snowflake, [message](/resources/message#message-object) object]           | The resolved messages |
 
 ^1^ Member objects will not include `user`, `deaf` and `mute` fields. The user will be in `users` map instead.
 
 ^2^ Channels will have only `id`, `name`, `type` and `permissions` fields. Threads will also have `thread_metadata` and `parent_id` fields.
+
+^3^ Only available within [application command interaction data](#application-command-interaction-data-structure) object.
 
 ### Message Interaction Object
 
@@ -227,7 +271,7 @@ Depending on the interaction type, not all callback types may be available. See 
 | DEFERRED_UPDATE_MESSAGE                 | 6     | Acknowledge an interaction and edit the original message later; the user does not see a loading state | [interaction callback message data](#interaction-callback-message-data-structure) object           | `MESSAGE_COMPONENT`, `MODAL_SUBMIT` (only when the modal is triggered by a message component) |
 | UPDATE_MESSAGE                          | 7     | Edit the message that the interacted component was attached to                                        | [interaction callback message data](#interaction-callback-message-data-structure) object           | `MESSAGE_COMPONENT`, `MODAL_SUBMIT` (only when the modal is triggered by a message component) |
 | APPLICATION_COMMAND_AUTOCOMPLETE_RESULT | 8     | Respond to an autocomplete interaction with suggested choices                                         | [interaction callback autocomplete data](#interaction-callback-autocomplete-data-structure) object | `APPLICATION_COMMAND_AUTOCOMPLETE`                                                            |
-| MODAL                                   | 9     | Respond to an interaction with a popup modal                                                          | [interaction callback modal data](#interaction-callback-modal-data-structure) object               | `APPLICATION_COMMAND, `MESSAGE_COMPONENT`                                                     |
+| MODAL                                   | 9     | Respond to an interaction with a popup modal                                                          | [interaction callback modal data](#interaction-callback-modal-data-structure) object               | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`                                                    |
 | PREMIUM_REQUIRED ^1^ **(deprecated)**   | 10    | Respond to an interaction with an upgrade button                                                      |                                                                                                    | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`, `MODAL_SUBMIT`                                    |
 | IFRAME_MODAL ^2^                        | 11    | Respond to an interaction with an IFrame modal                                                        | [interaction callback iframe modal data](#interaction-callback-iframe-modal-data-structure) object | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`                                                    |
 | LAUNCH_ACTIVITY ^3^                     | 12    | Launch an embedded activity associated with the application                                           |                                                                                                    | `APPLICATION_COMMAND`, `MESSAGE_COMPONENT`, `MODAL_SUBMIT`                                    |
@@ -265,6 +309,33 @@ While interaction responses and followups are webhooks, they respect @everyone's
 | ------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | choices | array[[application command option choice](/resources/interactions/application-commands#application-command-option-choice) object] | The autocompleted choices (max 25) |
 
+###### Interaction Callback Modal Data Structure
+
+| Field          | Type                                                             | Description                                                         |
+| -------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------- |
+| custom_id      | string                                                           | The developer-defined identifier for the modal (max 100 characters) |
+| title          | string                                                           | The title of the modal (max 45 characters)                          |
+| components ^1^ | array[[component](/resources/component#component-object) object] | The modal components (1-5)                                          |
+
+^1^ Currently only supports action rows.
+
+###### Interaction Callback IFrame Modal Data Structure
+
+| Field       | Type    | Description                                                                |
+| ----------- | ------- | -------------------------------------------------------------------------- |
+| iframe_path | string  | The relative URL to the iframe modal (max 2048 characters)                 |
+| title       | string  | The title of the modal (max 45 characters)                                 |
+| modal_size  | integer | The [size of the modal](#iframe-modal-size)                                |
+| custom_id   | string  | The developer-defined identifier for the iframe modal (max 100 characters) |
+
+###### IFrame Modal Size
+
+| Value | Name   | Description  |
+| ----- | ------ | ------------ |
+| 1     | SMALL  | Small modal  |
+| 2     | NORMAL | Normal modal |
+| 3     | BIG    | Big modal    |
+
 When responding to an interaction received **via webhook**, your server can simply respond to the received `POST` request. You'll want to respond with a `200` status code (if everything went well), as well as specifying a `type` and `data`, which is an [Interaction Response](#interaction-response-object) object:
 
 ```py
@@ -288,7 +359,7 @@ If you are receiving interactions over the Gateway, you will **also need to resp
 To respond to an interaction coming from the Gateway, make a `POST` request like this. `interaction_id` is the unique id of that individual interaction from the received payload. `interaction_token` is the unique token for that interaction from the received payload. **This endpoint is only valid for Interactions received over the Gateway. Otherwise, respond to the `POST` request to issue an initial response.**
 
 ```py
-url = "https://discord.com/api/v10/interactions/<interaction_id>/<interaction_token>/callback"
+url = f"https://discord.com/api/v10/interactions/{interaction_id}/{interaction_token}/callback"
 
 json = {
     "type": 4,
@@ -453,6 +524,8 @@ Files must be attached using a `multipart/form-data` body (or pre-uploaded to Di
 | section_name?       | string    | The [name of the section](#interaction-creation-section-name)                                                    |
 | source?             | string    | The [source of interaction creation](#interaction-creation-source-type)                                          |
 
+^1^ Only applicable for [`MESSAGE_COMPONENT` interactions](#interaction-type).
+
 ###### Interaction Creation Location
 
 | Value                                   | Description                                                                            |
@@ -485,16 +558,16 @@ Files must be attached using a `multipart/form-data` body (or pre-uploaded to Di
 
 ###### Interaction Creation Section Name
 
-| Value               | Description |
-| ------------------- | ----------- |
-| search              | Unknown     |
-| recent              | Unknown     |
-| installed           | Unknown     |
-| activities          | Unknown     |
-| recent_apps         | Unknown     |
-| recent_commands     | Unknown     |
-| new_to_apps         | Unknown     |
-| apps_in_this_server | Unknown     |
+| Value               | Description                        |
+| ------------------- | ---------------------------------- |
+| search              | Unknown                            |
+| recent              | Unknown                            |
+| installed           | Unknown                            |
+| activities          | Unknown                            |
+| recent_apps         | App Launcher > Recents             |
+| recent_commands     | Unknown                            |
+| new_to_apps         | Unknown                            |
+| apps_in_this_server | App Launcher > Apps in this Server |
 
 ###### Interaction Creation Source Type
 
