@@ -81,6 +81,8 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
 | [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
 | [Request Channel Member Count](#request-channel-member-count) | Request the number of members that can view a channel             |
+| [QoS Heartbeat](#qos-heartbeat)                               | Maintain an active Gateway connection with QoS metrics            |
+| [Update Time Spent Session ID](#update-time-spent-session-id) | Track the time spent in the current session                       |
 
 #### Identify
 
@@ -441,7 +443,7 @@ Used to request all members for a guild or a list of guilds. When initially conn
 Otherwise, if a guild has over `large_threshold` members (value in the [Gateway Identify](#identify)), it will only send members who are online, have a role, have a nickname, or are in a voice channel, and if it has under `large_threshold` members, it will send all members.
 If a client wishes to receive additional members, they need to explicitly request them via this operation. Fires multiple [Guild Members Chunk](#guild-members-chunk) events with up to 1000 members per chunk until all members that match the request have been sent.
 
-Due to our privacy and infrastructural concerns with this feature, there are some limitations that apply:
+Due to privacy and infrastructural concerns with this feature, there are some limitations that apply:
 
 - For bots, the `GUILD_PRESENCES` privileged intent is required to request presences
 - For bots, the `GUILD_MEMBERS` privileged intent is required to request the entire member list (query of "" and limit of 0)
@@ -654,6 +656,78 @@ Used to request the number of members that can view a guild channel, as well as 
   "d": {
     "guild_id": "957057010334048288",
     "channel_id": "1145501524013895733"
+  }
+}
+```
+
+#### QoS Heartbeat
+
+Same as a normal [heartbeat](#heartbeat), but also tracks [Quality of Service (QoS)](https://en.wikipedia.org/wiki/Quality_of_service) statistics.
+Must be sent every `heartbeat_interval` milliseconds after the [Opcode 10 Hello](#hello) payload is received. Fires a [Heartbeat ACK](#heartbeat-ack) Gateway event.
+
+Details about heartbeats are in the [Gateway documentation](/topics/gateway#sending-heartbeats).
+
+###### QoS Heartbeat Structure
+
+| Field | Type                                  | Description                        |
+| ----- | ------------------------------------- | ---------------------------------- |
+| seq   | ?integer                              | Last sequence number received      |
+| qos   | [QoS payload](#qos-payload-structure) | The QoS payload for this heartbeat |
+
+###### QoS Payload Structure
+
+| Field   | Type          | Description                                                      |
+| ------- | ------------- | ---------------------------------------------------------------- |
+| ver     | integer       | The client heartbeat version (currently `25`)                    |
+| active  | boolean       | Whether the session is currently active (has reasons of service) |
+| reasons | array[string] | [Reasons of Service](#reasons-of-service)                        |
+
+###### Reasons of Service
+
+| Name          | Description                         |
+| ------------- | ----------------------------------- |
+| foregrounded  | Window is focused                   |
+| rtc_connected | User is connected to the voice call |
+
+###### Example QoS Heartbeat
+
+```json
+{
+  "op": 40,
+  "d": {
+    "seq": 1337,
+    "qos": {
+      "ver": 25,
+      "active": true,
+      "reasons": ["foregrounded", "rtc_connected"]
+    }
+  }
+}
+```
+
+#### Update Time Spent Session ID
+
+Sent every 30 minutes (if the client is focused or is in a voice call) and on connect to track the time the user has spent in the current session.
+
+Whenever this is sent, an accompanying [QoS Heartbeat](#qos-heartbeat) should be sent.
+
+###### QoS Heartbeat Structure
+
+| Field                    | Type    | Description                                                                                                         |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| initialization_timestamp | integer | Unix timestamp (in milliseconds) of when the session ID was generated                                               |
+| session_id               | string  | A client-generated UUID, same as `client_heartbeat_session_id` in [client properties](/reference#client-properties) |
+| client_launch_id         | string  | A client-generated UUID, same as `client_launch_id` in [client properties](/reference#client-properties)            |
+
+###### Example Update Time Spent Session ID
+
+```json
+{
+  "op": 41,
+  "d": {
+    "initialization_timestamp": 1753221861697,
+    "session_id": "fe223885-211d-4826-ba7b-395373da4213",
+    "client_launch_id": "2bf1c669-4710-4b76-8c99-76f918fd36fc"
   }
 }
 ```
@@ -2048,6 +2122,12 @@ Sent when an integration is deleted.
 
 Sent when a new invite to a guild channel is created. Requires the `MANAGE_CHANNELS` permission.
 
+<Alert type="warn">
+
+This event is not received by user accounts.
+
+</Alert>
+
 ###### Invite Create Structure
 
 | Field               | Type                                                                    | Description                                                                         |
@@ -2070,6 +2150,12 @@ Sent when a new invite to a guild channel is created. Requires the `MANAGE_CHANN
 #### Invite Delete
 
 Sent when a guild invite is deleted. Requires the `MANAGE_CHANNELS` permission.
+
+<Alert type="warn">
+
+This event is not received by user accounts.
+
+</Alert>
 
 ###### Invite Delete Structure
 

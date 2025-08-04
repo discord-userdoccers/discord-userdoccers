@@ -833,6 +833,7 @@ A participating user in a [guild](#guild-object).
 | nick?                             | ?string                                                                         | The guild-specific nickname of the member (1-32 characters)                                                                                                               |
 | avatar?                           | ?string                                                                         | The member's [guild avatar hash](/reference#cdn-formatting)                                                                                                               |
 | avatar_decoration_data?           | ?[avatar decoration data](/resources/user#avatar-decoration-data-object) object | The member's [guild avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations)                                                   |
+| collectibles?                     | ?[collectibles](/resources/user#collectibles-object) object                     | The member's equipped collectibles                                                                                                                                        |
 | banner?                           | ?string                                                                         | The member's [guild banner hash](/reference#cdn-formatting)                                                                                                               |
 | roles                             | array[snowflake]                                                                | The role IDs assigned to this member                                                                                                                                      |
 | joined_at                         | ISO8601 timestamp                                                               | When the user joined the guild                                                                                                                                            |
@@ -917,31 +918,34 @@ Additional information about a participating user's join source in a [guild](#gu
 
 ###### Supplemental Guild Member Structure
 
-| Field               | Type                                        | Description                                                             |
-| ------------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
-| user_id? ^1^        | snowflake                                   | The ID of the user this guild member represents                         |
-| member? ^2^         | [guild member](#guild-member-object) object | The associated guild member                                             |
-| join_source_type?   | integer                                     | [How the user joined the guild](#join-source-type)                      |
-| source_invite_code? | ?string                                     | The invite code or vanity used to join the guild, if applicable         |
-| inviter_id?         | ?snowflake                                  | The ID of the user who invited the user to the guild, if applicable     |
-| integration_type?   | ?integer                                    | The type of integration that added the user to the guild, if applicable |
+| Field                           | Type                                        | Description                                                             |
+| ------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
+| user_id? ^1^                    | snowflake                                   | The ID of the user this guild member represents                         |
+| member? ^2^                     | [guild member](#guild-member-object) object | The associated guild member                                             |
+| join_source_type?               | integer                                     | [How the user joined the guild](#join-source-type)                      |
+| source_invite_code?             | ?string                                     | The invite code or vanity used to join the guild, if applicable         |
+| inviter_id?                     | ?snowflake                                  | The ID of the user who invited the user to the guild, if applicable     |
+| integration_type?               | ?integer                                    | The type of integration that added the user to the guild, if applicable |
+| join_source_application_id? ^2^ | ?snowflake                                  | The ID of the application that owns the linked lobby                    |
+| join_source_channel_id? ^2^     | ?snowflake                                  | The ID of the channel the lobby is linked to                            |
 
 ^1^ `user_id` is only included when fetched from the [Get Guild Members Supplemental](#get-guild-members-supplemental) endpoint.
 
-^2^ `member` is only included when fetched from the [Search Guild Members](#search-guild-members) endpoint.
+^2^ Only included when fetched from the [Search Guild Members](#search-guild-members) endpoint.
 
 ###### Join Source Type
 
-| Value | Name                       | Description                                                                                        |
-| ----- | -------------------------- | -------------------------------------------------------------------------------------------------- |
-| 0     | UNSPECIFIED                | The user joined the guild through an unknown source                                                |
-| 1     | BOT                        | The user was added to the guild by a bot using the [`guilds.join` OAuth2 scope](#add-guild-member) |
-| 2     | INTEGRATION                | The user was added to the guild by an integration (e.g. Twitch)                                    |
-| 3     | DISCOVERY                  | The user joined the guild through guild discovery                                                  |
-| 4     | HUB                        | The user joined the guild through a student hub                                                    |
-| 5     | INVITE                     | The user joined the guild through an invite                                                        |
-| 6     | VANITY_URL                 | The user joined the guild through a vanity URL                                                     |
-| 7     | MANUAL_MEMBER_VERIFICATION | The user was accepted into the guild after applying for membership                                 |
+| Value | Name                                    | Description                                                                                        |
+| ----- | --------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 0     | UNSPECIFIED                             | The user joined the guild through an unknown source                                                |
+| 1     | BOT                                     | The user was added to the guild by a bot using the [`guilds.join` OAuth2 scope](#add-guild-member) |
+| 2     | INTEGRATION                             | The user was added to the guild by an integration (e.g. Twitch)                                    |
+| 3     | DISCOVERY                               | The user joined the guild through guild discovery                                                  |
+| 4     | HUB                                     | The user joined the guild through a student hub                                                    |
+| 5     | INVITE                                  | The user joined the guild through an invite                                                        |
+| 6     | VANITY_URL                              | The user joined the guild through a vanity URL                                                     |
+| 7     | MANUAL_MEMBER_VERIFICATION              | The user was accepted into the guild after applying for membership                                 |
+| 8     | SOCIAL_LAYER_INTEGRATION_LINKED_CHANNEL | The user joined the guild through a linked lobby                                                   |
 
 ###### Example Supplemental Guild Member
 
@@ -2075,15 +2079,29 @@ Modifies the current user's member in the guild. Returns the updated [guild memb
 
 ###### JSON Params
 
-| Field                     | Type                               | Description                                                              | Permission        |
-| ------------------------- | ---------------------------------- | ------------------------------------------------------------------------ | ----------------- |
-| nick?                     | ?string                            | The guild-specific nickname of the member (1-32 characters)              | `CHANGE_NICKNAME` |
-| avatar?                   | ?[image data](/reference#cdn-data) | The member's guild avatar; can only be changed for premium (Nitro) users |
-| avatar_decoration_id?     | ?snowflake                         | The ID of the member's guild avatar decoration                           |
-| avatar_decoration_sku_id? | ?snowflake                         | The SKU ID of the member's guild avatar decoration                       |
-| pronouns?                 | ?string                            | The member's guild pronouns (max 40 characters)                          |
-| bio?                      | ?string                            | The member's guild bio; can only be changed for premium (Nitro) users    |
-| banner?                   | ?[image data](/reference#cdn-data) | The member's guild banner; can only be changed for premium (Nitro) users |
+| Field                     | Type                                            | Description                                                              | Permission        |
+| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ----------------- |
+| nick?                     | ?string                                         | The guild-specific nickname of the member (1-32 characters)              | `CHANGE_NICKNAME` |
+| avatar?                   | ?[image data](/reference#cdn-data)              | The member's guild avatar; can only be changed for premium (Nitro) users |
+| avatar_decoration_id?     | ?snowflake                                      | The ID of the member's guild avatar decoration                           |
+| avatar_decoration_sku_id? | ?snowflake                                      | The SKU ID of the member's guild avatar decoration                       |
+| collectibles?             | ?[collectibles](#collectibles-structure) object | The member's equipped collectibles                                       |
+| pronouns?                 | ?string                                         | The member's guild pronouns (max 40 characters)                          |
+| bio?                      | ?string                                         | The member's guild bio; can only be changed for premium (Nitro) users    |
+| banner?                   | ?[image data](/reference#cdn-data)              | The member's guild banner; can only be changed for premium (Nitro) users |
+
+###### Collectibles Structure
+
+| Field      | Type                                                | Description                                                                                           |
+| ---------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| nameplate? | ?[nameplate data](#nameplate-data-structure) object | The member's [nameplate](https://support.discord.com/hc/en-us/articles/30408457944215-Nameplates-FAQ) |
+
+###### Nameplate Data Structure
+
+| Field   | Type      | Description                   |
+| ------- | --------- | ----------------------------- |
+| id?     | snowflake | The ID of the nameplate       |
+| sku_id? | snowflake | The ID of the nameplate's SKU |
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/members/@me/nick" supportsAuditReason deprecated>
   Modify Current Guild Member Nick
