@@ -20,7 +20,11 @@ import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
 const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
 
-export default function App({ Component, pageProps, router }: AppProps) {
+export default function App({
+  Component,
+  pageProps,
+  router,
+}: AppProps & { Component: AppProps["Component"] & { meta?: { title: string; description: string } } }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
@@ -33,12 +37,18 @@ export default function App({ Component, pageProps, router }: AppProps) {
     },
   );
 
-  const component = <Component {...pageProps} />;
+  const component = (
+    <CodegenLanguageProvider>
+      <MDX>
+        <Component {...pageProps} />
+      </MDX>
+    </CodegenLanguageProvider>
+  );
 
   const getText = () => {
     if (router.pathname !== "/404") {
-      const str = ReactDOMServer.renderToString(component);
-      const title = TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
+      const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
+      const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
 
       return {
         description: `${str
@@ -62,18 +72,14 @@ export default function App({ Component, pageProps, router }: AppProps) {
     <>
       <ThemeProvider defaultTheme="system" attribute="data-theme">
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
-          <CodegenLanguageProvider>
-            <MDX>
-              <OpenGraph description={meta?.description} section={meta?.title} />
-              <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
-                <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-                <Menu />
+          <OpenGraph description={meta?.description} section={meta?.title} />
+          <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
+            <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
+            <Menu />
 
-                <Component {...pageProps} />
-              </div>
-              <Footer />
-            </MDX>
-          </CodegenLanguageProvider>
+            {component}
+          </div>
+          <Footer />
         </MenuContext.Provider>
       </ThemeProvider>
     </>

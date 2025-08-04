@@ -1,3 +1,7 @@
+import { opendir, readFile, writeFile } from "fs/promises";
+import { basename, join, sep } from "path";
+import matter from "gray-matter";
+
 /**
  * This script generates a sitemap.xml file & navigation sidebar for the website. It's meant to be run just before the site is deployed.
  *
@@ -7,9 +11,21 @@
  * 3. Extract markdown headings and create a navigation outline for use by <Navigation /> coponent
  */
 
-import { opendir, readFile, writeFile } from "fs/promises";
-import { basename, join, sep } from "path";
-import matter from "gray-matter";
+const SPECIAL_PAGES: Record<string, { content: string; data: any }> = {
+  "datamining/errors": {
+    content: "",
+    data: {
+      "name": "Error Codes",
+      "sort": 1,
+      "sort-name": "error-codes",
+      "show-sublinks": false,
+      // TODO: fetch it here and create sublinks
+      "sublinks": [],
+      "max-sublink-level": 3,
+      "icon": "Robot",
+    },
+  },
+};
 
 async function walk(path: string, filter: (file: string) => boolean): Promise<string[]> {
   let files: string[] = [];
@@ -34,6 +50,9 @@ const root = join(process.cwd(), "pages");
 const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename(file).startsWith("_")))]
   .map((file) => file.slice(root.length + 1, -4).replaceAll(sep, "/"))
   .sort((a, b) => a.split("/").length - b.split("/").length);
+
+// NATIVE NEXTJS PAGES
+files.push(...Object.keys(SPECIAL_PAGES));
 
 // SITEMAP
 
@@ -61,6 +80,7 @@ interface Page {
   link: `/${string}`;
   subLinks: any[];
   sort: number;
+  icon: string | null;
 }
 
 const navigationLinks: Record<string, { name: string | null; items?: Record<string, Page>; pages: Page[] }> = {};
@@ -74,7 +94,8 @@ for (const file of files) {
     section = "__ROOT__";
   }
 
-  const parsed = await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
+  const parsed =
+    file in SPECIAL_PAGES ? SPECIAL_PAGES[file] : await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
 
   navigationLinks[section] ??= {
     name: section ? section.replaceAll("-", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()) : null,
@@ -97,6 +118,7 @@ for (const file of files) {
     link: file === "index" ? "/" : `/${file}`,
     subLinks: [],
     sort: parsed.data.sort ?? 99999,
+    icon: parsed.data.icon ?? null,
   };
   const page = sectionList.items![link];
 
@@ -145,10 +167,11 @@ for (const section in navigationLinks) {
 }
 
 const sectionSortTable: Record<string, number> = {
-  "resources": 1,
-  "topics": 2,
-  "remote-authentication": 3,
-  "interactions": 4,
+  "datamining": 1,
+  "resources": 2,
+  "topics": 3,
+  "remote-authentication": 4,
+  "interactions": 5,
 };
 
 const navigationLinksArray = Object.entries(navigationLinks)

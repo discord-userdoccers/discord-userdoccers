@@ -721,7 +721,7 @@ Retrieves a device code and user code for the [device code grant](#device-code-g
   Get OAuth2 Token
 </RouteHeader>
 
-Retrieves an OAuth2 access token for the given application credentials. Implements a number of different grants. Returns an [access token](#oauth2-access-token-object) object on success.
+Retrieves an OAuth2 access token for the given application credentials. Implements a number of different grants. Returns an [oauth2 access token](#oauth2-access-token-object) object on success.
 
 ###### Form Params
 
@@ -760,6 +760,12 @@ Retrieves an OAuth2 access token for the given application credentials. Implemen
 
 Revokes the given OAuth2 access or refresh token. Returns an empty object on success.
 
+<Alert type="warn">
+
+When any valid access or refresh token is revoked, all of the application's access and refresh tokens for that user are immediately invalidated.
+
+</Alert>
+
 ###### Form Params
 
 | Field                  | Type      | Description                           |
@@ -776,10 +782,29 @@ Revokes the given OAuth2 access or refresh token. Returns an empty object on suc
   Get Provisional Account Token
 </RouteHeader>
 
-Retrieves an authentication for a provisional account with the given credentials. Returns an [access token](#oauth2-access-token-object) object on success.
+Retrieves an access token for a provisional account with the given credentials. Returns an [oauth2 access token](#oauth2-access-token-object) object on success.
 The response will only contain a `refresh_token` with certain external authentication types.
 
 If an account isn't found but the provided external authentication token is valid, a new provisional account will be created.
+
+<Alert type="warn">
+
+When attempting to authenticate a provisional account that has been merged with a user account, the request will fail with a 400 bad request and a special error response body:
+
+```json
+{
+  "message": "User account is non-provisional and should be authed through OAuth2",
+  "code": 530010,
+  "user_id": "1001086404203389018",
+  "provider_type": "OIDC",
+  "provider_id": "https://auth.example.com",
+  "provider_issued_user_id": "123456789"
+}
+```
+
+This indicates that the provisional account has been merged with a user account, and the user should be authenticated through OAuth2 instead, unless the provisional account is [unmerged](#unmerge-provisional-account) first.
+
+</Alert>
 
 ###### JSON Params
 
@@ -802,11 +827,56 @@ If an account isn't found but the provided external authentication token is vali
 | STEAM_SESSION_TICKET              | A Steam authentication ticket for web generated with `discord` set as the `identity` |
 | UNITY_SERVICES_ID_TOKEN           | ID token for Unity Auth Services                                                     |
 
+<RouteHeader method="POST" url="/partner-sdk/token/bot">
+  Get Provisional Account Token with Bot
+</RouteHeader>
+
+Retrieves an access token for a provisional account with the given credentials. Returns an [oauth2 access token](#oauth2-access-token-object) object on success.
+
+If an account isn't found, a new provisional account will be created.
+
+<Alert type="warn">
+
+When attempting to authenticate a provisional account that has been merged with a user account, the request will fail with a 400 bad request and a special error response body:
+
+```json
+{
+  "message": "User account is non-provisional and should be authed through OAuth2",
+  "code": 530010,
+  "user_id": "142007603549962240",
+  "provider_type": "DISCORD_BOT",
+  "provider_issued_user_id": "123456789"
+}
+```
+
+This indicates that the provisional account has been merged with a user account, and the user should be authenticated through OAuth2 instead, unless the provisional account is [unmerged](#unmerge-provisional-account) first.
+
+</Alert>
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field                  | Type   | Description                                                |
+| ---------------------- | ------ | ---------------------------------------------------------- |
+| external_user_id       | string | The ID of the user to authenticate (max 1024 characters)   |
+| preferred_global_name? | string | The preferred global name for the user (max 32 characters) |
+
 <RouteHeader method="POST" url="/partner-sdk/provisional-accounts/unmerge" unauthenticated>
   Unmerge Provisional Account
 </RouteHeader>
 
 Unmerge a provisional account. Returns a 204 empty response on success.
+
+<Alert type="warn">
+
+Unmerging invalidates all access and refresh tokens for the user.
+
+</Alert>
 
 ###### JSON Params
 

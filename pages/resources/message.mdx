@@ -156,7 +156,7 @@ Type `19` and `20` are only available in API v8 and above. In v7 and below, they
 
 ###### User Join Message Type
 
-Usually, the type of rendered message is determined via converting the message's `timestamp` to a unix timestamp with millisecond precision, modulo 13.
+The type of rendered message is determined via converting the message's `timestamp` to a unix timestamp with millisecond precision, modulo 13.
 
 | Value | Rendered Content                                |
 | ----- | ----------------------------------------------- |
@@ -173,23 +173,6 @@ Usually, the type of rendered message is determined via converting the message's
 | 10    | "Glad you're here, {author}."                   |
 | 11    | "Good to see you, {author}."                    |
 | 12    | "Yay you made it, {author}!"                    |
-
-However, if the guild has the [`CLAN` feature](/resources/guild#guild-features), the same is determined via dividing the message's `timestamp` with millisecond precision by modulo 10.
-
-See the below table for the system welcome messages specific to clans.
-
-| Value | Rendered Content                                                                |
-| ----- | ------------------------------------------------------------------------------- |
-| 0     | "Everyone welcome {author} to the Guild!"                                       |
-| 1     | "A new member has spawned. Say hi to {author}."                                 |
-| 2     | "{author} just joined the Guild. We hope you brought pizza."                    |
-| 3     | "Glad you're here, {author}, welcome to the Guild."                             |
-| 4     | "New recruit! {author} joined the Guild."                                       |
-| 5     | "Round of applause for the newest Guild member, {author}. Just for being here." |
-| 6     | "Rolling out the red carpet for {author}. Say hi!"                              |
-| 7     | "Yahaha! {author} found us!"                                                    |
-| 8     | "Get ready everyone -- a {author} has appeared!"                                |
-| 9     | "Roses are red, violets are blue, {author} just joined the Guild with you."     |
 
 ###### Message Flags
 
@@ -591,16 +574,20 @@ Clips are a special type of attachment that can be sent with a message. They are
 Clip [attachments](#attachment-object) have the [`CLIP` flag](#attachment-flags) set, and have the additional fields `clip_created_at`, `clip_participants`, and optionally `title` and `application`.
 
 An attachment can be sent as a clip by specifying the `is_clip`, `clip_created_at`, and `clip_participant_ids` fields, and optionally the `title` and `application_id` fields.
-For an attachment to be a valid clip, it must have a UUID appended to the end of the file in binary format. An example in hexadecimal format is `75 75 69 64 A1 C8 52 99 33 46 4D B8 88 F0 83 F5 7A 75 A5 EF`.
+For an attachment to be a valid clip, it must be an MP4 file and have the text `uuid` and the hardcoded UUID of `a1c85299-3346-4db8-88f0-83f57a75a5ef` appended to the end of the file in binary format.
+(represented in hexadecimal bytes as `75 75 69 64 A1 C8 52 99 33 46 4D B8 88 F0 83 F5 7A 75 A5 EF`)
+
 This can be done with the following pseudocode:
 
 ```py
 import uuid
 
+clip_uuid = uuid.UUID("a1c85299-3346-4db8-88f0-83f57a75a5ef")
+
 with open("cat.mp4", "r+b") as file:
     file.seek(0, 2)
     file.write(b"uuid")
-    file.write(uuid.uuid4().bytes)
+    file.write(clip_uuid.bytes)
 ```
 
 ### Reaction Object
@@ -679,20 +666,21 @@ The media proxy caches link embeds for 30 minutes.
 
 Most embed types are "loosely defined" and, for the most part, are not used by our clients for rendering. Embed attributes power what is rendered.
 
-| Type                              | Description                                                                               |
-| --------------------------------- | ----------------------------------------------------------------------------------------- |
-| application_news **(deprecated)** | Application news embed                                                                    |
-| article                           | Article embed                                                                             |
-| auto_moderation_message ^1^       | [AutoMod alert](/resources/auto-moderation#automod-alert)                                 |
-| auto_moderation_notification ^1^  | [AutoMod incident notification](/resources/auto-moderation#automod-incident-notification) |
-| gift                              | Gift embed                                                                                |
-| gifv                              | Animated GIF image rendered as a video embed                                              |
-| image                             | Image embed                                                                               |
-| link                              | Link embed                                                                                |
-| poll_result ^2^                   | Poll result embed                                                                         |
-| post_preview ^3^                  | Media channel post preview embed                                                          |
-| rich                              | Generic embed rendered from embed attributes                                              |
-| video                             | Video embed                                                                               |
+| Type                                     | Description                                                                               |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------- |
+| application_news **(deprecated)**        | Application news embed                                                                    |
+| article                                  | Article embed                                                                             |
+| auto_moderation_message ^1^              | [AutoMod alert](/resources/auto-moderation#automod-alert)                                 |
+| auto_moderation_notification ^1^         | [AutoMod incident notification](/resources/auto-moderation#automod-incident-notification) |
+| gift                                     | Gift embed                                                                                |
+| gifv                                     | Animated GIF image rendered as a video embed                                              |
+| image                                    | Image embed                                                                               |
+| link                                     | Link embed                                                                                |
+| poll_result ^2^                          | Poll result embed                                                                         |
+| post_preview ^3^                         | Media channel post preview embed                                                          |
+| rich                                     | Generic embed rendered from embed attributes                                              |
+| video                                    | Video embed                                                                               |
+| age_verification_system_notification ^1^ | Age verification system message embed                                                     |
 
 ^1^ These embed types are system-generated and cannot be sent by users. Their [`fields` array](#embed-object) represents the object linked in the description as a list of key-value pairs.
 
@@ -709,18 +697,18 @@ Most embed types are "loosely defined" and, for the most part, are not used by o
 
 ###### Embed Media Structure
 
-| Field                      | Type    | Description                                                                                                   |
-| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| url                        | string  | Source URL of media (only supports http(s) and attachments) (max 2048 characters)                             |
-| proxy_url? ^1^             | string  | A proxied URL of the media                                                                                    |
-| height? ^1^                | integer | Height of media                                                                                               |
-| width? ^1^                 | integer | Width of media                                                                                                |
-| flags? ^1^                 | integer | The [media's attachment flags](#attachment-flags)                                                             |
-| description? ^1^           | string  | The description for the media                                                                                 |
-| content_type? ^1^          | string  | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                       |
-| content_scan_metadata? ^1^ | string  | The content scan metadata for the media                                                                       |
-| placeholder_version? ^1^   | integer | The attachment placeholder protocol version (currently 1)                                                     |
-| placeholder? ^1^           | string  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the media, to display before it is loaded |
+| Field                      | Type                                                             | Description                                                                                                   |
+| -------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| url                        | string                                                           | Source URL of media (only supports http(s) and attachments) (max 2048 characters)                             |
+| proxy_url? ^1^             | string                                                           | A proxied URL of the media                                                                                    |
+| height? ^1^                | integer                                                          | Height of media                                                                                               |
+| width? ^1^                 | integer                                                          | Width of media                                                                                                |
+| flags? ^1^                 | integer                                                          | The [media's attachment flags](#attachment-flags)                                                             |
+| description? ^1^           | string                                                           | Alt text for the media                                                                                        |
+| content_type? ^1^          | string                                                           | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                       |
+| content_scan_metadata? ^1^ | [content scan metadata](#content-scan-metadata-structure) object | The content scan metadata for the media                                                                       |
+| placeholder_version? ^1^   | integer                                                          | The attachment placeholder protocol version (currently 1)                                                     |
+| placeholder? ^1^           | string                                                           | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the media, to display before it is loaded |
 
 ^1^ This field is received only and cannot be set.
 
@@ -772,6 +760,7 @@ Most embed types are "loosely defined" and, for the most part, are not used by o
 | Value  | Name     | Description                               |
 | ------ | -------- | ----------------------------------------- |
 | 1 << 0 | EXPLICIT | The media was flagged as explicit content |
+| 1 << 1 | GORE     | The media was flagged as gore             |
 
 ### Attachment Object
 
@@ -783,35 +772,35 @@ When sending/editing messages, only `id` is required. `filename` is also require
 
 </Alert>
 
-| Field                         | Type                                                                    | Description                                                                                                                                                                                   |
-| ----------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id                            | snowflake                                                               | The attachment ID                                                                                                                                                                             |
-| filename                      | string                                                                  | The name of file attached (max 1024 characters)                                                                                                                                               |
-| title?                        | string                                                                  | The name of the file without the extension or title of the clip (max 1024 characters, automatically provided when the filename is normalized or randomly generated due to invalid characters) |
-| uploaded_filename? ^3^        | string                                                                  | The name of the file pre-uploaded to Discord's GCP bucket                                                                                                                                     |
-| description?                  | string                                                                  | The description for the file (max 1024 characters)                                                                                                                                            |
-| content_type? ^2^             | string                                                                  | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                                                                                                       |
-| size                          | integer                                                                 | The size of file in bytes                                                                                                                                                                     |
-| url ^2^                       | string                                                                  | Source URL of the file                                                                                                                                                                        |
-| proxy_url ^2^ ^4^             | string                                                                  | A proxied url of the file                                                                                                                                                                     |
-| height? ^2^                   | ?integer                                                                | Height of image                                                                                                                                                                               |
-| width? ^2^                    | ?integer                                                                | Width of image                                                                                                                                                                                |
-| content_scan_version? ^2^ ^5^ | integer                                                                 | The version of the explicit content scan filter this attachment was scanned with                                                                                                              |
-| placeholder_version? ^2^      | integer                                                                 | The attachment placeholder protocol version (currently 1)                                                                                                                                     |
-| placeholder? ^2^              | string                                                                  | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the attachment, to display before it is loaded                                                                            |
-| ephemeral? ^1^ ^2^            | boolean                                                                 | Whether this attachment is ephemeral                                                                                                                                                          |
-| duration_secs?                | float                                                                   | Duration of the audio file (if [voice message](#voice-messages))                                                                                                                              |
-| waveform?                     | string                                                                  | Base64 encoded bytearray representing a sampled waveform (if [voice message](#voice-messages))                                                                                                |
-| flags? ^6^                    | integer                                                                 | The [attachment's flags](#attachment-flags)                                                                                                                                                   |
-| is_clip? ^6^ ^7^ ^8^          | boolean                                                                 | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)                                                      |
-| is_thumbnail? ^6^             | boolean                                                                 | Whether the file being uploaded is a thumbnail                                                                                                                                                |
-| is_remix? ^6^                 | boolean                                                                 | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment                                                  |
-| is_spoiler? ^6^               | boolean                                                                 | Whether this attachment is a spoiler                                                                                                                                                          |
-| clip_created_at? ^8^          | ISO8601 timestamp                                                       | When the clip was created                                                                                                                                                                     |
-| clip_participant_ids? ^7^ ^8^ | array[snowflake]                                                        | The IDs of the participants in the clip (max 100)                                                                                                                                             |
-| clip_participants? ^8^        | array[partial [user](/resources/user#user-object) object]               | The participants in the clip (max 100)                                                                                                                                                        |
-| application_id? ^8^           | snowflake                                                               | The ID of the application the clip was taken in                                                                                                                                               |
-| application? ^8^              | partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                                                                         |
+| Field                         | Type                                                                     | Description                                                                                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                            | snowflake                                                                | The attachment ID                                                                                                                                                                             |
+| filename                      | string                                                                   | The name of file attached (max 1024 characters)                                                                                                                                               |
+| title?                        | string                                                                   | The name of the file without the extension or title of the clip (max 1024 characters, automatically provided when the filename is normalized or randomly generated due to invalid characters) |
+| uploaded_filename? ^3^        | string                                                                   | The name of the file pre-uploaded to Discord's GCP bucket                                                                                                                                     |
+| description?                  | string                                                                   | Alt text for the file (max 1024 characters)                                                                                                                                                   |
+| content_type? ^2^             | string                                                                   | The attachment's [media type](https://en.wikipedia.org/wiki/Media_type)                                                                                                                       |
+| size                          | integer                                                                  | The size of file in bytes                                                                                                                                                                     |
+| url ^2^                       | string                                                                   | Source URL of the file                                                                                                                                                                        |
+| proxy_url ^2^ ^4^             | string                                                                   | A proxied url of the file                                                                                                                                                                     |
+| height? ^2^                   | ?integer                                                                 | Height of image                                                                                                                                                                               |
+| width? ^2^                    | ?integer                                                                 | Width of image                                                                                                                                                                                |
+| content_scan_version? ^2^ ^5^ | integer                                                                  | The version of the explicit content scan filter this attachment was scanned with                                                                                                              |
+| placeholder_version? ^2^      | integer                                                                  | The attachment placeholder protocol version (currently 1)                                                                                                                                     |
+| placeholder? ^2^              | string                                                                   | A low-resolution [thumbhash](https://github.com/evanw/thumbhash) of the attachment, to display before it is loaded                                                                            |
+| ephemeral? ^1^ ^2^            | boolean                                                                  | Whether this attachment is ephemeral                                                                                                                                                          |
+| duration_secs?                | float                                                                    | Duration of the audio file (if [voice message](#voice-messages))                                                                                                                              |
+| waveform?                     | string                                                                   | Base64 encoded bytearray representing a sampled waveform (if [voice message](#voice-messages))                                                                                                |
+| flags? ^6^                    | integer                                                                  | The [attachment's flags](#attachment-flags)                                                                                                                                                   |
+| is_clip? ^6^ ^7^ ^8^          | boolean                                                                  | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips)                                                      |
+| is_thumbnail? ^6^             | boolean                                                                  | Whether the file being uploaded is a thumbnail                                                                                                                                                |
+| is_remix? ^6^                 | boolean                                                                  | Whether this attachment is a [remixed](https://support.discord.com/hc/en-us/articles/15145601963031-Remix-FAQ) version of another attachment                                                  |
+| is_spoiler? ^6^               | boolean                                                                  | Whether this attachment is a spoiler                                                                                                                                                          |
+| clip_created_at? ^8^          | ISO8601 timestamp                                                        | When the clip was created                                                                                                                                                                     |
+| clip_participant_ids? ^7^ ^8^ | array[snowflake]                                                         | The IDs of the participants in the clip (max 100)                                                                                                                                             |
+| clip_participants? ^8^        | array[partial [user](/resources/user#user-object) object]                | The participants in the clip (max 100)                                                                                                                                                        |
+| application_id? ^8^           | snowflake                                                                | The ID of the application the clip was taken in                                                                                                                                               |
+| application? ^8^              | ?partial [application](/resources/application#application-object) object | The application the clip was taken in                                                                                                                                                         |
 
 ^1^ Ephemeral attachments will automatically be removed after a set period of time. Ephemeral attachments on messages are guaranteed to be available as long as the message itself exists.
 
@@ -839,6 +828,7 @@ When sending/editing messages, only `id` is required. `filename` is also require
 | 1 << 3 | IS_SPOILER              | Attachment is a spoiler                                                                                             |
 | 1 << 4 | CONTAINS_EXPLICIT_MEDIA | Attachment was flagged as [sensitive content](https://support.discord.com/hc/en-us/articles/18210995019671)         |
 | 1 << 5 | IS_ANIMATED             | Attachment is an animated image                                                                                     |
+| 1 << 6 | CONTAINS_GORE_CONTENT   | Attachment was flagged as [gore](https://support.discord.com/hc/en-us/articles/18210995019671)                      |
 
 ### Allowed Mentions Object
 
@@ -1170,6 +1160,45 @@ As [embed field values](#embed-field-structure) are strings, all below fields ar
 }
 ```
 
+### Age Verification System Message
+
+Age verification system messages are sent by the official Discord account to notify the user of their results. The message content will contain a localized, user-friendly message explaining their classification with a relevant help center link.
+
+###### Age Verification System Message Embed Structure
+
+| Field        | Type          | Description                                                                                             |
+| ------------ | ------------- | ------------------------------------------------------------------------------------------------------- |
+| ctas?        | array[string] | Comma seprated array of the CTAs to display (currently only `retry`)                                    |
+| content_type | string        | The [age verification system message content type](#age-verification-system-message-embed-content-type) |
+
+###### Age Verification System Message Embed Content Type
+
+| Name           | Description                                          |
+| -------------- | ---------------------------------------------------- |
+| verified_adult | User was verified as a adult                         |
+| verified_teen  | User was verified as a teen                          |
+| error          | An error occured during the age verification process |
+
+###### Example Age Verification System Message Embed
+
+```json
+{
+  "type": "age_verification_system_notification",
+  "fields": [
+    {
+      "name": "content_type",
+      "value": "verified_teen",
+      "inline": false
+    },
+    {
+      "name": "ctas",
+      "value": "retry",
+      "inline": false
+    }
+  ]
+}
+```
+
 ### Potion Object
 
 ###### Potion Structure
@@ -1263,6 +1292,15 @@ Conversation summaries are short, LLM-generated descriptions of a channel's acti
   "type": 3
 }
 ```
+
+### Message Pin Object
+
+###### Message Pin Structure
+
+| Field     | Type                              | Description                                 |
+| --------- | --------------------------------- | ------------------------------------------- |
+| pinned_at | ISO8601 timestamp                 | When the message was pinned                 |
+| message   | [message](#message-object) object | The pinned message, without `reactions` key |
 
 ## Endpoints
 
@@ -1749,18 +1787,14 @@ Creates attachment URLs to upload the intended attachments directly to Discord's
 
 ###### Upload Attachment Structure
 
-| Field                     | Type              | Description                                                                                                                              |
-| ------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| id?                       | ?string           | The ID of the attachment to reference in the response                                                                                    |
-| filename                  | string            | The name of the file being uploaded                                                                                                      |
-| file_size                 | integer           | The size of the file being uploaded in bytes                                                                                             |
-| is_clip? ^1^              | boolean           | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
-| clip_created_at? ^1^      | ISO8601 timestamp | When the clip was created                                                                                                                |
-| clip_participant_ids? ^1^ | array[snowflake]  | The IDs of the participants in the clip (max 100)                                                                                        |
-| title?                    | string            | The title of the clip                                                                                                                    |
-| application_id?           | snowflake         | The ID of the application the clip was taken in                                                                                          |
+| Field        | Type    | Description                                                                                                                              |
+| ------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| id?          | ?string | The ID of the attachment to reference in the response                                                                                    |
+| filename     | string  | The name of the file being uploaded                                                                                                      |
+| file_size    | integer | The size of the file being uploaded in bytes                                                                                             |
+| is_clip? ^1^ | boolean | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
 
-^1^ When uploading a clip, `is_clip`, `clip_created_at`, and `clip_participant_ids` are required. [See message types](#clips) for more information.
+^1^ When uploading a clip, `is_clip` must be `true`. [See message types](#clips) for more information.
 
 ###### Cloud Attachment Structure
 
@@ -2067,7 +2101,7 @@ This endpoint is only usable with an OAuth2 access token with the `dm_channels.m
 
 Deletes a message. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel and trying to delete a message that was not sent by the current user. Returns a 204 empty response on success. Fires a [Message Delete](/topics/gateway-events#message-delete) Gateway event.
 
-<RouteHeader method="POST" url="/users/@me/messages/{message.id}/delete" supportsOAuth2="dm_channels.messages.write">
+<RouteHeader method="DELETE" url="/users/@me/messages/{message.id}" supportsOAuth2="dm_channels.messages.write">
   Delete DM Message
 </RouteHeader>
 
@@ -2105,29 +2139,55 @@ This endpoint is not usable by user accounts.
 | -------- | ---------------- | --------------------------------- |
 | messages | array[snowflake] | The message IDs to delete (2-100) |
 
-<RouteHeader method="GET" url="/channels/{channel.id}/pins">
-  Get Pinned Messages
+<RouteHeader method="GET" url="/channels/{channel.id}/messages/pins">
+  Get Message Pins
 </RouteHeader>
 
-Returns all pinned messages in the channel as an array of [message](#message-object) objects without the `reactions` key.
+Returns all message pins in the channel. Requires the `VIEW_CHANNEL` permission.
 
-<RouteHeader method="PUT" url="/channels/{channel.id}/pins/{message.id}" supportsAuditReason>
-  Pin Message
-</RouteHeader>
+<Alert type="note">
 
-Pins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success.
-
-<Alert type="warn">
-
-The max pinned messages is 50.
+If the current user does not have `READ_MESSAGE_HISTORY` permission, an empty `items` array will be returned.
 
 </Alert>
 
-<RouteHeader method="DELETE" url="/channels/{channel.id}/pins/{message.id}" supportsAuditReason>
+###### Query String Params
+
+| Field   | Type              | Description                                     |
+| ------- | ----------------- | ----------------------------------------------- |
+| before? | ISO8601 timestamp | Get messages pinned before this timestamp       |
+| limit?  | integer           | Max number of pins to return (1-50, default 50) |
+
+###### Response Body
+
+| Field    | Type                                             | Description                                                                                       |
+| -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| items    | array[[message pin](#message-pin-object) object] | The message pins in the channel                                                                   |
+| has_more | boolean                                          | Whether there are potentially additional message pins that could be returned on a subsequent call |
+
+<RouteHeader method="GET" url="/channels/{channel.id}/pins" deprecated>
+  Get Pinned Messages
+</RouteHeader>
+
+Returns up to 50 pinned messages in the channel as an array of [message](#message-object) objects without the `reactions` key.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Get Message Pins](#get-message-pins).
+
+</Alert>
+
+<RouteHeader method="PUT" url="/channels/{channel.id}/messages/pins/{message.id}" supportsAuditReason>
+  Pin Message
+</RouteHeader>
+
+Pins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success. Fires a [Channel Pins Update](/topics/gateway-events#channel-pins-update) Gateway event.
+
+<RouteHeader method="DELETE" url="/channels/{channel.id}/messages/pins/{message.id}" supportsAuditReason>
   Unpin Message
 </RouteHeader>
 
-Unpins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success.
+Unpins a message in a channel. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel. Returns a 204 empty response on success. Fires a [Channel Pins Update](/topics/gateway-events#channel-pins-update) Gateway event.
 
 <RouteHeader method="POST" url="/channels/{channel.id}/pins/ack">
   Acknowledge Pinned Messages

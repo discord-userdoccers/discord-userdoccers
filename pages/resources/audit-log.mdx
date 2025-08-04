@@ -6,23 +6,6 @@ When an administrative action is performed in a guild, an entry is added to its 
 
 When performing an eligible action using the API, users can pass an `X-Audit-Log-Reason` header to indicate why the action was taken. More information is in the [audit log entry](#audit-log-entry-object) section.
 
-### Audit Log Object
-
-###### Audit Log Structure
-
-| Field                  | Type                                                                                                 | Description                                        |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| audit_log_entries      | array[[audit log entry](#audit-log-entry-object) object]                                             | Audit log entries                                  |
-| application_commands   | array[[application command](/interactions/application-commands#application-command-object) object]   | Application commands referenced in the audit log   |
-| auto_moderation_rules  | array[[automod rule](/resources/auto-moderation#automod-rule-object) object]                         | AutoMod rules referenced in the audit log          |
-| guild_scheduled_events | array[[guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object] | Guild scheduled events referenced in the audit log |
-| integrations           | array[partial [integration](#partial-integration-object) object]                                     | Partial integrations referenced in the audit log   |
-| threads ^1^            | array[[channel](/resources/channel#channel-object) object]                                           | Threads referenced in the audit log                |
-| users                  | array[partial [user](/resources/user#user-object) object]                                            | Users referenced in the audit log                  |
-| webhooks               | array[[webhook](/resources/webhook#webhook-object) object]                                           | Webhooks referenced in the audit log               |
-
-^1^ Threads referenced in `THREAD_CREATE` and `THREAD_UPDATE` events are included in the threads map because archived threads might not be kept in memory by clients.
-
 ### Audit Log Entry Object
 
 Each audit log entry represents a single administrative action (or [event](#audit-log-action-type)), indicated by `action_type`. Most entries contain one to many changes in the `changes` array that affected an entity in Discord—whether that's a user, channel, guild, emoji, or something else.
@@ -33,15 +16,15 @@ Users can specify why an administrative action is being taken by passing an `X-A
 
 ###### Audit Log Entry Structure
 
-| Field       | Type                                                       | Description                                                |
-| ----------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
-| target_id   | ?snowflake                                                 | ID of the affected entity (webhook, user, role, etc.)      |
-| changes?    | array[[audit log change](#audit-log-change-object) object] | Changes made to the `target_id``                           |
-| user_id     | ?snowflake                                                 | The user who made the changes                              |
-| id          | snowflake                                                  | The ID of the entry                                        |
-| action_type | integer                                                    | The [type of action](#audit-log-action-type) that occurred |
-| options?    | [optional audit entry info](#optional-audit-entry-info)    | Additional info for certain action types                   |
-| reason?     | string                                                     | The reason for the change (max 512 characters)             |
+| Field       | Type                                                           | Description                                                |
+| ----------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
+| target_id   | ?snowflake                                                     | ID of the affected entity (webhook, user, role, etc.)      |
+| changes?    | array[[audit log change](#audit-log-change-object) object]     | Changes made to the `target_id``                           |
+| user_id     | ?snowflake                                                     | The user who made the changes                              |
+| id          | snowflake                                                      | The ID of the entry                                        |
+| action_type | integer                                                        | The [type of action](#audit-log-action-type) that occurred |
+| options?    | [optional audit entry info](#optional-audit-entry-info) object | Additional info for certain action types                   |
+| reason?     | string                                                         | The reason for the change (max 512 characters)             |
 
 <Alert type="warn">
 
@@ -128,9 +111,13 @@ You should assume that you may run into any field for the changed object, though
 | 163     | ONBOARDING_PROMPT_CREATE                    | Onboarding prompt was created                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
 | 164     | ONBOARDING_PROMPT_UPDATE                    | Onboarding prompt was updated                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
 | 165     | ONBOARDING_PROMPT_DELETE                    | Onboarding prompt was deleted                             | [Onboarding Prompt](/resources/guild#onboarding-prompt-structure)                                               |
-| 166     | ONBOARDING_CREATE                           | Onboarding was created                                    | [Onboarding](/resources/guild#onboarding-object)                                                                |
+| 166     | ONBOARDING_CREATE                           | Onboarding was initialized                                | [Onboarding](/resources/guild#onboarding-object)                                                                |
 | 167     | ONBOARDING_UPDATE                           | Onboarding was updated                                    | [Onboarding](/resources/guild#onboarding-object)                                                                |
+| ~~171~~ | ~~GUILD_HOME_FEATURE_ITEM~~                 | ~~Item was featured in guild home~~                       |                                                                                                                 |
+| ~~172~~ | ~~GUILD_HOME_REMOVE_ITEM~~                  | ~~Item was removed from guild home~~                      |                                                                                                                 |
 | ~~180~~ | ~~HARMFUL_LINKS_BLOCKED_MESSAGE~~           | ~~Message blocked by harmful links filter~~               |                                                                                                                 |
+| 190     | HOME_SETTINGS_CREATE                        | New member welcome was initialized                        | [New Member Welcome](/resources/guild#new-member-welcome-object)                                                |
+| 191     | HOME_SETTINGS_UPDATE                        | New member welcome was updated                            | [New Member Welcome](/resources/guild#new-member-welcome-object)                                                |
 | 192     | VOICE_CHANNEL_STATUS_CREATE                 | Voice channel status was updated                          | [Channel](/resources/channel#channel-object)                                                                    |
 | 193     | VOICE_CHANNEL_STATUS_DELETE                 | Voice channel status was deleted                          | [Channel](/resources/channel#channel-object)                                                                    |
 | ~~194~~ | ~~CLYDE_AI_PROFILE_UPDATE~~                 | ~~Clyde AI profile was updated~~                          |                                                                                                                 |
@@ -254,7 +241,7 @@ In addition to the exceptions below, the `key` field may be appended with `_hash
   Get Guild Audit Log
 </RouteHeader>
 
-Returns an [audit log](#audit-log-object) object for the guild. Requires the `VIEW_AUDIT_LOG` permission.
+Returns the audit log for the guild. Requires the `VIEW_AUDIT_LOG` permission.
 
 ###### Query String Params
 
@@ -266,3 +253,16 @@ Returns an [audit log](#audit-log-object) object for the guild. Requires the `VI
 | user_id?     | snowflake | Get actions made by a specific user                                |
 | target_id?   | snowflake | Get actions affecting a specific entity                            |
 | action_type? | integer   | The [type of audit log event](#audit-log-action-type) to filter by |
+
+###### Response Body
+
+| Field                  | Type                                                                                                 | Description                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| audit_log_entries      | array[[audit log entry](#audit-log-entry-object) object]                                             | Audit log entries                                  |
+| application_commands   | array[[application command](/interactions/application-commands#application-command-object) object]   | Application commands referenced in the audit log   |
+| auto_moderation_rules  | array[[automod rule](/resources/auto-moderation#automod-rule-object) object]                         | AutoMod rules referenced in the audit log          |
+| guild_scheduled_events | array[[guild scheduled event](/resources/guild-scheduled-event#guild-scheduled-event-object) object] | Guild scheduled events referenced in the audit log |
+| integrations           | array[partial [integration](#partial-integration-object) object]                                     | Partial integrations referenced in the audit log   |
+| threads                | array[[channel](/resources/channel#channel-object) object]                                           | Threads referenced in the audit log                |
+| users                  | array[partial [user](/resources/user#user-object) object]                                            | Users referenced in the audit log                  |
+| webhooks               | array[[webhook](/resources/webhook#webhook-object) object]                                           | Webhooks referenced in the audit log               |
