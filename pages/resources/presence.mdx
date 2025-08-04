@@ -127,12 +127,12 @@ Active sessions are indicated with a status per platform. If a user is offline o
 | status_display_type? | ?integer                                                     | [Which field is displayed](#status-display-type) in the user's status text in the member list |
 | details? ^6^         | ?string                                                      | What the user is currently doing (max 128 characters)                                         |
 | details_url?         | ?string                                                      | URL that is opened when clicking on the details text (max 256 characters)                     |
-| state?               | ?string                                                      | The user's current party status, or text used for a custom status (max 128 characters)        |
+| state? ^7^           | ?string                                                      | The user's current party status, or text used for a custom status (max 128 characters)        |
 | state_url?           | ?string                                                      | URL that is opened when clicking on the state text (max 256 characters)                       |
 | sync_id?             | string                                                       | The ID of the synced activity (e.g. Spotify song ID)                                          |
 | flags?               | integer                                                      | The [activity's flags](#activity-flags)                                                       |
 | buttons?             | array[string]                                                | Custom buttons shown in rich presence (max 2)                                                 |
-| emoji?               | ?[activity emoji](#activity-emoji-structure) object          | The emoji used for a custom status                                                            |
+| emoji?               | ?[activity emoji](#activity-emoji-structure) object          | The emoji used for a custom or hang status                                                    |
 | party?               | [activity party](#activity-party-structure) object           | Information for the current party of the user                                                 |
 | assets?              | [activity assets](#activity-assets-structure) object         | Images for the presence and their hover texts                                                 |
 | secrets? ^4^         | [activity secrets](#activity-secrets-structure) object       | Secrets for rich presence joining and spectating                                              |
@@ -149,6 +149,8 @@ Active sessions are indicated with a status per platform. If a user is offline o
 ^5^ These fields are received only and cannot be set.
 
 ^6^ When provided in a `CUSTOM` activity, it represents a [Custom Status Label](#custom-status-label-type) enumeration.
+
+^7^ In the case of the `HANG` type, this field should be one of the [hang status types](#activity-hang-status-type). If set to `custom`, the `details` field should be used to specify the custom text, and the `emoji` field should be used to specify the custom emoji.
 
 <Alert type="info">
 
@@ -172,7 +174,11 @@ Formatting can be further controlled by `status_display_type`. The formats liste
 | 3     | WATCHING  | Watching {name}                                      | "Watching YouTube Together"          |
 | 4     | CUSTOM    | {details ? "{details}: "}{emoji ? "{emoji} "}{state} | "😃 I am cool"                       |
 | 5     | COMPETING | Competing in {name}                                  | "Competing in Arena World Champions" |
-| ~~6~~ | ~~HANG~~  | ~~{state} or {emoji} {details}~~                     | ~~"Chilling"~~                       |
+| 6     | HANG ^1^  | {state} or {emoji} {details} ^2^                     | "Chilling"                           |
+
+^1^ This type is only displayed if the user has an active voice state.
+
+^2^ See [activity hang status type](#activity-hang-status-type) for more information.
 
 ###### Activity Platform Type
 
@@ -187,6 +193,21 @@ Formatting can be further controlled by `status_display_type`. The formats liste
 | ps4      | PlayStation 4 integration |
 | ps5      | PlayStation 5 integration |
 
+###### Activity Hang Status Type
+
+When a `HANG` activity's `state` is set to any value other than `custom`, a built-in corresponding emoji will be used instead of the custom `emoji` field.
+
+| Value      | Example        |
+| ---------- | -------------- |
+| chilling   | Chilling       |
+| gaming     | GAMING         |
+| focusing   | In the zone    |
+| brb        | Gonna BRB      |
+| eating     | Grubbin        |
+| in-transit | Wandering IRL  |
+| watching   | Watchin' stuff |
+| custom     | {details}      |
+
 ###### Activity Flags
 
 | Value      | Name                          | Description                                                       |
@@ -200,7 +221,7 @@ Formatting can be further controlled by `status_display_type`. The formats liste
 | 1 << 6     | PARTY_PRIVACY_FRIENDS         | Activity's party can be joined by friends                         |
 | 1 << 7     | PARTY_PRIVACY_VOICE_CHANNEL   | Activity's party can be joined by users in the same voice channel |
 | 1 << 8     | EMBEDDED                      | Activity is embedded within the Discord client                    |
-| ~~1 << 9~~ | ~~CONTEXTLESS~~               | ~~Embedded activity is launched without a context~~               |
+| 1 << 9     | CONTEXTLESS                   | Embedded activity is launched without a context                   |
 
 ^1^ Spectating has been removed from official clients and is no longer supported.
 
@@ -651,6 +672,12 @@ Creates a new headless session for the current user. Fires a [Sessions Replace](
 <Alert type="warn">
 
 This endpoint is only usable with an OAuth2 access token with the `activities.write` scope.
+
+</Alert>
+
+<Alert type="info">
+
+Headless sessions only last for 20 minutes before they are automatically deleted.
 
 </Alert>
 

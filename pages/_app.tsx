@@ -37,7 +37,13 @@ export default function App({
     },
   );
 
-  const component = <Component {...pageProps} />;
+  const component = (
+    <CodegenLanguageProvider>
+      <MDX>
+        <Component {...pageProps} />
+      </MDX>
+    </CodegenLanguageProvider>
+  );
 
   const getText = () => {
     if (router.pathname !== "/404") {
@@ -66,18 +72,14 @@ export default function App({
     <>
       <ThemeProvider defaultTheme="system" attribute="data-theme">
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
-          <CodegenLanguageProvider>
-            <MDX>
-              <OpenGraph description={meta?.description} section={meta?.title} />
-              <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
-                <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
-                <Menu />
+          <OpenGraph description={meta?.description} section={meta?.title} />
+          <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
+            <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
+            <Menu />
 
-                <Component {...pageProps} />
-              </div>
-              <Footer />
-            </MDX>
-          </CodegenLanguageProvider>
+            {component}
+          </div>
+          <Footer />
         </MenuContext.Provider>
       </ThemeProvider>
     </>
