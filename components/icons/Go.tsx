@@ -10,7 +10,6 @@ export default function Go(props: React.JSX.IntrinsicElements["svg"]) {
         x="0px"
         y="0px"
         viewBox="0 0 254.5 225"
-        style={{ enableBackground: "new 0 0 254.5 225" }}
         xmlSpace="preserve"
         {...props}
       >
