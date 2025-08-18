@@ -25,18 +25,7 @@ export class GoGenerator {
         const title = this.typeToString(layout.title);
         const description = layout.description?.multiline ?? [];
 
-        type Property = {
-            field: string;
-            jsonKey: string;
-            type?: string;
-            description: string;
-            otherColumns: [string, string][];
-            isDeprecated: boolean;
-            isUndefinable: boolean;
-            isOptionalType: boolean;
-        };
-
-        const properties: Property[] = [];
+        const properties = [];
 
         for (const property of layout.contents) {
             const isEnum = layout.type === TableType.Enum;
