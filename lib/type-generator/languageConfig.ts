@@ -1,11 +1,11 @@
+import Go from "@components/icons/Go";
 import Python from "@components/icons/Python";
 import Rust from "@components/icons/Rust";
-import Go from "@components/icons/Go";
 import TypeScript from "@components/icons/TypeScript";
+import { GoGenerator } from "@lib/type-generator/go";
 import { PythonGenerator } from "@lib/type-generator/python";
 import { RustGenerator } from "@lib/type-generator/rust";
 import { TypescriptGenerator } from "@lib/type-generator/typescript";
-import { GoGenerator } from "@lib/type-generator/go";
 
 export const LANGUAGE_CONFIG = {
   Python: {
