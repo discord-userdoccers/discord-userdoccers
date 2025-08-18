@@ -122,7 +122,7 @@ export class GoGenerator {
             // Decide underlying type. Default to int; explicit values will be assigned directly.
             output += `type ${title} int\n`;
             output += `const (\n`;
-            let useIota = properties.every((p) => !p.type);
+            const useIota = properties.every((p) => !p.type);
             let iotaIndex = 0;
             for (const prop of properties) {
                 if (prop.description) output += `\t// ${prop.description}\n`;
