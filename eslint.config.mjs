@@ -1,9 +1,8 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextOnPages from "eslint-plugin-next-on-pages";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
+import { defineConfig, globalIgnores } from "eslint/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,16 +15,7 @@ const compat = new FlatCompat({
 export default defineConfig([
   globalIgnores(["dist/*", ".next/*", "**/*.js", "**/next-env.d.ts"]),
   {
-    extends: compat.extends(
-      "next",
-      "next/core-web-vitals",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:eslint-plugin-next-on-pages/recommended",
-    ),
-
-    plugins: {
-      "next-on-pages": nextOnPages,
-    },
+    extends: compat.extends("next", "next/core-web-vitals", "plugin:@typescript-eslint/recommended"),
 
     languageOptions: {
       ecmaVersion: 5,

@@ -1,6 +1,6 @@
-import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 import frontmatter from "@lib/frontmatter";
 import createMDX from "@next/mdx";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 import supersub from "remark-supersub";
 
@@ -37,8 +37,6 @@ const withMDX = createMDX({
   },
 });
 
-if (process.env.NODE_ENV === "development") {
-  setupDevPlatform();
-}
-
 export default withMDX(config);
+
+initOpenNextCloudflareForDev();
