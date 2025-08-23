@@ -1,7 +1,7 @@
 import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
-import App, { type AppContext, type AppProps } from "next/app";
-import { useCallback, useState } from "react";
+import type { AppProps } from "next/app";
+import { useCallback, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import Footer from "../components/Footer";
 import MDX from "../components/MDX";
@@ -20,10 +20,11 @@ import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
 const TITLE_REGEX = /<h1 .*?><a .*?>(\w+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
 
-type Meta = { title: string; description: string };
-type MyAppProps = AppProps & { Component: AppProps["Component"] & { meta?: Meta }; meta: Meta };
-
-export default function MyApp({ Component, pageProps, meta }: MyAppProps) {
+export default function App({
+  Component,
+  pageProps,
+  router,
+}: AppProps & { Component: AppProps["Component"] & { meta?: { title: string; description: string } } }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
@@ -36,6 +37,31 @@ export default function MyApp({ Component, pageProps, meta }: MyAppProps) {
     },
   );
 
+  const component = (
+    <CodegenLanguageProvider>
+      <MDX>
+        <Component {...pageProps} />
+      </MDX>
+    </CodegenLanguageProvider>
+  );
+
+  const getText = () => {
+    if (router.pathname !== "/404") {
+      const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
+      const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
+      const description = handleDesc(str);
+
+      return {
+        description,
+        title,
+      };
+    }
+    return null;
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const meta = useMemo(() => getText(), []);
+
   return (
     <>
       <ThemeProvider defaultTheme="system" attribute="data-theme">
@@ -45,11 +71,7 @@ export default function MyApp({ Component, pageProps, meta }: MyAppProps) {
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
 
-            <CodegenLanguageProvider>
-              <MDX>
-                <Component {...pageProps} />
-              </MDX>
-            </CodegenLanguageProvider>
+            {component}
           </div>
           <Footer />
         </MenuContext.Provider>
@@ -58,36 +80,15 @@ export default function MyApp({ Component, pageProps, meta }: MyAppProps) {
   );
 }
 
-MyApp.getInitialProps = async (ctx: AppContext & { Component: MyAppProps["Component"] }) => {
-  const { Component } = ctx;
-  const component = (
-    <CodegenLanguageProvider>
-      <MDX>
-        <Component />
-      </MDX>
-    </CodegenLanguageProvider>
-  );
-
-  const props = App.getInitialProps(ctx);
-
-  if (ctx.router.pathname !== "/404") {
-    const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
-    const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
-    const description = `${str
-      .replace(TITLE_REGEX, "")
-      .replaceAll(/<[^>]*>/gm, " ")
-      .replace(/\s+/gm, " ")
-      .trim()
-      .slice(0, 200)
-      .trim()
-      .replace(/&\w+$/, "")}...`;
-
-    return {
-      ...props,
-      description,
-      title,
-      str,
-    };
-  }
-  return { ...props };
-};
+function handleDesc(str: string) {
+  return `${str
+    .replace(TITLE_REGEX, "")
+    .replaceAll(/<[^>]*>|\s+/gm, " ")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .trim()
+    .slice(0, 200)
+    .trim()
+    .replace(/&\w+$/, "")}...`;
+}

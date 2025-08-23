@@ -20,7 +20,7 @@ export default function OpenGraph({
   const currentPage = currentSection?.pages.find((page) => page.link === router.asPath);
 
   const url = `https://${process.env.BASE_DOMAIN}${router.asPath}`;
-  const isBase = router.asPath === "/";
+  const isBase = router.asPath === "/intro";
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
   const title = `Discord Userdoccers - ${section ? section : "Unofficial API Documentation"}`;
