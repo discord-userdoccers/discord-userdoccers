@@ -23,7 +23,7 @@ export default function OpenGraph({
   const isBase = router.asPath === "/intro";
   const google_site_verification = process.env.GOOGLE_SITE_VERIFICATION;
 
-  const title = `Discord Userdoccers - ${section ? section : "Unofficial API Documentation"}`;
+  const title = section ? `${section} • Discord Userdoccers` : "Discord Userdoccers — Unofficial API Documentation";
   const image = isBase ? `/banner.webp` : undefined;
   const siteName = "Discord Userdoccers";
 
