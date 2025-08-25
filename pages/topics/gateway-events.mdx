@@ -77,6 +77,8 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Remote Command](<#remote-command-(send)>)                    | Send a message to another Gateway session                         |
 | Request Deleted Entity IDs                                    | Request deleted entity IDs not matching a given hash for a guild  |
 | [Request Soundboard Sounds](#request-soundboard-sounds)       | Request soundboard sounds for one or more guilds                  |
+| [Create Speed Test](#create-speed-test)                       | Create or update an RTC speed test for the client.                |
+| [Delete Speed Test](#delete-speed-test)                       | Delete the client's RTC speed test.                               |
 | [Request Last Messages](#request-last-messages)               | Request last messages for a guild's channels                      |
 | [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
 | [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
@@ -254,7 +256,7 @@ Sent when a client wants to join, move, or disconnect from a voice channel. Fire
 | self_mute          | boolean       | Whether the client is muted                                                                 |
 | self_deaf          | boolean       | Whether the client is deafened                                                              |
 | self_video?        | boolean       | Whether the client is streaming video to the channel                                        |
-| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
+| preferred_region?  | ?string       | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
 | preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the voice channel   |
 | flags?             | integer       | The client's [voice flags](/topics/voice-connections#voice-flags)                           |
 
@@ -303,7 +305,7 @@ The inner `d` key is an array of the following objects:
 | self_mute          | boolean       | Whether the client is muted                                                         |
 | self_deaf          | boolean       | Whether the client is deafened                                                      |
 | self_video?        | boolean       | Whether the client is streaming video to the channel                                |
-| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
+| preferred_region?  | ?string       | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
 | preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the lobby   |
 
 #### Create Stream
@@ -312,12 +314,12 @@ Sent by the client to create a stream in a given voice channel. Requires the `ST
 
 ###### Create Stream Structure
 
-| Field             | Type       | Description                                                                                 |
-| ----------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| type              | string     | The [type of stream](#stream-type) to create                                                |
-| guild_id?         | ?snowflake | The ID of the guild to stream in, if any                                                    |
-| channel_id        | snowflake  | The ID of the voice channel to stream in                                                    |
-| preferred_region? | string     | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
+| Field             | Type       | Description                                                                          |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------ |
+| type              | string     | The [type of stream](#stream-type) to create                                         |
+| guild_id?         | ?snowflake | The ID of the guild to stream in, if any                                             |
+| channel_id        | snowflake  | The ID of the voice channel to stream in                                             |
+| preferred_region? | ?string    | The preferred [voice region](/resources/voice#voice-region-object) ID for the stream |
 
 ###### Example Create Stream
 
@@ -538,6 +540,40 @@ Used to request soundboard sounds for a list of guilds. Fires a [Soundboard Soun
   "d": {
     "guild_ids": ["41771983444115456", "1015060230222131221", "811255666990907402"]
   }
+}
+```
+
+#### Create Speed Test
+
+Used to create an RTC speed test for the client. If the client already has an active speed test, this will update it. Fires a [Speed Test Create](#speed-test-create) and [Speed Test Server Update](#speed-test-server-update) or [Speed Test Update](#speed-test-update) Gateway event.
+
+###### Create Speed Test Structure
+
+| Field             | Type    | Description                                                                              |
+| ----------------- | ------- | ---------------------------------------------------------------------------------------- |
+| preferred_region? | ?string | The preferred [voice region](/resources/voice#voice-region-object) ID for the speed test |
+
+###### Example Create Speed Test
+
+```json
+{
+  "op": 32,
+  "d": {
+    "preferred_region": "us-east"
+  }
+}
+```
+
+#### Delete Speed Test
+
+Used to delete the client's RTC speed test. Fires a [Speed Test Delete](#speed-test-delete) Gateway event.
+
+###### Example Delete Speed Test
+
+```json
+{
+  "op": 33,
+  "d": null
 }
 ```
 
@@ -945,6 +981,10 @@ These events directly correspond with a specific action or state change that has
 | [Stream Server Update](#stream-server-update)                                       | Stream server was updated                                                                       |
 | [Stream Update](#stream-update)                                                     | Stream was updated                                                                              |
 | [Stream Delete](#stream-delete)                                                     | Stream was deleted                                                                              |
+| [Speed Test Create](#speed-test-create)                                             | RTC speed test was created                                                                      |
+| [Speed Test Server Update](#speed-test-server-update)                               | RTC speed test server was updated                                                               |
+| [Speed Test Update](#speed-test-update)                                             | RTC speed test was updated                                                                      |
+| [Speed Test Delete](#speed-test-delete)                                             | RTC speed test was deleted                                                                      |
 | [Typing Start](#typing-start)                                                       | User started typing in a channel                                                                |
 | [User Update](#user-update)                                                         | Current user changed                                                                            |
 | [User Application Update](#user-application-update)                                 | User installed an application or application was updated                                        |
@@ -2769,6 +2809,22 @@ Sent when a stream is deleted, or becomes unavailable due to an outage.
   "reason": "stream_ended"
 }
 ```
+
+#### Speed Test Create
+
+Sent when an RTC speed test is created. Speed tests are a special type of stream used to test connection quality. Same as [Stream Create](#stream-create).
+
+#### Speed Test Server Update
+
+Sent when a speed test's voice server is updated. Same as [Stream Server Update](#stream-server-update).
+
+#### Speed Test Update
+
+Sent when a speed test is updated. Same as [Stream Update](#stream-update).
+
+#### Speed Test Delete
+
+Sent when a speed test is deleted. Same as [Stream Delete](#stream-delete).
 
 ### Typing
 
