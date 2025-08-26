@@ -1,6 +1,8 @@
+import Go from "@components/icons/Go";
 import Python from "@components/icons/Python";
 import Rust from "@components/icons/Rust";
 import TypeScript from "@components/icons/TypeScript";
+import { GoGenerator } from "@lib/type-generator/go";
 import { PythonGenerator } from "@lib/type-generator/python";
 import { RustGenerator } from "@lib/type-generator/rust";
 import { TypescriptGenerator } from "@lib/type-generator/typescript";
@@ -20,6 +22,11 @@ export const LANGUAGE_CONFIG = {
     label: "Rust",
     icon: Rust,
     generator: (ref: HTMLTableElement) => new RustGenerator(ref).generateCode(),
+  },
+  Go: {
+    label: "Go",
+    icon: Go,
+    generator: (ref: HTMLTableElement) => new GoGenerator(ref).generateCode(),
   },
 } as const;
 

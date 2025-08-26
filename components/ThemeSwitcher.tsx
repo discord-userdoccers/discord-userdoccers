@@ -23,8 +23,10 @@ export default function ThemeSwitcher() {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="inline-flex w-full justify-center rounded-md bg-white p-2 text-sm font-medium text-black transition duration-100 hover:bg-brand-blurple hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 dark:bg-table-row-background-secondary-dark dark:text-white dark:hover:bg-brand-blurple">
-          <span className="sr-only">Change Theme</span>
+        <Menu.Button
+          className="inline-flex w-full justify-center rounded-md bg-white p-2 text-sm font-medium text-black transition duration-100 hover:bg-brand-blurple hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 dark:bg-table-row-background-secondary-dark dark:text-white dark:hover:bg-brand-blurple"
+          aria-label="Change Theme"
+        >
           <Lightbulb className="h-4 w-4 md:h-6 md:w-6" aria-hidden="true" />
         </Menu.Button>
       </div>

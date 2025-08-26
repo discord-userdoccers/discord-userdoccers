@@ -156,7 +156,7 @@ Type `19` and `20` are only available in API v8 and above. In v7 and below, they
 | 60     | REPORT_TO_MOD_KICK_USER                       | A message sent when a user resolves a moderation report by kicking the offending user                                 | "{author} kicked {mentions[0]}"                                                                                                                                                             | true      |
 | 61     | REPORT_TO_MOD_BAN_USER                        | A message sent when a user resolves a moderation report by banning the offending user                                 | "{author} banned {mentions[0]}"                                                                                                                                                             | true      |
 | 62     | REPORT_TO_MOD_CLOSED_REPORT                   | A message sent when a user resolves a moderation report                                                               | "{author} resolved this flag"                                                                                                                                                               | true      |
-| 63     | EMOJI_ADDED                                   | A message sent when a user adds an emoji to a guild                                                                   | "{author} added a new emoji, {content} **:{emoji.name}:**"                                                                                                                                  | true      |
+| 63     | EMOJI_ADDED                                   | A message sent when a user adds a new emoji to a guild                                                                | "{author} added a new emoji, {content} **:{emoji.name}:**"                                                                                                                                  | true      |
 
 ^1^ Can only be deleted by members with the `MANAGE_MESSAGES` permission.
 
@@ -1327,6 +1327,24 @@ Returns a list of [message](#message-object) objects in the channel. Requires th
 | after?  | snowflake | Get messages after this message ID                   |
 | limit   | integer   | Max number of messages to return (1-100, default 50) |
 
+<RouteHeader method="GET" url="/users/{user.id}/messages" supportsOAuth2="dm_channels.messages.read">
+  Get DM Messages
+</RouteHeader>
+
+Returns a list of partial [message](#partial-message-structure) objects in the DM channel.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token with the `dm_channels.messages.read` scope.
+
+</Alert>
+
+###### Query String Params
+
+| Field | Type    | Description                                          |
+| ----- | ------- | ---------------------------------------------------- |
+| limit | integer | Max number of messages to return (1-200, default 50) |
+
 <RouteHeader method="POST" url="/channels/preload-messages">
   Preload Messages
 </RouteHeader>
@@ -1374,35 +1392,45 @@ Additionally, when messages are actively being created or deleted, the `total_re
 
 ###### Query String Params
 
-| Field                    | Type             | Description                                                                     |
-| ------------------------ | ---------------- | ------------------------------------------------------------------------------- |
-| limit?                   | integer          | Max number of messages to return (1-25, default 25)                             |
-| offset?                  | integer          | Number to offset the returned messages by (max 9975)                            |
-| max_id?                  | snowflake        | Get messages before this message ID                                             |
-| min_id?                  | snowflake        | Get messages after this message ID                                              |
-| include_nsfw?            | boolean          | Whether to include results from NSFW channels (default false)                   |
-| content?                 | string           | Filter messages by content                                                      |
-| channel_id? ^1^          | array[snowflake] | Filter messages by these channels                                               |
-| author_type?             | array[string]    | Filter messages by [author type](#author-type)                                  |
-| author_id?               | array[snowflake] | Filter messages by these authors                                                |
-| mentions?                | array[snowflake] | Filter messages that mention these users                                        |
-| mention_everyone?        | boolean          | Filter messages that do or do not mention @everyone                             |
-| pinned?                  | boolean          | Filter messages by whether they are or are not pinned                           |
-| has?                     | array[string]    | Filter messages by whether or not they [have specific things](#search-has-type) |
-| embed_type?              | array[string]    | Filter messages by [embed type](#search-embed-type)                             |
-| embed_provider?          | array[string]    | Filter messages by embed provider (case-sensitive, e.g. `Tenor`)                |
-| link_hostname?           | array[string]    | Filter messages by link hostname (case-sensitive, e.g. `discordapp.com`)        |
-| attachment_filename? ^3^ | string           | Filter messages by attachment filename                                          |
-| attachment_extension?    | array[string]    | Filter messages by attachment extension (e.g. `txt`)                            |
-| command_id? ^3^          | snowflake        | Filter messages by application command ID                                       |
-| sort_by? ^2^             | string           | The [sorting algorithm](#search-sort-type) to use                               |
-| sort_order? ^2^          | string           | The direction to sort (`asc` or `desc`, default `desc`)                         |
+| Field                    | Type             | Description                                                                                      |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------ |
+| limit?                   | integer          | Max number of messages to return (1-25, default 25)                                              |
+| offset?                  | integer          | Number to offset the returned messages by (max 9975)                                             |
+| max_id?                  | snowflake        | Get messages before this message ID                                                              |
+| min_id?                  | snowflake        | Get messages after this message ID                                                               |
+| slop?                    | integer          | Max number of words to skip between matching tokens in the search `content` (max 100, default 2) |
+| content?                 | string           | Filter messages by content (max 1024 characters)                                                 |
+| contents?                | array[string]    | Filter messages by [tokenized content](#tokenized-content) (max 1024 characters, max 100)        |
+| channel_id? ^1^          | array[snowflake] | Filter messages by these channels (max 500)                                                      |
+| author_type?             | array[string]    | Filter messages by [author type](#author-type)                                                   |
+| author_id?               | array[snowflake] | Filter messages by these authors                                                                 |
+| mentions?                | array[snowflake] | Filter messages that mention these users                                                         |
+| mention_everyone?        | boolean          | Filter messages that do or do not mention @everyone                                              |
+| pinned?                  | boolean          | Filter messages by whether they are or are not pinned                                            |
+| has?                     | array[string]    | Filter messages by whether or not they [have specific things](#search-has-type)                  |
+| embed_type?              | array[string]    | Filter messages by [embed type](#search-embed-type)                                              |
+| embed_provider?          | array[string]    | Filter messages by embed provider (case-sensitive, e.g. `Tenor`) (max 256 characters)            |
+| link_hostname?           | array[string]    | Filter messages by link hostname (case-sensitive, e.g. `discordapp.com`)                         |
+| attachment_filename?     | string           | Filter messages by attachment filename (max 1024 characters)                                     |
+| attachment_extension?    | array[string]    | Filter messages by attachment extension (e.g. `txt`)                                             |
+| command_id? ^3^ ^4^      | snowflake        | Filter messages by application command ID                                                        |
+| command_name? ^3^ ^4^    | string           | Filter messages by application command name (max 32 characters)                                  |
+| sort_by? ^2^             | string           | The [sorting algorithm](#search-sort-type) to use                                                |
+| sort_order? ^2^          | string           | The direction to sort (`asc` or `desc`, default `desc`)                                          |
+| include_nsfw?            | boolean          | Whether to include results from NSFW channels (default false)                                    |
 
 ^1^ Not applicable when operating on a private channel.
 
 ^2^ Sort order is not respected when sorting by relevance.
 
 ^3^ Parameter is unstable and should not be relied on.
+
+^4^ `command_id` and `command_name` must be provided together.
+
+###### Tokenized Content
+
+Search queries can be tokenized client-side to allow for more flexible matching. The tokenized terms must be prepended with a match type, followed by a seperator (`|`). The match type can be `0` (exact match), `1`, or `2` (fuzzy match).
+An example search query might look like this: `?contents=0|"important phrase"&contents=2|other&contents=2|text`
 
 ###### Author Type
 
@@ -1438,8 +1466,9 @@ These do not correspond 1:1 to actual [embed types](#embed-type) and encompass a
 | -------------------- | ------------------------------------------ |
 | image                | Return messages that have an image embed   |
 | video                | Return messages that have a video embed    |
-| article              | Return messages that have an article embed |
 | gif **(deprecated)** | Return messages that have a gif embed      |
+| sound                | Return messages that have a sound embed    |
+| article              | Return messages that have an article embed |
 
 ###### Search Sort Type
 
@@ -1456,12 +1485,12 @@ These do not correspond 1:1 to actual [embed types](#embed-type) and encompass a
 | doing_deep_historical_index | boolean                                                                | The status of the guild/channel's deep historical indexing operation, if any              |
 | documents_indexed?          | integer                                                                | The number of documents that have been indexed during the current index operation, if any |
 | total_results               | integer                                                                | The total number of results that match the query                                          |
-| messages                    | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context)^1^ that match the query    |
+| messages ^1^                | array[array[[message](#message-object) object]]                        | A nested array of messages that match the query                                           |
 | channels? ^2^               | array[[channel](/resources/channel#channel-object) object]             | The channels that contain the returned messages                                           |
 | threads?                    | array[[channel](/resources/channel#channel-object) object]             | The threads that contain the returned messages                                            |
 | members?                    | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined               |
 
-^1^ Surrounding context messages are no longer returned.
+^1^ The nested array is used to provide surrounding context to search results. However, surrounding context is no longer returned.
 
 ^2^ Only applicable when operating on a private channel.
 
@@ -1570,28 +1599,31 @@ While the tab names themselves are enforced, what they are used for is not. Clie
 
 ###### Search Tab Structure
 
-| Field                    | Type                                              | Description                                                                     |
-| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------- |
-| limit?                   | integer                                           | Max number of messages to return (1-25, default 25)                             |
-| cursor? ^1^              | ?[search cursor](#search-cursor-structure) object | The cursor to use for pagination                                                |
-| offset? ^1^              | integer                                           | Number to offset the returned messages by (max 9975)                            |
-| max_id?                  | snowflake                                         | Get messages before this message ID                                             |
-| min_id?                  | snowflake                                         | Get messages after this message ID                                              |
-| content?                 | string                                            | Filter messages by content                                                      |
-| author_type?             | array[string]                                     | Filter messages by [author type](#author-type)                                  |
-| author_id?               | array[snowflake]                                  | Filter messages by these authors                                                |
-| mentions?                | array[snowflake]                                  | Filter messages that mention these users                                        |
-| mention_everyone?        | boolean                                           | Filter messages that do or do not mention @everyone                             |
-| pinned?                  | boolean                                           | Filter messages by whether they are or are not pinned                           |
-| has?                     | array[string]                                     | Filter messages by whether or not they [have specific things](#search-has-type) |
-| embed_type?              | array[string]                                     | Filter messages by [embed type](#search-embed-type)                             |
-| embed_provider?          | array[string]                                     | Filter messages by embed provider (case-sensitive, e.g. `Tenor`)                |
-| link_hostname?           | array[string]                                     | Filter messages by link hostname (case-sensitive, e.g. `discordapp.com`)        |
-| attachment_filename? ^3^ | string                                            | Filter messages by attachment filename                                          |
-| attachment_extension?    | array[string]                                     | Filter messages by attachment extension (e.g. `txt`)                            |
-| command_id? ^3^          | snowflake                                         | Filter messages by application command ID                                       |
-| sort_by? ^2^             | string                                            | The [sorting algorithm](#search-sort-type) to use                               |
-| sort_order? ^2^          | string                                            | The direction to sort (`asc` or `desc`, default `desc`)                         |
+| Field                    | Type                                              | Description                                                                                      |
+| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| limit?                   | integer                                           | Max number of messages to return (1-25, default 25)                                              |
+| cursor? ^1^              | ?[search cursor](#search-cursor-structure) object | The cursor to use for pagination                                                                 |
+| offset? ^1^              | integer                                           | Number to offset the returned messages by (max 9975)                                             |
+| max_id?                  | snowflake                                         | Get messages before this message ID                                                              |
+| min_id?                  | snowflake                                         | Get messages after this message ID                                                               |
+| slop?                    | integer                                           | Max number of words to skip between matching tokens in the search `content` (max 100, default 2) |
+| content?                 | string                                            | Filter messages by content (max 1024 characters)                                                 |
+| contents?                | array[string]                                     | Filter messages by [tokenized content](#tokenized-content) (max 1024 characters, max 100)        |
+| author_type?             | array[string]                                     | Filter messages by [author type](#author-type)                                                   |
+| author_id?               | array[snowflake]                                  | Filter messages by these authors                                                                 |
+| mentions?                | array[snowflake]                                  | Filter messages that mention these users                                                         |
+| mention_everyone?        | boolean                                           | Filter messages that do or do not mention @everyone                                              |
+| pinned?                  | boolean                                           | Filter messages by whether they are or are not pinned                                            |
+| has?                     | array[string]                                     | Filter messages by whether or not they [have specific things](#search-has-type)                  |
+| embed_type?              | array[string]                                     | Filter messages by [embed type](#search-embed-type)                                              |
+| embed_provider?          | array[string]                                     | Filter messages by embed provider (case-sensitive, e.g. `Tenor`) (max 256 characters)            |
+| link_hostname?           | array[string]                                     | Filter messages by link hostname (case-sensitive, e.g. `discordapp.com`)                         |
+| attachment_filename?     | string                                            | Filter messages by attachment filename (max 1024 characters)                                     |
+| attachment_extension?    | array[string]                                     | Filter messages by attachment extension (e.g. `txt`)                                             |
+| command_id? ^3^ ^4^      | snowflake                                         | Filter messages by application command ID                                                        |
+| command_name? ^3^ ^4^    | string                                            | Filter messages by application command name (max 32 characters)                                  |
+| sort_by? ^2^             | string                                            | The [sorting algorithm](#search-sort-type) to use                                                |
+| sort_order? ^2^          | string                                            | The direction to sort (`asc` or `desc`, default `desc`)                                          |
 
 ^1^ You may only paginate with either `offset` or `cursor`, not both. If `cursor` is provided, the [search cursor type](#search-cursor-type) should match the [sorting algorithm](#search-sort-type) used in `sort_by`.
 
@@ -1599,13 +1631,19 @@ While the tab names themselves are enforced, what they are used for is not. Clie
 
 ^3^ Parameter is unstable and should not be relied on.
 
+^4^ `command_id` and `command_name` must be provided together.
+
 ###### Search Cursor Structure
 
-| Field      | Type                                                         | Description                                                                                           |
-| ---------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| type       | string                                                       | The [type of the cursor](#search-cursor-type)                                                         |
-| timestamp? | snowflake                                                    | The ID of the last message in this page of results; used for pagination by timestamp                  |
-| score?     | [search cursor score](#search-cursor-score-structure) object | The relevance metadata for the last message in this page of results; used for pagination by relevance |
+| Field         | Type                                                         | Description                                                         |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| type          | string                                                       | The [type of the cursor](#search-cursor-type)                       |
+| timestamp ^1^ | snowflake                                                    | The ID of the last message in this page of results                  |
+| score? ^2^    | [search cursor score](#search-cursor-score-structure) object | The relevance metadata for the last message in this page of results |
+
+^1^ Only used for `timestamp` cursors.
+
+^2^ Only used for `score` cursors.
 
 ###### Search Cursor Score Structure
 
@@ -1632,17 +1670,17 @@ While the tab names themselves are enforced, what they are used for is not. Clie
 
 ###### Search Tab Results Structure
 
-| Field             | Type                                                                   | Description                                                                            |
-| ----------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| messages          | array[array[[message](#message-object) object]]                        | A nested array of messages (with optional surrounding context)^1^ that match the query |
-| channels          | array[[channel](/resources/channel#channel-object) object]             | The channels that contain the returned messages                                        |
-| threads?          | array[[channel](/resources/channel#channel-object) object]             | The threads that contain the returned messages                                         |
-| members?          | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined            |
-| cursor ^2^        | [search cursor](#search-cursor-structure) object                       | The cursor for the next page of results                                                |
-| total_results ^3^ | integer                                                                | The total number of results that match the query                                       |
-| time_spent_ms     | integer                                                                | Duration taken (in milliseconds) processing the search query                           |
+| Field             | Type                                                                   | Description                                                                 |
+| ----------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| messages ^1^      | array[array[[message](#message-object) object]]                        | A nested array of messages that match the query                             |
+| channels          | array[[channel](/resources/channel#channel-object) object]             | The channels that contain the returned messages                             |
+| threads?          | array[[channel](/resources/channel#channel-object) object]             | The threads that contain the returned messages                              |
+| members?          | array[[thread member](/resources/channel#thread-member-object) object] | A thread member object for each returned thread the current user has joined |
+| cursor ^2^        | [search cursor](#search-cursor-structure) object                       | The cursor for the next page of results                                     |
+| total_results ^3^ | integer                                                                | The total number of results that match the query                            |
+| time_spent_ms     | integer                                                                | Duration taken (in milliseconds) processing the search query                |
 
-^1^ Surrounding context messages are no longer returned.
+^1^ The nested array is used to provide surrounding context to search results. However, surrounding context is no longer returned.
 
 ^2^ Will be an empty object if there is no more data to paginate.
 
@@ -2109,7 +2147,7 @@ This endpoint is only usable with an OAuth2 access token with the `dm_channels.m
 
 Deletes a message. Requires the `MANAGE_MESSAGES` permission if operating on a guild channel and trying to delete a message that was not sent by the current user. Returns a 204 empty response on success. Fires a [Message Delete](/topics/gateway-events#message-delete) Gateway event.
 
-<RouteHeader method="DELETE" url="/users/@me/messages/{message.id}" supportsOAuth2="dm_channels.messages.write">
+<RouteHeader method="DELETE" url="/users/{user.id}/messages/{message.id}" supportsOAuth2="dm_channels.messages.write">
   Delete DM Message
 </RouteHeader>
 
@@ -2360,3 +2398,16 @@ Get a list of up to 50 latest conversation summaries for a text channel in rever
 </RouteHeader>
 
 Deletes a conversation summary. Requires the `MANAGE_MESSAGES` permission. Returns a 204 empty response on success. Fires a [Conversation Summary Update](/topics/gateway-events#conversation-summary-update) Gateway event.
+
+<RouteHeader method="GET" url="/partner-sdk/users/@me/channels">
+  Get User Message Summaries
+</RouteHeader>
+
+Returns a list of [user message summary](#user-message-summary-structure) objects for each DM channel.
+
+###### User Message Summary Structure
+
+| Field           | Type      | Description                                                                           |
+| --------------- | --------- | ------------------------------------------------------------------------------------- |
+| user_id         | snowflake | The ID of the recipient                                                               |
+| last_message_id | snowflake | The ID of the last message sent in DM channel (may not point to an existing resource) |
