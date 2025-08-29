@@ -77,6 +77,8 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Remote Command](<#remote-command-(send)>)                    | Send a message to another Gateway session                         |
 | Request Deleted Entity IDs                                    | Request deleted entity IDs not matching a given hash for a guild  |
 | [Request Soundboard Sounds](#request-soundboard-sounds)       | Request soundboard sounds for one or more guilds                  |
+| [Create Speed Test](#create-speed-test)                       | Create or update an RTC speed test for the client.                |
+| [Delete Speed Test](#delete-speed-test)                       | Delete the client's RTC speed test.                               |
 | [Request Last Messages](#request-last-messages)               | Request last messages for a guild's channels                      |
 | [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
 | [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
@@ -184,6 +186,8 @@ Details about heartbeats are in the [Gateway documentation](/topics/gateway#send
 
 Sent by the client to indicate a presence update.
 
+Requires `activities.write` or `presences.write` scope when operating in an OAuth2 context.
+
 <Alert type="warn">
 
 Clients may only update their presence 5 times per 20 seconds.
@@ -245,6 +249,8 @@ All incoming Gateway events will be paused until the updated presence is propaga
 
 Sent when a client wants to join, move, or disconnect from a voice channel. Fires a [Voice State Update](#voice-state-update) and optionally a [Voice Server Update](#voice-server-update) Gateway event.
 
+Requires `voice` scope when operating in an OAuth2 context.
+
 ###### Update Voice State Structure
 
 | Field              | Type          | Description                                                                                 |
@@ -254,7 +260,7 @@ Sent when a client wants to join, move, or disconnect from a voice channel. Fire
 | self_mute          | boolean       | Whether the client is muted                                                                 |
 | self_deaf          | boolean       | Whether the client is deafened                                                              |
 | self_video?        | boolean       | Whether the client is streaming video to the channel                                        |
-| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
+| preferred_region?  | ?string       | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
 | preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the voice channel   |
 | flags?             | integer       | The client's [voice flags](/topics/voice-connections#voice-flags)                           |
 
@@ -280,6 +286,8 @@ Sent when a client wants to join, move, or disconnect from a voice channel. Fire
 
 Sent when a client wants to request that the Gateway pings a misbehaving voice server. This will force a check server-side and potentially reallocate the voice server. The inner `d` key should be set to `null`. May fire a [Voice Server Update](#voice-server-update) Gateway event.
 
+Requires `voice` scope when operating in an OAuth2 context.
+
 ###### Example Ping Voice Server
 
 ```json
@@ -293,6 +301,8 @@ Sent when a client wants to request that the Gateway pings a misbehaving voice s
 
 Sent by the client to update the user's voice state in multiple lobbies. Fires a [Lobby Voice State Update](#lobby-voice-state-update) and optionally [Lobby Voice Server Update](#lobby-voice-server-update) Gateway event.
 
+Requires `lobbies.write` scope when operating in an OAuth2 context.
+
 The inner `d` key is an array of the following objects:
 
 ###### Update Lobby Voice State Structure
@@ -303,21 +313,23 @@ The inner `d` key is an array of the following objects:
 | self_mute          | boolean       | Whether the client is muted                                                         |
 | self_deaf          | boolean       | Whether the client is deafened                                                      |
 | self_video?        | boolean       | Whether the client is streaming video to the channel                                |
-| preferred_region?  | string        | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
+| preferred_region?  | ?string       | The preferred [voice region](/resources/voice#voice-region-object) ID for the lobby |
 | preferred_regions? | array[string] | The ranked [voice region](/resources/voice#voice-region-object) IDs for the lobby   |
 
 #### Create Stream
 
 Sent by the client to create a stream in a given voice channel. Requires the `STREAM` permission in the given channel. Fires a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) Gateway event.
 
+Requires `voice` scope when operating in an OAuth2 context.
+
 ###### Create Stream Structure
 
-| Field             | Type       | Description                                                                                 |
-| ----------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| type              | string     | The [type of stream](#stream-type) to create                                                |
-| guild_id?         | ?snowflake | The ID of the guild to stream in, if any                                                    |
-| channel_id        | snowflake  | The ID of the voice channel to stream in                                                    |
-| preferred_region? | string     | The preferred [voice region](/resources/voice#voice-region-object) ID for the voice channel |
+| Field             | Type       | Description                                                                          |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------ |
+| type              | string     | The [type of stream](#stream-type) to create                                         |
+| guild_id?         | ?snowflake | The ID of the guild to stream in, if any                                             |
+| channel_id        | snowflake  | The ID of the voice channel to stream in                                             |
+| preferred_region? | ?string    | The preferred [voice region](/resources/voice#voice-region-object) ID for the stream |
 
 ###### Example Create Stream
 
@@ -336,6 +348,8 @@ Sent by the client to create a stream in a given voice channel. Requires the `ST
 ### Watch Stream
 
 Sent by the client to start watching a user's stream. User must be connected to the associated voice channel. Fires either a [Stream Create](#stream-create) and [Stream Server Update](#stream-server-update) or a [Stream Delete](#stream-delete) Gateway event.
+
+Requires `voice` scope when operating in an OAuth2 context.
 
 ###### Watch Stream Structure
 
@@ -357,6 +371,8 @@ Sent by the client to start watching a user's stream. User must be connected to 
 #### Set Stream Paused
 
 Sent by the client to pause or resume their stream. User must be the owner of the stream. Fires a [Stream Server Update](#stream-server-update) Gateway event.
+
+Requires `voice` scope when operating in an OAuth2 context.
 
 ###### Set Stream Paused Structure
 
@@ -381,6 +397,8 @@ Sent by the client to pause or resume their stream. User must be the owner of th
 
 Sent by the client to disconnect from a stream. If the client is the owner of the stream, the stream will be deleted. Fires a [Stream Delete](#stream-delete) Gateway event.
 
+Requires `voice` scope when operating in an OAuth2 context.
+
 ###### Delete Stream Structure
 
 | Field      | Type   | Description                             |
@@ -401,6 +419,8 @@ Sent by the client to disconnect from a stream. If the client is the owner of th
 #### Ping Stream Server
 
 Sent when a client wants to request that the Gateway pings a misbehaving stream server. This will force a check server-side and potentially reallocate the stream server. May fire a [Stream Server Update](#stream-server-update) Gateway event.
+
+Requires `voice` scope when operating in an OAuth2 context.
 
 ###### Ping Stream Server Structure
 
@@ -467,6 +487,8 @@ Due to privacy and infrastructural concerns with this feature, there are some li
 #### Request Call Connect
 
 Used to request a private channel's pre-existing call data, created before the Gateway connection was established. Fires a [Call Create](#call-create) Gateway event if a call is found.
+
+Requires `dm_channels.read` and `voice` scopes if operating in OAuth2 context.
 
 <Alert type="info">
 
@@ -538,6 +560,40 @@ Used to request soundboard sounds for a list of guilds. Fires a [Soundboard Soun
   "d": {
     "guild_ids": ["41771983444115456", "1015060230222131221", "811255666990907402"]
   }
+}
+```
+
+#### Create Speed Test
+
+Used to create an RTC speed test for the client. If the client already has an active speed test, this will update it. Fires a [Speed Test Create](#speed-test-create) and [Speed Test Server Update](#speed-test-server-update) or [Speed Test Update](#speed-test-update) Gateway event.
+
+###### Create Speed Test Structure
+
+| Field             | Type    | Description                                                                              |
+| ----------------- | ------- | ---------------------------------------------------------------------------------------- |
+| preferred_region? | ?string | The preferred [voice region](/resources/voice#voice-region-object) ID for the speed test |
+
+###### Example Create Speed Test
+
+```json
+{
+  "op": 32,
+  "d": {
+    "preferred_region": "us-east"
+  }
+}
+```
+
+#### Delete Speed Test
+
+Used to delete the client's RTC speed test. Fires a [Speed Test Delete](#speed-test-delete) Gateway event.
+
+###### Example Delete Speed Test
+
+```json
+{
+  "op": 33,
+  "d": null
 }
 ```
 
@@ -848,7 +904,7 @@ These events directly correspond with a specific action or state change that has
 | [Thread Update](#thread-update)                                                             | Thread was updated                                                                              |
 | [Thread Delete](#thread-delete)                                                             | Thread was deleted                                                                              |
 | [Thread List Sync](#thread-list-sync)                                                       | Sent when gaining access to a channel, contains all active threads in that channel              |
-| [Thread Member Update](#thread-member-update)                                               | [Thread member](/resources/channel#thread-member-object) for the current user was up dated      |
+| [Thread Member Update](#thread-member-update)                                               | [Thread member](/resources/channel#thread-member-object) for the current user was updated       |
 | [Thread Members Update](#thread-members-update)                                             | User(s) were added to or removed from a thread                                                  |
 | [Entitlement Create](#entitlement-create)                                                   | Entitlement was created                                                                         |
 | [Entitlement Update](#entitlement-update)                                                   | Entitlement was updated                                                                         |
@@ -948,6 +1004,10 @@ These events directly correspond with a specific action or state change that has
 | [Stream Server Update](#stream-server-update)                                               | Stream server was updated                                                                       |
 | [Stream Update](#stream-update)                                                             | Stream was updated                                                                              |
 | [Stream Delete](#stream-delete)                                                             | Stream was deleted                                                                              |
+| [Speed Test Create](#speed-test-create)                                                     | RTC speed test was created                                                                      |
+| [Speed Test Server Update](#speed-test-server-update)                                       | RTC speed test server was updated                                                               |
+| [Speed Test Update](#speed-test-update)                                                     | RTC speed test was updated                                                                      |
+| [Speed Test Delete](#speed-test-delete)                                                     | RTC speed test was deleted                                                                      |
 | [Typing Start](#typing-start)                                                               | User started typing in a channel                                                                |
 | [User Update](#user-update)                                                                 | Current user changed                                                                            |
 | [User Application Update](#user-application-update)                                         | User installed an application or application was updated                                        |
@@ -1120,10 +1180,10 @@ Unavailable guilds will only include the `id` field.
 
 </Alert>
 
-| Field        | Type                                                             | Description                                   |
-| ------------ | ---------------------------------------------------------------- | --------------------------------------------- |
-| id           | snowflake                                                        | The ID of the guild                           |
-| voice_states | array[[voice state](/resources/voice#voice-state-object) object] | States of members currently in voice channels |
+| Field         | Type                                                             | Description                                   |
+| ------------- | ---------------------------------------------------------------- | --------------------------------------------- |
+| id            | snowflake                                                        | The ID of the guild                           |
+| voice_states? | array[[voice state](/resources/voice#voice-state-object) object] | States of members currently in voice channels |
 
 #### Resumed
 
@@ -2149,7 +2209,7 @@ Unlike persistent messages, ephemeral messages are sent directly to the user and
 | --------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | channel_type    | integer                                                             | The [type of channel](/resources/channel#channel-type) this message was sent in                                                                |
 | guild_id? ^1^   | snowflake                                                           | The ID of the guild the message was sent in                                                                                                    |
-| member? ^1^ ^2^ | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author                                                                                                    |
+| member? ^1^ ^2^ | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author, without the [`user`](/resources/user#user-object) key                                             |
 | mentions ^1^    | array[partial [user](/resources/user#user-object) object]           | Users specifically mentioned in the message, with an extra [`member`](/resources/guild#guild-member-object) key representing guild member data |
 | metadata?       | object                                                              | Custom metadata for the message (max 25 keys, 1024 characters per key and value)                                                               |
 
@@ -2615,7 +2675,7 @@ A `null` endpoint means that the voice server allocated has gone away and is try
 {
   "token": "66d29164ee8cd919",
   "lobby_id": "41771983423143937",
-  "endpoint": "smart.loyal.discord.media:443"
+  "endpoint": "smart.loyal.discord.media:1337"
 }
 ```
 
@@ -2744,7 +2804,7 @@ A `null` endpoint means that the voice server allocated has gone away and is try
   "token": "91f8016f34a5cd17",
   "stream_key": "call:1110739331624210483:852892297661906993",
   "guild_id": null,
-  "endpoint": "smart.loyal.discord.media:443"
+  "endpoint": "smart.loyal.discord.media:1337"
 }
 ```
 
@@ -2784,6 +2844,22 @@ Sent when a stream is deleted, or becomes unavailable due to an outage.
   "reason": "stream_ended"
 }
 ```
+
+#### Speed Test Create
+
+Sent when an RTC speed test is created. Speed tests are a special type of stream used to test connection quality. Same as [Stream Create](#stream-create).
+
+#### Speed Test Server Update
+
+Sent when a speed test's voice server is updated. Same as [Stream Server Update](#stream-server-update).
+
+#### Speed Test Update
+
+Sent when a speed test is updated. Same as [Stream Update](#stream-update).
+
+#### Speed Test Delete
+
+Sent when a speed test is deleted. Same as [Stream Delete](#stream-delete).
 
 ### Typing
 
@@ -2889,7 +2965,7 @@ Sent when the client protobuf user settings are modified.
 
 #### User Settings Update
 
-Sent when the client user settings are modified. Inner payload is a [user settings](/resources/user-settings#user-settings-object) object.
+Sent when the client user settings are modified. Inner payload is a partial [user settings](/resources/user-settings#user-settings-object) object with only the modified fields serialized.
 
 <Alert type="info">
 
@@ -2949,7 +3025,7 @@ A `null` endpoint means that the voice server allocated has gone away and is try
 {
   "token": "66d29164ee8cd919",
   "guild_id": "41771983423143937",
-  "endpoint": "smart.loyal.discord.media:443"
+  "endpoint": "smart.loyal.discord.media:1337"
 }
 ```
 

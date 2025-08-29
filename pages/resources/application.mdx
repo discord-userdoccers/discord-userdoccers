@@ -75,6 +75,7 @@ Applications are Discord entities that represent games, services, and other inte
 | monetization_eligibility_flags? ^2^          | integer                                                                                                                   | The current [application monetization eligibility flags](#application-monetization-eligibility-flags) for the application                                                                                                        |
 | max_participants? ^6^                        | integer                                                                                                                   | The maximum possible participants in the application's embedded activity (-1 for no limit)                                                                                                                                       |
 | embedded_activity_config? ^6^                | [embedded activity config](#embedded-activity-config-object) object                                                       | The configuration for the application's embedded activity                                                                                                                                                                        |
+| approved_consoles                            | array[integer]                                                                                                            | The [approved console types](#approvable-console-type) for social SDK builds                                                                                                                                                     |
 
 ^1^ The `primary_sku_id` and `slug` fields can be combined to form a URL to the application's primary store page like so: `https://discord.com/store/skus/{primary_sku_id}/{slug}`.
 
@@ -198,6 +199,8 @@ Further complicating things, some optional fields may be omitted if their value 
 | 1 << 27     | SOCIAL_LAYER_INTEGRATION               | Application can use the social layer SDK                                                                                                                   | Yes     |
 | 1 << 29     | PROMOTED                               | Application is promoted by Discord in the application directory                                                                                            | Yes     |
 | 1 << 30     | PARTNER                                | Application is a Discord partner                                                                                                                           | Yes     |
+| 1 << 33     | PARENT                                 | Application is a parent of a child application                                                                                                             | Yes     |
+| 1 << 34     | DISABLE_RELATIONSHIP_ACCESS            | Application cannot access relationship information                                                                                                         | Yes     |
 | ~~1 << 8~~  | ~~ALLOW_ASSETS~~                       | ~~Application can use activity assets~~                                                                                                                    | ~~No~~  |
 | ~~1 << 9~~  | ~~ALLOW_ACTIVITY_ACTION_SPECTATE~~     | ~~Application can enable spectating activities~~                                                                                                           | ~~No~~  |
 | ~~1 << 10~~ | ~~ALLOW_ACTIVITY_ACTION_JOIN_REQUEST~~ | ~~Application can enable activity join requests~~                                                                                                          | ~~No~~  |
@@ -235,11 +238,15 @@ Further complicating things, some optional fields may be omitted if their value 
 
 ###### Event Webhooks Type
 
-| Value                  | Description                                 |
-| ---------------------- | ------------------------------------------- |
-| APPLICATION_AUTHORIZED | Sent when a user authorizes the application |
-| ENTITLEMENT_CREATE     | Sent when a user creates an entitlement     |
-| QUEST_USER_ENROLLMENT  | Sent when a user enrolls in a quest         |
+| Value                    | Description                                   |
+| ------------------------ | --------------------------------------------- |
+| APPLICATION_AUTHORIZED   | Sent when a user authorizes the application   |
+| APPLICATION_DEAUTHORIZED | Sent when a user deauthorizes the application |
+| ENTITLEMENT_CREATE       | Sent when a user creates an entitlement       |
+| QUEST_USER_ENROLLMENT    | Sent when a user enrolls in a quest           |
+| LOBBY_MESSAGE_CREATE     | Sent when a user sends a message in a lobby   |
+| LOBBY_MESSAGE_UPDATE     | Sent when a user updates a message in a lobby |
+| LOBBY_MESSAGE_DELETE     | Sent when a user deletes a message in a lobby |
 
 ###### Explicit Content Filter Level
 
@@ -541,6 +548,9 @@ The values of this enum are currently unknown. Help us by figuring them out and 
 | origin         | Origin              |
 | gog            | GOG.com             |
 | epic           | Epic Games Store    |
+| microsoft      | Microsoft Store     |
+| igdb           | IGDB.com            |
+| glyph          | Glyph.net           |
 | google_play    | Google Play Store   |
 | nvidia_gdn_app | NVIDIA Cloud Gaming |
 
@@ -689,8 +699,8 @@ This enum is undergoing changes and may not be fully accurate. Please contact th
 | in_development        | The activity is still in development                                                                                |
 | activities_team       | The activity is available to guilds with the [`ACTIVITIES_ALPHA` guild feature](/resources/guild#guild-features)    |
 | employee_release      | The activity is available to guilds with the [`ACTIVITIES_EMPLOYEE` guild feature](/resources/guild#guild-features) |
-| soft_launch           | The activity is available to all guilds                                                                             |
-| soft_launch_multi_geo | The activity is available to all guilds                                                                             |
+| soft_launch           | The activity is available to all guilds in Canada                                                                   |
+| soft_launch_multi_geo | The activity is available to all guilds in multiple countries                                                       |
 | global_launch         | The activity is available to all guilds                                                                             |
 
 ###### Embedded Activity Surface
@@ -847,6 +857,126 @@ Each metadata type offers a comparison operation that allows guilds to configure
   "custom_id": "button"
 }
 ```
+
+### Social SDK Release Object
+
+###### Social SDK Release Structure
+
+| Field             | Type                                                                                | Description                   |
+| ----------------- | ----------------------------------------------------------------------------------- | ----------------------------- |
+| version           | string                                                                              | The version of the SDK        |
+| release_date_time | ISO8601 timestamp                                                                   | When the SDK version released |
+| artifacts ^1^     | array[[social SDK release artifact](#social-sdk-release-artifact-structure) object] | The SDK artifacts             |
+
+^1^ Only included when fetched from the [Get Social SDK Release](#get-social-sdk-release) endpoint.
+
+### Social SDK Release Artifact Structure
+
+| Field        | Type    | Description                         |
+| ------------ | ------- | ----------------------------------- |
+| download_url | string  | The SDK download URL                |
+| filename     | string  | The filename                        |
+| size_bytes   | integer | The The size (in bytes) of the file |
+
+###### Example Social SDK Release
+
+```json
+{
+  "version": "1.2.8730",
+  "release_date_time": "2025-05-08T12:00:00+00:00",
+  "artifacts": [
+    {
+      "download_url": "https://storage.googleapis.com/discord-slayer-sdk-artifacts/discord_partner_sdk/XXX/release/DiscordSocialSdk-1.2.8730.zip",
+      "filename": "DiscordSocialSdk-1.2.8730.zip",
+      "size_bytes": 156241906
+    },
+    {
+      "download_url": "https://storage.googleapis.com/discord-slayer-sdk-artifacts/discord_partner_sdk/XXX/release/DiscordSocialSdk-UnityPlugin-1.2.8730.zip",
+      "filename": "DiscordSocialSdk-UnityPlugin-1.2.8730.zip",
+      "size_bytes": 67692124
+    },
+    {
+      "download_url": "https://storage.googleapis.com/discord-slayer-sdk-artifacts/discord_partner_sdk/XXX/release/DiscordSocialSdk-UnitySample-1.2.8730.zip",
+      "filename": "DiscordSocialSdk-UnitySample-1.2.8730.zip",
+      "size_bytes": 67804418
+    },
+    {
+      "download_url": "https://storage.googleapis.com/discord-slayer-sdk-artifacts/discord_partner_sdk/XXX/release/DiscordSocialSdk-UnrealPlugin-1.2.8730.zip",
+      "filename": "DiscordSocialSdk-UnrealPlugin-1.2.8730.zip",
+      "size_bytes": 81056342
+    },
+    {
+      "download_url": "https://storage.googleapis.com/discord-slayer-sdk-artifacts/discord_partner_sdk/XXX/release/DiscordSocialSdk-UnrealSample-1.2.8730.zip",
+      "filename": "DiscordSocialSdk-UnrealSample-1.2.8730.zip",
+      "size_bytes": 81290780
+    }
+  ]
+}
+```
+
+###### Application External Identity Provider Configuration Structure
+
+| Field           | Type                                                                                                                    | Description                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| application_id  | snowflake                                                                                                               | The ID of the application                                                |
+| provider_type   | integer                                                                                                                 | The [type of the identity provider](#application-identity-provider-type) |
+| client_id       | string                                                                                                                  | The ID of the primary provider client                                    |
+| oidc_issuer_url | ?string                                                                                                                 | The primary URL of the OpenID Connect Issuer                             |
+| clients         | array[[application external identity provider client](#application-external-identity-provider-client-structure) object] | The provider clients                                                     |
+
+###### Application Identity Provider Type
+
+| Value                | Description                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| OIDC                 | OpenID Connect                                                                                                |
+| EPIC_ONLINE_SERVICES | [Epic Online Services](https://dev.epicgames.com/docs/epic-online-services/eos-overview)-based authentication |
+| STEAM                | Steam-based authentication                                                                                    |
+| UNITY                | [Unity](https://docs.unity.com/ugs/manual/authentication/manual/unity-player-accounts)-based authentication   |
+
+###### Application External Identity Provider Client Structure
+
+| Field           | Type    | Description                             |
+| --------------- | ------- | --------------------------------------- |
+| id              | string  | The ID of the provider client           |
+| oidc_issuer_url | ?string | The URL of the OpenID Connect Issuer    |
+| description?    | ?string | The description of the client (max 250) |
+| environment?    | ?string | The environment for the client          |
+
+###### Example Application External Identity Provider Configuration
+
+```json
+{
+  "application_id": "1169421761859833997",
+  "provider_type": "UNITY",
+  "client_id": "d360455e-2b56-4922-bf73-b64b157d5934",
+  "oidc_issuer_url": null,
+  "clients": [
+    {
+      "id": "d360455e-2b56-4922-bf73-b64b157d5934",
+      "oidc_issuer_url": null,
+      "description": null,
+      "environment": null
+    }
+  ]
+}
+```
+
+###### Application Undeletable Reason
+
+| Value | Name                          | Description                                        |
+| ----- | ----------------------------- | -------------------------------------------------- |
+| 0     | UNKNOWN                       | Unknown                                            |
+| 1     | USER_THRESHOLD_EXCEEDED       | The application has over 500 active users          |
+| 2     | SOCIAL_SDK_APP_DELETION_ERROR | The application is not deletable for other reasons |
+| 3     | PARENT_HAS_CHILD_APPLICATIONS | The application has child applications             |
+
+###### Approvable Console Type
+
+| Value | Name          | Description   |
+| ----- | ------------- | ------------- |
+| 1     | XBOX          | Xbox          |
+| 2     | PLAYSTATION_5 | PlayStation 5 |
+| 3     | PLAYSTATION_4 | PlayStation 4 |
 
 ## Endpoints
 
@@ -1872,3 +2002,82 @@ The application must meet the following criteria to be eligible for verification
 - It must have links to its Terms of Service and Privacy Policy
 - It must have an install link
 - All its team members must have a verified email and MFA set up, with the team owner additionally having to undergo identity verification
+
+<RouteHeader method="GET" url="/social-sdk/releases">
+  Get Social SDK Releases
+</RouteHeader>
+
+Returns the currently available social SDK releases.
+
+###### Response Body
+
+| Field          | Type                                                           | Description                   |
+| -------------- | -------------------------------------------------------------- | ----------------------------- |
+| releases       | array[[social SDK release](#social-sdk-release-object) object] | The SDK releases              |
+| latest_version | string                                                         | The latest version of the SDK |
+
+<RouteHeader method="GET" url="/social-sdk/releases/{release.version}">
+  Get Social SDK release
+</RouteHeader>
+
+Returns a [social SDK release](#social-sdk-release-object) object for the given version.
+
+<RouteHeader method="POST" url="/applications/{application.id}/social-sdk/enable">
+  Enable Social SDK
+</RouteHeader>
+
+Enables social SDK features for the given application, applying the [`SOCIAL_LAYER_INTEGRATION_LIMITED` application flag](#application-flags). Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field                  | Type    | Description                                                    |
+| ---------------------- | ------- | -------------------------------------------------------------- |
+| name                   | string  | The name of the company (1-100 characters)                     |
+| business_email         | string  | The company business email (max 320 characters)                |
+| game_or_studio_name?   | string  | The name of the company (max 100 characters)                   |
+| game_or_studio_url?    | string  | The URL of the company (max 512 characters)                    |
+| email_updates_consent? | boolean | Whether to receive emails about the social SDK (default false) |
+
+<RouteHeader method="GET" url="/applications/{application.id}/external-identity-provider-configurations">
+  Get Application External Identity Provider Configurations
+</RouteHeader>
+
+Returns a list of [application external identity provider configuration](#application-external-identity-provider-configuration-structure) objects for the given application.
+
+<RouteHeader
+  method="PUT"
+  url="/applications/{application.id}/external-identity-provider-configurations/{identity_provider_type}"
+>
+  Create Application External Identity Provider Configuration
+</RouteHeader>
+
+Creates or updates a configuration for the given external identity provider type.
+
+###### JSON Params
+
+| Field           | Type                                                                                                                    | Description                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| clients         | array[[application external identity provider client](#application-external-identity-provider-client-structure) object] | The provider clients                         |
+| oidc_issuer_url | ?string                                                                                                                 | The primary URL of the OpenID Connect Issuer |
+
+<RouteHeader
+  method="DELETE"
+  url="/applications/{application.id}/external-identity-provider-configurations/{identity_provider_type}"
+>
+  Remove Application External Identity Provider Configuration
+</RouteHeader>
+
+Removes the given external identity provider. Returns a 204 empty response on success.
+
+<RouteHeader method="GET" url="/applications/{application.id}/can-delete">
+  Get Application Undeletable Reason
+</RouteHeader>
+
+Returns a reason for why an application cannot be deleted.
+
+###### Response Body
+
+| Field      | Type     | Description                                                                         |
+| ---------- | -------- | ----------------------------------------------------------------------------------- |
+| deletable? | ?boolean | Whether the application is deletable (default false)                                |
+| reason?    | ?integer | The [reason](#application-undeletable-reason) why the application cannot be deleted |

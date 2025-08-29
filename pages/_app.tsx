@@ -18,7 +18,7 @@ import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
-const TITLE_REGEX = /<h1>(.*?)<\/h1>/;
+const TITLE_REGEX = /<h1 .*?><a .*?>(\w+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
 
 export default function App({
   Component,
@@ -49,16 +49,10 @@ export default function App({
     if (router.pathname !== "/404") {
       const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
       const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
+      const description = handleDesc(str);
 
       return {
-        description: `${str
-          .replace(/^(<h\d>(.*?)<\/h\d>)+/, "")
-          .replaceAll(/<[^>]*>?/gm, " ")
-          .replace(/\s+/gm, " ")
-          .trim()
-          .slice(0, 200)
-          .trim()
-          .replace(/&\w+$/, "")}...`,
+        description,
         title,
       };
     }
@@ -84,4 +78,17 @@ export default function App({
       </ThemeProvider>
     </>
   );
+}
+
+function handleDesc(str: string) {
+  return `${str
+    .replace(TITLE_REGEX, "")
+    .replaceAll(/<[^>]*>|\s+/gm, " ")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .trim()
+    .slice(0, 200)
+    .trim()
+    .replace(/&\w+$/, "")}...`;
 }
