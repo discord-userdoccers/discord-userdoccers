@@ -29,9 +29,9 @@ For [Message Components](/resources/components) it includes identifying informat
 | member? ^2^                          | [guild member](/resources/guild#guild-member-object) object            | The guild member representing the invoking user                                                                   |
 | user? ^2^                            | partial [user](/resources/user#user-object) object                     | The invoking user                                                                                                 |
 | token                                | string                                                                 | The continuation token for responding to the interaction                                                          |
-| version                              | integer                                                                | Read-only property, always `1`                                                                                    |
+| version                              | integer                                                                | The [interactions system version](/resources/application#application-interactions-version) (currently 1)          |
 | message? ^4^                         | [message](/resources/message#message-object) object                    | The message the components are attached to                                                                        |
-| app_permissions                      | string                                                                 | The permission bitwise value of permissions the application has in the source location of the interaction         |
+| app_permissions                      | string                                                                 | The permissions the application has in the source location of the interaction                                     |
 | locale?                              | string                                                                 | The [language option](/reference#locales) of the invoking user                                                    |
 | guild_locale?                        | string                                                                 | The [preferred locale](/reference#locales) of the guild                                                           |
 | entitlements                         | array[[entitlement](/resources/entitlement#entitlement-object) object] | The entitlements for the invoking user                                                                            |
@@ -42,9 +42,9 @@ For [Message Components](/resources/components) it includes identifying informat
 
 ^1^ This is always present on non-`PING` interaction types. It is optional for future-proofing against new interaction types.
 
-^2^ `member` is sent only when the interaction is triggered in a guild, and `user` is sent only when triggered in a DM/group channel.
+^2^ `member` is sent only when the interaction is triggered in a guild, and `user` is sent only when triggered in a private channel.
 
-^3^ The value of [`GUILD_INSTALL`](/resources/application#application-integration-type) key may be `0` if the interaction was not triggered in a guild.
+^3^ The value of the [`GUILD_INSTALL`](/resources/application#application-integration-type) key may be `0` if the interaction was not triggered in a guild.
 
 ^4^ `message` is sent only when the interaction was triggered from a message component, or the modal submit.
 
@@ -90,27 +90,6 @@ For [Message Components](/resources/components) it includes identifying informat
 
 ^3^ Only present when the application command type is [`USER` or `MESSAGE`](/interactions/application-commands#application-command-type).
 
-###### Sendable Application Command Interaction Data Structure
-
-| Field                | Type                                                                                                                        | Description                                                                                        |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| version              | snowflake                                                                                                                   | The autoincrementing version identifier updated during substantial command record changes          |
-| id                   | snowflake                                                                                                                   | The ID of the application command                                                                  |
-| name                 | string                                                                                                                      | The name of the application command                                                                |
-| type?                | integer                                                                                                                     | The [type of the application command](/interactions/application-commands#application-command-type) |
-| options? ^1^ ^2^     | array[partial [application command option](/interactions/application-commands#application-command-option-structure) object] | The options with their values (max 25)                                                             |
-| application_command? | [application command](/interactions/application-commands#application-command-object) object                                 | The application command being executed                                                             |
-| target_id? ^3^       | snowflake                                                                                                                   | The ID of the user or message targeted by a context menu                                           |
-| attachments? ^4^     | array[partial [attachment](/resources/message#attachment-object) object]                                                    | Partial attachment objects with `filename` and `description` (max 25)                              |
-
-^1^ Only applicable when the application command type is [`CHAT_INPUT`](/interactions/application-commands#application-command-type).
-
-^2^ Options can have only `type`, `name`, `value`, and optionally `focused` fields.
-
-^3^ Only applicable when the application command type is [`USER` or `MESSAGE`](/interactions/application-commands#application-command-type).
-
-^4^ See [Uploading Files](/reference#uploading-files) for details.
-
 ###### Message Component Interaction Data Structure
 
 | Field          | Type                                      | Description                                                       |
@@ -121,33 +100,12 @@ For [Message Components](/resources/components) it includes identifying informat
 | custom_id      | string                                    | The developer-defined identifier for the component                |
 | component_type | integer                                   | The [type of the component](/resources/components#component-type) |
 
-###### Sendable Message Component Interaction Data Structure
-
-| Field               | Type                              | Description                                                       |
-| ------------------- | --------------------------------- | ----------------------------------------------------------------- |
-| component_type? ^1^ | integer                           | The [type of the component](/resources/components#component-type) |
-| custom_id           | string                            | The developer-defined identifier for the component                |
-| type? ^1^           | integer                           | The [type of the component](/resources/components#component-type) |
-| values? ^2^         | array[snowflake] \| array[string] | The selected options in the select menu                           |
-
-^1^ At least or `component_type` or `type` must be provided.
-
-^2^ Only applicable for [`STRING_SELECT`/`USER_SELECT`/`ROLE_SELECT`/`MENTIONABLE_SELECT`/`CHANNEL_SELECT` components](/resources/components#component-type).
-
 ###### Modal Submit Interaction Data Structure
 
 | Field      | Type                                                              | Description                                   |
 | ---------- | ----------------------------------------------------------------- | --------------------------------------------- |
 | custom_id  | string                                                            | The developer-defined identifier of the modal |
 | components | array[[component](/resources/components#component-object) object] | The submitted values                          |
-
-###### Sendable Modal Submit Interaction Data Structure
-
-| Field      | Type                                                              | Description                                        |
-| ---------- | ----------------------------------------------------------------- | -------------------------------------------------- |
-| id         | snowflake                                                         | The ID of the interaction that triggered the modal |
-| custom_id  | string                                                            | The developer-defined identifier of the modal      |
-| components | array[[component](/resources/components#component-object) object] | The values to submit                               |
 
 ###### Resolved Data Structure
 
@@ -278,7 +236,7 @@ Depending on the interaction type, not all callback types may be available. See 
 
 ^1^ Only available if the application has access to monetization features.
 
-^2^ Only available if the application has [`IFRAME_MODAL`](/resources/application#application-flags) flag.
+^2^ Only available if the application has the [`IFRAME_MODAL`](/resources/application#application-flags) flag.
 
 ^3^ Only available if the application is an embedded activity.
 
@@ -323,10 +281,10 @@ While interaction responses and followups are webhooks, they respect @everyone's
 
 | Field       | Type    | Description                                                                |
 | ----------- | ------- | -------------------------------------------------------------------------- |
-| iframe_path | string  | The relative URL to the iframe modal (max 2048 characters)                 |
+| iframe_path | string  | The relative URL to the iFrame modal (max 2048 characters)                 |
 | title       | string  | The title of the modal (max 45 characters)                                 |
 | modal_size  | integer | The [size of the modal](#iframe-modal-size)                                |
-| custom_id   | string  | The developer-defined identifier for the iframe modal (max 100 characters) |
+| custom_id   | string  | The developer-defined identifier for the Fframe modal (max 100 characters) |
 
 ###### IFrame Modal Size
 
@@ -353,6 +311,8 @@ def handle_interaction():
         }
     })
 ```
+
+Optionally, you can also return a `204` status code and response to the interaction with a regular HTTP request, as described below.
 
 If you are receiving interactions over the Gateway, you will **also need to respond via HTTP**. Note that responses to interactions **are not sent as commands over the Gateway**.
 
@@ -526,35 +486,77 @@ Files must be attached using a `multipart/form-data` body (or pre-uploaded to Di
 
 ^1^ Only applicable for [`MESSAGE_COMPONENT` interactions](#interaction-type).
 
+###### Sendable Application Command Interaction Data Structure
+
+| Field                | Type                                                                                                                        | Description                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| version              | snowflake                                                                                                                   | The autoincrementing version identifier updated during substantial command record changes          |
+| id                   | snowflake                                                                                                                   | The ID of the application command                                                                  |
+| name                 | string                                                                                                                      | The name of the application command                                                                |
+| type?                | integer                                                                                                                     | The [type of the application command](/interactions/application-commands#application-command-type) |
+| options? ^1^ ^2^     | array[partial [application command option](/interactions/application-commands#application-command-option-structure) object] | The options with their values (max 25)                                                             |
+| application_command? | [application command](/interactions/application-commands#application-command-object) object                                 | The application command being executed                                                             |
+| target_id? ^3^       | snowflake                                                                                                                   | The ID of the user or message targeted by a context menu                                           |
+| attachments? ^4^     | array[partial [attachment](/resources/message#attachment-object) object]                                                    | Partial attachment objects with `filename` and `description` (max 25)                              |
+
+^1^ Only applicable when the application command type is [`CHAT_INPUT`](/interactions/application-commands#application-command-type).
+
+^2^ Options can have only `type`, `name`, `value`, and optionally `focused` fields.
+
+^3^ Only applicable when the application command type is [`USER` or `MESSAGE`](/interactions/application-commands#application-command-type).
+
+^4^ See [Uploading Files](/reference#uploading-files) for details.
+
+###### Sendable Message Component Interaction Data Structure
+
+| Field               | Type                              | Description                                                       |
+| ------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| component_type? ^1^ | integer                           | The [type of the component](/resources/components#component-type) |
+| custom_id           | string                            | The developer-defined identifier for the component                |
+| type? ^1^           | integer                           | The [type of the component](/resources/components#component-type) |
+| values? ^2^         | array[snowflake] \| array[string] | The selected options in the select menu                           |
+
+^1^ At least or `component_type` or `type` must be provided.
+
+^2^ Only applicable for [`STRING_SELECT`/`USER_SELECT`/`ROLE_SELECT`/`MENTIONABLE_SELECT`/`CHANNEL_SELECT` components](/resources/components#component-type).
+
+###### Sendable Modal Submit Interaction Data Structure
+
+| Field      | Type                                                              | Description                                        |
+| ---------- | ----------------------------------------------------------------- | -------------------------------------------------- |
+| id         | snowflake                                                         | The ID of the interaction that triggered the modal |
+| custom_id  | string                                                            | The developer-defined identifier of the modal      |
+| components | array[[component](/resources/components#component-object) object] | The values to submit                               |
+
 ###### Interaction Creation Location
 
-| Value                                   | Description                                                                              |
-| --------------------------------------- | ---------------------------------------------------------------------------------------- |
-| discovery                               | The application command was executed from Application Directory                          |
-| suggestion                              | The application command was suggested as a replacement of text commands                  |
-| mention                                 | The application command was executed from a mention                                      |
-| paste                                   | The application command was pasted                                                       |
-| recall                                  | Unknown                                                                                  |
-| popular_commands                        | Unknown                                                                                  |
-| mj_chat_bar                             | The application command was executed from Midjourney command promotion                   |
-| query                                   | Unknown                                                                                  |
-| slash_ui                                | Unknown                                                                                  |
-| app_launcher                            | The application command was executed from "App Launcher" button in chat bar              |
-| app_launcher_home                       | Unknown                                                                                  |
-| app_launcher_home_search                | Unknown                                                                                  |
-| app_launcher_list_view_all              | Unknown                                                                                  |
-| app_launcher_application_view           | Unknown                                                                                  |
-| app_launcher_application_view_frecent   | Unknown                                                                                  |
-| app_launcher_application_view_more_menu | Unknown                                                                                  |
-| app_launcher_slash_search               | Unknown                                                                                  |
-| app_launcher_frecents_view_all          | Unknown                                                                                  |
-| image_recs_menu                         | The application command was executed by clicking app from "Edit Image With Apps" menu    |
-| image_recs_submenu                      | The application command was executed by clicking app from "Edit Image With Apps" submenu |
-| activity_instance_embed                 | Unknown                                                                                  |
-| activity_bookmark_embed                 | Unknown                                                                                  |
-| activities_mini_shelf                   | Unknown                                                                                  |
-| vc_tile_activity_suggestion             | Unknown                                                                                  |
-| app_dms_entry_point_command_button      | The application command was executed by clicking "Play" button in chat bar               |
+| Value                                   | Description                                                                        |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| discovery                               | The application command was executed from Application Directory                    |
+| suggestion                              | The application command was suggested as a replacement of text commands            |
+| mention                                 | The application command was executed from a mention                                |
+| paste                                   | The application command was pasted                                                 |
+| recall                                  | Unknown                                                                            |
+| popular_commands                        | Unknown                                                                            |
+| mj_chat_bar                             | The application command was executed from a Midjourney command promotion           |
+| query                                   | Unknown                                                                            |
+| slash_ui                                | The application command was executed from chat bar                                 |
+| app_launcher                            | The application command was executed from the App Launcher                         |
+| app_launcher_home                       | Unknown                                                                            |
+| app_launcher_home_search                | Unknown                                                                            |
+| app_launcher_list_view_all              | Unknown                                                                            |
+| app_launcher_application_view           | Unknown                                                                            |
+| app_launcher_application_view_frecent   | Unknown                                                                            |
+| app_launcher_application_view_more_menu | Unknown                                                                            |
+| app_launcher_slash_search               | Unknown                                                                            |
+| app_launcher_frecents_view_all          | Unknown                                                                            |
+| image_recs_menu                         | The application command was executed from the "Edit Image With Apps" menu          |
+| image_recs_submenu                      | The application command was executed from the "Edit Image With Apps" submenu       |
+| activity_instance_embed                 | Unknown                                                                            |
+| activity_bookmark_embed                 | Unknown                                                                            |
+| activities_mini_shelf                   | Unknown                                                                            |
+| vc_tile_activity_suggestion             | Unknown                                                                            |
+| app_dms_entry_point_command_button      | The application command was executed by clicking the "Play" button in the chat bar |
 
 ###### Interaction Creation Section Name
 
