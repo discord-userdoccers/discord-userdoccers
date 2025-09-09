@@ -429,6 +429,85 @@ An override represents a manual setting by Discord employees to grant a guild ea
 }
 ```
 
+### Apex Experiments Object
+
+###### Apex Experiments Structure
+
+| Field       | Type                                                                                                       | Description                                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| assignments | map[integer, map[snowflake, [apex experiment assignments](#apex-experiment-assignments-structure) object]] | A mapping of [unit type](#apex-experiment-unit-type) to mapping of unit IDs to their assignments |
+
+###### Apex Experiment Assignments Structure
+
+| Field         | Type                                                     | Description                                  |
+| ------------- | -------------------------------------------------------- | -------------------------------------------- |
+| evaluation_id | ?string                                                  | The ID of the evaluation                     |
+| assignments   | array[[apex experiment](#apex-experiment-object) object] | The assignments for the apex experiment unit |
+
+###### Apex Experiment Unit Type
+
+| Value | Name | Description               |
+| ----- | ---- | ------------------------- |
+| 1     | USER | Experiment is for an user |
+
+###### Example Apex Experiments
+
+```json
+{
+  "assignments": {
+    "1": {
+      "852892297661906993": {
+        "evaluation_id": "cd659a5d",
+        "assignments": [
+          [3759954850, 1, 0, 2],
+          [4240376458, 0, 0, 8],
+          [956087042, 1, 0, 2],
+          [1605213660, 0, 2, 0],
+          [3164674236, 1, 0, 4],
+          [3436651650, 1, 1, 0],
+          [1581149260, 0, 0, 3],
+          [13763179, 1, 2, 0],
+          [721000765, 1, 2, 0],
+          [2657741306, 0, 2, 3],
+          [341733491, 0, 2, 3],
+          [76075180, 0, 2, 3],
+          [2722069991, 0, 2, 3],
+          [196982166, 1, 0, 0],
+          [1228731397, 1, 2, 0],
+          [1132732657, 1, 2, 0]
+        ]
+      }
+    }
+  }
+}
+```
+
+### Apex Experiment Object
+
+Similarly to [user experiments](#user-experiments), this object is represented as an array of the following fields:
+
+| Field       | Type     | Description                                           |
+| ----------- | -------- | ----------------------------------------------------- |
+| hashed_name | integer  | 32-bit unsigned Murmur3 hash of the experiment's name |
+| variant_id  | integer  | The ID of the assigned experiment variant for target  |
+| flags       | ?integer | The [experiment's flags](#apex-experiment-flags)      |
+| revision    | integer  | Current version of the rollout                        |
+
+###### Apex Experiment Flags
+
+| Value  | Name        | Description               |
+| ------ | ----------- | ------------------------- |
+| 1 << 0 | IS_OVERRIDE | Experiment is an override |
+
+###### Apex Experiment Surface
+
+| Value | Name             | Description                                                       |
+| ----- | ---------------- | ----------------------------------------------------------------- |
+| 1     | API              | Return apex experiments that alter API functionality              |
+| 2     | APP              | Return apex experiments that alter client functionality           |
+| 3     | DEVELOPER_PORTAL | Return apex experiments that alter developer portal functionality |
+| 4     | ADMIN_PANEL      | Return apex experiments that alter admin panel functionality      |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/experiments">
@@ -489,3 +568,66 @@ Fingerprint generation has a rate limit of 3 valid fingerprints per 2 minutes pe
 | Field       | Type   | Description                                            |
 | ----------- | ------ | ------------------------------------------------------ |
 | fingerprint | string | The generated fingerprint of the current date and time |
+
+<RouteHeader method="GET" url="/apex/experiments">
+  Get Apex Experiment Assignments
+</RouteHeader>
+
+Returns an [apex experiments](#apex-experiments-object) object for the given surface.
+
+###### Query String Parameters
+
+| Field   | Type    | Description                                                                                                 |
+| ------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| surface | integer | The [surface](#apex-experiment-surface) to return apex experiments for (only `DEVELOPER_PORTAL` is allowed) |
+
+<RouteHeader method="GET" url="/apex/experiments/metadata">
+  Get Metadata for Apex Experiments
+</RouteHeader>
+
+Returns metadata for apex experiments.
+
+<Alert type="warn">
+
+This endpoint is only usable by Discord employees.
+
+</Alert>
+
+###### Query String Parameters
+
+| Field   | Type    | Description                                                            |
+| ------- | ------- | ---------------------------------------------------------------------- |
+| surface | integer | The [surface](#apex-experiment-surface) to return apex experiments for |
+
+###### Response Body
+
+| Field       | Type                                                                          | Description                       |
+| ----------- | ----------------------------------------------------------------------------- | --------------------------------- |
+| experiments | array[[apex experiment metadata](#apex-experiment-metadata-structure) object] | The metadata for apex experiments |
+
+###### Apex Experiment Metadata Structure
+
+| Field     | Type                                                                        | Description                                                        |
+| --------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| id        | integer                                                                     | The ID of the apex experiment                                      |
+| name      | string                                                                      | The name of the apex experiment                                    |
+| title     | string                                                                      | The title of the apex experiment                                   |
+| revision  | integer                                                                     | Current version of the rollout                                     |
+| unit_type | integer                                                                     | The [unit type](#apex-experiment-unit-type) of the apex experiment |
+| variants  | array[[apex experiment variant](#apex-experiment-variant-structure) object] | The variants of the apex experiment                                |
+
+###### Apex Experiment Variant Structure
+
+| Field | Type    | Description                                              |
+| ----- | ------- | -------------------------------------------------------- |
+| id    | integer | The ID of the experiment variant                         |
+| label | string  | The label of the variant                                 |
+| type  | integer | The [type of the variant](#apex-experiment-variant-type) |
+
+###### Apex Experiment Variant Type
+
+| Value | Name   | Description                              |
+| ----- | ------ | ---------------------------------------- |
+| 1     | ACTIVE | The variant is active                    |
+| 2     | UNUSED | The variant is currently unused          |
+| 3     | BURNED | The variant failed and is being reverted |
