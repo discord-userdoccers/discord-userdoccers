@@ -1,0 +1,408 @@
+# Safety Hub
+
+Safety Hub is a feature that provides users with information about their account's standing, trust & safety violations, and actions taken against them.
+
+### Safety Hub Object
+
+###### Safety Hub Structure
+
+| Field                 | Type                                                   | Description                                                     |
+| --------------------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| classifications       | array[[classification](#classification-object) object] | User infractions                                                |
+| guild_classifications | array[[classification](#classification-object) object] | Guild infractions                                               |
+| account_standing      | [account standing](#account-standing-structure) object | Current standing of the user's account                          |
+| is_dsa_eligible       | boolean                                                | Indicates if the user is eligible for DSA appeal                |
+| is_appeal_eligible    | boolean                                                | Indicates if the user is eligible to appeal any classifications |
+| username              | string                                                 | The username of the user                                        |
+| appeal_eligibility    | array[integer]                                         | [Appeal types](#appeal-eligibility) the user is eligible for    |
+
+### Classification Object
+
+###### Classification Structure
+
+| Field                     | Type                                                        | Description                                                        |
+| ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| id                        | snowflake                                                   | The ID of the classification                                       |
+| classification_type       | integer                                                     | The [classification type](#classification-type)                    |
+| description               | string                                                      | A brief description of the classification                          |
+| explainer_link            | string                                                      | URL to a detailed explanation of the classification                |
+| actions                   | array[[action](#actions-structure) object]                  | List of actions taken as part of the classification                |
+| max_expiration_time       | ?ISO8601 timestamp                                          | When the classification will expire                                |
+| flagged_content           | array[[flagged content](#flagged-content-structure) object] | Content that was flagged as part of the classification             |
+| appeal_status?            | [appeal status](#appeal-status) object                      | Status of an appeal related to the classification                  |
+| is_coppa ^1^              | boolean                                                     | Whether the classification is a COPPA violation                    |
+| is_spam ^1^               | boolean                                                     | Whether the classification is a spam violation                     |
+| appeal_ingestion_type ^1^ | integer                                                     | [How a nominal appeal should be submitted](#appeal-ingestion-type) |
+| guild_metadata? ^2^       | [guild metadata](#guild-metadata-structure) object          | Metadata related to the guild where the classification was applied |
+
+^1^ Classifications that are marked as spam or COPPA violations cannot be appealed in-app.
+
+^2^ Only present on guild classifications.
+
+###### Actions Structure
+
+| Field        | Type          | Description                                |
+| ------------ | ------------- | ------------------------------------------ |
+| action_type  | integer       | The type of action taken                   |
+| descriptions | array[string] | List of descriptions related to the action |
+| id           | snowflake     | Unique identifier for the action           |
+
+###### Appeal Status Structure
+
+| Field  | Type    | Description                                    |
+| ------ | ------- | ---------------------------------------------- |
+| status | integer | Current [status of the appeal](#appeal-status) |
+
+###### Account Standing Structure
+
+| Field | Type    | Description                                               |
+| ----- | ------- | --------------------------------------------------------- |
+| state | integer | Current [account standing state](#account-standing-state) |
+
+###### Guild Metadata Structure
+
+| Field       | Type    | Description                                       |
+| ----------- | ------- | ------------------------------------------------- |
+| name        | string  | Name of the guild                                 |
+| icon_hash   | ?string | Hash of the guild's icon                          |
+| member_type | integer | Type of member associated with the classification |
+
+###### Flagged Content Structure
+
+| Field       | Type                                                             | Description                                      |
+| ----------- | ---------------------------------------------------------------- | ------------------------------------------------ |
+| id          | snowflake                                                        | The message ID that was flagged content          |
+| content     | string                                                           | The content that was flagged                     |
+| attachments | array[[attachment](/resources/message#attachment-object) object] | Attachments related to the flagged content       |
+| type        | string                                                           | The type of content (currently always `message`) |
+
+###### Guild Member Type
+
+| Value | Name   | Description        |
+| ----- | ------ | ------------------ |
+| 1     | OWNER  | Owner of the guild |
+| 2     | MEMBER | Regular member     |
+
+###### Appeal Status
+
+| Value | Name                       | Description                             |
+| ----- | -------------------------- | --------------------------------------- |
+| 1     | REVIEW_PENDING             | Appeal pending                          |
+| 2     | CLASSIFICATION_UPHELD      | Appeal denied, classification remains   |
+| 3     | CLASSIFICATION_INVALIDATED | Appeal accepted, classification removed |
+
+###### Classification Type
+
+| Value | Name                                | Description                                        |
+| ----- | ----------------------------------- | -------------------------------------------------- |
+| 1     | UNKNOWN                             | Classification type is unknown                     |
+| 100   | UNSOLICITED_PORNOGRAPHY             | Unsolicited pornography content                    |
+| 200   | NONCONSENSUAL_PORNOGRAPHY           | Non-consensual pornography content                 |
+| 210   | GLORIFYING_VIOLENCE                 | Content glorifying violence                        |
+| 220   | HATE_SPEECH                         | Hate speech content                                |
+| 230   | CRACKED_ACCOUNTS                    | Content related to cracked accounts                |
+| 240   | ILLICIT_GOODS                       | Content related to illicit goods                   |
+| 250   | SOCIAL_ENGINEERING                  | Content related to social engineering              |
+| 280   | CHILD_SAFETY                        | Content related to child safety                    |
+| 290   | HARRASMENT_AND_BULLYING             | Harrasment and bullying content                    |
+| 310   | HARRASMENT_AND_BULLYING_2           | Harassment and bullying content                    |
+| 320   | HATEFUL_CONDUCT                     | Hateful conduct                                    |
+| 390   | HARRASMENT_AND_BULLYING_3           | Harassment and bullying content                    |
+| 600   | CHILD_SAFETY_2                      | Content related to child safety                    |
+| 650   | CHILD_SAFETY_3                      | Content related to child safety                    |
+| 711   | IMPERSONATION                       | User has been impersonating a different user       |
+| 720   | BAN_EVASION                         | User has been evading an account suspension        |
+| 3010  | MALICIOUS_CONDUCT                   | User has tried phishing someone                    |
+| 3030  | SPAM                                | Spam content                                       |
+| 4000  | NONCONSENSUAL_ADULT_CONTENT         | Content related to non-consensual adult content    |
+| 4010  | FRAUD                               | Fraudulent content                                 |
+| 4130  | DOXXING_GUILD_OWNER                 | User owned a doxxing content guild                 |
+| 4140  | COPYRIGHT_INFRINGEMENT_GUILD_OWNER  | User owned a copyright infringement content guild  |
+| 5010  | CHILD_SAFETY_4                      | Content related to child safety                    |
+| 5090  | CHILD_SELF_ENDANGERMENT             | Content related to child self-harm                 |
+| 5305  | DOXXING_GUILD_MEMBER                | User was in a doxxing content guild                |
+| 5411  | UNDERAGE                            | User was banned for being underage                 |
+| 5440  | COPYRIGHT_INFRINGEMENT_GUILD_MEMBER | User was in a copyright infringement content guild |
+| 5485  | COPYRIGHT_INFRINGEMENT_3            | Copyright infringement content                     |
+
+###### Action Type
+
+| Value | Name                        | Description                              |
+| ----- | --------------------------- | ---------------------------------------- |
+| 0     | BAN                         | Permanent ban from the platform          |
+| 1     | TEMP_BAN                    | Temporary ban from the platform          |
+| 2     | GLOBAL_QUARANTINE           | Global quarantine of the user            |
+| 3     | REQUIRE_VERIFICATION        | User must verify their account           |
+| 4     | USER_WARNING                | Warning issued to the user               |
+| 5     | USER_SPAMMER                | User marked as a spammer                 |
+| 6     | CHANNEL_SPAM                | Channel marked for spam                  |
+| 7     | MESSAGE_SPAM                | Message marked as spam                   |
+| 8     | DISABLE_SUSPICIOUS_ACTIVITY | Account disabled for suspicious activity |
+| 9     | LIMITED_ACCESS              | User has limited access to features      |
+| 10    | CHANNEL_SCHEDULE_DELETE     | Channel scheduled for deletion           |
+| 11    | MESSAGE_CONTENT_REMOVAL     | Message content removed                  |
+| 12    | GUILD_DISABLE_INVITE        | Guild invites disabled                   |
+| 13    | USER_CONTENT_REMOVAL        | User content removed                     |
+| 14    | USER_USERNAME_MANGLED       | Offending username was cleared           |
+| 15    | GUILD_LIMITED_ACCESS        | Guild has limited access to features     |
+| 16    | USER_MESSAGE_REMOVAL        | User's message has been removed          |
+| 20    | GUILD_DELETE                | Guild has been deleted                   |
+| 22    | USER_PROFILE_MANGLED        | Offending profile was cleared            |
+
+###### Account Standing State
+
+| Value | Name         | Description                 |
+| ----- | ------------ | --------------------------- |
+| 100   | ALL_GOOD     | Account is in good standing |
+| 200   | LIMITED      | Account is limited          |
+| 300   | VERY_LIMITED | Account is very limited     |
+| 400   | AT_RISK      | Account is at risk          |
+| 500   | SUSPENDED    | Account is suspended        |
+
+###### Appeal Eligibility
+
+| Value | Name                | Description                                  |
+| ----- | ------------------- | -------------------------------------------- |
+| 1     | DSA_ELIGIBLE        | User is eligible for DSA appeal              |
+| 2     | IN_APP_ELIGIBLE     | User is eligible for in-app appeal           |
+| 3     | AGE_VERIFY_ELIGIBLE | User is eligible for age verification appeal |
+
+###### Appeal Ingestion Type
+
+| Value | Name       | Description                                     |
+| ----- | ---------- | ----------------------------------------------- |
+| 0     | WEBFORM    | Appeal should be submitted via webform          |
+| 1     | AGE_VERIFY | Appeal should be submitted via age verification |
+| 2     | IN_APP     | Appeal should be submitted in-app               |
+
+###### Appeal Ingestion Signal
+
+| Value | Name                 | Description                                       |
+| ----- | -------------------- | ------------------------------------------------- |
+| 0     | DIDNT_VIOLATE_POLICY | User believes they did not violate policy         |
+| 1     | TOO_STRICT_UNFAIR    | User believes the action was too strict or unfair |
+| 2     | DONT_AGREE_PENALTY   | User does not agree with the penalty              |
+| 3     | SOMETHING_ELSE       | User is appealing for a different reason          |
+
+### Safety Hub System Messages
+
+<Alert type="warn">
+
+As [embed field values](/resources/message#embed-field-structure) are strings, all below fields are serialized as strings, even if the type is specified as otherwise.
+
+</Alert>
+
+#### Safety Policy Notice
+
+###### Safety Policy Notice Embed Structure
+
+| Field                  | Type      | Description                                                    |
+| ---------------------- | --------- | -------------------------------------------------------------- |
+| client_version_message | string    | The message that appears if the client is too old              |
+| classification_id      | snowflake | The classification ID associated with the notice               |
+| incident_time          | float     | Unix timestamp (in milliseconds) of when the incident occurred |
+
+###### Example Safety Policy Notice Embed
+
+```json
+{
+  "type": "safety_policy_notice",
+  "title": "You broke Discord’s community guidelines",
+  "fields": [
+    {
+      "name": "client_version_message",
+      "value": "To see the details of this violation, please update the app or open Discord in your browser.",
+      "inline": false
+    },
+    {
+      "name": "classification_id",
+      "value": "1411751868690075770",
+      "inline": false
+    },
+    {
+      "name": "incident_time",
+      "value": "1756658274.0",
+      "inline": false
+    }
+  ],
+  "content_scan_version": 2
+}
+```
+
+#### Safety System Notification
+
+###### Safety System Notification Embed Structure
+
+| Field                  | Type      | Description                                                                     |
+| ---------------------- | --------- | ------------------------------------------------------------------------------- |
+| client_version_message | string    | The message that appears if the client is too old                               |
+| classification_id      | snowflake | The classification ID associated with the notice                                |
+| body                   | string    | The content of the embed                                                        |
+| icon_type              | string    | The icon to use in the embed                                                    |
+| header                 | string    | The header of the embed                                                         |
+| timestamp              | float     | The Unix timestamp (in seconds) of when the incident occurred                   |
+| theme                  | string    | The theme of the embed (currently always `default`)                             |
+| ctas                   | string    | Comma-delimited list of [CTAs to display](#safety-system-notification-cta-type) |
+| learn_more_link?       | string    | Link for the "Learn More" CTA                                                   |
+
+###### Safety System Notification CTA Type
+
+| Value                   | Description                      |
+| ----------------------- | -------------------------------- |
+| learn_more_link         | Learn more button will be shown  |
+| policy_violation_detail | See Details button will be shown |
+
+###### Example Safety System Notification Embed
+
+```json
+{
+  "type": "safety_system_notification",
+  "title": "Important message from Discord regarding your account",
+  "fields": [
+    {
+      "name": "client_version_message",
+      "value": "To see the details of this notification, please update the app or open Discord in your browser.",
+      "inline": false
+    },
+    {
+      "name": "body",
+      "value": "We reviewed a violation regarding our minimum age requirements policy and determined it does not violate our community guidelines. We have removed this violation from your account.",
+      "inline": false
+    },
+    {
+      "name": "icon_type",
+      "value": "default",
+      "inline": false
+    },
+    {
+      "name": "header",
+      "value": "We have removed a violation from your account",
+      "inline": false
+    },
+    {
+      "name": "timestamp",
+      "value": "1756658765.703625",
+      "inline": false
+    },
+    {
+      "name": "theme",
+      "value": "default",
+      "inline": false
+    },
+    {
+      "name": "ctas",
+      "value": "learn_more_link",
+      "inline": false
+    },
+    {
+      "name": "learn_more_link",
+      "value": "https://support.discord.com/hc/articles/18210965981847-Discord-Warning-System",
+      "inline": false
+    },
+    {
+      "name": "classification_id",
+      "value": "1411751868690075770",
+      "inline": false
+    }
+  ],
+  "content_scan_version": 2
+}
+```
+
+## Endpoints
+
+<RouteHeader method="GET" url="/safety-hub/@me">
+  Get User Safety Hub
+</RouteHeader>
+
+Returns a [safety hub](#safety-hub-object) object for the current user.
+
+<RouteHeader method="POST" url="/safety-hub/suspended/@me" unauthenticated>
+  Get Suspended User Safety Hub
+</RouteHeader>
+
+Returns a [safety hub](#safety-hub-object) object for a suspended user.
+
+###### JSON Params
+
+| Field | Type   | Description              |
+| ----- | ------ | ------------------------ |
+| token | string | The suspended user token |
+
+<RouteHeader method="PUT" url="/safety-hub/request-review/{classification.id}">
+  Request Classification Review
+</RouteHeader>
+
+Requests a review for a specific classification ID.
+
+###### JSON Params
+
+| Field      | Type    | Description                                                |
+| ---------- | ------- | ---------------------------------------------------------- |
+| signal     | integer | The [appeal ingestion signal](#appeal-ingestion-signal)    |
+| user_input | string  | Additional user input for the appeal (max 1000 characters) |
+
+###### Response Body
+
+| Field     | Type      | Description          |
+| --------- | --------- | -------------------- |
+| appeal_id | snowflake | The ID of the appeal |
+
+<RouteHeader method="PUT" url="/safety-hub/suspended/request-review/{classification.id}" unauthenticated>
+  Request Classification Review for Suspended User
+</RouteHeader>
+
+Requests a review for a specific classification ID.
+
+###### JSON Params
+
+| Field      | Type    | Description                                                |
+| ---------- | ------- | ---------------------------------------------------------- |
+| signal     | integer | The [appeal ingestion signal](#appeal-ingestion-signal)    |
+| user_input | string  | Additional user input for the appeal (max 1000 characters) |
+| token      | string  | The suspended user token                                   |
+
+###### Response Body
+
+| Field     | Type      | Description          |
+| --------- | --------- | -------------------- |
+| appeal_id | snowflake | The ID of the appeal |
+
+<RouteHeader method="POST" url="/safety-hub/suspended/check-verification" unauthenticated>
+  Check Age Verification for Suspended User
+</RouteHeader>
+
+Checks if the suspended user has verified their age.
+
+###### JSON Params
+
+| Field | Type   | Description              |
+| ----- | ------ | ------------------------ |
+| token | string | The suspended user token |
+
+###### Response Body
+
+| Field   | Type    | Description                                      |
+| ------- | ------- | ------------------------------------------------ |
+| success | boolean | Indicates if the age verification was successful |
+
+<RouteHeader method="POST" url="/safety-hub/suspended/request-verification" unauthenticated>
+  Request Age Verification for Suspended User
+</RouteHeader>
+
+Starts the age verification process using a third-party age verification provider. If the process is successful the user has their underage classifications invalidated.
+
+###### JSON Params
+
+| Field                   | Type       | Description                                          |
+| ----------------------- | ---------- | ---------------------------------------------------- |
+| token                   | string     | The suspended user token                             |
+| from_classification_id? | ?snowflake | The classification ID from which the request is made |
+
+###### Response Body
+
+| Field                    | Type   | Description                                                                |
+| ------------------------ | ------ | -------------------------------------------------------------------------- |
+| verification_request_id  | string | UUID generated by the server to track the current age verification request |
+| verification_vendor_name | string | The third party age verification provider (currently always `K_ID`)        |
+| verification_webview_url | string | The webview URL to iframe into the client                                  |
