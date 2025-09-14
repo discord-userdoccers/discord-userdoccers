@@ -1,6 +1,6 @@
 # Safety Hub
 
-Safety Hub is a feature that provides users with information about their account's account standing and actions taken against their account.
+Safety Hub is a feature that provides users with information about their account's standing, trust & safety violations, and actions taken against them.
 
 ### Safety Hub Object
 
@@ -8,36 +8,38 @@ Safety Hub is a feature that provides users with information about their account
 
 | Field                 | Type                                                   | Description                                                            |
 | --------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------- |
-| classifications       | array[[classification](#classification-object) object] | List of classifications applied to the user's content                  |
-| guild_classifications | array[[classification](#classification-object) object] | List of classifications applied to the user's guilds                   |
-| account_standing      | [account standing](#account-standing-state) object     | Current standing of the user's account                                 |
+| classifications       | array[[classification](#classification-object) object] | User infractions                                                       |
+| guild_classifications | array[[classification](#classification-object) object] | Guild infractions                                                      |
+| account_standing      | [account standing](#account-standing-structure) object | Current standing of the user's account                                 |
 | is_dsa_eligible       | boolean                                                | Indicates if the user is eligible for DSA appeal                       |
 | is_appeal_eligible    | boolean                                                | Indicates if the user is eligible to appeal any classifications        |
 | username              | string                                                 | The username of the user                                               |
-| appeal_eligibility    | array[integer]                                         | List of [appeal eligibility](#appeal-eligibility) reasons for the user |
+| appeal_eligibility    | array[integer]                                         | [Appeal types](#appeal-eligibility) the user is eligible for |
 
 ### Classification Object
 
 ###### Classification Structure
 
-| Field                 | Type                                                     | Description                                                        |
-| --------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
-| id                    | snowflake                                                | The ID of the classification                                       |
-| classification_type   | integer                                                  | The [classification type](#classification-type)                    |
-| description           | string                                                   | A brief description of the classification                          |
-| explainer_link        | string                                                   | URL to a detailed explanation of the classification                |
-| actions               | array[[action](#actions-object) object]                  | List of actions taken as part of the classification                |
-| max_expiration_time   | ?ISO8601 timestamp                                       | The time at which the classification will expire                   |
-| flagged_content       | array[[flagged content](#flagged-content-object) object] | List of messages that was flagged as part of the classification    |
-| appeal_status?        | [appeal status](#appeal-status) object                   | Status of an appeal related to the classification                  |
-| is_coppa              | boolean                                                  | Whether the classification is related to COPPA                     |
-| is_spam               | boolean                                                  | Whether the classification is related to spam                      |
-| appeal_ingestion_type | integer                                                  | How a nominal appeal should be submitted                           |
-| guild_metadata? ^1^   | [guild metadata](#guild-metadata-object) object          | Metadata related to the guild where the classification was applied |
+| Field                     | Type                                                        | Description                                                        |
+| ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| id                        | snowflake                                                   | The ID of the classification                                       |
+| classification_type       | integer                                                     | The [classification type](#classification-type)                    |
+| description               | string                                                      | A brief description of the classification                          |
+| explainer_link            | string                                                      | URL to a detailed explanation of the classification                |
+| actions                   | array[[action](#actions-structure) object]                  | List of actions taken as part of the classification                |
+| max_expiration_time       | ?ISO8601 timestamp                                          | When the classification will expire                                |
+| flagged_content           | array[[flagged content](#flagged-content-structure) object] | Content that was flagged as part of the classification             |
+| appeal_status?            | [appeal status](#appeal-status) object                      | Status of an appeal related to the classification                  |
+| is_coppa ^1^              | boolean                                                     | Whether the classification is a COPPA violation                    |
+| is_spam ^1^               | boolean                                                     | Whether the classification is a spam violation                     |
+| appeal_ingestion_type ^1^ | integer                                                     | How a nominal appeal should be submitted                           |
+| guild_metadata? ^2^       | [guild metadata](#guild-metadata-structure) object          | Metadata related to the guild where the classification was applied |
 
-^1^ Only present on guild classifications.
+^1^ Classifications that are marked as spam or COPPA violations cannot be appealed in-app.
 
-###### Actions Object
+^2^ Only present on guild classifications.
+
+###### Actions Structure
 
 | Field        | Type          | Description                                |
 | ------------ | ------------- | ------------------------------------------ |
@@ -45,13 +47,19 @@ Safety Hub is a feature that provides users with information about their account
 | descriptions | array[string] | List of descriptions related to the action |
 | id           | snowflake     | Unique identifier for the action           |
 
-###### Appeal Status Object
+###### Appeal Status Structure
 
 | Field  | Type    | Description                                    |
 | ------ | ------- | ---------------------------------------------- |
 | status | integer | Current [status of the appeal](#appeal-status) |
 
-###### Guild Metadata Object
+###### Account Standing Structure
+
+| Field | Type    | Description                                               |
+| ----- | ------- | --------------------------------------------------------- |
+| state | integer | Current [account standing state](#account-standing-state) |
+
+###### Guild Metadata Structure
 
 | Field       | Type    | Description                                       |
 | ----------- | ------- | ------------------------------------------------- |
@@ -59,7 +67,7 @@ Safety Hub is a feature that provides users with information about their account
 | icon_hash   | ?string | Hash of the guild's icon                          |
 | member_type | integer | Type of member associated with the classification |
 
-###### Flagged Content Object
+###### Flagged Content Structure
 
 | Field       | Type                                                             | Description                                      |
 | ----------- | ---------------------------------------------------------------- | ------------------------------------------------ |
@@ -77,11 +85,11 @@ Safety Hub is a feature that provides users with information about their account
 
 ###### Appeal Status
 
-| Value | Name                       | Description        |
-| ----- | -------------------------- | ------------------ |
-| 1     | REVIEW_PENDING             | Appeal pending     |
-| 2     | CLASSIFICATION_UPHELD      | Appeal upheld      |
-| 3     | CLASSIFICATION_INVALIDATED | Appeal invalidated |
+| Value | Name                       | Description                             |
+| ----- | -------------------------- | --------------------------------------- |
+| 1     | REVIEW_PENDING             | Appeal pending                          |
+| 2     | CLASSIFICATION_UPHELD      | Appeal denied, classification remains   |
+| 3     | CLASSIFICATION_INVALIDATED | Appeal accepted, classification removed |
 
 ###### Classification Type
 
@@ -136,7 +144,7 @@ Safety Hub is a feature that provides users with information about their account
 | 11    | MESSAGE_CONTENT_REMOVAL     | Message content removed                  |
 | 12    | GUILD_DISABLE_INVITE        | Guild invites disabled                   |
 | 13    | USER_CONTENT_REMOVAL        | User content removed                     |
-| 14    | USER_USERNAME_MANGLED       | User's username has been mangled         |
+| 14    | USER_USERNAME_MANGLED       | Offending username was cleared           |
 | 15    | GUILD_LIMITED_ACCESS        | Guild has limited access to features     |
 | 16    | USER_MESSAGE_REMOVAL        | User's message has been removed          |
 | 20    | GUILD_DELETE                | Guild has been deleted                   |
@@ -165,9 +173,7 @@ Safety Hub is a feature that provides users with information about their account
 | ----- | ---------- | ----------------------------------------------- |
 | 0     | WEBFORM    | Appeal should be submitted via webform          |
 | 1     | AGE_VERIFY | Appeal should be submitted via age verification |
-| 2     | IN_APP ^1^ | Appeal should be submitted in-app               |
-
-^1^ Classifications that are marked as spam or COPPA violations cannot be appealed in-app.
+| 2     | IN_APP     | Appeal should be submitted in-app               |
 
 ###### Appeal Ingestion Signal
 
@@ -176,7 +182,7 @@ Safety Hub is a feature that provides users with information about their account
 | 0     | DIDNT_VIOLATE_POLICY | User believes they did not violate policy         |
 | 1     | TOO_STRICT_UNFAIR    | User believes the action was too strict or unfair |
 | 2     | DONT_AGREE_PENALTY   | User does not agree with the penalty              |
-| 3     | SOMETHING_ELSE       | User believes it's something else                 |
+| 3     | SOMETHING_ELSE       | User is appealing for a different reason          |
 
 ### Safety Hub System Messages
 
@@ -185,6 +191,8 @@ Safety Hub is a feature that provides users with information about their account
 As [embed field values](/resources/message#embed-field-structure) are strings, all below fields are serialized as strings, even if the type is specified as otherwise.
 
 </Alert>
+
+#### Safety Policy Notice
 
 ###### Safety Policy Notice Embed Structure
 
@@ -221,21 +229,23 @@ As [embed field values](/resources/message#embed-field-structure) are strings, a
 }
 ```
 
+#### Safety System Notification
+
 ###### Safety System Notification Embed Structure
 
-| Field                  | Type      | Description                                                        |
-| ---------------------- | --------- | ------------------------------------------------------------------ |
-| client_version_message | string    | The message that appears if the client is too old                  |
-| classification_id      | snowflake | The classification ID associated with the notice                   |
-| body                   | string    | The content of the embed                                           |
-| icon_type              | string    | The icon to use in the embed                                       |
-| header                 | string    | The header of the embed                                            |
-| timestamp              | float     | The Unix timestamp (in milliseconds) of when the incident occurred |
-| theme                  | string    | The theme of the embed (currently always `default`)                |
-| ctas                   | string    | CTAs to display                                                    |
-| learn_more_link?       | string    | Link for the "Learn More" CTA                                      |
+| Field                  | Type      | Description                                                                     |
+| ---------------------- | --------- | ------------------------------------------------------------------------------- |
+| client_version_message | string    | The message that appears if the client is too old                               |
+| classification_id      | snowflake | The classification ID associated with the notice                                |
+| body                   | string    | The content of the embed                                                        |
+| icon_type              | string    | The icon to use in the embed                                                    |
+| header                 | string    | The header of the embed                                                         |
+| timestamp              | float     | The Unix timestamp (in seconds) of when the incident occurred                   |
+| theme                  | string    | The theme of the embed (currently always `default`)                             |
+| ctas                   | string    | Comma-delimited list of [CTAs to display](#safety-system-notification-cta-type) |
+| learn_more_link?       | string    | Link for the "Learn More" CTA                                                   |
 
-###### Safety System Notification CTA Types
+###### Safety System Notification CTA Type
 
 | Value                   | Description                      |
 | ----------------------- | -------------------------------- |
@@ -302,16 +312,16 @@ As [embed field values](/resources/message#embed-field-structure) are strings, a
 ## Endpoints
 
 <RouteHeader method="GET" url="/safety-hub/@me">
-  Get Current User's Safety Hub
+  Get User Safety Hub
 </RouteHeader>
 
-Returns the [safety hub](#safety-hub-object) object for the current user.
+Returns a [safety hub](#safety-hub-object) object for the current user.
 
 <RouteHeader method="POST" url="/safety-hub/suspended/@me" unauthenticated>
-  Get Suspended User's Safety Hub
+  Get Suspended User Safety Hub
 </RouteHeader>
 
-Returns the [safety hub](#safety-hub-object) object for a suspended user.
+Returns a [safety hub](#safety-hub-object) object for a suspended user.
 
 ###### JSON Params
 
@@ -320,17 +330,17 @@ Returns the [safety hub](#safety-hub-object) object for a suspended user.
 | token | string | The suspended user token |
 
 <RouteHeader method="PUT" url="/safety-hub/request-review/{classification.id}">
-  Request Review for Classification
+  Request Classification Review
 </RouteHeader>
 
 Requests a review for a specific classification ID.
 
 ###### JSON Params
 
-| Field      | Type    | Description                                             |
-| ---------- | ------- | ------------------------------------------------------- |
-| signal     | integer | The [appeal ingestion signal](#appeal-ingestion-signal) |
-| user_input | string  | Additional user input for the appeal                    |
+| Field      | Type    | Description                                                |
+| ---------- | ------- | ---------------------------------------------------------- |
+| signal     | integer | The [appeal ingestion signal](#appeal-ingestion-signal)    |
+| user_input | string  | Additional user input for the appeal (max 1000 characters) |
 
 ###### Response Body
 
@@ -339,18 +349,18 @@ Requests a review for a specific classification ID.
 | appeal_id | snowflake | The ID of the appeal |
 
 <RouteHeader method="PUT" url="/safety-hub/suspended/request-review/{classification.id}" unauthenticated>
-  Request Review for Classification for Suspended User
+  Request Classification Review for Suspended User
 </RouteHeader>
 
 Requests a review for a specific classification ID.
 
 ###### JSON Params
 
-| Field      | Type    | Description                                             |
-| ---------- | ------- | ------------------------------------------------------- |
-| signal     | integer | The [appeal ingestion signal](#appeal-ingestion-signal) |
-| user_input | string  | Additional user input for the appeal                    |
-| token      | string  | The suspended user token                                |
+| Field      | Type    | Description                                                |
+| ---------- | ------- | ---------------------------------------------------------- |
+| signal     | integer | The [appeal ingestion signal](#appeal-ingestion-signal)    |
+| user_input | string  | Additional user input for the appeal (max 1000 characters) |
+| token      | string  | The suspended user token                                   |
 
 ###### Response Body
 
