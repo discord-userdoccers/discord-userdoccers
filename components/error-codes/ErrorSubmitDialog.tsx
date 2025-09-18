@@ -56,7 +56,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                 <p className={classNames(Styles.dialogText, "-mt-3")}>
                   Thanks for your contribution! Fill out the form below to add your error code.
                 </p>
-                <p className={classNames(Styles.dialogText, "mt-2 mb-5")}>
+                <p className={classNames(Styles.dialogText, "mb-5 mt-2")}>
                   Please ensure that your client or API locale is set to <Strong>English (US)</Strong> before
                   submitting.
                 </p>
@@ -145,7 +145,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     <label htmlFor="change_description" className={Styles.dialogLabel}>
                       Reason for Change
                     </label>
-                    <p className={classNames(Styles.dialogText, "text-sm mb-3")}>
+                    <p className={classNames(Styles.dialogText, "mb-3 text-sm")}>
                       {errorCode in codesFlat
                         ? "Explain why this error code is being updated"
                         : "Describe where this error code is used"}
@@ -163,9 +163,9 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     />
                   </div>
 
-                  <div className="w-full flex flex-col gap-2">
+                  <div className="flex w-full flex-col gap-2">
                     <button
-                      className="inline-flex justify-center items-center gap-2 rounded-md px-4 md:px-5 py-2 md:py-2.5 text-lg/80 md:text-md/80 text-center bg-brand-blurple font-semibold text-white focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white hover:bg-brand-blurple/90 data-open:bg-gray-700 disabled:opacity-50"
+                      className="text-lg/80 md:text-md/80 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-open:bg-gray-700 inline-flex items-center justify-center gap-2 rounded-md bg-brand-blurple px-4 py-2 text-center font-semibold text-white hover:bg-brand-blurple/90 disabled:opacity-50 md:px-5 md:py-2.5"
                       type="submit"
                       aria-label="Finish your submission"
                       disabled={isSubmitting}

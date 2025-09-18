@@ -45,7 +45,13 @@ export default defineConfig([
           extensions: [".tsx"],
         },
       ],
-
+      "sort-imports": [
+        "error",
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true,
+        },
+      ],
       "no-eq-null": "off",
       "prefer-object-has-own": "off",
       "no-negated-condition": "off",

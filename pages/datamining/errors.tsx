@@ -70,8 +70,8 @@ export default function Errors() {
       </Alert>
       <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codes ?? []} />
 
-      <div className="flex flex-col flex-start gap-3 w-full">
-        <div className="flex w-full md:self-end items-center gap-2 px-1">
+      <div className="flex-start flex w-full flex-col gap-3">
+        <div className="flex w-full items-center gap-2 px-1 md:self-end">
           <input
             type="checkbox"
             id="filter-by-unknown"
@@ -90,8 +90,8 @@ export default function Errors() {
           <label id="error-search-description" htmlFor="error-search" className="sr-only">
             Search error codes
           </label>
-          <div className="flex flex-row justify-start items-center">
-            <SearchIcon className="ml-3 -mr-7 size-4 z-10 text-text-light dark:text-text-dark" />
+          <div className="flex flex-row items-center justify-start">
+            <SearchIcon className="z-10 -mr-7 ml-3 size-4 text-text-light dark:text-text-dark" />
             <input
               id="error-search"
               type="search"

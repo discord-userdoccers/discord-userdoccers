@@ -56,7 +56,7 @@ export default function ErrorCodeGroup({
         .map(([code, { message, isUnknown }]) => (
           <ErrorCode key={code} code={code} message={message} isUnknown={isUnknown} />
         )),
-    [search, unknownOnly, processedCodes],
+    [search, unknownOnly, processedCodes, isGroupMatch],
   );
 
   if (filteredCodes.length === 0) {
