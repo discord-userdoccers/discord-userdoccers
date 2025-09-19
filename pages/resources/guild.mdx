@@ -843,6 +843,7 @@ A participating user in a [guild](#guild-object).
 | avatar_decoration_data?           | ?[avatar decoration data](/resources/user#avatar-decoration-data-object) object | The member's [guild avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations)                                                   |
 | collectibles?                     | ?[collectibles](/resources/user#collectibles-object) object                     | The member's equipped collectibles                                                                                                                                        |
 | banner?                           | ?string                                                                         | The member's [guild banner hash](/reference#cdn-formatting)                                                                                                               |
+| bio? ^4^                          | ?string                                                                         | The member's guild-specific bio (max 190 characters)                                                                                                                      |
 | roles                             | array[snowflake]                                                                | The role IDs assigned to this member                                                                                                                                      |
 | joined_at                         | ISO8601 timestamp                                                               | When the user joined the guild                                                                                                                                            |
 | premium_since?                    | ?ISO8601 timestamp                                                              | When the member subscribed to (started [boosting](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-)) the guild                                 |
@@ -852,7 +853,7 @@ A participating user in a [guild](#guild-object).
 | communication_disabled_until? ^3^ | ?ISO8601 timestamp                                                              | When the member's [timeout](https://support.discord.com/hc/en-us/articles/4413305239191-Time-Out-FAQ) will expire and they will be able to communicate in the guild again |
 | unusual_dm_activity_until? ^3^    | ?ISO8601 timestamp                                                              | When the member's unusual DM activity flag will expire                                                                                                                    |
 | flags                             | integer                                                                         | The [member's flags](#guild-member-flags)                                                                                                                                 |
-| permissions? ^4^                  | string                                                                          | Total permissions of the member in the channel, including overwrites                                                                                                      |
+| permissions? ^4^ ^5^              | string                                                                          | Total permissions of the member in the guild                                                                                                                              |
 
 ^1^ Won't be included in certain member objects served alongside user objects. These cases are always called out in the relevant structures.
 
@@ -860,7 +861,9 @@ A participating user in a [guild](#guild-object).
 
 ^3^ If the value is a time in the past, the flag has expired.
 
-^4^ Only returned when received in a slash command interaction.
+^4^ Only included in private guild member objects returned from the [Get Current Guild Member](#get-current-guild-member), [Modify Current Guild Member](#modify-current-guild-member), and [Get User Profile](/resources/user#get-user-profile) endpoints.
+
+^5^ When received in an interaction, this field will instead contain the member's total permissions in the channel, including overwrites.
 
 ###### Guild Member Flags
 
@@ -1988,7 +1991,7 @@ Returns a list of [guild member unusual DM activity](#guild-member-unusual-dm-ac
   Get Current Guild Member
 </RouteHeader>
 
-Returns the [guild member](#guild-member-object) object for the current user in the specified guild.
+Returns the private [guild member](#guild-member-object) object for the current user in the specified guild.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/members/{user.id}">
   Get Guild Member
@@ -2083,20 +2086,20 @@ Modifies attributes of a guild member. User must be a member of the guild. Retur
   Modify Current Guild Member
 </RouteHeader>
 
-Modifies the current user's member in the guild. Returns the updated [guild member](#guild-member-object) object on success (including extra `bio` and `banner` fields). Fires a [Guild Member Update](/topics/gateway-events#guild-member-update) Gateway event.
+Modifies the current user's member in the guild. Returns the updated private [guild member](#guild-member-object) object on success. Fires a [Guild Member Update](/topics/gateway-events#guild-member-update) Gateway event.
 
 ###### JSON Params
 
-| Field                     | Type                                            | Description                                                              | Permission        |
-| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ----------------- |
-| nick?                     | ?string                                         | The guild-specific nickname of the member (1-32 characters)              | `CHANGE_NICKNAME` |
-| avatar?                   | ?[image data](/reference#cdn-data)              | The member's guild avatar; can only be changed for premium (Nitro) users |
-| avatar_decoration_id?     | ?snowflake                                      | The ID of the member's guild avatar decoration                           |
-| avatar_decoration_sku_id? | ?snowflake                                      | The SKU ID of the member's guild avatar decoration                       |
-| collectibles?             | ?[collectibles](#collectibles-structure) object | The member's equipped collectibles                                       |
-| pronouns?                 | ?string                                         | The member's guild pronouns (max 40 characters)                          |
-| bio?                      | ?string                                         | The member's guild bio; can only be changed for premium (Nitro) users    |
-| banner?                   | ?[image data](/reference#cdn-data)              | The member's guild banner; can only be changed for premium (Nitro) users |
+| Field                     | Type                                            | Description                                                                                 | Permission        |
+| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------- |
+| nick?                     | ?string                                         | The guild-specific nickname of the member (1-32 characters)                                 | `CHANGE_NICKNAME` |
+| avatar?                   | ?[image data](/reference#cdn-data)              | The member's guild avatar; can only be changed for premium users and bots                   |
+| avatar_decoration_id?     | ?snowflake                                      | The ID of the member's guild avatar decoration; can only be changed for premium users       |
+| avatar_decoration_sku_id? | ?snowflake                                      | The SKU ID of the member's guild avatar decoration; can only be changed for premium users   |
+| collectibles?             | ?[collectibles](#collectibles-structure) object | The member's equipped collectibles; can only be changed for premium users                   |
+| pronouns?                 | ?string                                         | The member's guild pronouns (max 40 characters)                                             |
+| bio?                      | ?string                                         | The member's guild bio (max 190 characters); can only be changed for premium users and bots |
+| banner?                   | ?[image data](/reference#cdn-data)              | The member's guild banner; can only be changed for premium users and bots                   |
 
 ###### Collectibles Structure
 
@@ -2133,16 +2136,16 @@ Modifies the current user's profile in the guild. Returns a [profile metadata](/
 
 ###### JSON Params
 
-| Field                           | Type                               | Description                                                                                                                                             |
-| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| pronouns?                       | ?string                            | The member's guild pronouns (max 40 characters)                                                                                                         |
-| bio?                            | ?string                            | The member's guild bio (max 190 characters); can only be changed for premium (Nitro) users                                                              |
-| banner?                         | ?[image data](/reference#cdn-data) | The member's guild banner; can only be changed for premium (Nitro) users                                                                                |
-| accent_color?                   | ?integer                           | The member's guild accent color as a hex integer; can only be changed for premium (Nitro) users                                                         |
-| theme_colors?                   | ?array[integer, integer]           | The member's two guild theme colors encoded as an array of integers representing hexadecimal color codes; can only be changed for premium (Nitro) users |
-| popout_animation_particle_type? | ?snowflake                         | The member's guild profile popout animation particle type                                                                                               |
-| emoji_id?                       | ?snowflake                         | The member's guild profile emoji ID                                                                                                                     |
-| profile_effect_id?              | ?snowflake                         | The member's guild profile effect ID                                                                                                                    |
+| Field                           | Type                               | Description                                                                                                                                     |
+| ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| pronouns?                       | ?string                            | The member's guild pronouns (max 40 characters)                                                                                                 |
+| bio?                            | ?string                            | The member's guild bio (max 190 characters); can only be changed for premium users                                                              |
+| banner?                         | ?[image data](/reference#cdn-data) | The member's guild banner; can only be changed for premium users                                                                                |
+| accent_color?                   | ?integer                           | The member's guild accent color as a hex integer; can only be changed for premium users                                                         |
+| theme_colors?                   | ?array[integer, integer]           | The member's two guild theme colors encoded as an array of integers representing hexadecimal color codes; can only be changed for premium users |
+| popout_animation_particle_type? | ?snowflake                         | The member's guild profile popout animation particle type; can only be changed for premium users                                                |
+| emoji_id?                       | ?snowflake                         | The member's guild profile emoji ID; can only be changed for premium users                                                                      |
+| profile_effect_id?              | ?snowflake                         | The member's guild profile effect ID; can only be changed for premium users                                                                     |
 
 <RouteHeader method="PUT" url="/guilds/{guild.id}/members/{user.id}/roles/{role.id}" supportsAuditReason>
   Add Guild Member Role
