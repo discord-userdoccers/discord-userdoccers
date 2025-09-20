@@ -2,15 +2,12 @@
 
 Application commands are commands that an application can register to Discord. They provide users a first-class way of interacting directly with your application that feels deeply integrated into Discord.
 
-## Application Command Object
+###### Application Command Naming
 
-<Alert type="info">
+`CHAT_INPUT` command names and command option names must match the regex `^[-_'\p{L}\p{N}\p{sc=Deva}\p{sc=Thai}]{1,32}$` with the unicode flag set. If there is a lowercase variant of any letters used, you must use those.
+Characters with no lowercase variants and uncased letters are still allowed. `USER` and `MESSAGE` commands may be mixed case and can include spaces.
 
-`CHAT_INPUT` command names must be all lowercase
-matching `^[\w-]{(1, 32)}$`. `USER` and `MESSAGE` commands may be mixed case
-and can include spaces.
-
-</Alert>
+### Application Command Object
 
 ###### Application Command Structure
 
@@ -29,7 +26,6 @@ and can include spaces.
 | options?                            | array[[application command option](#application-command-option-structure) object] | The options for the command (max 25)                                                                                                                            | `CHAT_INPUT`          |
 | default_member_permissions          | ?string                                                                           | The default required permissions to call the command                                                                                                            | All                   |
 | dm_permission? ^3^ **(deprecated)** | boolean                                                                           | Whether the command is available in DMs with the application (default true)                                                                                     | All                   |
-| ~~default_permission?~~ ^3^         | ~~boolean~~                                                                       | ~~Whether the command is enabled by default when the application is added to a guild (default true)~~                                                           | ~~All~~               |
 | nsfw?                               | boolean                                                                           | Whether the command is age-restricted (default false)                                                                                                           | All                   |
 | integration_types? ^3^              | array[integer]                                                                    | The [installation contexts](/resources/application#application-integration-type) where the command is available (defaults to application's configured contexts) | All                   |
 | global_popularity_rank? ^2^ ^3^ ^4^ | integer                                                                           | The popularity rank of the application command                                                                                                                  | All                   |
@@ -37,9 +33,9 @@ and can include spaces.
 | version ^2^                         | snowflake                                                                         | An autoincrementing version identifier updated during substantial record changes                                                                                | All                   |
 | handler? ^3^                        | integer                                                                           | [How the command should be handled when called](#application-command-handler-type)                                                                              | `PRIMARY_ENTRY_POINT` |
 
-^1^ This is always present when received.
+^1^ This field is always present when received.
 
-^2^ This field are received only and cannot be set.
+^2^ This field is received only and cannot be set.
 
 ^3^ Only applicable for globally-scoped commands.
 
@@ -47,18 +43,18 @@ and can include spaces.
 
 ###### Application Command Type
 
-| Name                | Type | Description                                                                     |
-| ------------------- | ---- | ------------------------------------------------------------------------------- |
-| CHAT_INPUT          | 1    | Slash commands; a text-based command that shows up when a user types `/`        |
-| USER                | 2    | An UI-based command that shows up when you right click or tap on an user        |
-| MESSAGE             | 3    | An UI-based command that shows up when you right click or tap on a message      |
-| PRIMARY_ENTRY_POINT | 4    | An UI-based command that represents the primary way to invoke an app's activity |
+| Value | Name                | Description                                                                     |
+| ----- | ------------------- | ------------------------------------------------------------------------------- |
+| 1     | CHAT_INPUT          | Slash commands; a text-based command that shows up when a user types `/`        |
+| 2     | USER                | An UI-based command that shows up when you right click or tap on an user        |
+| 3     | MESSAGE             | An UI-based command that shows up when you right click or tap on a message      |
+| 4     | PRIMARY_ENTRY_POINT | An UI-based command that represents the primary way to invoke an app's activity |
 
 ###### Application Command Option Structure
 
 <Alert type="warn">
 
-Options that are required must be listed before optional options.
+Required options must be listed before optional ones.
 
 </Alert>
 
@@ -78,24 +74,6 @@ Options that are required must be listed before optional options.
 | min_length?                | integer                                                                                         | The minimum length (0-6000, only applicable for [`STRING`](#application-command-option-type) options)                                                       |
 | max_length?                | integer                                                                                         | The maximum length (0-6000, only applicable for [`STRING`](#application-command-option-type) options)                                                       |
 | autocomplete?              | boolean                                                                                         | Whether the option can be autocompleted (only applicable for [`STRING`, `INTEGER`, and `NUMBER`](#application-command-option-type) options)                 |
-
-###### Partial Application Command Option Structure
-
-All options have names, and an option can either be a parameter and input value, in which case `value` will be set, or it can denote a subcommand or group, in which case it will contain a top-level key and another array of `options`.
-
-`value` and `options` are mutually exclusive.
-
-| Field        | Type                                                                                              | Description                                                                            |
-| ------------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| type         | integer                                                                                           | The [type of the application command option](#application-command-option-type)         |
-| name         | string                                                                                            | The name of the option                                                                 |
-| value? ^1^   | boolean \| float \| integer \| snowflake \| string                                                | The value of the option                                                                |
-| options?     | array[[partial application command option](#partial-application-command-option-structure) object] | The nested options (only applicable if the option is a subcommand or subcommand group) |
-| focused? ^2^ | boolean                                                                                           | Whether the option is the currently focused option for autocomplete                    |
-
-^1^ For [`ATTACHMENT`](#application-command-option-type) options, `value` should be set to the attachment ID.
-
-^2^ Only applicable for [`APPLICATION_COMMAND_AUTOCOMPLETE` interactions](/interactions/receiving-and-responding#interaction-type).
 
 ###### Application Command Option Type
 
@@ -136,7 +114,7 @@ If you specify `choices` for an option, they are the **only** valid values for a
 
 ## Application Command Index Object
 
-Multiple different resources are queryable with the application command index structure, including guilds and applications themselves. Sometimes usable with channels.
+Multiple different resources have application command indexes, including guilds, users, and applications themselves.
 
 ###### Application Command Index Structure
 
@@ -152,9 +130,9 @@ Multiple different resources are queryable with the application command index st
 
 Application commands do not depend on a bot user in the guild; they use the [interactions](/interactions/receiving-and-responding) model. To create commands in a guild, your application must be authorized with the `applications.commands` scope.
 
-<Alert type="note">
+<Alert type="info">
 
-Requesting `bot` scope will implicitly include `applications.commands` scope as well.
+Requesting the `bot` scope will implicitly direct the client to request the `applications.commands` scope as well.
 
 </Alert>
 
@@ -197,7 +175,7 @@ There is a global rate limit of 200 application command creates per day, per gui
 
 </Alert>
 
-### Making a Global Command
+<Collapsible title="Making a Global Command" description="Simple examples of making a global command" icon="code">
 
 Global commands are available on _all_ your app's guilds.
 
@@ -207,7 +185,6 @@ To make a **global** command, make an HTTP POST call like this:
 
 ```py
 import requests
-
 
 url = "https://discord.com/api/v10/applications/<my_application_id>/commands"
 
@@ -259,9 +236,11 @@ headers = {
 r = requests.post(url, headers=headers, json=json)
 ```
 
-### Making a Guild Command
+</Collapsible>
 
-Guild commands are available only within the guild specified on creation. Guild commands update **instantly**. Discord recommends you use guild commands for quick testing, and global commands when they're ready for public use.
+<Collapsible title="Making a Guild Command" description="Simple examples of making a guild command" icon="code">
+
+Guild commands are available only within the guild specified on creation.
 
 To make a **guild** command, make a similar HTTP POST call, but scope it to a specific `guild_id`:
 
@@ -290,6 +269,8 @@ headers = {
 r = requests.post(url, headers=headers, json=json)
 ```
 
+</Collapsible>
+
 ## Updating and Deleting a Command
 
 Commands can be deleted and updated by making `DELETE` and `PATCH` calls to the command endpoint. Those endpoints are
@@ -301,7 +282,52 @@ Because commands have unique names within a type and scope, Discord treats `POST
 
 Full documentation of endpoints can be found [here](#endpoints).
 
+## Contexts
+
+Commands have two sets of contexts on the [application command object](#application-command-object) that let you to configure when and where it can be used:
+
+- `integration_types` defines the **[installation contexts](#installation-context)** that a command supports
+- `contexts` defines the **[interaction contexts](#interaction-context)** where a command can be used
+
+Details for both types of command contexts are in the sections below.
+
+<Alert type="info">
+
+Contexts are distinct from, and do not affect, any [command permissions](#permissions) for applications in a guild.
+
+</Alert>
+
+### Installation Context
+
+The [installation context](/resources/application#application-integration-type) is where your app was installed—to a guild, a user, or both. If your app supports both installation contexts, there may be cases where you want some of your app's commands to only be available for one or the other.
+For example, maybe your app has a `/profile` command that is only relevant when it's installed to a user.
+
+A command's supported installation context(s) can be set using the [`integration_types` field](#application-command-object) when creating or updating a command as long as any included contexts are already [supported by the application's `integration_types`](/resources/application#application-object).
+
+### Interaction Context
+
+The interaction contexts for a command determines where it can be used, and can be configured by setting the [`contexts` field](#application-command-object) when creating or updating a command.
+
+There are three [interaction context types](/interactions/receiving-and-responding#interaction-context-type) that correspond to different surfaces: `GUILD`, `BOT_DM`, and `PRIVATE_CHANNEL`. However, the `PRIVATE_CHANNEL` interaction context is only meaningful for commands installed to a user (when the command's `integration_types` includes `USER_INSTALL`).
+
 ## Permissions
+
+Application command permissions allow commands to be configured on an individual basis for up to 100 users, roles, and channels within a guild.
+
+<Alert type="warn">
+
+Command permissions cannot be updated using a bot.
+
+</Alert>
+
+A command's current permissions can be retrieved using the [`GET /applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions`](#get-application-command-permissions) endpoint. The response will include a `permissions` arrau with associated IDs and permission types.
+
+Command permissions can be updated with the [`PUT /applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions`](#modify-application-command-permissions) endpoint by a user with sufficient permissions.
+For their permissions to be considered sufficient, all of the following must be true:
+
+- Has [permission to `MANAGE_GUILD` and `MANAGE_ROLES`](/topics/permissions) in the guild where the command is being edited
+- Has the ability to run the command being edited
+- Has permission to manage the resources that will be affected (roles, users, and/or channels depending on the [permission types](#application-command-permission-type))
 
 ### Application Command Permissions Object
 
@@ -309,12 +335,14 @@ Full documentation of endpoints can be found [here](#endpoints).
 
 Returned when fetching the permissions for a command in a guild.
 
-| Field          | Type                                                                                        | Description                                      |
-| -------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| id             | snowflake                                                                                   | The ID of the command                            |
-| application_id | snowflake                                                                                   | The ID of the application the command belongs to |
-| guild_id       | snowflake                                                                                   | The ID of the guild                              |
-| permissions    | array[[application command permissions](#application-command-permissions-structure) object] | The permissions for the command in the guild     |
+| Field          | Type                                                                                        | Description                                            |
+| -------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| id ^1^         | snowflake                                                                                   | The ID of the command                                  |
+| application_id | snowflake                                                                                   | The ID of the application the command belongs to       |
+| guild_id       | snowflake                                                                                   | The ID of the guild                                    |
+| permissions    | array[[application command permissions](#application-command-permissions-structure) object] | The permissions for the command in the guild (max 100) |
+
+^1^ When the `id` field is the application ID instead of a command ID, the permissions apply to all commands the application provides that do not otherwise have explicit overwrites.
 
 ###### Application Command Permissions Structure
 
@@ -324,68 +352,109 @@ Application command permissions allow you to enable or disable commands for spec
 | ---------- | --------- | ------------------------------------------------------------------------------------------------ |
 | id         | snowflake | The ID of the role or user                                                                       |
 | type       | integer   | The type of the [application command permission overwrite](#application-command-permission-type) |
-| permission | boolean   | Whether the command is allowed to be called by the entity                                        |
+| permission | boolean   | Whether the command is allowed to be invoked by the entity                                       |
+
+###### Application Command Permissions Constants
+
+The following constants can be used in the `id` field for command permissions payloads.
+
+| Permission   | Value          | Type      | Description             |
+| ------------ | -------------- | --------- | ----------------------- |
+| `@everyone`  | `guild_id`     | snowflake | All members in a guild  |
+| All Channels | `guild_id - 1` | snowflake | All channels in a guild |
 
 ###### Application Command Permission Type
 
-| Value | Name |
-| ----- | ---- |
-| 1     | ROLE |
-| 2     | USER |
+| Value | Name    | Description              |
+| ----- | ------- | ------------------------ |
+| 1     | ROLE    | A role within a guild    |
+| 2     | USER    | A guild member           |
+| 3     | CHANNEL | A channel within a guild |
 
-Need to keep some of your commands safe from prying eyes, or only available to the right people? Commands support permission overwrites! For both guild _and_ global commands of all types, you can enable or disable a specific user or role in a guild from using a command.
+To allow for fine-tuned access to commands, application command permissions are supported for guild and global commands of all types. Guild members and apps with the [necessary permissions](/docs/interactions/application-commands#permissions) can allow or deny specific users and roles from using a command, or toggle commands for entire channels.
+
+Similar to how threads [inherit user and role permissions from the parent channel](/docs/topics/threads#permissions), any command permissions for a channel will apply to the threads it contains.
 
 <Alert type="info">
 
-For now, if you don't have permission to use a command, they'll show up in the command picker as disabled and unusable. They will **not** be hidden.
+If you don't have permission to use a command, it will not show up in the command index. Members with the `ADMINISTRATOR` permission can use all commands.
 
 </Alert>
 
-You can also set a `default_permission` on your commands if you want them to be disabled by default when your app is added to a new guild. Setting `default_permission` to `false` will disallow _anyone_ in a guild from using the command—even Administrators and guild owners—unless a specific overwrite is configured. It will also disable the command from being usable in DMs.
+###### Using Default Permissions
 
-For example, this command will not be usable by anyone in any guilds by default:
+Default permissions can be added to a command during creation using the `default_member_permissions` and `context` fields. This is the only opportunity for bots to configure permissions on commands, as per-guild command permissions must be configured by a user account or through OAuth2.
+
+The `default_member_permissions` field can be used when creating a command to set the permissions a user must have to use it.
+The value for `default_member_permissions` is a bitwise OR-ed set of [permissions](/docs/topics/permissions#permissions-bitwise-permission-flags), serialized as a string.
+Setting it to `0` will prohibit anyone in a guild from using the command unless a specific overwrite is configured or the user has admin permissions.
+
+You can also include `BOT_DM` in `contexts` when setting a global command's [interaction contexts](#interaction-context) to control whether it can be run in DMs with your bot. Guild commands don't support the `BOT_DM` interaction context.
+
+###### Example of Editing Permissions
+
+<Collapsible title="Example of Editing Permissions" description="Simple example of editing command permissions" icon="code">
+
+As an example, the following command would not be usable by anyone except admins in any guilds by default:
 
 ```json
 {
   "name": "permissions_test",
   "description": "A test of default permissions",
   "type": 1,
-  "default_permission": false
+  "default_member_permissions": "0"
 }
 ```
 
-To enable it just for a moderator role:
+Or this would enable it just for users that have the `MANAGE_GUILD` permission:
 
 ```py
-MODERATOR_ROLE_ID = "<moderator_role_id>"
-url = "https://discord.com/api/v10/applications/<my_application_id>/guilds/<my_guild_id>/commands/<my_command_id>/permissions"
+permissions = str(1 << 5)
+
+command = {
+    "name": "permissions_test",
+    "description": "A test of default permissions",
+    "type": 1,
+    "default_member_permissions": permissions
+}
+```
+
+And the following would disable a command for a specific channel:
+
+```py
+A_SPECIFIC_CHANNEL = "<channel_id>"
+url = "https://discord.com/api/v10/applications/<application_id>/guilds/<my_guild_id>/commands/<my_command_id>/permissions"
 
 json = {
     "permissions": [
         {
-            "id": MODERATOR_ROLE_ID,
-            "type": 1,
-            "permission": True
+            "id": A_SPECIFIC_CHANNEL,
+            "type": 3,
+            "permission": False
         }
     ]
 }
 
 headers = {
-    "Authorization": "Bot <my_bot_token>"
+    "Authorization": "Bearer <my_bearer_token>"
 }
 
 r = requests.put(url, headers=headers, json=json)
 ```
 
+</Collapsible>
+
 ## Slash Commands
 
-Slash commands—the `CHAT_INPUT` type—are a type of application command. They're made up of a name, description, and a block of `options`, which you can think of like arguments to a function. The name and description help users find your command among many others, and the `options` validate user input as they fill out your command.
+Slash commands—the `CHAT_INPUT` type—are a type of application command. They're made up of a name, description, and a block of `options`, which you can think of like arguments to a function.
+The name and description help users find your command among many others, and the `options` validate user input as they fill out your command.
 
 Slash commands can also have groups and subcommands to further organize commands. More on those later.
 
 <Alert type="warn">
 
-Slash commands can have a maximum of 4000 characters for combined name, description, and value properties for each command and its subcommands and groups
+Slash commands can have a maximum of 8000 characters for combined name, description, and value properties for each command, its options (including subcommands and groups), and choices.
+When [localization fields](#localization) are present, only the longest localization for each field (including the default value) is counted towards the size limit.
 
 </Alert>
 
@@ -393,9 +462,16 @@ Slash commands can have a maximum of 4000 characters for combined name, descript
 
 ```json
 {
-  "name": "blep",
+  "id": "1267261558183034922",
+  "application_id": "891436233903964161",
+  "version": "1267644402063507572",
+  "default_member_permissions": null,
   "type": 1,
+  "name": "blep",
   "description": "Send a random adorable animal photo",
+  "dm_permission": true,
+  "contexts": [0, 1, 2],
+  "integration_types": [0, 1],
   "options": [
     {
       "name": "animal",
@@ -423,7 +499,8 @@ Slash commands can have a maximum of 4000 characters for combined name, descript
       "type": 5,
       "required": false
     }
-  ]
+  ],
+  "nsfw": false
 }
 ```
 
@@ -431,19 +508,26 @@ When someone uses a slash command, your application will receive an interaction:
 
 ###### Example Slash Command Interaction
 
+<Collapsible title="Slash Command Interaction" description="View sample payload for Slash Command interactions" icon="code">
+
 ```json
 {
   "id": "786008729715212338",
   "application_id": "775799577604522054",
   "type": 2,
   "data": {
-    "id": "771825006014889984",
-    "name": "cardsearch",
+    "id": "1267261558183034922",
+    "name": "blep",
     "options": [
       {
         "type": 3,
-        "name": "cardname",
-        "value": "The Gitrog Monster"
+        "name": "animal",
+        "value": "animal_cat"
+      },
+      {
+        "type": 5,
+        "name": "only_smol",
+        "value": true
       }
     ]
   },
@@ -477,19 +561,13 @@ When someone uses a slash command, your application will receive an interaction:
       "avatar": "a_d5efa99b3eeaa7dd43acca82f5692432",
       "discriminator": "0",
       "public_flags": 4325445,
-      "flags": 4325445,
       "banner": "42db4e3be824706cb1304fba05995722",
       "accent_color": null,
       "global_name": "Mason",
       "avatar_decoration_data": null,
       "collectibles": null,
       "display_name_styles": null,
-      "primary_guild": {
-        "identity_guild_id": "993957185493160057",
-        "identity_enabled": true,
-        "tag": "JMR",
-        "badge": "79dae93b4acc456cc8aaf6ed2accc540"
-      }
+      "primary_guild": null
     },
     "nick": null,
     "avatar": null,
@@ -506,7 +584,7 @@ When someone uses a slash command, your application will receive an interaction:
     "flags": 0,
     "permissions": "2147483647"
   },
-  "token": "AN_UNIQUE_TOKEN",
+  "token": "A_UNIQUE_TOKEN",
   "version": 1,
   "app_permissions": "442368",
   "locale": "en-US",
@@ -521,13 +599,9 @@ When someone uses a slash command, your application will receive an interaction:
 }
 ```
 
+</Collapsible>
+
 ## Subcommands and Subcommand Groups
-
-<Alert type="warn">
-
-Currently, subcommands and subcommand groups all appear at the top level in the command explorer. This may change in the future to include them as nested autocomplete options.
-
-</Alert>
 
 For those developers looking to make more organized and complex groups of commands, look no further than subcommands and groups.
 
@@ -535,7 +609,7 @@ For those developers looking to make more organized and complex groups of comman
 
 **Subcommand Groups** organize your **subcommands** by **grouping subcommands by similar action or resource within a command**.
 
-These are not enforced rules. You are free to use subcommands and groups however you'd like; it's just how we think about them.
+These are not enforced rules. You are free to use subcommands and groups however you'd like; it's just how Discord thinks about them.
 
 <Alert type="danger">
 
@@ -594,6 +668,8 @@ INVALID
 ```
 
 ### Example Walkthrough
+
+<Collapsible title="Example Walkthrough" description="View a moderation bot command example" icon="code">
 
 Let's look at an example. Let's imagine you run a moderation bot. You want to make a `/permissions` command that can do the following:
 
@@ -783,9 +859,17 @@ Now, we need some arguments! If we chose `user`, we need to be able to pick a us
 
 And, done! The JSON looks a bit complicated, but what we've ended up with is a single command that can be scoped to multiple actions, and then further scoped to a particular resource, and then even _further_ scope with optional arguments.
 
+</Collapsible>
+
 ## User Commands
 
 User commands are application commands that appear on the context menu (right click or tap) of users. They're a great way to surface quick actions for your app that target users. They don't take any arguments, and will return the user on whom you clicked or tapped in the interaction response.
+
+<Alert type="warn">
+
+A user must have permission to send text messages in the channel they invoke a user command in.
+
+</Alert>
 
 <Alert type="danger">
 
@@ -797,8 +881,17 @@ The `description` field is not allowed when creating user commands. However, to 
 
 ```json
 {
+  "id": "1241360244118917161",
+  "application_id": "682654466453012553",
+  "version": "1263110356692373562",
+  "default_member_permissions": null,
+  "type": 2,
   "name": "High Five",
-  "type": 2
+  "description": "",
+  "dm_permission": true,
+  "contexts": [0, 1, 2],
+  "integration_types": [1],
+  "nsfw": false
 }
 ```
 
@@ -806,14 +899,16 @@ When someone uses a user command, your application will receive an interaction:
 
 ###### Example User Command Interaction
 
+<Collapsible title="User Command Interaction" description="View sample payload for User Command interactions" icon="code">
+
 ```json
 {
   "id": "867794291820986368",
   "application_id": "775799577604522054",
   "type": 2,
   "data": {
-    "id": "866818195033292850",
-    "name": "context-menu-user-2",
+    "id": "1303493304175955988",
+    "name": "High Five",
     "type": 2,
     "resolved": {
       "members": {
@@ -839,7 +934,6 @@ When someone uses a user command, your application will receive an interaction:
           "avatar": "afc428077119df8aabbbd84b0dc90c74",
           "discriminator": "7302",
           "public_flags": 524288,
-          "flags": 524288,
           "bot": true,
           "banner": null,
           "accent_color": null,
@@ -883,7 +977,6 @@ When someone uses a user command, your application will receive an interaction:
       "avatar": "f61594630cbc4848cfe9d8da1a13088e",
       "discriminator": "0",
       "public_flags": 4604418,
-      "flags": 4604418,
       "banner": "6b9757e5926ac9f31d9e206581fc3cc3",
       "accent_color": 16119261,
       "global_name": "ian",
@@ -922,6 +1015,8 @@ When someone uses a user command, your application will receive an interaction:
 }
 ```
 
+</Collapsible>
+
 ## Message Commands
 
 Message commands are application commands that appear on the context menu (right click or tap) of messages. They're a great way to surface quick actions for your app that target messages. They don't take any arguments, and will return the message on whom you clicked or tapped in the interaction response.
@@ -936,8 +1031,17 @@ The `description` field is not allowed when creating message commands. However, 
 
 ```json
 {
-  "name": "Bookmark",
-  "type": 3
+  "id": "1303493304175955988",
+  "application_id": "682654466453012553",
+  "version": "1303493304175955989",
+  "default_member_permissions": null,
+  "type": 3,
+  "name": "Bookmarks",
+  "description": "",
+  "dm_permission": true,
+  "contexts": [0, 1, 2],
+  "integration_types": [1],
+  "nsfw": false
 }
 ```
 
@@ -945,14 +1049,16 @@ When someone uses a message command, your application will receive an interactio
 
 ###### Example Message Command Interaction
 
+<Collapsible title="Message Command Interaction" description="View sample payload for Message Command interactions" icon="code">
+
 ```json
 {
   "id": "867794291820986368",
   "application_id": "775799577604522054",
   "type": 2,
   "data": {
-    "id": "866818195033292851",
-    "name": "context-menu-message-2",
+    "id": "1303493304175955988",
+    "name": "Bookmarks",
     "type": 3,
     "resolved": {
       "messages": {
@@ -965,7 +1071,6 @@ When someone uses a message command, your application will receive an interactio
             "avatar": "f61594630cbc4848cfe9d8da1a13088e",
             "discriminator": "0",
             "public_flags": 4604418,
-            "flags": 4604418,
             "banner": "6b9757e5926ac9f31d9e206581fc3cc3",
             "accent_color": 16119261,
             "global_name": "ian",
@@ -1025,7 +1130,6 @@ When someone uses a message command, your application will receive an interactio
       "avatar": "f61594630cbc4848cfe9d8da1a13088e",
       "discriminator": "0",
       "public_flags": 4604418,
-      "flags": 4604418,
       "banner": "6b9757e5926ac9f31d9e206581fc3cc3",
       "accent_color": 16119261,
       "global_name": "ian",
@@ -1064,19 +1168,21 @@ When someone uses a message command, your application will receive an interactio
 }
 ```
 
+</Collapsible>
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/applications/{application.id}/application-command-index">
-  Get Application Command Index
+  Get Bot Application Command Index
 </RouteHeader>
 
-Returns an [application command index](#application-command-index-object) object for the given application ID.
+Returns an [application command index](#application-command-index-object) object for the given application ID, containing the commands available to use in the application's bot DMs.
 
 <RouteHeader method="GET" url="/channels/{channel.id}/application-command-index">
   Get Channel Application Command Index
 </RouteHeader>
 
-Returns an [application command index](#application-command-index-object) object for the given channel ID.
+Returns an [application command index](#application-command-index-object) object for the given group DM ID.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/application-command-index">
   Get Guild Application Command Index
@@ -1088,21 +1194,19 @@ Returns an [application command index](#application-command-index-object) object
   Get User Application Command Index
 </RouteHeader>
 
-<Alert type="note">
-
-The application command index will contain only commands that are installed to the current user account.
-
-</Alert>
-
-Returns an [application command index](#application-command-index-object) object for the current user.
+Returns an [application command index](#application-command-index-object) object for the current user, containing the commands available from applications installed to the user's account.
 
 <RouteHeader method="GET" url="/applications/{application.id}/commands" supportsOAuth2="applications.commands.update">
   Get Global Application Commands
 </RouteHeader>
 
-Returns a list of global [application command](#application-command-object) objects on success.
+Returns a list of global [application command](#application-command-object) objects for the given application ID. User must be the owner of the application, developer of the application's team, or have a DM channel with the application's bot.
 
-For user accounts, the user must have a DM with the application.
+<Alert type="warn">
+
+For OAuth2 requests, only the application associated with the access token can be used.
+
+</Alert>
 
 <RouteHeader method="POST" url="/applications/{application.id}/commands" supportsOAuth2="applications.commands.update">
   Create Global Application Command
@@ -1110,7 +1214,7 @@ For user accounts, the user must have a DM with the application.
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1134,7 +1238,6 @@ Creates a new global command. Returns an [application command](#application-comm
 | options?                        | array[[application command option](#application-command-option-structure) object] | The options for the command (max 25)                                                                                                                        | `CHAT_INPUT`          |
 | default_member_permissions?     | ?string                                                                           | The default required permissions to call the command                                                                                                        | All                   |
 | dm_permission? **(deprecated)** | boolean                                                                           | Whether the command is available in DMs with the application (default true)                                                                                 | All                   |
-| ~~default_permission?~~         | ~~boolean~~                                                                       | ~~Whether the command is enabled by default when the application is added to a guild (default true)~~                                                       | All                   |
 | nsfw?                           | boolean                                                                           | Whether the command is age-restricted (default false)                                                                                                       | All                   |
 | integration_types?              | array[integer]                                                                    | The [installation contexts](/resources/application#application-integration-type) where the command is available (default application's configured contexts) | All                   |
 | contexts?                       | array[integer]                                                                    | The [interaction context](/interactions/receiving-and-responding#interaction-context-type) where the command can be used                                    | All                   |
@@ -1154,7 +1257,7 @@ Returns an [application command](#application-command-object) object for the giv
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1170,7 +1273,7 @@ Modifies a global command. Returns the updated [application command](#applicatio
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1203,12 +1306,12 @@ Deletes a global command. Returns a 204 empty response on success.
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
 <RouteHeader method="PUT" url="/applications/{application.id}/commands" supportsOAuth2="applications.commands.update">
-  Bulk Overwrite Global Application Commands
+  Bulk Modify Global Application Commands
 </RouteHeader>
 
 Overwrites existing commands that are registered globally for this application. Accepts a list of [application command](#application-command-object) objects. Returns a list of [application command](#application-command-object) objects on success. Commands that do not already exist will count toward daily application command create limits.
@@ -1233,11 +1336,11 @@ This will overwrite **all** types of application commands: slash commands, user 
   Get Guild Application Commands
 </RouteHeader>
 
-Returns a list of [application command](#application-command-object) objects.
+Returns a list of [application command](#application-command-object) objects for the given guild ID. User must be the owner of the application or developer of the application's team.
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+For OAuth2 requests, only the application associated with the access token can be used.
 
 </Alert>
 
@@ -1251,7 +1354,7 @@ This endpoint is not usable by user accounts.
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1284,11 +1387,11 @@ Create a new guild command. Returns an [application command](#application-comman
   Get Guild Application Command
 </RouteHeader>
 
-Returns an [application command](#application-command-object) object for the given application, guild and command ID.
+Returns an [application command](#application-command-object) object for the given application, guild, and command ID.
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1304,7 +1407,7 @@ Modifies a guild command. Returns the updated guild [application command](#appli
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1332,7 +1435,7 @@ Deletes a guild application command. Returns a 204 empty response on success.
 
 <Alert type="warn">
 
-This endpoint is not usable by user accounts.
+This endpoint is only usable with an OAuth2 access token with the `applications.commands.update` scope for the application specified in the path.
 
 </Alert>
 
@@ -1341,7 +1444,7 @@ This endpoint is not usable by user accounts.
   url="/applications/{application.id}/guilds/{guild.id}/commands"
   supportsOAuth2="applications.commands.update"
 >
-  Bulk Overwrite Guild Application Commands
+  Bulk Modify Guild Application Commands
 </RouteHeader>
 
 Overwrites existing commands that are registered for the given guild. Accepts a list of [application command](#application-command-object) objects. Returns a list of [application command](#application-command-object) objects on success.
@@ -1366,13 +1469,7 @@ This will overwrite **all** types of application commands: slash commands, user 
   Get Guild Application Command Permissions
 </RouteHeader>
 
-Returns a list of [guild application command permissions](#guild-application-command-permissions-structure) objects for all commands from the given guild ID.
-
-<Alert type="warn">
-
-This endpoint is not usable by user accounts.
-
-</Alert>
+Returns a list of [guild application command permissions](#guild-application-command-permissions-structure) objects representing all configured command permissions for your application in a guild.
 
 <RouteHeader
   method="GET"
@@ -1392,13 +1489,13 @@ Returns a [guild application command permissions](#guild-application-command-per
   Modify Application Command Permissions
 </RouteHeader>
 
+Modifies permissions for a specific application command in a guild. Returns a [guild application command permissions](#guild-application-command-permissions-structure) object on success. You can only add up to 10 permission overwrites for a command.
+
 <Alert type="warn">
 
 This endpoint will overwrite existing permissions for the command in that guild.
 
 </Alert>
-
-Modifies command permissions for a specific command for your application in a guild. Returns a [guild application command permissions](#guild-application-command-permissions-structure) object. You can only add up to 10 permission overwrites for a command.
 
 <Alert type="warn">
 
