@@ -61,6 +61,8 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Identify](#identify)                                         | Trigger the initial handshake with the Gateway                    |
 | [Resume](#resume)                                             | Resume a dropped Gateway connection                               |
 | [Heartbeat](#heartbeat)                                       | Maintain an active Gateway connection                             |
+| [QoS Heartbeat](#qos-heartbeat)                               | Maintain an active Gateway connection with QoS metrics            |
+| [Update Time Spent Session ID](#update-time-spent-session-id) | Track the time spent in the current session                       |
 | [Update Presence](#update-presence)                           | Update the client's presence                                      |
 | [Update Voice State](#update-voice-state)                     | Join, move, or disconnect the client from a voice channel or call |
 | [Ping Voice Server](#ping-voice-server)                       | Ping the Discord voice servers                                    |
@@ -83,8 +85,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
 | [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
 | [Request Channel Member Count](#request-channel-member-count) | Request the number of members that can view a channel             |
-| [QoS Heartbeat](#qos-heartbeat)                               | Maintain an active Gateway connection with QoS metrics            |
-| [Update Time Spent Session ID](#update-time-spent-session-id) | Track the time spent in the current session                       |
+| [Request Channel Info](#request-channel-info)                 | Request extra voice channel fields for a guild                    |
 
 #### Identify
 
@@ -169,7 +170,8 @@ Details about resuming are in the [Gateway documentation](/topics/gateway#resumi
 
 #### Heartbeat
 
-Used to maintain an active Gateway connection. Must be sent every `heartbeat_interval` milliseconds after the [Opcode 10 Hello](#hello) payload is received. The inner `d` key is the last sequence number—`s`—received by the client. If you have not yet received one, send `null`. Fires a [Heartbeat ACK](#heartbeat-ack) Gateway event.
+Used to maintain an active Gateway connection. Must be sent every `heartbeat_interval` milliseconds after the [Opcode 10 Hello](#hello) payload is received. The inner `d` key is the last sequence number—`s`—received by the client.
+If you have not yet received one, send `null`. Fires a [Heartbeat ACK](#heartbeat-ack) Gateway event.
 
 Details about heartbeats are in the [Gateway documentation](/topics/gateway#sending-heartbeats).
 
@@ -179,6 +181,78 @@ Details about heartbeats are in the [Gateway documentation](/topics/gateway#send
 {
   "op": 1,
   "d": 251
+}
+```
+
+#### QoS Heartbeat
+
+Same as a normal [heartbeat](#heartbeat), but also tracks [Quality of Service (QoS)](https://en.wikipedia.org/wiki/Quality_of_service) statistics.
+Must be sent every `heartbeat_interval` milliseconds after the [Opcode 10 Hello](#hello) payload is received. Fires a [Heartbeat ACK](#heartbeat-ack) Gateway event.
+
+Details about heartbeats are in the [Gateway documentation](/topics/gateway#sending-heartbeats).
+
+###### QoS Heartbeat Structure
+
+| Field | Type                                  | Description                        |
+| ----- | ------------------------------------- | ---------------------------------- |
+| seq   | ?integer                              | Last sequence number received      |
+| qos   | [QoS payload](#qos-payload-structure) | The QoS payload for this heartbeat |
+
+###### QoS Payload Structure
+
+| Field   | Type          | Description                                                      |
+| ------- | ------------- | ---------------------------------------------------------------- |
+| ver     | integer       | The client heartbeat version (currently `25`)                    |
+| active  | boolean       | Whether the session is currently active (has reasons of service) |
+| reasons | array[string] | [Reasons of Service](#reasons-of-service)                        |
+
+###### Reasons of Service
+
+| Name          | Description                         |
+| ------------- | ----------------------------------- |
+| foregrounded  | Window is focused                   |
+| rtc_connected | User is connected to the voice call |
+
+###### Example QoS Heartbeat
+
+```json
+{
+  "op": 40,
+  "d": {
+    "seq": 1337,
+    "qos": {
+      "ver": 25,
+      "active": true,
+      "reasons": ["foregrounded", "rtc_connected"]
+    }
+  }
+}
+```
+
+#### Update Time Spent Session ID
+
+Sent every 30 minutes (if the client is focused or is in a voice call) and on connect to track the time the user has spent in the current session.
+
+Whenever this is sent, an accompanying [QoS Heartbeat](#qos-heartbeat) should be sent.
+
+###### QoS Heartbeat Structure
+
+| Field                    | Type    | Description                                                                                                         |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| initialization_timestamp | integer | Unix timestamp (in milliseconds) of when the session ID was generated                                               |
+| session_id               | string  | A client-generated UUID, same as `client_heartbeat_session_id` in [client properties](/reference#client-properties) |
+| client_launch_id         | string  | A client-generated UUID, same as `client_launch_id` in [client properties](/reference#client-properties)            |
+
+###### Example Update Time Spent Session ID
+
+```json
+{
+  "op": 41,
+  "d": {
+    "initialization_timestamp": 1753221861697,
+    "session_id": "fe223885-211d-4826-ba7b-395373da4213",
+    "client_launch_id": "2bf1c669-4710-4b76-8c99-76f918fd36fc"
+  }
 }
 ```
 
@@ -695,77 +769,23 @@ Used to request the number of members that can view a guild channel, as well as 
 }
 ```
 
-#### QoS Heartbeat
+#### Request Channel Info
 
-Same as a normal [heartbeat](#heartbeat), but also tracks [Quality of Service (QoS)](https://en.wikipedia.org/wiki/Quality_of_service) statistics.
-Must be sent every `heartbeat_interval` milliseconds after the [Opcode 10 Hello](#hello) payload is received. Fires a [Heartbeat ACK](#heartbeat-ack) Gateway event.
+Used to request a number of extra fields for a guilds' channels. Fires a [Channel Info](#channel-info) Gateway event with the requested information.
 
-Details about heartbeats are in the [Gateway documentation](/topics/gateway#sending-heartbeats).
+###### Request Channel Info Structure
 
-###### QoS Heartbeat Structure
+| Field    | Type          | Description                                   |
+| -------- | ------------- | --------------------------------------------- |
+| guild_id | snowflake     | The ID of the guild                           |
+| fields   | array[string] | The [fields](#channel-info-fields) to request |
 
-| Field | Type                                  | Description                        |
-| ----- | ------------------------------------- | ---------------------------------- |
-| seq   | ?integer                              | Last sequence number received      |
-| qos   | [QoS payload](#qos-payload-structure) | The QoS payload for this heartbeat |
+###### Channel Info Fields
 
-###### QoS Payload Structure
-
-| Field   | Type          | Description                                                      |
-| ------- | ------------- | ---------------------------------------------------------------- |
-| ver     | integer       | The client heartbeat version (currently `25`)                    |
-| active  | boolean       | Whether the session is currently active (has reasons of service) |
-| reasons | array[string] | [Reasons of Service](#reasons-of-service)                        |
-
-###### Reasons of Service
-
-| Name          | Description                         |
-| ------------- | ----------------------------------- |
-| foregrounded  | Window is focused                   |
-| rtc_connected | User is connected to the voice call |
-
-###### Example QoS Heartbeat
-
-```json
-{
-  "op": 40,
-  "d": {
-    "seq": 1337,
-    "qos": {
-      "ver": 25,
-      "active": true,
-      "reasons": ["foregrounded", "rtc_connected"]
-    }
-  }
-}
-```
-
-#### Update Time Spent Session ID
-
-Sent every 30 minutes (if the client is focused or is in a voice call) and on connect to track the time the user has spent in the current session.
-
-Whenever this is sent, an accompanying [QoS Heartbeat](#qos-heartbeat) should be sent.
-
-###### QoS Heartbeat Structure
-
-| Field                    | Type    | Description                                                                                                         |
-| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------- |
-| initialization_timestamp | integer | Unix timestamp (in milliseconds) of when the session ID was generated                                               |
-| session_id               | string  | A client-generated UUID, same as `client_heartbeat_session_id` in [client properties](/reference#client-properties) |
-| client_launch_id         | string  | A client-generated UUID, same as `client_launch_id` in [client properties](/reference#client-properties)            |
-
-###### Example Update Time Spent Session ID
-
-```json
-{
-  "op": 41,
-  "d": {
-    "initialization_timestamp": 1753221861697,
-    "session_id": "fe223885-211d-4826-ba7b-395373da4213",
-    "client_launch_id": "2bf1c669-4710-4b76-8c99-76f918fd36fc"
-  }
-}
-```
+| Name             | Description                                          |
+| ---------------- | ---------------------------------------------------- |
+| status           | The status of the voice channel                      |
+| voice_start_time | The start time of the voice channel's active session |
 
 ## Receive Events
 
@@ -891,7 +911,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Update](#channel-update)                                                           | Channel was updated                                                                            |
 | [Channel Delete](#channel-delete)                                                           | Channel was deleted                                                                            |
 | [Channel Statuses](#channel-statuses)                                                       | Response to [Request Channel Statuses](#request-channel-statuses)                              |
-| [Voice Channel Status Update](#voice-channel-status-update)                                 | Voice channel status was updated                                                               |
+| [Channel Info](#channel-info)                                                               | Response to [Request Channel Info](#request-channel-info)                                      |
 | [Channel Member Count Update](#channel-member-count-update)                                 | Response to [Request Channel Member Count](#request-channel-member-count)                      |
 | [Channel Pins Update](#channel-pins-update)                                                 | Message was pinned or unpinned                                                                 |
 | [Channel Recipient Add](#channel-recipient-add)                                             | User joined a group DM channel                                                                 |
@@ -1029,6 +1049,8 @@ These events directly correspond with a specific action or state change that has
 | [Voice State Update](#voice-state-update)                                                   | User joined, left, or moved a voice channel                                                    |
 | [Voice Server Update](#voice-server-update)                                                 | Voice connection server was updated                                                            |
 | [Voice Channel Effect Send](#voice-channel-effect-send)                                     | User sent an effect in a voice channel the current user is connected to                        |
+| [Voice Channel Start Time Update](#voice-channel-start-time-update)                         | Voice channel start time was updated                                                           |
+| [Voice Channel Status Update](#voice-channel-status-update)                                 | Voice channel status was updated                                                               |
 | [Webhooks Update](#webhooks-update)                                                         | Channel webhook was created, update, or deleted                                                |
 
 #### Ready
@@ -1431,6 +1453,26 @@ For private channels, the received channel object will be partial.
 
 </Alert>
 
+#### Channel Info
+
+Sent in response to [Request Channel Info](#request-channel-info). Contains extra fields for the guild's channels.
+Only requested fields are included, and they are only included on applicable channel types.
+
+###### Channel Info Structure
+
+| Field    | Type                                                          | Description                            |
+| -------- | ------------------------------------------------------------- | -------------------------------------- |
+| guild_id | snowflake                                                     | The ID of the guild                    |
+| channels | array[[channel metadata](#channel-metadata-structure) object] | The guild's channels with extra fields |
+
+###### Channel Metadata Structure
+
+| Field             | Type               | Description                                                               |
+| ----------------- | ------------------ | ------------------------------------------------------------------------- |
+| id                | snowflake          | The ID of the channel                                                     |
+| status?           | ?string            | The status of the voice channel (max 500 characters)                      |
+| voice_start_time? | ?ISO8601 timestamp | The unix timestamp (in seconds) of when the current voice session started |
+
 #### Channel Statuses
 
 Sent in response to [Request Channel Statuses](#request-channel-statuses). Contains the statuses for all voice channels that have one set.
@@ -1448,18 +1490,6 @@ Sent in response to [Request Channel Statuses](#request-channel-statuses). Conta
 | ------ | --------- | ---------------------------------------------------- |
 | id     | snowflake | The ID of the channel                                |
 | status | string    | The status of the voice channel (max 500 characters) |
-
-#### Voice Channel Status Update
-
-Sent when a voice channel's status is updated.
-
-###### Voice Channel Status Update Structure
-
-| Field    | Type      | Description                                          |
-| -------- | --------- | ---------------------------------------------------- |
-| id       | snowflake | The ID of the voice channel                          |
-| guild_id | snowflake | The ID of the guild                                  |
-| status   | ?string   | The status of the voice channel (max 500 characters) |
 
 #### Channel Member Count Update
 
@@ -2730,7 +2760,7 @@ A `null` endpoint means that the voice server allocated has gone away and is try
 | lobby_id | snowflake | The lobby this voice server update is for |
 | endpoint | ?string   | The voice server host                     |
 
-###### Example Lobby Voice Server Update Payload
+###### Example Lobby Voice Server Update
 
 ```json
 {
@@ -3092,7 +3122,7 @@ A `null` endpoint means that the voice server allocated has gone away and is try
 | channel_id? | snowflake  | The private channel this voice server update is for |
 | endpoint    | ?string    | The voice server host                               |
 
-###### Example Voice Server Update Payload
+###### Example Voice Server Update
 
 ```json
 {
@@ -3119,7 +3149,7 @@ Sent when someone sends an effect, such as an emoji reaction or a soundboard sou
 | sound_id?      | snowflake                                              | The ID of the soundboard sound                                                      |
 | sound_volume?  | float                                                  | The volume of the soundboard sound (represented as a float from 0 to 1)             |
 
-###### Example Voice Channel Effect Send Payload
+###### Example Voice Channel Effect Send
 
 ```json
 {
@@ -3137,6 +3167,30 @@ Sent when someone sends an effect, such as an emoji reaction or a soundboard sou
   "user_id": "852892297661906993"
 }
 ```
+
+#### Voice Channel Start Time Update
+
+Sent when a voice channel session is started or ended.
+
+###### Voice Channel Start Time Update Structure
+
+| Field            | Type      | Description                                                                                          |
+| ---------------- | --------- | ---------------------------------------------------------------------------------------------------- |
+| id               | snowflake | The ID of the voice channel                                                                          |
+| guild_id         | snowflake | The ID of the guild                                                                                  |
+| voice_start_time | ?integer  | The unix timestamp (in seconds) of when the current voice session started, or `null` if it was ended |
+
+#### Voice Channel Status Update
+
+Sent when a voice channel's status is updated.
+
+###### Voice Channel Status Update Structure
+
+| Field    | Type      | Description                                          |
+| -------- | --------- | ---------------------------------------------------- |
+| id       | snowflake | The ID of the voice channel                          |
+| guild_id | snowflake | The ID of the guild                                  |
+| status   | ?string   | The status of the voice channel (max 500 characters) |
 
 ### Webhooks
 
