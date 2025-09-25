@@ -689,12 +689,6 @@ Mapped URLs are available at `<application_id>.discordsays.com/<prefix>`.
 
 ###### Embedded Activity Release Phase
 
-<Alert type="warn">
-
-This enum is undergoing changes and may not be fully accurate. Please contact the feature owner [@.dziurwa](https://discord.com/users/1001086404203389018) if you have any questions or suggestions.
-
-</Alert>
-
 | Value                 | Description                                                                                                         |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | in_development        | The activity is still in development                                                                                |
@@ -748,6 +742,77 @@ This enum is undergoing changes and may not be fully accurate. Please contact th
   "has_csp_exception": false,
   "displays_advertisements": false,
   "application_id": "880218394199220334"
+}
+```
+
+### Embedded Activity Instance Object
+
+###### Embedded Activity Instance Structure
+
+| Field                 | Type                                                                                    | Description                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| application_id        | snowflake                                                                               | The ID of the application for this activity instance                        |
+| composite_instance_id | string                                                                                  | The [composite ID](#embedded-activity-instance-id) of the activity instance |
+| instance_id           | snowflake                                                                               | The ID of the activity instance                                             |
+| launch_id             | snowflake                                                                               | The ID of the activity instance launch                                      |
+| location              | [embedded activity location](#embedded-activity-location-structure) object              | The location the activity instance is running in                            |
+| participants          | array[[embedded activity participant](#embedded-activity-participant-structure) object] | The users participating in the activity instance                            |
+
+###### Embedded Activity Instance ID
+
+The composite ID of an activity instance is a globally unique identifier for an activity instance in a channel.
+It is in the format `i-<instance_id>-<location_kind>-<location_guild_id>-<location_channel_id>`, where `<location_guild_id>` is omitted for private channels.
+
+###### Embedded Activity Location Structure
+
+| Field      | Type       | Description                                                                         |
+| ---------- | ---------- | ----------------------------------------------------------------------------------- |
+| id         | string     | The [composite ID](#embedded-activity-location-id) of the location                  |
+| kind       | string     | The [type of location](#embedded-activity-location-type) the activity is running in |
+| channel_id | snowflake  | The ID of the channel the activity is running in                                    |
+| guild_id?  | ?snowflake | The ID of the guild the activity is running in                                      |
+
+###### Embedded Activity Location ID
+
+The composite ID of an activity location is a globally unique identifier for a channel.
+It is in the format `<location_kind>-<location_guild_id>-<location_channel_id>`, where `<location_guild_id>` is omitted for private channels.
+
+###### Embedded Activity Location Type
+
+| Value | Description     |
+| ----- | --------------- |
+| gc    | Guild channel   |
+| pc    | Private channel |
+
+###### Embedded Activity Participant Structure
+
+| Field      | Type                                                        | Description                                       |
+| ---------- | ----------------------------------------------------------- | ------------------------------------------------- |
+| user_id    | snowflake                                                   | The ID of the user participating in the activity  |
+| member?    | [guild member](/resources/guild#guild-member-object) object | The guild member data for the user, if in a guild |
+| session_id | string                                                      | The session ID the participant is connected with  |
+| nonce      | ?string                                                     | Unknown                                           |
+
+###### Example Embedded Activity Instance
+
+```json
+{
+  "application_id": "1211781489931452447",
+  "composite_instance_id": "i-1420621242070732950-pc-1386091138305359984",
+  "instance_id": "1420621242070732950",
+  "launch_id": "1420621242070732950",
+  "location": {
+    "channel_id": "1386091138305359984",
+    "id": "pc-1386091138305359984",
+    "kind": "pc"
+  },
+  "participants": [
+    {
+      "nonce": null,
+      "session_id": "3b5d8906771b15af3346454c4e6cf9d5",
+      "user_id": "852892297661906993"
+    }
+  ]
 }
 ```
 
@@ -1497,13 +1562,13 @@ Modifies whether the application is an embedded activity or not (determined by t
 | embedded | boolean | Whether the application is embedded |
 
 <RouteHeader method="GET" url="/applications/{application.id}/embedded-activity-config">
-  Get Application Embedded Activity Config
+  Get Embedded Activity Config
 </RouteHeader>
 
 Returns the [embedded activity config](#embedded-activity-config-object) object for the given application ID. User must be the owner of the application or member of the current team.
 
 <RouteHeader method="PATCH" url="/applications/{application.id}/embedded-activity-config">
-  Modify Application Embedded Activity Config
+  Modify Embedded Activity Config
 </RouteHeader>
 
 Modifies the embedded activity config for the given application ID. User must be the owner of the application or developer of the current team. Returns the updated [embedded activity config](#embedded-activity-config-object) object on success.
@@ -1521,6 +1586,98 @@ Modifies the embedded activity config for the given application ID. User must be
 | free_period_ends_at? **(deprecated)**   | ?ISO8601 timestamp                                                                                    | When the current free period for the activity ends, if any                                                       |
 | client_platform_config?                 | map[string, [embedded activity platform config](#embedded-activity-platform-config-structure) object] | The release configuration for the activity on each [platform](#embedded-activity-platform-type)                  |
 | shelf_rank?                             | integer                                                                                               | The rank of the activity in the activity shelf sort order                                                        |
+
+<RouteHeader method="GET" url="/activities/{application.id}/instances/{channel.id}" deprecated>
+  Get Embedded Activity Instances
+</RouteHeader>
+
+Returns the currently active activity instances in a channel for the application. Useful for preventing unwanted activity sessions.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Get Embedded Activity Instance](#get-embedded-activity-instance).
+
+</Alert>
+
+###### Response Body
+
+| Field     | Type                                                                            | Description                                    |
+| --------- | ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| instances | array[[channel activity instance](#channel-activity-instance-structure) object] | The embedded activity instances in the channel |
+
+###### Channel Activity Instance Structure
+
+| Field          | Type             | Description                                                                 |
+| -------------- | ---------------- | --------------------------------------------------------------------------- |
+| application_id | snowflake        | The ID of the application                                                   |
+| instance_id    | string           | The [composite ID](#embedded-activity-instance-id) of the activity instance |
+| channel_id     | snowflake        | The ID of the channel the activity is running in                            |
+| guild_id?      | snowflake        | The ID of the guild the activity is running in                              |
+| users          | array[snowflake] | The IDs of the users participating in the activity                          |
+
+<RouteHeader method="GET" url="/applications/{application.id}/activity-instances/{instance.composite_instance_id}">
+  Get Embedded Activity Instance
+</RouteHeader>
+
+Returns an active activity instance for the application. Useful for preventing unwanted activity sessions.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### Response Body
+
+| Field          | Type                                                                       | Description                                                                 |
+| -------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| application_id | snowflake                                                                  | The ID of the application                                                   |
+| instance_id    | string                                                                     | The [composite ID](#embedded-activity-instance-id) of the activity instance |
+| launch_id      | string                                                                     | The ID of the activity instance                                             |
+| location       | [embedded activity location](#embedded-activity-location-structure) object | The location the activity instance is running in                            |
+| users          | array[snowflake]                                                           | The IDs of the users participating in the activity                          |
+
+<RouteHeader method="POST" url="/activities/{channel.id}/{application.id}">
+  Launch Embedded Activity
+</RouteHeader>
+
+Launches an embedded activity in a channel. Joins an existing activity instance if one exists, otherwise creates a new instance.
+Requires the `USE_EMBEDDED_ACTIVITIES` permission, as well as the `USE_EXTERNAL_APPS` permission if the activity application is not authorized to the guild. Returns a 204 empty response on success.
+
+<Alert type="warn">
+
+When possible, this should instead be done [creating an interaction](/interactions/receiving-and-responding#create-interaction) with an [Entry Point command](/interactions/application-commands#entry-point-commands).
+
+An accompanying application command invocation will be sent to the channel if the user has the `USE_APPLICATION_COMMANDS` permission.
+
+</Alert>
+
+###### JSON Params
+
+| Field      | Type   | Description                                       |
+| ---------- | ------ | ------------------------------------------------- |
+| session_id | string | The session ID of the user launching the activity |
+
+<RouteHeader
+  method="POST"
+  url="/applications/{application.id}/activities/{instance.location.id}/instances/{instance.instance_id}/leave"
+>
+  Leave Embedded Activity Instance
+</RouteHeader>
+
+Leaves an embedded activity instance. Returns an empty object on success.
+
+###### JSON Params
+
+| Field      | Type   | Description                                     |
+| ---------- | ------ | ----------------------------------------------- |
+| session_id | string | The session ID of the user leaving the activity |
 
 <RouteHeader method="GET" url="/applications/{application.id}/proxy-config">
   Get Application Proxy Config
