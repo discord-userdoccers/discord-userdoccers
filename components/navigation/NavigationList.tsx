@@ -1,5 +1,8 @@
+import { RobotIcon } from "../mdx/icons/RobotIcon";
 import data from "./data.json" with { type: "json" };
 import { NavigationLink, NavigationSection, NavigationSubLink, SearchItem } from "./NavigationItems";
+
+export const SITEMAP: NavigationData[] = data as unknown as NavigationData[];
 
 export interface NavigationData {
   name: string | null;
@@ -12,7 +15,12 @@ export interface Page {
   link: string;
   subLinks: SubLink[];
   sort: number;
+  icon: keyof typeof ICONS | null;
 }
+
+export const ICONS = {
+  Robot: RobotIcon,
+};
 
 export interface SubLink {
   link: string;
@@ -30,6 +38,7 @@ export default function NavigationList() {
           {Object.values(section.pages).map((page) => (
             <NavigationLink
               href={page.link}
+              icon={page.icon}
               subLinks={
                 page.subLinks.length === 0
                   ? null
