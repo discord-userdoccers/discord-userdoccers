@@ -1,5 +1,6 @@
 import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
 import frontmatter from "@lib/frontmatter";
+import pmo from "@lib/pmo/plugin";
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 import supersub from "remark-supersub";
@@ -32,7 +33,7 @@ const config: NextConfig = {
 
 const withMDX = createMDX({
   options: {
-    remarkPlugins: [supersub, frontmatter],
+    remarkPlugins: [supersub, frontmatter, pmo],
     rehypePlugins: [],
   },
 });
