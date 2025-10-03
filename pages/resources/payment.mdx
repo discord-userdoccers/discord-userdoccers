@@ -1,0 +1,113 @@
+# Payments
+
+...
+
+### Payment Object
+
+###### Payment Structure
+
+| Field                            | Type                                                              | Description                                                                         |
+| -------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| id                               | snowflake                                                         | The ID of the payment                                                               |
+| amount                           | integer                                                           | The amount of the payment                                                           |
+| tax                              | integer                                                           | The amount of tax paid                                                              |
+| tax_inclusive                    | boolean                                                           | Whether the amount is inclusive of all taxes                                        |
+| currency ^1^                     | string                                                            | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code    |
+| amount_refunded                  | integer                                                           | The amount refunded from the payment                                                |
+| description                      | string                                                            | The description of the payment                                                      |
+| status                           | integer                                                           | The [status](#payment-status) of payment                                            |
+| created_at                       | ISO8601 timestamp                                                 | When the payment was created                                                        |
+| sku_id?                          | snowflake                                                         | The ID of the SKU the payment was for                                               |
+| sku_price?                       | integer                                                           | The price of the SKU the payment was for                                            |
+| sku_subscription_plan_id?        | snowflake                                                         | The ID of the subscription plan the payment was for                                 |
+| payment_gateway?                 | integer                                                           | The [payment gateway](/resources/billing#payment-gateway) the payment was made with |
+| payment_gateway_payment_id?      | string                                                            | The ID of the payment on the payment gateway                                        |
+| downloadable_invoice?            | string                                                            | The URL to download the VAT invoice for this payment                                |
+| downloadable_refund_invoices?    | array[string]                                                     | The URLs to download VAT credit notices for refunds on this payment                 |
+| refund_disqualification_reasons? | array[integer]                                                    | The reasons why the payment cannot be refunded                                      |
+| flags                            | integer                                                           | The [payment's flags](#payment-flags)                                               |
+| sku?                             | SKU object                                                        | The SKU the payment was for                                                         |
+| payment_source?                  | [payment source](/resources/billing#payment-source-object) object | The payment source the payment was made with                                        |
+| subscription?                    | partial subscription object                                       | The subscription the payment was for                                                |
+| metadata                         | [payment metadata](#payment-metadata-structure) object            | The payment metadata                                                                |
+
+^1^ The value can be `discord_orb` to represent payment via virtual currency.
+
+###### Partial Payment Structure
+
+| Field         | Type      | Description                                                                      |
+| ------------- | --------- | -------------------------------------------------------------------------------- |
+| id            | snowflake | The ID of the payment                                                            |
+| amount        | integer   | The amount of the payment                                                        |
+| tax           | integer   | The amount of tax paid                                                           |
+| tax_inclusive | boolean   | Whether the amount is inclusive of all taxes                                     |
+| currency ^1^  | string    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+
+^1^ The value can be `discord_orb` to represent payment via virtual currency.
+
+###### Payment Status
+
+| Value | Name      | Description               |
+| ----- | --------- | ------------------------- |
+| 0     | PENDING   | Payment is pending        |
+| 1     | COMPLETED | Payment has gone through  |
+| 2     | FAILED    | Payment has failed        |
+| 3     | REVERSED  | Payment has been reversed |
+| 4     | REFUNDED  | Payment has been refunded |
+| 5     | CANCELED  | Payment has been canceled |
+
+###### Refund Disqualification Reason
+
+| Value | Name                           | Description                                                                                                        |
+| ----- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| 0     | OTHER                          | Purchase is disqualified from a refund due to another reasons                                                      |
+| 1     | ALREADY_REFUNDED               | Purchase is disqualified from a refund because it has already been refunded                                        |
+| 2     | NOT_USER_REFUNDABLE_TYPE       | Purchase is disqualified from a refund because it is not a user refundable type                                    |
+| 3     | PAST_REFUNDABLE_DATE           | Purchase is disqualified from a refund because it is past the refundable date                                      |
+| 4     | ENTITLEMENT_ALREADY_CONSUMED   | Purchase is disqualified from a refund because the purchased entitlement has already been consumed                 |
+| 5     | ALREADY_REFUNDED_PREMIUM       | Purchase is disqualified from a refund because the user has already refunded a premium subscription purchase       |
+| 6     | ALREADY_REFUNDED_PREMIUM_GUILD | Purchase is disqualified from a refund because the user has already refunded a premium guild subscription purchase |
+
+###### Payment Flags
+
+| Value  | Name                    | Description                                                   |
+| ------ | ----------------------- | ------------------------------------------------------------- |
+| 1 << 0 | GIFT                    | Payment is for a gift                                         |
+| 1 << 2 | USER_REFUNDED           | Payment has been self-refunded                                |
+| 1 << 3 | PREORDER                | Payment is a preorder                                         |
+| 1 << 4 | PENDING                 | Automatic payment is pending manual authorization by the user |
+| 1 << 5 | TEMPORARY_AUTHORIZATION | Payment is a temporary authorization                          |
+
+###### Payment Metadata Structure
+
+| Field              | Type     | Description                                                                |
+| ------------------ | -------- | -------------------------------------------------------------------------- |
+| billing_error_code | ?integer | The [JSON error code](/datamining/errors) that occurred during the payment |
+
+### Endpoints
+
+<RouteHeader method="GET" url="/users/@me/billing/payments">
+  Get Payments
+</RouteHeader>
+
+Returns a list of [payment](#payment-object) objects the current user ever made.
+
+{/* Unsure on `limit` default */}
+
+| Field   | Type      | Description                                          |
+| ------- | --------- | ---------------------------------------------------- |
+| limit   | integer   | Max number of payments to return (1-100, default 50) |
+| before? | snowflake | Get payments before this payment ID                  |
+| after?  | snowflake | Get payments after this payment ID                   |
+
+<RouteHeader method="GET" url="/users/@me/billing/payments/{payment.id}">
+  Get Payment
+</RouteHeader>
+
+Returns a [payment](#payment-object) object for the given payment ID.
+
+<RouteHeader method="POST" url="/users/@me/billing/payments/{payment.id}/void">
+  Void Payment
+</RouteHeader>
+
+Voids the payment. Returns a 204 empty response on success. Only applicable for payments whose status is [`PENDING`](#payment-status).
