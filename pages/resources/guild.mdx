@@ -1609,6 +1609,72 @@ Represents a member's premium guild subscription ([boost](https://support.discor
 }
 ```
 
+### Game Server Object
+
+###### Game Server Structure
+
+| Field              | Type                                                | Description                                                         |
+| ------------------ | --------------------------------------------------- | ------------------------------------------------------------------- |
+| id                 | snowflake                                           | The ID of the game server                                           |
+| name               | string                                              | The name of the game server                                         |
+| region_id?         | ?string                                             | The ID of the game server region                                    |
+| region_name?       | ?string                                             | The name of the game server region                                  |
+| sku_id             | snowflake                                           | The ID of the SKU                                                   |
+| plan_name          | string                                              | The name of the plan                                                |
+| players_count?     | ?integer                                            | Current amount of players connected to the game server              |
+| max_players_count? | ?integer                                            | Maximum amount of players that can connect to the game server       |
+| ip?                | string                                              | The IP of the game server                                           |
+| port?              | integer                                             | The port of the game server                                         |
+| entitlement_id     | snowflake                                           | The ID of the entitlement                                           |
+| provider_type      | string                                              | The type of the game server provider (currently always `shockbyte`) |
+| provider_url?      | ?string                                             | The panel URL to the game server                                    |
+| status             | integer                                             | The [status](#game-server-status) of game server                    |
+| game_id            | snowflake                                           | The ID of the game application                                      |
+| game_config?       | [game server config](#game-server-config-structure) | The game config                                                     |
+
+###### Game Server Status
+
+| Value            | Description                              |
+| ---------------- | ---------------------------------------- |
+| starting         | Game server is starting                  |
+| startup_failed   | Game server failed to start              |
+| missing_stock    | Game server's location is out of stock   |
+| sleeping         | Game server is sleeping                  |
+| offline          | Game server is offline                   |
+| online           | Game server is online                    |
+| deleted          | Game server has been deleted             |
+| provider_errored | Game server's provider have had an error |
+
+###### Game Server Config Structure
+
+| Field   | Type   | Description                    |
+| ------- | ------ | ------------------------------ |
+| type    | string | The type of the game server    |
+| version | string | The version of the game server |
+
+###### Example Game Server
+
+```json
+{
+  "id": "1429548737042186251",
+  "name": "Alien Minecraft SMP",
+  "sku_id": "1425220365138792480",
+  "plan_name": "Ultimate Plan",
+  "players_count": 2,
+  "max_players_count": 15,
+  "ip": "162.159.136.232",
+  "port": 42252,
+  "entitlement_id": "1429548737042186250",
+  "provider_type": "shockbyte",
+  "status": "online",
+  "game_id": "1402418491272986635",
+  "game_config": {
+    "type": "Java",
+    "version": "1.16.5"
+  }
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/guilds" supportsOAuth2="guilds">
@@ -2963,7 +3029,7 @@ Returns a list of [entitlement](/resources/entitlement#entitlement-object) objec
   Add Guild Powerup
 </RouteHeader>
 
-Adds the given powerup SKU to the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Guild Update](/topics/gateway-events#guild-update) and [Guild Powerup Entitlements Create](/topics/gateway-events#guild-powerup-entitlements-create) Gateway event.
+Adds the given powerup SKU to the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Guild Update](/topics/gateway-events#guild-update), optionally [Game Server Create](/topics/gateway-events#game-server-create), and [Guild Powerup Entitlements Create](/topics/gateway-events#guild-powerup-entitlements-create) Gateway event.
 
 ###### JSON Params
 
@@ -2976,13 +3042,26 @@ Adds the given powerup SKU to the guild. Requires the `MANAGE_GUILD` permission.
   Remove Guild Powerup
 </RouteHeader>
 
-Removes the given powerup SKU from the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Guild Update](/topics/gateway-events#guild-update) and [Guild Powerup Entitlements Delete](/topics/gateway-events#guild-powerup-entitlements-delete) Gateway event.
+Removes the given powerup SKU from the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires a [Guild Update](/topics/gateway-events#guild-update), optionally [Game Server Delete](/topics/gateway-events#game-server-delete), and [Guild Powerup Entitlements Delete](/topics/gateway-events#guild-powerup-entitlements-delete) Gateway event.
 
 ###### Query String Params
 
 | Field           | Type      | Description                                                                              |
 | --------------- | --------- | ---------------------------------------------------------------------------------------- |
 | entitlement_id? | snowflake | The ID of the entitlement to remove (if not specified, all entitlements will be removed) |
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/entitlements/{entitlement.id}">
+  Modify Guild Powerup
+</RouteHeader>
+
+Modifies the guild's powerup. Returns a 204 empty response on success. Fires a [Game Server Update](/topics/gateway-events#game-server-update) Gateway event.
+
+###### JSON Params
+
+| Field             | Type      | Description                                   |
+| ----------------- | --------- | --------------------------------------------- |
+| game_server_name? | string    | The name of the game server (1-32 characters) |
+| sku_id?           | snowflake | The ID of the plan SKU                        |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/admin-server-eligibility">
   Get Admin Community Eligibility
@@ -3118,7 +3197,7 @@ Returns a list of [game server region](#game-server-region-structure) objects fo
 | id           | string | The ID of the region                                                                              |
 | name         | string | The name of the region                                                                            |
 | country_code | string | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code of region |
-| ping_url     | string | The ping URL of region server                                                                     |
+| ping_url     | string | The WebSocket URL of region server used to ping                                                   |
 
 <RouteHeader method="POST" url="/guilds/{guild.id}/game-servers/{game_server.id}/wake">
   Wake Guild Game Server
