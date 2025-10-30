@@ -60,7 +60,7 @@ export default function App({
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const meta = useMemo(() => getText(), []);
+  const meta = useMemo(() => getText(), [router.asPath]);
 
   return (
     <>
