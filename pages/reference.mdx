@@ -217,7 +217,31 @@ However, there are cases in which passing something to the API will instead retu
 }
 ```
 
-You can see in this case that the sent `user_id` is not a `bigint`; therefore, when it is serialized back to JSON by Discord, it is not transformed into a string. **This will never happen with IDs that come from Discord.** But, this can happen if you send malformed data in your requests.
+You can see in this case that the sent `user_id` is not a `bigint`; therefore, when it is serialized back to JSON by Discord, it is not transformed into a string.
+
+## Magic Snowflakes
+
+Certain snowflake IDs are constants that have special meaning throughout the API. While this is not an exhaustive list, the following are important to note:
+
+| Resource                                                 | ID                    | Description                       |
+| -------------------------------------------------------- | --------------------- | --------------------------------- |
+| [User](/resources/user#user-object)                      | `456226577798135808`  | Deleted user sentinel account     |
+| [User](/resources/user#user-object)                      | `643945264868098049`  | Official Discord system account   |
+| [User](/resources/user#user-object)                      | `669627189624307712`  | Community Updates system account  |
+| [User](/resources/user#user-object)                      | `1008776202191634432` | AutoMod system account            |
+| [User](/resources/user#user-object)                      | `1081004946872352958` | Clyde AI bot                      |
+| [User](/resources/user#user-object)                      | `1232523165893132288` | Discord Updates system account    |
+| [Application](/resources/application#application-object) | `521842831262875670`  | Premium subscriptions application |
+| [Application](/resources/application#application-object) | `545364944258990091`  | Discord Developers application    |
+| [Application](/resources/application#application-object) | `710982414301790216`  | Stickers application              |
+| [Application](/resources/application#application-object) | `834488117758001152`  | Ticketed Events application       |
+| [Application](/resources/application#application-object) | `1096190356233670716` | Collectibles application          |
+| [Application](/resources/application#application-object) | `1225629272358518784` | Quest Reward Codes application    |
+| [Application](/resources/application#application-object) | `1340102344645283891` | Guild Powerups application        |
+| [Application](/resources/application#application-object) | `622174530214821906`  | Xbox integration                  |
+| [Application](/resources/application#application-object) | `1008890872156405890` | PlayStation integration           |
+| [Application](/resources/application#application-object) | `984193235868065795`  | PlayStation integration (staging) |
+| [Guild](/resources/guild#guild-object)                   | `667560445975986187`  | Community Updates guild           |
 
 ## ISO8601 Datetime
 
@@ -713,15 +737,17 @@ Timestamps are expressed in seconds and display the given timestamp in the user'
 
 ###### Timestamp Styles
 
-| Style | Example Output               | Description     |
-| ----- | ---------------------------- | --------------- |
-| t     | 16:20                        | Short Time      |
-| T     | 16:20:30                     | Long Time       |
-| d     | 20/04/2021                   | Short Date      |
-| D     | 20 April 2021                | Long Date       |
-| f ^1^ | 20 April 2021 16:20          | Short Date/Time |
-| F     | Tuesday, 20 April 2021 16:20 | Long Date/Time  |
-| R     | 2 months ago                 | Relative Time   |
+| Style | Example Output                   | Description            |
+| ----- | -------------------------------- | ---------------------- |
+| t     | 16:20                            | Short Time             |
+| T     | 16:20:30                         | Medium Time            |
+| d     | 20/04/2021                       | Short Date             |
+| D     | April 20, 2021                   | Long Date              |
+| f ^1^ | April 20, 2021 at 16:20          | Long Date/Short Time   |
+| F     | Tuesday, April 20, 2021 at 16:20 | Full Date/Short Time   |
+| s     | 20/04/2021, 16:20                | Short Date/Short Time  |
+| S     | 20/04/2021, 16:20:30             | Short Date/Medium Time |
+| R     | 2 months ago                     | Relative Time          |
 
 ^1^ This is the default.
 
@@ -1070,41 +1096,62 @@ Now, instead of sending the attachment again in a form body in the request, you 
 
 ## Locales
 
-| Locale | Language Name         | Native Name               |
-| ------ | --------------------- | ------------------------- |
-| ar     | Arabic                | العربية                   |
-| bg     | Bulgarian             | български                 |
-| cs     | Czech                 | Čeština                   |
-| da     | Danish                | Dansk                     |
-| de     | German                | Deutsch                   |
-| el     | Greek                 | Ελληνικά                  |
-| en-GB  | English, UK           | English, UK               |
-| en-US  | English, US           | English, US               |
-| es-ES  | Spanish               | Español                   |
-| es-419 | Spanish, LATAM        | Español de América Latina |
-| fi     | Finnish               | Suomi                     |
-| fr     | French                | Français                  |
-| hi     | Hindi                 | हिन्दी                    |
-| hr     | Croatian              | Hrvatski                  |
-| hu     | Hungarian             | Magyar                    |
-| id     | Indonesian            | Bahasa Indonesia          |
-| it     | Italian               | Italiano                  |
-| ja     | Japanese              | 日本語                    |
-| ko     | Korean                | 한국어                    |
-| lt     | Lithuanian            | Lietuviškai               |
-| nl     | Dutch                 | Nederlands                |
-| no     | Norwegian             | Norsk                     |
-| pl     | Polish                | Polski                    |
-| pt-BR  | Portuguese, Brazilian | Português do Brasil       |
-| ro     | Romanian              | Română                    |
-| ru     | Russian               | Pусский                   |
-| sv-SE  | Swedish               | Svenska                   |
-| th     | Thai                  | ไทย                       |
-| tr     | Turkish               | Türkçe                    |
-| uk     | Ukrainian             | Українська                |
-| vi     | Vietnamese            | Tiếng Việt                |
-| zh-CN  | Chinese, China        | 中文                      |
-| zh-TW  | Chinese, Taiwan       | 繁體中文                  |
+User locale is determined by looking at the `X-Discord-Locale` header, then the `Accept-Language` header if not present, then lastly the user settings locale.
+
+| Locale | Language Name      | Native Name               |
+| ------ | ------------------ | ------------------------- |
+| ar     | Arabic             | العربية                   |
+| bg     | Bulgarian          | български                 |
+| cs     | Czech              | Čeština                   |
+| da     | Danish             | Dansk                     |
+| de     | German             | Deutsch                   |
+| el     | Greek              | Ελληνικά                  |
+| en-GB  | English, UK        | English, UK               |
+| en-US  | English, US        | English, US               |
+| es-ES  | Spanish, Spain     | Español                   |
+| es-419 | Spanish, LATAM     | Español de América Latina |
+| fi     | Finnish            | Suomi                     |
+| fr     | French             | Français                  |
+| hi     | Hindi              | हिन्दी                    |
+| hr     | Croatian           | Hrvatski                  |
+| hu     | Hungarian          | Magyar                    |
+| id     | Indonesian         | Bahasa Indonesia          |
+| it     | Italian            | Italiano                  |
+| ja     | Japanese           | 日本語                    |
+| ko     | Korean             | 한국어                    |
+| lt     | Lithuanian         | Lietuviškai               |
+| nl     | Dutch              | Nederlands                |
+| no     | Norwegian          | Norsk                     |
+| pl     | Polish             | Polski                    |
+| pt-BR  | Portuguese, Brazil | Português do Brasil       |
+| ro     | Romanian           | Română                    |
+| ru     | Russian            | Pусский                   |
+| sv-SE  | Swedish            | Svenska                   |
+| th     | Thai               | ไทย                       |
+| tr     | Turkish            | Türkçe                    |
+| uk     | Ukrainian          | Українська                |
+| vi     | Vietnamese         | Tiếng Việt                |
+| zh-CN  | Chinese, China     | 中文                      |
+| zh-TW  | Chinese, Taiwan    | 繁體中文                  |
+
+#### Localized String
+
+<Alert type="warn">
+
+In API v8 and above, most API resources have switched away from this format, instead opting for `<string>` and `<string>_localizations` fields.
+However, this format is still used in [store APIs](/resources/store) today.
+
+</Alert>
+
+Certain localized strings in the API have a special structure. These strings are represented as an object with the following fields:
+
+| Field          | Type                | Description                                                                  |
+| -------------- | ------------------- | ---------------------------------------------------------------------------- |
+| default        | string              | The fallback string if no localization is available for the requested locale |
+| localizations? | map[string, string] | The string for each [locale](#locales) supported                             |
+
+Note that for localized versions of resources, the value is simply the localized string, not the above object.
+When creating or updating resources, you can provide either the above object or a single string value, which will set the `default` field and remove any existing localizations.
 
 ## Documentation Reference
 
