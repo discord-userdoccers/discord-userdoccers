@@ -2,6 +2,25 @@
 
 Payments are made by the user to Discord in exchange for first and third-party products and services.
 
+## Payment Clients
+
+Payment clients are a concept used to prevent fraudulent transactions across Discord. When a client first attempts to make a payment, it generates a UUIDv4 identifier to be used as the purchase token. This token is then persisted by the client and sent along with all future payment requests.
+It is mandatory that all purchase requests include this token in the `purchase_token` field of the request body, and the tokens expire after 60 days and must be regenerated.
+
+If Discord detects suspicious activity from a payment client during a transaction, it sends a verification email to the user asking them to authorize the purchase. In the meantime, all purchase requests will fail with a 400 bad request and a [`100056` JSON error code](/topics/opcodes-and-status-codes#json-error-codes):
+
+```json
+{
+  "message": "This client needs to be authorized for purchases. We've sent you an email. Click the link on the email and then retry the purchase.",
+  "code": 100056,
+  "payment_id": "1434311883015458937"
+}
+```
+
+The verification email received will contain a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-payment#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiN3NtVnNGYWlQNFBQTzIrREgya3JhUVJmZXFlclpvY3UvaFRwcVFBckw5Yz0iXQ.Y5ER6Q.IQhdQcfkK_eHLC16CcFZaYqRP_E`).
+After receiving the token, clients can then send a request to the [Verify Purchase Request](#verify-purchase-request) endpoint to complete the authorization process. If the user has not received a link, clients can [choose to resend it](#resend-payment-verification-email).
+Upon successful verification, the client will receive a [User Payment Client Add](/topics/gateway-events#user-payment-client-add) Gateway event, which indicates that the purchase can be retried.
+
 ### Payment Object
 
 ###### Payment Structure
@@ -73,6 +92,30 @@ Payments are made by the user to Discord in exchange for first and third-party p
 | 1 << 5 | TEMPORARY_AUTHORIZATION | Payment is a temporary authorization                          |
 
 ### Endpoints
+
+<RouteHeader method="POST" url="/billing/verify-purchase-request">
+  Verify Purchase Request
+</RouteHeader>
+
+Verifies and authorizes a payment client for purchases. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field | Type   | Description                                |
+| ----- | ------ | ------------------------------------------ |
+| token | string | The verification token from the email link |
+
+<RouteHeader method="POST" url="/store/email/resend-payment-verification">
+  Resend Payment Verification Email
+</RouteHeader>
+
+Resends the payment verification email to the user. Returns an empty object on success.
+
+###### JSON Params
+
+| Field          | Type   | Description                                                    |
+| -------------- | ------ | -------------------------------------------------------------- |
+| purchase_token | string | The purchase token of the payment client (max 1024 characters) |
 
 <RouteHeader method="GET" url="/users/@me/billing/payments">
   Get Payments
