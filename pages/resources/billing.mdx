@@ -1,0 +1,537 @@
+# Billing
+
+Discord supports a variety of payment providers to enable billing for first-party and third-party monetization.
+
+### Payment Source Object
+
+###### Payment Source Structure
+
+| Field                      | Type                                          | Description                                                                   |
+| -------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------- |
+| id                         | snowflake                                     | The ID of the payment source                                                  |
+| brand?                     | string                                        | The brand of the payment source (only applicable for credit cards)            |
+| country?                   | string                                        | The country of the payment source                                             |
+| last_4?                    | string                                        | The last four digits of the payment source (only applicable for credit cards) |
+| billing_address ^1^        | [billing address](#billing-address-structure) | The billing address of the payment source                                     |
+| type                       | integer                                       | The [type of the payment source](#payment-source-type)                        |
+| payment_gateway            | integer                                       | The [payment gateway](#payment-gateway) of the payment source                 |
+| payment_gateway_source_id? | string                                        | The ID of the payment source in the payment gateway                           |
+| default ^1^                | boolean                                       | Whether the payment source is the default payment source                      |
+| invalid                    | boolean                                       | Whether the payment source is invalid                                         |
+| flags                      | integer                                       | The [payment source's flags](#payment-source-flags)                           |
+| deleted_at                 | ?ISO8601 timestamp                            | When the payment source was deleted at                                        |
+| expires_month?             | integer                                       | The month the credit card expires at                                          |
+| expires_year?              | integer                                       | The year the credit card expires at                                           |
+| email?                     | string                                        | The email address associated with the payment source                          |
+| bank?                      | string                                        | The bank associated with the payment source                                   |
+| username?                  | string                                        | The username associated with the payment source (only applicable for Venmo)   |
+
+^1^ Not available in payment objects.
+
+###### Example Payment Source
+
+```json
+{
+  "id": "1422548914485198869",
+  "type": 1,
+  "invalid": false,
+  "flags": 0,
+  "deleted_at": null,
+  "brand": "visa",
+  "last_4": "4242",
+  "expires_month": 9,
+  "expires_year": 2077,
+  "billing_address": {
+    "name": "John Doe",
+    "line_1": "123 Main Street",
+    "line_2": "Apt 4B",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "US",
+    "postal_code": "94105"
+  },
+  "country": "US",
+  "payment_gateway": 1,
+  "payment_gateway_source_id": "pm_DwiVlGlYwe1qxLzy4QWChQeo",
+  "default": false
+}
+```
+
+###### Billing Address Structure
+
+| Field        | Type    | Description                           |
+| ------------ | ------- | ------------------------------------- |
+| line_1       | string  | The address of the location           |
+| line_2?      | ?string | The secondary address of the location |
+| name         | string  | The name of the payment source        |
+| postal_code? | string  | The postal code of the location       |
+| city         | string  | The city of the location              |
+| state?       | string  | The state or province of the location |
+| country      | string  | The country of the location           |
+
+###### Payment Source Type
+
+| Value | Name                    | Description        |
+| ----- | ----------------------- | ------------------ |
+| 1     | CARD                    | Credit card        |
+| 2     | PAYPAL                  | PayPal             |
+| 3     | GIROPAY                 | Giropay            |
+| 4     | SOFORT **(deprecated)** | Sofort             |
+| 5     | PRZELEWY24              | Przelewy24         |
+| 6     | SEPA_DEBIT              | SEPA debit         |
+| 7     | PAYSAFE_CARD            | Paysafe            |
+| 8     | GCASH                   | GCash              |
+| 9     | GRABPAY_MY              | GrabPay (Malaysia) |
+| 10    | MOMO_WALLET             | MoMo Wallet        |
+| 11    | VENMO                   | Venmo              |
+| 12    | GOPAY_WALLET            | GoPay Wallet       |
+| 13    | KAKAOPAY                | KakaoPay           |
+| 14    | BANCONTACT              | Bancontact         |
+| 15    | EPS                     | EPS                |
+| 16    | IDEAL                   | iDEAL              |
+| 17    | CASH_APP                | Cash App           |
+| 18    | APPLE                   | Apple Pay          |
+
+###### Payment Gateway
+
+| Value | Name                 | Description |
+| ----- | -------------------- | ----------- |
+| 1     | STRIPE               | Stripe      |
+| 2     | BRAINTREE            | Braintree   |
+| 3     | APPLE                | Apple       |
+| 4     | GOOGLE               | Google      |
+| 5     | ADYEN                | Adyen       |
+| 6     | APPLE_PARTNER        | Apple Pay   |
+| 8     | VIRTUAL_CURRENCY ^1^ | Orbs        |
+
+^1^ Payment gateway is internal and cannot be used directly.
+
+###### Payment Source Flags
+
+| Value  | Name               | Description                                             |
+| ------ | ------------------ | ------------------------------------------------------- |
+| 1 << 0 | NEW                | Payment source is new                                   |
+| 1 << 1 | SUCCESSFUL_PAYMENT | Payment source has been successfully used at least once |
+
+### Gateway Checkout Context Object
+
+###### Gateway Checkout Context Structure
+
+| Field                  | Type    | Description                                         |
+| ---------------------- | ------- | --------------------------------------------------- |
+| braintree_device_data? | ?string | The Braintree device data collected during checkout |
+
+### User Trial Offer Object
+
+###### User Trial Offer Structure
+
+| Field              | Type                                                                           | Description                                                |
+| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| id                 | snowflake                                                                      | The ID of the user trial offer                             |
+| user_id            | snowflake                                                                      | The ID of the user the offer is for                        |
+| trial_id           | snowflake                                                                      | The ID of the subscription trial associated with the offer |
+| expires_at ^1^     | ?ISO8601 timestamp                                                             | When the trial offer expires                               |
+| subscription_trial | [subscription trial](/resources/subscription#subscription-trial-object) object | The subscription trial associated with the offer           |
+
+^1^ Trial offers only gain an expiration date when they are [acknowledged](#acknowledge-user-offer).
+
+###### Example User Trial Offer
+
+```json
+{
+  "id": "1433666591022645361",
+  "user_id": "852892297661906993",
+  "trial_id": "1073698058383917056",
+  "subscription_trial": {
+    "id": "1073698058383917056",
+    "interval": 3,
+    "interval_count": 14,
+    "sku_id": "521847234246082599"
+  },
+  "expires_at": "2025-11-04T07:26:18.125782+00:00"
+}
+```
+
+### User Discount Offer Object
+
+###### User Discount Offer Structure
+
+| Field           | Type                                   | Description                                      |
+| --------------- | -------------------------------------- | ------------------------------------------------ |
+| id              | snowflake                              | The ID of the user discount offer                |
+| discount_id     | snowflake                              | The ID of the discount associated with the offer |
+| user_id         | snowflake                              | The ID of the user the offer is for              |
+| invoice_id? ^1^ | ?snowflake                             | The ID of the invoice the offer was applied to   |
+| created_at? ^1^ | ?ISO8601 timestamp                     | When the offer was created                       |
+| applied_at      | ?ISO8601 timestamp                     | When the offer was applied                       |
+| deleted_at? ^1^ | ?ISO8601 timestamp                     | When the offer was deleted                       |
+| expires_at ^2^  | ?ISO8601 timestamp                     | When the offer expires                           |
+| discount        | [discount](#discount-structure) object | The discount associated with the offer           |
+
+^1^ These fields are only present for applied offers.
+
+^2^ Discount offers only gain an expiration date when they are [acknowledged](#acknowledge-user-offer).
+
+###### Discount Structure
+
+| Field                           | Type               | Description                                                                |
+| ------------------------------- | ------------------ | -------------------------------------------------------------------------- |
+| id                              | snowflake          | The ID of the discount                                                     |
+| amount                          | integer            | The discount amount in the smallest currency unit                          |
+| starts_at?                      | ?ISO8601 timestamp | When the discount starts                                                   |
+| ends_at?                        | ?ISO8601 timestamp | When the discount ends                                                     |
+| status                          | integer            | The [status of the discount](#discount-status)                             |
+| created_at                      | ISO8601 timestamp  | When the discount was created                                              |
+| sku_ids                         | ?array[snowflake]  | The IDs of the subscription SKUs the discount applies to                   |
+| sku_group_ids                   | ?array[snowflake]  | The IDs of the subscription SKU groups the discount applies to             |
+| plan_ids                        | array[snowflake]   | The IDs of the plans the discount applies to                               |
+| user_usage_limit_interval       | integer            | The [interval](/resources/store#subscription-interval) for the usage limit |
+| user_usage_limit_interval_count | integer            | The number of intervals before the usage limit resets                      |
+| user_usage_limit                | integer            | The maximum number of times a user can use the discount                    |
+
+###### Example User Discount Offer
+
+```json
+{
+  "id": "1433666591022645360",
+  "user_id": "852892297661906993",
+  "discount_id": "1204865493622587392",
+  "applied_at": null,
+  "expires_at": "2025-11-04T07:26:18.125782+00:00",
+  "discount": {
+    "id": "1204865493622587392",
+    "amount": 30,
+    "starts_at": null,
+    "ends_at": null,
+    "status": 2,
+    "created_at": "2024-02-08T16:44:28.903181+00:00",
+    "sku_ids": null,
+    "sku_group_ids": null,
+    "plan_ids": ["511651880837840896"],
+    "user_usage_limit_interval": 3,
+    "user_usage_limit_interval_count": 1,
+    "user_usage_limit": 1
+  }
+}
+```
+
+### Endpoints
+
+<RouteHeader method="GET" url="/users/@me/billing/country-code">
+  Get Billing Country Code
+</RouteHeader>
+
+Returns the user's country code based on requesting IP address.
+
+###### Response Body
+
+| Field        | Type   | Description                                                                             |
+| ------------ | ------ | --------------------------------------------------------------------------------------- |
+| country_code | string | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+
+<RouteHeader method="GET" url="/users/@me/billing/location-info">
+  Get Billing Location Info
+</RouteHeader>
+
+Returns the user's country and subdivision code based on requesting IP address.
+
+###### Response Body
+
+| Field            | Type    | Description                                                                             |
+| ---------------- | ------- | --------------------------------------------------------------------------------------- |
+| country_code     | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| subdivision_code | ?string | The [ISO 3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) subdivision code             |
+
+<RouteHeader method="GET" url="/users/@me/billing/payment-sources">
+  Get Payment Sources
+</RouteHeader>
+
+Returns a list of [payment source](#payment-source-object) objects. Note that the `billing_address` fields within these objects will be partial for security reasons, containing only `name` and `country`.
+
+<RouteHeader method="GET" url="/users/@me/billing/payment-sources/{payment_source.id}" mfa>
+  Get Payment Source
+</RouteHeader>
+
+Returns a [payment source](#payment-source-object) object for a given payment source ID.
+
+<RouteHeader method="POST" url="/users/@me/billing/payment-sources">
+  Create Payment Source
+</RouteHeader>
+
+Creates a payment source. Returns a [payment source](#payment-source-object) object on success. Fires a [User Payment Sources Update](/topics/gateway-events#user-payment-sources-update) Gateway event.
+
+###### JSON Params
+
+| Field                  | Type                                                 | Description                                                                                           |
+| ---------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| token                  | string                                               | The payment source token retrieved from the payment gateway                                           |
+| payment_gateway        | integer                                              | The [payment gateway](#payment-gateway) of the payment source                                         |
+| billing_address        | [billing address](#billing-address-structure) object | The billing address of the payment source                                                             |
+| billing_address_token? | string                                               | The validation token obtained from the [Validate Billing Address](#validate-billing-address) endpoint |
+| return_url?            | string                                               | The URL to return to after the payment source is created                                              |
+| bank?                  | string                                               | The bank information for the payment source                                                           |
+
+<RouteHeader method="PATCH" url="/users/@me/billing/payment-sources/{payment_source.id}" mfa>
+  Modify Payment Source
+</RouteHeader>
+
+Modifies a payment source. Returns an updated [payment source](#payment-source-object) object on success. Fires a [User Payment Sources Update](/topics/gateway-events#user-payment-sources-update) Gateway event.
+
+###### JSON Params
+
+| Field            | Type                                                 | Description                                              |
+| ---------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| billing_address? | [billing address](#billing-address-structure) object | The billing address of the payment source                |
+| default?         | boolean                                              | Whether the payment source is the default payment source |
+| expires_month?   | integer                                              | The year the credit card expires at                      |
+| expires_year?    | integer                                              | The month the credit card expires at                     |
+
+<RouteHeader method="DELETE" url="/users/@me/billing/payment-sources/{payment_source.id}">
+  Delete Payment Source
+</RouteHeader>
+
+Deletes a payment source. Returns a 204 empty response on success. Fires a [User Payment Sources Update](/topics/gateway-events#user-payment-sources-update) Gateway event.
+
+<RouteHeader method="POST" url="/users/@me/billing/payment-sources/validate-billing-address">
+  Validate Billing Address
+</RouteHeader>
+
+Validates a billing address.
+
+| Field           | Type                                                 | Description                     |
+| --------------- | ---------------------------------------------------- | ------------------------------- |
+| billing_address | [billing address](#billing-address-structure) object | The billing address to validate |
+
+###### Response Body
+
+| Field | Type   | Description                            |
+| ----- | ------ | -------------------------------------- |
+| token | string | The token of validated billing address |
+
+<RouteHeader method="POST" url="/users/@me/billing/stripe/setup-intents">
+  Get Stripe Setup Intent Secret
+</RouteHeader>
+
+Creates a Stripe SetupIntent and returns the client secret. See the [Stripe documentation](https://docs.stripe.com/api/setup_intents) for more information.
+
+###### JSON Params
+
+| Field                                  | Type           | Description                                                                       |
+| -------------------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| regional_payment_element_source_types? | array[integer] | [Payment source types](#payment-source-type) to use via Stripe's Payment Elements |
+
+###### Response Body
+
+| Field         | Type   | Description                          |
+| ------------- | ------ | ------------------------------------ |
+| client_secret | string | The client secret of the SetupIntent |
+
+<RouteHeader method="POST" url="/users/@me/billing/paypal/billing-agreement-tokens">
+  Create PayPal Billing Agreement Token
+</RouteHeader>
+
+Creates a PayPal billing agreement and returns its token. See the [PayPal documentation](https://developer.paypal.com/docs/api/payments.billing-agreements/v1/#billing-agreements_create-agreement-token) for more information.
+This token is used to redirect the user to PayPal to approve the billing agreement through a URL: `https://www.paypal.com/agreements/approve?nolegacy=1&ba_token={token}`
+
+###### JSON Params
+
+| Field          | Type   | Description                                                     |
+| -------------- | ------ | --------------------------------------------------------------- |
+| return_url ^1^ | string | The URL to redirect to after approval (max 2048 characters)     |
+| cancel_url ^1^ | string | The URL to redirect to after cancellation (max 2048 characters) |
+
+^1^ These URLs are typically set to the [Create Billing Popup Bridge Redirect](#create-billing-popup-bridge-redirect) endpoint (with a `response_type` of `return` and `cancel`, respectively), which redirects the user back to the Discord client for handling.
+
+###### Response Body
+
+| Field | Type   | Description                               |
+| ----- | ------ | ----------------------------------------- |
+| token | string | The token of the PayPal billing agreement |
+
+<RouteHeader method="GET" url="/users/@me/billing/adyen/payment-methods">
+  Get Available Adyen Payment Methods
+</RouteHeader>
+
+Returns available payment methods for the [`ADYEN` payment gateway](#payment-gateway). This endpoint is a proxy for getting available payment methods for transactions using the Adyen API. See the [Adyen documentation](https://docs.adyen.com/api-explorer/Checkout/71/post/paymentMethods) for more information.
+
+<RouteHeader method="POST" url="/billing/popup-bridge/{payment_source.type}">
+  Create Billing Popup Bridge
+</RouteHeader>
+
+Creates a billing popup bridge to handle third-party payment flows.
+
+###### Response Body
+
+| Field | Type   | Description                              |
+| ----- | ------ | ---------------------------------------- |
+| state | string | A unique identifier for the request flow |
+
+<RouteHeader method="GET" url="/billing/popup-bridge/{payment_source.type}/callback/{state}/{response_type}">
+  Create Billing Popup Bridge Redirect
+</RouteHeader>
+
+Redirects the user back to the Discord client after completing a third-party payment flow. The client uses [Create Billing Popup Bridge Callback](#create-billing-popup-bridge-callback) to complete the flow.
+
+<RouteHeader method="POST" url="/billing/popup-bridge/{payment_source.type}/callback">
+  Create Billing Popup Bridge Callback
+</RouteHeader>
+
+Completes a third-party payment flow after being redirected back from the payment provider. Returns a 204 empty response on success. Fires a [Billing Popup Bridge Callback](/topics/gateway-events#billing-popup-bridge-callback) Gateway event.
+
+###### JSON Params
+
+| Field     | Type                | Description                                      |
+| --------- | ------------------- | ------------------------------------------------ |
+| state     | string              | The unique identifier for the request flow       |
+| path      | string              | The redirect API path                            |
+| query?    | map[string, string] | Redirect query parameters                        |
+| insecure? | boolean             | Whether the callback is insecure (default false) |
+
+<RouteHeader method="GET" url="/users/@me/billing/localized-pricing-promo">
+  Get Localized Pricing Promo
+</RouteHeader>
+
+Returns localized pricing promo information for the user based on their country.
+
+###### Response Body
+
+| Field                   | Type                                                                  | Description                                                                             |
+| ----------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| country_code            | string                                                                | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localized_pricing_promo | ?[localized pricing promo](#localized-pricing-promo-structure) object | The localized pricing promo information                                                 |
+
+###### Localized Pricing Promo Structure
+
+| Field                | Type                                                 | Description                                                                             |
+| -------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| plan_id              | snowflake                                            | The ID of the discounted subscription plan                                              |
+| country_code         | string                                               | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| payment_source_types | array[integer]                                       | The allowed [payment source types](#payment-source-type) for the promotion              |
+| price                | [localized price](#localized-price-structure) object | The promotional price information                                                       |
+
+###### Localized Price Structure
+
+| Field    | Type    | Description                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------- |
+| currency | string  | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| amount   | integer | The price amount in the smallest currency unit                                   |
+
+<RouteHeader method="POST" url="/users/@me/billing/user-offer">
+  Get User Offer
+</RouteHeader>
+
+Returns the current trial and discount offers for the user, if any.
+
+###### JSON Params
+
+| Field            | Type      | Description                                                    |
+| ---------------- | --------- | -------------------------------------------------------------- |
+| payment_gateway? | integer   | The [payment gateway](#payment-gateway) to retrieve offers for |
+| offer_id?        | snowflake | The specific discount ID to fetch the offer of                 |
+
+###### Response Body
+
+| Field               | Type                                                       | Description                          |
+| ------------------- | ---------------------------------------------------------- | ------------------------------------ |
+| user_trial_offer    | ?[user trial offer](#user-trial-offer-object) object       | The user's trial offer               |
+| user_discount_offer | ?[user discount offer](#user-discount-offer-object) object | The user's discount offer            |
+| user_discount       | ?[user discount offer](#user-discount-offer-object) object | The currently applied discount offer |
+
+<RouteHeader method="POST" url="/users/@me/billing/user-offer/ack">
+  Acknowledge User Offer
+</RouteHeader>
+
+Acknowledges that the user has seen a trial or discount offer.
+
+###### JSON Params
+
+| Field                   | Type      | Description                                 |
+| ----------------------- | --------- | ------------------------------------------- |
+| user_trial_offer_id?    | snowflake | The ID of the trial offer to acknowledge    |
+| user_discount_offer_id? | snowflake | The ID of the discount offer to acknowledge |
+
+###### Response Body
+
+| Field                | Type                                                       | Description                             |
+| -------------------- | ---------------------------------------------------------- | --------------------------------------- |
+| user_trial_offer     | ?[user trial offer](#user-trial-offer-object) object       | The acknowledged trial offer            |
+| user_discount_offer? | ?[user discount offer](#user-discount-offer-object) object | The acknowledged discount offer         |
+| user_discount?       | ?[user discount offer](#user-discount-offer-object) object | The acknowledged applied discount offer |
+
+<RouteHeader method="POST" url="/users/@me/billing/churn-user-offer">
+  Create Churn User Offer
+</RouteHeader>
+
+Creates a discount offer as a retention attempt for a user in a non-renewing state, if allowed.
+
+###### Response Body
+
+| Field | Type                                                      | Description                |
+| ----- | --------------------------------------------------------- | -------------------------- |
+| offer | [user discount offer](#user-discount-offer-object) object | The created discount offer |
+
+<RouteHeader method="GET" url="/users/@me/billing/churn-user-offer">
+  Get Churn User Offer
+</RouteHeader>
+
+Returns the current retention discount offer for a user in a non-renewing state, if any.
+
+###### Response Body
+
+| Field | Type                                                      | Description                          |
+| ----- | --------------------------------------------------------- | ------------------------------------ |
+| offer | [user discount offer](#user-discount-offer-object) object | The current retention discount offer |
+
+<RouteHeader method="GET" url="/users/@me/billing/user-trial-offer" deprecated>
+  Get User Trial Offer
+</RouteHeader>
+
+Returns a [user trial offer](#user-trial-offer-object) object for the user, if any.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Get User Offer](#get-user-offer).
+
+</Alert>
+
+<RouteHeader method="POST" url="/users/@me/billing/user-trial-offer/{user_trial_offer.id}/ack" deprecated>
+  Acknowledge User Trial Offer
+</RouteHeader>
+
+Acknowledges that the user has seen a trial offer. Returns the acknowledged [user trial offer](#user-trial-offer-object) object on success.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Acknowledge User Offer](#acknowledge-user-offer).
+
+</Alert>
+
+<RouteHeader method="POST" url="/users/@me/billing/user-offer/redeem">
+  Redeem User Offer
+</RouteHeader>
+
+Redeems a discount offer for the user. Returns a list of applied [user discount offer](#user-discount-offer-object) objects on success.
+
+###### JSON Params
+
+| Field                  | Type      | Description                            |
+| ---------------------- | --------- | -------------------------------------- |
+| user_discount_offer_id | snowflake | The ID of the discount offer to redeem |
+
+<RouteHeader method="GET" url="/users/@me/billing/checkout-recovery">
+  Get Checkout Recovery
+</RouteHeader>
+
+Returns whether the client should prompt the user to continue their premium purchase.
+
+###### Response Body
+
+| Field        | Type    | Description                                                     |
+| ------------ | ------- | --------------------------------------------------------------- |
+| is_eligible? | boolean | Whether the client should prompt the user for checkout recovery |
+
+<RouteHeader method="GET" url="/users/@me/billing/nitro-affinity">
+  Get Premium User Affinity
+</RouteHeader>
+
+Returns a list of up to 3 partial [user](/resources/user#partial-user-structure) objects representing friends with a premium subscription, used to entice the user to subscribe.

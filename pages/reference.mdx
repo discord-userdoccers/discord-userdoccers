@@ -217,7 +217,31 @@ However, there are cases in which passing something to the API will instead retu
 }
 ```
 
-You can see in this case that the sent `user_id` is not a `bigint`; therefore, when it is serialized back to JSON by Discord, it is not transformed into a string. **This will never happen with IDs that come from Discord.** But, this can happen if you send malformed data in your requests.
+You can see in this case that the sent `user_id` is not a `bigint`; therefore, when it is serialized back to JSON by Discord, it is not transformed into a string.
+
+## Magic Snowflakes
+
+Certain snowflake IDs are constants that have special meaning throughout the API. While this is not an exhaustive list, the following are important to note:
+
+| Resource                                                 | ID                    | Description                       |
+| -------------------------------------------------------- | --------------------- | --------------------------------- |
+| [User](/resources/user#user-object)                      | `456226577798135808`  | Deleted user sentinel account     |
+| [User](/resources/user#user-object)                      | `643945264868098049`  | Official Discord system account   |
+| [User](/resources/user#user-object)                      | `669627189624307712`  | Community Updates system account  |
+| [User](/resources/user#user-object)                      | `1008776202191634432` | AutoMod system account            |
+| [User](/resources/user#user-object)                      | `1081004946872352958` | Clyde AI bot                      |
+| [User](/resources/user#user-object)                      | `1232523165893132288` | Discord Updates system account    |
+| [Application](/resources/application#application-object) | `521842831262875670`  | Premium subscriptions application |
+| [Application](/resources/application#application-object) | `545364944258990091`  | Discord Developers application    |
+| [Application](/resources/application#application-object) | `710982414301790216`  | Stickers application              |
+| [Application](/resources/application#application-object) | `834488117758001152`  | Ticketed Events application       |
+| [Application](/resources/application#application-object) | `1096190356233670716` | Collectibles application          |
+| [Application](/resources/application#application-object) | `1225629272358518784` | Quest Reward Codes application    |
+| [Application](/resources/application#application-object) | `1340102344645283891` | Guild Powerups application        |
+| [Application](/resources/application#application-object) | `622174530214821906`  | Xbox integration                  |
+| [Application](/resources/application#application-object) | `1008890872156405890` | PlayStation integration           |
+| [Application](/resources/application#application-object) | `984193235868065795`  | PlayStation integration (staging) |
+| [Guild](/resources/guild#guild-object)                   | `667560445975986187`  | Community Updates guild           |
 
 ## ISO8601 Datetime
 
@@ -318,7 +342,7 @@ Discord's Gateway API is used for maintaining persistent, stateful WebSocket con
 
 ## Client Properties
 
-Client properties, or "super properties", contain tracking information about the current client, used for analytics and A/B testing purposes. These properties are sent when [identifying](/topics/gateway#identifying) with the Gateway and are included with every outgoing HTTP request using the `X-Super-Properties` header as a base 64-encoded JSON object.
+Client properties, or "super properties", contain tracking information about the current client, used for analytics and A/B testing purposes. These properties are sent when [identifying](/topics/gateway#identifying) with the Gateway and are included with every outgoing HTTP request using the `X-Super-Properties` header as a base64-encoded JSON object.
 
 When these properties are not provided, Discord will attempt to parse some of them from the `User-Agent` header of requests.
 
@@ -347,9 +371,9 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | native_build_number?                            | ?integer | The [native metadata version](/topics/client-distribution#get-latest-distributed-application-manifest) of the desktop client, if using the new update system                    |
 | client_version? ^1^                             | string   | The mobile client version                                                                                                                                                       |
 | client_event_source?                            | ?string  | The [alternate event source](#client-event-source) this request originated from                                                                                                 |
-| client_app_state? ^3^                           | string   | The [focus state](#client-app-state) of the client when the Gateway session was instantiated                                                                                    |
+| client_app_state?                               | string   | The [focus state](#client-app-state) of the client                                                                                                                              |
 | client_launch_id?                               | string   | A client-generated UUID used to identify the client launch                                                                                                                      |
-| client_heartbeat_session_id?                    | ?string  | A client-generated UUID representing the current persisted analytics heartbeat                                                                                                  |
+| client_heartbeat_session_id?                    | ?string  | A client-generated UUID representing the current persisted analytics heartbeat, regenerated every 30 minutes                                                                    |
 | client_performance_cpu? **(deprecated)**        | integer  | The total CPU utilization of the mobile device (in percent)                                                                                                                     |
 | client_performance_memory? **(deprecated)**     | integer  | The total memory utilization of the mobile device (in kilobytes)                                                                                                                |
 | cpu_core_count? **(deprecated)**                | integer  | The number of CPU cores available to the mobile device                                                                                                                          |
@@ -696,6 +720,8 @@ Discord utilizes a subset of markdown for rendering message content on its clien
 | Unix Timestamp          | `<t:TIMESTAMP>`                | `<t:1618953630>`                |
 | Unix Timestamp (Styled) | `<t:TIMESTAMP:STYLE>`          | `<t:1618953630:d>`              |
 | Guild Navigation        | `<id:TYPE>`                    | `<id:customize>`                |
+| Email ^3^               | `<USERNAME@DOMAIN>`            | `<nelly@discordapp.com>`        |
+| Phone Number ^4^        | `<+PHONE_NUMBER>`              | `<+1 (555) 123 4567>`           |
 
 Using the markdown for either users, roles, or channels will usually mention the target(s) accordingly, but this can be suppressed using the `allowed_mentions` parameter when creating a message. Standard emoji are currently rendered using [Twemoji](https://twemoji.twitter.com/) for Desktop/Android and Apple's native emoji on iOS.
 
@@ -705,17 +731,23 @@ Timestamps are expressed in seconds and display the given timestamp in the user'
 
 ^2^ Subcommands and subcommand groups can also be mentioned by using respectively `</NAME SUBCOMMAND:ID>` and `</NAME SUBCOMMAND_GROUP SUBCOMMAND:ID>`.
 
+^3^ Can be optionally prefixed with `mailto:`, following the same format as the [`mailto:`](https://en.wikipedia.org/wiki/Mailto) URI scheme. Does not support multiple comma-separated addresses. Supports headers (e.g. `<nelly@discord.com?subject=Title&body=Message%20Content>`).
+
+^4^ Can be optionally prefixed with `tel:`/`sms:`. Whitespace is ignored and the dialling prefix `+` is not required when a scheme is provided.
+
 ###### Timestamp Styles
 
-| Style | Example Output               | Description     |
-| ----- | ---------------------------- | --------------- |
-| t     | 16:20                        | Short Time      |
-| T     | 16:20:30                     | Long Time       |
-| d     | 20/04/2021                   | Short Date      |
-| D     | 20 April 2021                | Long Date       |
-| f ^1^ | 20 April 2021 16:20          | Short Date/Time |
-| F     | Tuesday, 20 April 2021 16:20 | Long Date/Time  |
-| R     | 2 months ago                 | Relative Time   |
+| Style | Example Output                   | Description            |
+| ----- | -------------------------------- | ---------------------- |
+| t     | 16:20                            | Short Time             |
+| T     | 16:20:30                         | Medium Time            |
+| d     | 20/04/2021                       | Short Date             |
+| D     | April 20, 2021                   | Long Date              |
+| f ^1^ | April 20, 2021 at 16:20          | Long Date/Short Time   |
+| F     | Tuesday, April 20, 2021 at 16:20 | Full Date/Short Time   |
+| s     | 20/04/2021, 16:20                | Short Date/Short Time  |
+| S     | 20/04/2021, 16:20:30             | Short Date/Medium Time |
+| R     | 2 months ago                     | Relative Time          |
 
 ^1^ This is the default.
 
@@ -761,48 +793,52 @@ In the case of endpoints that support animated images, the hash will begin with 
 
 ###### CDN Endpoints
 
-| Type                             | Path                                                                                                                                                                                                                                                                                 | Supports                                             |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Activity Link Asset              | /attachments-quick-links/[{asset_path}](/resources/application#activity-link-object)                                                                                                                                                                                                 | Uploaded format ^4^                                  |
-| Achievement Icon                 | /app-assets/[{application_id}](/resources/application#application-object)/achievements/{achievement_id}/icons/icon_hash.png                                                                                                                                                          | PNG, JPEG, WebP                                      |
-| Application Icon                 | /app-icons/[{application_id}](/resources/application#application-object)/[{application_icon}](/resources/application#application-object).png                                                                                                                                         | PNG, JPEG, WebP                                      |
-| Application Cover                | /app-icons/[{application_id}](/resources/application#application-object)/[{application_cover_image}](/resources/application#application-object).png                                                                                                                                  | PNG, JPEG, WebP                                      |
-| Application Splash               | /app-icons/[{application_id}](/resources/application#application-object)/[{application_splash}](/resources/application#application-object).png                                                                                                                                       | PNG, JPEG, WebP                                      |
-| Application Asset                | /app-assets/[{application_id}](/resources/application#application-object)/[{asset_id}](/resources/application#application-asset-object).png                                                                                                                                          | PNG, JPEG, WebP                                      |
-| Application Directory Collection | /application-directory/collection-items/{item_id}/{item_hash}.png                                                                                                                                                                                                                    | PNG, JPEG, WebP                                      |
-| Attachment ^2^                   | /attachments/[{channel_id}](/resources/channel#channel-object)/[{message_id]/[attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                                                                    | Uploaded format ^4^                                  |
-| Ephemeral Attachment ^2^         | /ephemeral-attachments/[{application_id}](/resources/application#application-object)/[{attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                                                           | Uploaded format ^4^                                  |
-| Avatar Decoration Preset         | /avatar-decoration-presets/[{avatar_decoration_data_asset}](/resources/user#avatar-decoration-data-structure).png                                                                                                                                                                    | PNG, JPEG, WebP                                      |
-| Channel Icon                     | /channels/[{channel_id}](/resources/channel#channel-object)/icons/[{channel_icon}](/resources/channel#channel-object).png                                                                                                                                                            | PNG, JPEG, WebP                                      |
-| Clan Badge                       | /clan-badges/[{guild_id}](/resources/guild#guild-object)/[{badge_hash}](/resources/discovery#guild-profile-object).png                                                                                                                                                               | PNG                                                  |
-| Clan Banner                      | /clan-banners/[{guild_id}](/resources/guild#guild-object)/[{banner_hash}](/resources/discovery#guild-profile-object).png                                                                                                                                                             | PNG                                                  |
-| Custom Emoji                     | /emojis/[{emoji_id}](/resources/emoji#emoji-object).png                                                                                                                                                                                                                              | PNG, JPEG, WebP, GIF                                 |
-| Guild Icon                       | /icons/[{guild_id}](/resources/guild#guild-object)/[{guild_icon}](/resources/guild#guild-object).png                                                                                                                                                                                 | PNG, JPEG, WebP, GIF                                 |
-| Guild Splash                     | /splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_splash}](/resources/guild#guild-object).png                                                                                                                                                                            | PNG, JPEG, WebP                                      |
-| Guild Discovery Splash           | /discovery-splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_discovery_splash}](/resources/guild#guild-object).png                                                                                                                                                        | PNG, JPEG, WebP                                      |
-| Guild Banner                     | /banners/[{guild_id}](/resources/guild#guild-object)/[{guild_banner}](/resources/guild#guild-object).png                                                                                                                                                                             | PNG, JPEG, WebP, GIF                                 |
-| Guild Home Header                | /guilds/[{guild_id}](/resources/guild#guild-object)/home-headers/[{guild_home_header}](/resources/guild#guild-object).png                                                                                                                                                            | PNG, JPEG, WebP                                      |
-| Guild Scheduled Event Cover      | /guild-events/[{scheduled_event_id}](/resources/guild-scheduled-event#guild-scheduled-event-object)/[{scheduled_event_cover_image}](/resources/guild-scheduled-event#guild-scheduled-event-object).png                                                                               | PNG, JPEG, WebP                                      |
-| Guild Member Avatar              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/avatars/[{user_avatar}](/resources/user#user-object).png                                                                                                                          | PNG, JPEG, WebP, GIF                                 |
-| Guild Member Banner              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/banners/[{user_banner}](/resources/user#user-object).png                                                                                                                          | PNG, JPEG, WebP, GIF                                 |
-| Nameplate                        | /assets/collectibles/[{asset_path}](/resources/user#nameplate-data-structure){asset_name} ^6^                                                                                                                                                                                        | PNG, WebM                                            |
-| Profile Badge                    | /badge-icons/[{badge_icon}](/resources/user#profile-badge-structure).png                                                                                                                                                                                                             | PNG                                                  |
-| Quest Asset ^5^                  | /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{asset_name}](/resources/quests#quest-assets-structure), /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{theme}](/resources/user-settings#theme)/[{asset_name}](/resources/quests#quest-assets-structure) | PNG, JPEG, GIF, SVG, WebP, WebM, MP4, M3U8, VTT, TXT |
-| Role Icon                        | /roles/[{role_id}](/resources/guild#role-object)/icons/[{role_icon}](/resources/guild#role-object).png                                                                                                                                                                               | PNG, JPEG, WebP                                      |
-| Soundboard Sound                 | /soundboard-sounds/{sound_id}                                                                                                                                                                                                                                                        | MP3, OGG                                             |
-| Sticker ^2^ ^3^                  | /stickers/[{sticker_id}](/resources/sticker#sticker-object).png                                                                                                                                                                                                                      | PNG, Lottie, GIF                                     |
-| Sticker Pack Banner              | /app-assets/710982414301790216/store/[{asset_id}](/resources/sticker#sticker-pack-object).png                                                                                                                                                                                        | PNG, JPEG, WebP                                      |
-| Stream Preview                   | /streams/[{stream_key}](/topics/gateway-events#stream-key)/{thumbnail_hash}.png                                                                                                                                                                                                      | PNG, JPEG, WebP                                      |
-| Team Icon                        | /team-icons/[{team_id}](/resources/team#team-object)/[{team_icon}](/resources/team#team-object).png                                                                                                                                                                                  | PNG, JPEG, WebP                                      |
-| User Avatar                      | /avatars/[{user_id}](/resources/user#user-object)/[{user_avatar}](/resources/user#user-object).png                                                                                                                                                                                   | PNG, JPEG, WebP, GIF                                 |
-| User Archived Avatar             | /avatars/[{user_id}](/resources/user#user-object)/archived/[{avatar_id}](/resources/user#avatar-structure)/[{avatar_storage_hash}](/resources/user#avatar-structure).png                                                                                                             | PNG, JPEG, WebP, GIF                                 |
-| Default User Avatar ^1^ ^2^      | /embed/avatars/[{user_index}](/resources/user#user-object).png                                                                                                                                                                                                                       | PNG                                                  |
-| User Banner                      | /banners/[{user_id}](/resources/user#user-object)/[{user_banner}](/resources/user#user-object).png                                                                                                                                                                                   | PNG, JPEG, WebP, GIF                                 |
-| Video Filter                     | /users/[{user_id}](/resources/user#user-object)/video-filter-assets/[{video_filter_id}](/resources/user-settings-proto#video-filter-asset-structure)/[{video_filter_asset}](/resources/user-settings-proto#video-filter-asset-structure).png                                         | PNG, JPEG, GIF, MP4, WEBP                            |
+| Type                             | Path                                                                                                                                                                                                                                         | Supports                  |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Activity Link Asset ^4^          | /attachments-quick-links/[{asset_path}](/resources/application#activity-link-object)                                                                                                                                                         | Uploaded format           |
+| Achievement Icon                 | /app-assets/[{application_id}](/resources/application#application-object)/achievements/{achievement_id}/icons/icon_hash.png                                                                                                                  | PNG, JPEG, WebP           |
+| Application Icon                 | /app-icons/[{application_id}](/resources/application#application-object)/[{application_icon}](/resources/application#application-object).png                                                                                                 | PNG, JPEG, WebP           |
+| Application Cover                | /app-icons/[{application_id}](/resources/application#application-object)/[{application_cover_image}](/resources/application#application-object).png                                                                                          | PNG, JPEG, WebP           |
+| Application Splash               | /app-icons/[{application_id}](/resources/application#application-object)/[{application_splash}](/resources/application#application-object).png                                                                                               | PNG, JPEG, WebP           |
+| Application Asset                | /app-assets/[{application_id}](/resources/application#application-object)/[{asset_id}](/resources/application#application-asset-object).png                                                                                                  | PNG, JPEG, WebP           |
+| Application Directory Collection | /application-directory/collection-items/{item_id}/{item_hash}.png                                                                                                                                                                            | PNG, JPEG, WebP           |
+| Attachment ^2^ ^4^               | /attachments/[{channel_id}](/resources/channel#channel-object)/[{message_id]/[attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                            | Uploaded format           |
+| Ephemeral Attachment ^2^ ^4^     | /ephemeral-attachments/[{application_id}](/resources/application#application-object)/[{attachment_id}](/resources/message#attachment-object)/[{attachment_filename}](/resources/message#attachment-object)                                   | Uploaded format           |
+| Avatar Decoration Preset         | /avatar-decoration-presets/[{avatar_decoration_data_asset}](/resources/user#avatar-decoration-data-structure).png                                                                                                                            | PNG, JPEG, WebP           |
+| Channel Icon                     | /channels/[{channel_id}](/resources/channel#channel-object)/icons/[{channel_icon}](/resources/channel#channel-object).png                                                                                                                    | PNG, JPEG, WebP           |
+| Clan Badge ^7^                   | /clan-badges/[{guild_id}](/resources/guild#guild-object)/[{badge_hash}](/resources/discovery#guild-profile-object).png                                                                                                                       | PNG                       |
+| Clan Banner                      | /clan-banners/[{guild_id}](/resources/guild#guild-object)/[{banner_hash}](/resources/discovery#guild-profile-object).png                                                                                                                     | PNG                       |
+| Custom Emoji                     | /emojis/[{emoji_id}](/resources/emoji#emoji-object).png                                                                                                                                                                                      | PNG, JPEG, WebP, GIF      |
+| Guild Icon                       | /icons/[{guild_id}](/resources/guild#guild-object)/[{guild_icon}](/resources/guild#guild-object).png                                                                                                                                         | PNG, JPEG, WebP, GIF      |
+| Guild Splash                     | /splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_splash}](/resources/guild#guild-object).png                                                                                                                                    | PNG, JPEG, WebP           |
+| Guild Discovery Splash           | /discovery-splashes/[{guild_id}](/resources/guild#guild-object)/[{guild_discovery_splash}](/resources/guild#guild-object).png                                                                                                                | PNG, JPEG, WebP           |
+| Guild Banner                     | /banners/[{guild_id}](/resources/guild#guild-object)/[{guild_banner}](/resources/guild#guild-object).png                                                                                                                                     | PNG, JPEG, WebP, GIF      |
+| Guild Home Header                | /home-headers/[{guild_id}](/resources/guild#guild-object)/[{guild_home_header}](/resources/guild#guild-object).png                                                                                                                           | PNG, JPEG, WebP           |
+| Guild Scheduled Event Cover      | /guild-events/[{scheduled_event_id}](/resources/guild-scheduled-event#guild-scheduled-event-object)/[{scheduled_event_cover_image}](/resources/guild-scheduled-event#guild-scheduled-event-object).png                                       | PNG, JPEG, WebP           |
+| Guild Member Avatar              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/avatars/[{user_avatar}](/resources/user#user-object).png                                                                                  | PNG, JPEG, WebP, GIF      |
+| Guild Member Banner              | /guilds/[{guild_id}](/resources/guild#guild-object)/users/[{user_id}](/resources/user#user-object)/banners/[{user_banner}](/resources/user#user-object).png                                                                                  | PNG, JPEG, WebP, GIF      |
+| Guild New Member Action Icon     | /new-member-actions/[{channel_id}](/resources/guild#new-member-action-structure)/[{action_icon}](/resources/guild#new-member-action-structure).png                                                                                           | PNG, JPEG, WebP           |
+| Guild Resource Channel Icon      | /resource-channels/[{channel_id}](/resources/guild#resource-channel-structure)/[{channel_icon}](/resources/guild#resource-channel-structure).png                                                                                             | PNG, JPEG, WebP           |
+| Guild Tag Badge ^7^              | /guild-tag-badges/[{guild_id}](/resources/guild#guild-object)/[{badge_hash}](/resources/discovery#guild-profile-object).png                                                                                                                  | PNG                       |
+| Nameplate ^2^ ^6^                | /assets/collectibles/[{asset_path}](/resources/user#nameplate-data-structure){asset_name}                                                                                                                                                    | PNG, WebM                 |
+| Profile Badge                    | /badge-icons/[{badge_icon}](/resources/user#profile-badge-structure).png                                                                                                                                                                     | PNG                       |
+| Quest Asset ^2^ ^4^ ^5^          | /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{asset_name}](/resources/quests#quest-assets-structure)                                                                                                                         | Uploaded format           |
+| Quest Asset (Themed) ^2^ ^4^ ^5^ | /assets/quests/[{quest_id}](/resources/quests#quest-object)/[{theme}](/resources/user-settings#theme)/[{asset_name}](/resources/quests#quest-assets-structure)                                                                               | Uploaded format           |
+| Role Icon                        | /roles/[{role_id}](/resources/guild#role-object)/icons/[{role_icon}](/resources/guild#role-object).png                                                                                                                                       | PNG, JPEG, WebP           |
+| Soundboard Sound                 | /soundboard-sounds/{sound_id}                                                                                                                                                                                                                | MP3, OGG                  |
+| Sticker ^2^ ^3^                  | /stickers/[{sticker_id}](/resources/sticker#sticker-object).png                                                                                                                                                                              | PNG, Lottie, GIF          |
+| Sticker Pack Banner              | /app-assets/710982414301790216/store/[{asset_id}](/resources/sticker#sticker-pack-object).png                                                                                                                                                | PNG, JPEG, WebP           |
+| Stream Preview                   | /streams/[{stream_key}](/topics/gateway-events#stream-key)/{thumbnail_hash}.png                                                                                                                                                              | PNG, JPEG, WebP           |
+| Team Icon                        | /team-icons/[{team_id}](/resources/team#team-object)/[{team_icon}](/resources/team#team-object).png                                                                                                                                          | PNG, JPEG, WebP           |
+| User Avatar                      | /avatars/[{user_id}](/resources/user#user-object)/[{user_avatar}](/resources/user#user-object).png                                                                                                                                           | PNG, JPEG, WebP, GIF      |
+| User Archived Avatar             | /avatars/[{user_id}](/resources/user#user-object)/archived/[{avatar_id}](/resources/user#avatar-structure)/[{avatar_storage_hash}](/resources/user#avatar-structure).png                                                                     | PNG, JPEG, WebP, GIF      |
+| Default User Avatar ^1^ ^2^      | /embed/avatars/[{user_index}](/resources/user#user-object).png                                                                                                                                                                               | PNG                       |
+| User Banner                      | /banners/[{user_id}](/resources/user#user-object)/[{user_banner}](/resources/user#user-object).png                                                                                                                                           | PNG, JPEG, WebP, GIF      |
+| Video Filter                     | /users/[{user_id}](/resources/user#user-object)/video-filter-assets/[{video_filter_id}](/resources/user-settings-proto#video-filter-asset-structure)/[{video_filter_asset}](/resources/user-settings-proto#video-filter-asset-structure).png | PNG, JPEG, GIF, MP4, WEBP |
 
 ^1^ The value for `user_index` in the path for migrated users should be the user's ID shifted 22 bits to the left modulo 6 (i.e. `user_id >> 22 % 6`). The value for non-migrated users the user's discriminator modulo 5 (Test#1337 would be `1337 % 5`, which evaluates to 2). The value for teams should be the team's ID modulo 5 (i.e. `team_id % 5`). See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
 
-^2^ The size of images returned is constant with the `size` query string parameter being ignored.
+^2^ The size of images returned is constant with the `size` query string parameter being ignored. This also applies to any received CDN URL that is under the `/assets/` path.
 
 ^3^ The sticker will be available as PNG if its [`format_type`](/resources/sticker#sticker-object) is `PNG` or `APNG`, GIF if its [`format_type`](/resources/sticker#sticker-object) is `GIF`, and as [Lottie](https://airbnb.io/lottie/#/) if its [`format_type`](/resources/sticker#sticker-object) is `LOTTIE`. GIF stickers are not available through the CDN, and must be accessed at `https://media.discordapp.net/stickers/{sticker_id}.gif`.
 
@@ -811,6 +847,8 @@ In the case of endpoints that support animated images, the hash will begin with 
 ^5^ The [theme](/resources/user-settings#theme) path is only used for fetching the [`game_tile` and `logotype` assets](/resources/quests#quest-assets-structure). Only `dark` and `light` are supported.
 
 ^6^ Valid asset names are limited to: `img.png`, `static.png`, `asset.webm`.
+
+^7^ The clan badge route is an alias of the guild tag badge route, existing for backward compatibility.
 
 ##### CDN Parameters
 
@@ -838,9 +876,11 @@ The quality of the image to return. Only supported with WebP and JPG formats (th
 
 #### Signed Attachment URLs
 
-Attachments uploaded to Discord's CDN (like user-uploaded images) have signed URLs with a preset expiry time. This includes ephemeral attachments. Discord automatically refreshes attachment CDN URLs that appear within the client, so when you receive a payload with a signed URL (like when you [fetch a message](/resources/message#get-messages)), it will be valid.
+Attachments uploaded to Discord's CDN (like user-uploaded images) have signed URLs with a preset expiry time. This includes ephemeral attachments. Discord automatically refreshes attachment CDN URLs that appear within the client,
+so when you receive a payload with a signed URL (like when you [fetch a message](/resources/message#get-messages)), it will be valid. Note that this does not apply to URLs present in user-generated content, such as message content or embed descriptions.
 
-When passing CDN URLs into API fields, like [`url` in an embed image object](/resources/message#embed-media-structure) and [`avatar_url` for webhooks](/resources/webhook#execute-webhook), or when simply sending a message, you can pass the CDN URL without any parameters as the value and Discord will automatically render and refresh the URL.
+When passing CDN URLs into API fields, like [`url` in an embed image object](/resources/message#embed-media-structure) and [`avatar_url` for webhooks](/resources/webhook#execute-webhook), or when simply sending a message,
+you can pass the CDN URL without any parameters as the value and Discord will automatically render and refresh the URL.
 
 If you need to refresh an attachment URL manually, you can use the [Refresh Attachment URLs](/resources/message#refresh-attachment-urls) endpoint with any URL.
 
@@ -873,10 +913,18 @@ Ensure you use the proper content type (e.g. `image/jpeg`, `image/png`, `image/g
 
 ## Uploading Files
 
+Most endpoints in the Discord API only accept JSON-encoded request bodies with the `application/json` content type. However, certain endpoints, specifically those that support file attachments, also accept `multipart/form-data` request bodies.
+If an endpoint supports both `application/json` and `multipart/form-data`, it will also accept `application/x-www-form-urlencoded` request bodies, but only when no files are being uploaded.
+
+If you wish to upload files while maintaining a JSON body, you may include a `payload_json` field in your `multipart/form-data` request. This field should contain a JSON-encoded string representing the body of your request, excluding any file data.
+Note that arrays and nested objects require you to use `payload_json`, as form fields do not support these data types.
+
+All message create endpoints accept file attachments, indicated by the `files[n]` parameter. To add file(s), the standard `application/json` body must be replaced by a `multipart/form-data` body. The JSON message body can optionally be provided using the `payload_json` parameter as outlined above.
+
 <Collapsible title="Upload Limits" description="How are file upload limits calculated?" icon="list">
 
 The file upload size limit applies to each file in a request. The default limit is **10 MiB** for all users, but may be higher depending on their [premium type](https://support.discord.com/hc/en-us/articles/115000435108)
-or the target guild's [premium tier](https://support.discord.com/hc/en-us/articles/360028038352-Server-Boosting-FAQ), whichever is higher. The table below summarizes the raised limits:
+or the target guild's [premium tier](https://support.discord.com/hc/en-us/articles/360028038352), whichever is higher. The table below summarizes the raised limits:
 
 <Alert type="info">
 
@@ -895,9 +943,8 @@ To upload files larger than **200 MiB**, you must utilize [Google Cloud uploads]
 
 </Collapsible>
 
-Some endpoints support file attachments, indicated by the `files[n]` parameter. To add file(s), the standard `application/json` body must be replaced by a `multipart/form-data` body. The JSON message body can optionally be provided using the `payload_json` parameter.
-
-All `files[n]` parameters must include a valid `Content-Disposition` subpart header with a `filename` and unique `name` parameter. Each file parameter must be uniquely named in the format `files[n]` such as `files[0]`, `files[1]`, or `files[42]`. The suffixed index `n` is the _snowflake placeholder_ that can be used in the `attachments` field, which can be passed to the `payload_json` parameter (or [Callback Data Payloads](/interactions/receiving-and-responding/#interaction-callback-data-structure)).
+All `files[n]` parameters must include a valid `Content-Disposition` subpart header with a `filename` and unique `name` parameter. Each file parameter must be uniquely named in the format `files[n]` (e.g. `files[0]`, `files[1]`, or `files[42]`).
+The suffixed index `n` is the _snowflake placeholder_ that can be used in the `attachments` field.
 
 Images can also be referenced in embeds using the `attachment://filename` URL. The `filename` for these URLs must be ASCII alphanumeric with underscores, dashes, or dots. An example payload is provided below.
 
@@ -907,7 +954,7 @@ The `attachments` JSON parameter includes all files that will be appended to the
 
 ###### Example Request Bodies (multipart/form-data)
 
-Note that these examples are small sections of an HTTP request to demonstrate behaviour of this endpoint - client libraries will set their own form boundaries (`boundary` is just an example). For more information, refer to the [multipart/form-data spec](https://tools.ietf.org/html/rfc7578#section-4).
+Note that these examples are small sections of an HTTP request to demonstrate behaviour of this endpoint—client libraries will set their own form boundaries (`boundary` is just an example). For more information, refer to the [multipart/form-data spec](https://tools.ietf.org/html/rfc7578#section-4).
 
 This example demonstrates usage of the endpoint _without_ `payload_json`.
 
@@ -1049,41 +1096,62 @@ Now, instead of sending the attachment again in a form body in the request, you 
 
 ## Locales
 
-| Locale | Language Name         | Native Name               |
-| ------ | --------------------- | ------------------------- |
-| ar     | Arabic                | العربية                   |
-| bg     | Bulgarian             | български                 |
-| cs     | Czech                 | Čeština                   |
-| da     | Danish                | Dansk                     |
-| de     | German                | Deutsch                   |
-| el     | Greek                 | Ελληνικά                  |
-| en-GB  | English, UK           | English, UK               |
-| en-US  | English, US           | English, US               |
-| es-ES  | Spanish               | Español                   |
-| es-419 | Spanish, LATAM        | Español de América Latina |
-| fi     | Finnish               | Suomi                     |
-| fr     | French                | Français                  |
-| hi     | Hindi                 | हिन्दी                    |
-| hr     | Croatian              | Hrvatski                  |
-| hu     | Hungarian             | Magyar                    |
-| id     | Indonesian            | Bahasa Indonesia          |
-| it     | Italian               | Italiano                  |
-| ja     | Japanese              | 日本語                    |
-| ko     | Korean                | 한국어                    |
-| lt     | Lithuanian            | Lietuviškai               |
-| nl     | Dutch                 | Nederlands                |
-| no     | Norwegian             | Norsk                     |
-| pl     | Polish                | Polski                    |
-| pt-BR  | Portuguese, Brazilian | Português do Brasil       |
-| ro     | Romanian              | Română                    |
-| ru     | Russian               | Pусский                   |
-| sv-SE  | Swedish               | Svenska                   |
-| th     | Thai                  | ไทย                       |
-| tr     | Turkish               | Türkçe                    |
-| uk     | Ukrainian             | Українська                |
-| vi     | Vietnamese            | Tiếng Việt                |
-| zh-CN  | Chinese, China        | 中文                      |
-| zh-TW  | Chinese, Taiwan       | 繁體中文                  |
+User locale is determined by looking at the `X-Discord-Locale` header, then the `Accept-Language` header if not present, then lastly the user settings locale.
+
+| Locale | Language Name      | Native Name               |
+| ------ | ------------------ | ------------------------- |
+| ar     | Arabic             | العربية                   |
+| bg     | Bulgarian          | български                 |
+| cs     | Czech              | Čeština                   |
+| da     | Danish             | Dansk                     |
+| de     | German             | Deutsch                   |
+| el     | Greek              | Ελληνικά                  |
+| en-GB  | English, UK        | English, UK               |
+| en-US  | English, US        | English, US               |
+| es-ES  | Spanish, Spain     | Español                   |
+| es-419 | Spanish, LATAM     | Español de América Latina |
+| fi     | Finnish            | Suomi                     |
+| fr     | French             | Français                  |
+| hi     | Hindi              | हिन्दी                    |
+| hr     | Croatian           | Hrvatski                  |
+| hu     | Hungarian          | Magyar                    |
+| id     | Indonesian         | Bahasa Indonesia          |
+| it     | Italian            | Italiano                  |
+| ja     | Japanese           | 日本語                    |
+| ko     | Korean             | 한국어                    |
+| lt     | Lithuanian         | Lietuviškai               |
+| nl     | Dutch              | Nederlands                |
+| no     | Norwegian          | Norsk                     |
+| pl     | Polish             | Polski                    |
+| pt-BR  | Portuguese, Brazil | Português do Brasil       |
+| ro     | Romanian           | Română                    |
+| ru     | Russian            | Pусский                   |
+| sv-SE  | Swedish            | Svenska                   |
+| th     | Thai               | ไทย                       |
+| tr     | Turkish            | Türkçe                    |
+| uk     | Ukrainian          | Українська                |
+| vi     | Vietnamese         | Tiếng Việt                |
+| zh-CN  | Chinese, China     | 中文                      |
+| zh-TW  | Chinese, Taiwan    | 繁體中文                  |
+
+#### Localized String
+
+<Alert type="warn">
+
+In API v8 and above, most API resources have switched away from this format, instead opting for `<string>` and `<string>_localizations` fields.
+However, this format is still used in [store APIs](/resources/store) today.
+
+</Alert>
+
+Certain localized strings in the API have a special structure. These strings are represented as an object with the following fields:
+
+| Field          | Type                | Description                                                                  |
+| -------------- | ------------------- | ---------------------------------------------------------------------------- |
+| default        | string              | The fallback string if no localization is available for the requested locale |
+| localizations? | map[string, string] | The string for each [locale](#locales) supported                             |
+
+Note that for localized versions of resources, the value is simply the localized string, not the above object.
+When creating or updating resources, you can provide either the above object or a single string value, which will set the `default` field and remove any existing localizations.
 
 ## Documentation Reference
 

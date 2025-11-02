@@ -1,0 +1,246 @@
+# Payments
+
+Payments are made by the user to Discord in exchange for first and third-party products and services.
+
+## Payment Clients
+
+Payment clients are a concept used to prevent fraudulent transactions across Discord. When a client first attempts to make a payment, it generates a UUIDv4 identifier to be used as the purchase token. This token is then persisted by the client and sent along with all future payment requests.
+It is mandatory that all purchase requests include this token in the `purchase_token` field of the request body. The tokens expire after 60 days and must be regenerated.
+
+If Discord detects suspicious activity from a payment client during a transaction, it sends a verification email to the user asking them to authorize the purchase. In the meantime, all purchase requests will fail with a 400 bad request and a [`100056` JSON error code](/topics/opcodes-and-status-codes#json-error-codes):
+
+```json
+{
+  "message": "This client needs to be authorized for purchases. We've sent you an email. Click the link on the email and then retry the purchase.",
+  "code": 100056,
+  "payment_id": "1434311883015458937"
+}
+```
+
+The verification email received will contain a link that redirects to the official Discord client with a verification token present in the URL's fragment (e.g. `https://discord.com/authorize-payment#token=Wzg1Mjg5MjI5NzY2MTkwNjk5MywiN3NtVnNGYWlQNFBQTzIrREgya3JhUVJmZXFlclpvY3UvaFRwcVFBckw5Yz0iXQ.Y5ER6Q.IQhdQcfkK_eHLC16CcFZaYqRP_E`).
+After receiving the token, clients can then send a request to the [Verify Purchase Request](#verify-purchase-request) endpoint to complete the authorization process. If the user has not received a link, clients can [choose to resend it](#resend-payment-verification-email).
+Upon successful verification, the client will receive a [User Payment Client Add](/topics/gateway-events#user-payment-client-add) Gateway event, which indicates that the purchase can be retried.
+
+## Payment Confirmation
+
+Some purchases may require additional authentication before they can be completed. In such cases, the purchase request will fail with a 400 bad request and a [`100057` JSON error code](/topics/opcodes-and-status-codes#json-error-codes):
+
+```json
+{
+  "message": "Confirmation required",
+  "code": 100047,
+  "payment_id": "1434311883015458937"
+}
+```
+
+Depending on the [payment gateway](/resources/billing#payment-gateway) used, the error response may also contain a `adyen_redirect_url` field with a URL that the user must visit to complete the authentication process.
+Upon successful authentication, the purchase will be automatically confirmed. The client should _not_ retry the purchase request.
+
+### Payment Object
+
+###### Payment Structure
+
+| Field                            | Type                                                                                  | Description                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| id                               | snowflake                                                                             | The ID of the payment                                                               |
+| amount                           | integer                                                                               | The amount of the payment                                                           |
+| tax                              | integer                                                                               | The amount of tax paid                                                              |
+| tax_inclusive                    | boolean                                                                               | Whether the amount is inclusive of all taxes                                        |
+| currency ^1^                     | string                                                                                | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code    |
+| amount_refunded                  | integer                                                                               | The amount refunded from the payment                                                |
+| description                      | string                                                                                | The description of the payment                                                      |
+| status                           | integer                                                                               | The [status](#payment-status) of payment                                            |
+| created_at                       | ISO8601 timestamp                                                                     | When the payment was created                                                        |
+| sku_id?                          | snowflake                                                                             | The ID of the SKU the payment was for                                               |
+| sku_price?                       | integer                                                                               | The price of the SKU the payment was for                                            |
+| sku_subscription_plan_id?        | snowflake                                                                             | The ID of the subscription plan the payment was for                                 |
+| payment_gateway?                 | integer                                                                               | The [payment gateway](/resources/billing#payment-gateway) the payment was made with |
+| payment_gateway_payment_id?      | string                                                                                | The ID of the payment on the payment gateway                                        |
+| downloadable_invoice?            | string                                                                                | The URL to download the VAT invoice for this payment                                |
+| downloadable_refund_invoices?    | array[string]                                                                         | The URLs to download VAT credit notices for refunds on this payment                 |
+| refund_disqualification_reasons? | array[integer]                                                                        | The reasons why the payment cannot be refunded                                      |
+| flags                            | integer                                                                               | The [payment's flags](#payment-flags)                                               |
+| sku?                             | [SKU](/resources/store#sku-object) object                                             | The SKU the payment was for                                                         |
+| payment_source?                  | [payment source](/resources/billing#payment-source-object) object                     | The payment source the payment was made with                                        |
+| subscription?                    | partial [subscription](/resources/subscription#partial-subscription-structure) object | The subscription the payment was for                                                |
+| metadata                         | [payment metadata](#payment-metadata-structure) object                                | The payment metadata                                                                |
+
+^1^ The value can be `discord_orb` to represent payment via virtual currency.
+
+###### Payment Metadata Structure
+
+| Field              | Type     | Description                                                                |
+| ------------------ | -------- | -------------------------------------------------------------------------- |
+| billing_error_code | ?integer | The [JSON error code](/datamining/errors) that occurred during the payment |
+
+###### Payment Status
+
+| Value | Name      | Description               |
+| ----- | --------- | ------------------------- |
+| 0     | PENDING   | Payment is pending        |
+| 1     | COMPLETED | Payment has gone through  |
+| 2     | FAILED    | Payment has failed        |
+| 3     | REVERSED  | Payment has been reversed |
+| 4     | REFUNDED  | Payment has been refunded |
+| 5     | CANCELED  | Payment has been canceled |
+
+###### Refund Disqualification Reason
+
+| Value | Name                           | Description                                                                                                        |
+| ----- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| 0     | OTHER                          | Purchase is disqualified from a refund due to other reasons                                                        |
+| 1     | ALREADY_REFUNDED               | Purchase is disqualified from a refund because it has already been refunded                                        |
+| 2     | NOT_USER_REFUNDABLE_TYPE       | Purchase is disqualified from a refund because it is not a user-refundable type                                    |
+| 3     | PAST_REFUNDABLE_DATE           | Purchase is disqualified from a refund because it is past the refundable date                                      |
+| 4     | ENTITLEMENT_ALREADY_CONSUMED   | Purchase is disqualified from a refund because the purchased entitlement has already been consumed                 |
+| 5     | ALREADY_REFUNDED_PREMIUM       | Purchase is disqualified from a refund because the user has already refunded a premium subscription purchase       |
+| 6     | ALREADY_REFUNDED_PREMIUM_GUILD | Purchase is disqualified from a refund because the user has already refunded a premium guild subscription purchase |
+
+###### Payment Flags
+
+| Value  | Name                    | Description                                                   |
+| ------ | ----------------------- | ------------------------------------------------------------- |
+| 1 << 0 | GIFT                    | Payment is for a gift                                         |
+| 1 << 2 | USER_REFUNDED           | Payment has been self-refunded                                |
+| 1 << 3 | PREORDER                | Payment is a preorder                                         |
+| 1 << 4 | PENDING                 | Automatic payment is pending manual authorization by the user |
+| 1 << 5 | TEMPORARY_AUTHORIZATION | Payment is a temporary authorization                          |
+
+### Invoice Object
+
+###### Invoice Structure
+
+| Field                     | Type                                                  | Description                                                                                        |
+| ------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| id                        | snowflake                                             | The ID of the invoice                                                                              |
+| status?                   | integer                                               | The [status](#invoice-status) of the invoice                                                       |
+| currency                  | string                                                | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code the invoice is in |
+| subtotal                  | integer                                               | The subtotal of the invoice                                                                        |
+| tax                       | integer                                               | The tax applied to the invoice                                                                     |
+| total                     | integer                                               | The total of the invoice                                                                           |
+| tax_inclusive             | boolean                                               | Whether the subtotal is inclusive of all taxes                                                     |
+| items                     | array[[invoice item](#invoice-item-structure) object] | The items in the invoice                                                                           |
+| subscription_period_start | ?ISO8601 timestamp                                    | When the current billing period started                                                            |
+| subscription_period_end   | ?ISO8601 timestamp                                    | When the current billing period ends                                                               |
+| applied_discount_ids?     | array[snowflake]                                      | The IDs of the discounts applied to the invoice                                                    |
+| applied_user_discounts?   | map[snowflake, ?ISO8601 timestamp]                    | The user discount offers applied to the invoice and their expiration dates                         |
+
+###### Invoice Status
+
+| Value | Name          | Description              |
+| ----- | ------------- | ------------------------ |
+| 1     | OPEN          | Invoice is open          |
+| 2     | PAID          | Invoice is paid          |
+| 3     | VOID          | Invoice is void          |
+| 4     | UNCOLLECTIBLE | Invoice is uncollectible |
+
+###### Invoice Item Structure
+
+| Field                       | Type                                                          | Description                                            |
+| --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
+| id                          | snowflake                                                     | The ID of the invoice item                             |
+| quantity                    | integer                                                       | How many of the item have been/are being purchased     |
+| amount                      | integer                                                       | The price of the item (includes discounts)             |
+| proration                   | boolean                                                       | Whether the item is prorated                           |
+| subscription_plan_id        | ?snowflake                                                    | The ID of the subscription plan the item represents    |
+| subscription_plan_price ^1^ | ?integer                                                      | The price of the subscription plan the item represents |
+| discounts                   | array[[invoice discount](#invoice-discount-structure) object] | The discounts applied to the item                      |
+| sku_id                      | ?snowflake                                                    | The ID of the SKU                                      |
+| unit_price ^1^              | ?[unit price](#unit-price-structure)                          | The unit price of the item                             |
+| tenant_metadata?            | map[string, any]                                              | Tenant metadata for the invoice item                   |
+
+^1^ Does not include discounts.
+
+###### Invoice Discount Structure
+
+| Field  | Type    | Description                                    |
+| ------ | ------- | ---------------------------------------------- |
+| type   | integer | The [type](#invoice-discount-type) of discount |
+| amount | integer | How much the discount is                       |
+
+###### Invoice Discount Type
+
+| Value | Name                             | Description                                                       |
+| ----- | -------------------------------- | ----------------------------------------------------------------- |
+| 1     | SUBSCRIPTION_PLAN                | Discount is from an existing subscription plan’s remaining credit |
+| 2     | ENTITLEMENT                      | Discount is from an applied entitlement                           |
+| 3     | PREMIUM_LEGACY_UPGRADE_PROMOTION | Discount is from a legacy premium plan promotion discount         |
+| 4     | PREMIUM_TRIAL                    | Discount is from a premium trial                                  |
+| 5     | DEFAULT                          | Discount is a default discount                                    |
+
+###### Unit Price Structure
+
+| Field    | Type    | Description                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------- |
+| currency | string  | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| amount   | integer | The price amount in the smallest currency unit                                   |
+| exponent | integer | The exponent to convert the amount to the displayed currency unit                |
+
+### Endpoints
+
+<RouteHeader method="POST" url="/billing/verify-purchase-request">
+  Verify Purchase Request
+</RouteHeader>
+
+Verifies and authorizes a payment client for purchases. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field | Type   | Description                                |
+| ----- | ------ | ------------------------------------------ |
+| token | string | The verification token from the email link |
+
+<RouteHeader method="POST" url="/store/email/resend-payment-verification">
+  Resend Payment Verification Email
+</RouteHeader>
+
+Resends the payment verification email to the user. Returns an empty object on success.
+
+###### JSON Params
+
+| Field          | Type   | Description                                                    |
+| -------------- | ------ | -------------------------------------------------------------- |
+| purchase_token | string | The purchase token of the payment client (max 1024 characters) |
+
+<RouteHeader method="GET" url="/users/@me/billing/payments">
+  Get Payments
+</RouteHeader>
+
+Returns a list of [payment](#payment-object) objects that the current user has made.
+
+| Field   | Type      | Description                                                 |
+| ------- | --------- | ----------------------------------------------------------- |
+| limit   | integer   | Max number of payments to return (1-100, default unlimited) |
+| before? | snowflake | Get payments before this payment ID                         |
+| after?  | snowflake | Get payments after this payment ID                          |
+
+<RouteHeader method="GET" url="/users/@me/billing/payments/{payment.id}">
+  Get Payment
+</RouteHeader>
+
+Returns a [payment](#payment-object) object for the given payment ID.
+
+<RouteHeader method="POST" url="/users/@me/billing/payments/{payment.id}/void">
+  Void Payment
+</RouteHeader>
+
+Voids the pending payment. Returns a 204 empty response on success. Fires [Payment Update](/topics/gateway-events#payment-update) Gateway event.
+
+<RouteHeader method="GET" url="/users/@me/billing/invoice/breakdown" mfa>
+  Get Payment Invoice Breakdown
+</RouteHeader>
+
+Returns URLs to download VAT invoices for the given payment ID.
+
+###### Query Params
+
+| Field      | Type      | Description                           |
+| ---------- | --------- | ------------------------------------- |
+| payment_id | snowflake | The ID of the payment to get invoices |
+
+###### Response Body
+
+| Field               | Type          | Description                          |
+| ------------------- | ------------- | ------------------------------------ |
+| invoiceLink?        | string        | The URL to download the invoice      |
+| refundInvoiceLinks? | array[string] | The URLs to download refund invoices |

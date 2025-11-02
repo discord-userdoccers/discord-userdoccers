@@ -1,0 +1,533 @@
+---
+max-sublink-level: 2
+---
+
+# Reports
+
+Discord has a [reporting system](https://discord.com/safety/360044103651-reporting-abusive-behavior-to-discord) that allows users to report messages or profiles that violate Discord's [Terms of Service](https://discord.com/terms) or [Community Guidelines](https://discord.com/guidelines).
+When a user creates a report, it is sent to Discord's Trust and Safety team for review. The team evaluates the report and takes appropriate action, which may include warning the user, temporarily suspending their account, or permanently banning them from the platform.
+
+There are multiple versions of the reporting API:
+
+- [**V1**](#reports-v1): The original version of the reporting API, also known as dirt. Supports reporting messages and users.
+- [**V2**](#reports-v2): An updated version of the original reporting API that includes detailed report types and saves a snapshot of the reported message for review. Supports reporting messages only.
+- [**V3**](#reports-v3): The latest version of the reporting API, known as in-app reports, that includes additional report types and improved functionality. Supports reporting messages, users, guilds, scheduled events, and more.
+- [**DSA**](#dsa): A special version of reports V3 that can be used by users living in the European Union to comply with the [Digital Services Act](https://en.wikipedia.org/wiki/Digital_Services_Act).
+
+## Considerations
+
+When using the reporting API, keep the following in mind:
+
+- Only resources you have access to can be reported. For example, you cannot report a message in a private channel you cannot access.
+- You must have a verified email on your account to create reports.
+- You cannot report your own messages or profile.
+- Reports are anonymous. The user being reported will not be notified of who reported them.
+- Abuse of the reporting system may result in action being taken against your account.
+
+## Reports V1
+
+The original version of the reporting API, also known as dirt. Supports reporting messages and users.
+
+### Endpoints
+
+<RouteHeader method="GET" url="/report">
+  Get Report Reasons
+</RouteHeader>
+
+Returns a list of [report reason](#report-reason-structure) objects that can be used when creating a report for a message or user.
+
+###### Query String Params
+
+Either `channel_id` and `message_id`, or `user_id` must be provided.
+
+| Field      | Type      | Description                             |
+| ---------- | --------- | --------------------------------------- |
+| message_id | snowflake | The ID of the message to report         |
+| channel_id | snowflake | The ID of the channel the message is in |
+| user_id    | snowflake | The ID of the user to report            |
+
+###### Report Reason Structure
+
+| Field       | Type    | Description                        |
+| ----------- | ------- | ---------------------------------- |
+| reason      | integer | A unique identifier for the reason |
+| label       | string  | The display name of the reason     |
+| description | string  | A brief description of the reason  |
+
+###### Example Report Reason
+
+```json
+{
+  "reason": 2,
+  "label": "Spam or Phishing Links",
+  "description": "Fake links, invites to a server via bot, malicious links or attachments."
+}
+```
+
+<RouteHeader method="POST" url="/report">
+  Create Report
+</RouteHeader>
+
+Creates a report for a message or user.
+
+###### JSON Params
+
+| Field          | Type      | Description                                              |
+| -------------- | --------- | -------------------------------------------------------- |
+| message_id ^1^ | snowflake | The ID of the message to report                          |
+| channel_id ^1^ | snowflake | The ID of the channel the message is in                  |
+| user_id ^1^    | snowflake | The ID of the user to report                             |
+| reason         | integer   | The [report reason](#report-reason-structure) identifier |
+
+^1^ Either `channel_id` and `message_id`, or `user_id` must be provided.
+
+###### Response Body
+
+| Field | Type      | Description                  |
+| ----- | --------- | ---------------------------- |
+| id    | snowflake | The ID of the created report |
+
+## Reports V2
+
+An updated version of the original reporting API that includes detailed report types and saves a snapshot of the reported message for review. Supports reporting messages only.
+
+### Endpoints
+
+<RouteHeader method="GET" url="/report/options">
+  Get Report Options
+</RouteHeader>
+
+Returns a list of [report option](#report-option-structure) objects that can be used when creating a report for a message.
+
+###### Report Option Structure
+
+| Field         | Type                                                                      | Description                                              |
+| ------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- |
+| value         | string                                                                    | A unique identifier for the report option                |
+| label         | string                                                                    | The display name of the report option                    |
+| description   | string                                                                    | A brief description of the report option                 |
+| sub_question? | string                                                                    | Prompt to ask the user for in order to select a sub-type |
+| sub_types?    | array[[report option sub-type](#report-option-sub-type-structure) object] | Sub-types for the report option                          |
+
+###### Report Option Sub-Type Structure
+
+| Field | Type   | Description                             |
+| ----- | ------ | --------------------------------------- |
+| value | string | A unique identifier for the sub-type    |
+| label | string | The display name of the report sub-type |
+
+###### Example Report Option
+
+```json
+{
+  "value": "spamming",
+  "label": "Spamming",
+  "description": "Unsolicited advertisements",
+  "sub_question": "How is this spam?",
+  "sub_types": [
+    {
+      "value": "sub_spam",
+      "label": "User is sending spam messages or requests"
+    },
+    {
+      "value": "sub_spambot",
+      "label": "This is a spambot account"
+    }
+  ]
+}
+```
+
+<RouteHeader method="POST" url="/reports/channels/{channel.id}/messages/{message.id}">
+  Stage Report
+</RouteHeader>
+
+Stages a report for a message, returning a token that can be used to create the report containing the serialized message data.
+
+###### Response Body
+
+| Field | Type   | Description             |
+| ----- | ------ | ----------------------- |
+| token | string | The signed report token |
+
+<RouteHeader method="POST" url="/reports">
+  Create Staged Report
+</RouteHeader>
+
+Creates a report for a message, including a snapshot of the message for review. Requires the `MANAGE_MESSAGES` permission if the channel is in a guild. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field           | Type   | Description                                                           |
+| --------------- | ------ | --------------------------------------------------------------------- |
+| token           | string | The signed report token                                               |
+| report_type     | string | The [report option](#report-option-structure) value                   |
+| report_subtype? | string | The [report option sub-type](#report-option-sub-type-structure) value |
+| subject         | string | The subject of the report (max 300 characters)                        |
+| description     | string | Additional details for the report (max 800 characters)                |
+
+## Reports V3
+
+The latest version of the reporting API, known as in-app reports, that includes additional report types and improved functionality. Supports reporting messages, users, guilds, scheduled events, and more.
+
+### DSA
+
+A special version of reports V3 that can be used by users living in the European Union to comply with the [Digital Services Act](https://en.wikipedia.org/wiki/Digital_Services_Act).
+Unlike regular reports, DSA reports do not require an account to submit. Instead, users simply need to [verify an email address](#verify-unauthenticated-report).
+Additionally, instead of the standard [report menu types](#report-menu-type), DSA reporters fetch their allowed report types from [a separate endpoint](#get-unauthenticated-report-capabilities).
+
+Note that the unauthenticated reporting endpoints require that either authentication or a [fingerprint](/topics/experiments#fingerprints) is provided for experiment tracking purposes.
+
+### Report Menu Object
+
+###### Report Menu Structure
+
+| Field           | Type                                                       | Description                                                           |
+| --------------- | ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| name            | string                                                     | The [type of report menu](#report-menu-type)                          |
+| version         | string                                                     | The version of the report menu schema (currently `1.0`)               |
+| variant         | string                                                     | The variant of the menu                                               |
+| postback_url    | string                                                     | The [API URL endpoint for submitting the report](#submit-report-menu) |
+| language?       | string                                                     | The language code for the menu (default `en`)                         |
+| root_node_id    | integer                                                    | The ID of the starting node in the menu flow                          |
+| success_node_id | integer                                                    | The ID of the node shown on successful submission                     |
+| fail_node_id    | integer                                                    | The ID of the node shown on failed submission                         |
+| nodes           | map[integer, [report node](#report-node-structure) object] | A map of node IDs to their corresponding node objects                 |
+
+###### Report Node Structure
+
+| Field                    | Type                                                            | Description                                                      |
+| ------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- |
+| id ^1^                   | integer                                                         | The unique identifier for the node                               |
+| report_type?             | string                                                          | The report type identifier if this is a submission node          |
+| key                      | string                                                          | A unique key identifier for the node                             |
+| header                   | string                                                          | The main header text displayed for this node                     |
+| subheader?               | string                                                          | Optional secondary header text                                   |
+| info?                    | string                                                          | Optional informational text or warning                           |
+| children                 | array[[report node child](#report-node-child-structure) object] | Child options that lead to other nodes                           |
+| elements                 | array[[report element](#report-element-structure) object]       | UI elements to display on this node                              |
+| button?                  | [report button](#report-button-structure) object                | The action button for this node                                  |
+| is_multi_select_required | boolean                                                         | Whether multi-select elements require at least one selection     |
+| is_auto_submit           | boolean                                                         | Whether this node automatically submits without user interaction |
+
+^1^ Node IDs are unique across all report menu types and often reused in multiple menus.
+
+###### Report Button Structure
+
+| Field  | Type     | Description                                                            |
+| ------ | -------- | ---------------------------------------------------------------------- |
+| type   | string   | The [type of button](#report-button-type)                              |
+| target | ?integer | The target node ID for navigation (only applicable for `next` buttons) |
+
+###### Report Button Type
+
+| Value  | Description                                   |
+| ------ | --------------------------------------------- |
+| next   | Navigates to the next node in the report flow |
+| submit | Submits the report                            |
+| done   | Exits the modal successfully                  |
+| cancel | Exits the modal without submitting the report |
+
+###### Report Node Child Structure
+
+This object is represented as an array of the following fields:
+
+| Field          | Type    | Description                            |
+| -------------- | ------- | -------------------------------------- |
+| name           | string  | The display label for the child option |
+| target_node_id | integer | The node ID this option navigates to   |
+
+###### Report Element Structure
+
+| Field               | Type    | Description                                                      |
+| ------------------- | ------- | ---------------------------------------------------------------- |
+| name                | string  | The name identifier for the element                              |
+| type                | string  | The [type of element](#report-element-type)                      |
+| data                | object  | Element-specific data, varies by type                            |
+| should_submit_data  | boolean | Whether this element's data should be included in the submission |
+| skip_if_unlocalized | boolean | Whether to skip this element if not localized                    |
+| is_localized        | boolean | Whether this element has been localized                          |
+
+###### Report Element Type
+
+| Value                         | Description                                        | Receive Data                                                               | Send Data                |
+| ----------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------ |
+| checkbox                      | A checkbox input element                           | array[array[string]] ^1^                                                   | array[array[string]] ^1^ |
+| dropdown                      | A dropdown select input element                    | [dropdown element](#dropdown-element-structure) object                     | string                   |
+| free_text                     | A free text input element                          | [free text element](#free-text-element-structure) object                   | string                   |
+| ~~radio~~                     | ~~A radio button input element~~                   |
+| success                       | A success element                                  | null                                                                       |
+| fail                          | A fail element                                     | null                                                                       |
+| breadcrumbs                   | The user's progress through the report flow        | null                                                                       |
+| text_line_resource            | A phone number for the user to text                | [text line resource element](#text-line-resource-element-structure) object |
+| text                          | A block of text                                    | [text resource element](#text-line-resource-element-structure) object      |
+| external_link                 | An external link reference                         | [external link element](#external-link-element-structure) object           |
+| ~~more_you_can_do~~           | ~~Additional actions that can be taken~~           |
+| block_users                   | An option to block the reported user               | null                                                                       |
+| ignore_users                  | An option to ignore the reported user              | null                                                                       |
+| mute_users                    | An option to mute the reported user                | null                                                                       |
+| delete_message                | An option to delete the reported message           | null                                                                       |
+| leave_guild                   | An option to leave the reported guild              | null                                                                       |
+| deauthorize_app               | An option to deauthorize the reported app          | null                                                                       |
+| share_with_parents            | An option to share the report with parents         | null                                                                       |
+| settings_upsells              | Additional settings actions that can be taken      | null                                                                       |
+| guild_preview                 | Displays a preview of the reported guild           | null                                                                       |
+| guild_discovery_preview       | Displays a preview of the reported guild listing   | null                                                                       |
+| guild_directory_entry_preview | Displays a preview of the reported directory entry | null                                                                       |
+| guild_scheduled_event_preview | Displays a preview of the reported scheduled event | null                                                                       |
+| message_preview               | Displays a preview of the reported message         | null                                                                       |
+| channel_preview               | Displays a preview of the reported channel         | null                                                                       |
+| user_preview                  | Displays a preview of the reported user            | null                                                                       |
+| app_preview                   | Displays a preview of the reported application     | null                                                                       |
+| widget_preview                | Displays a preview of the reported profile widget  | null                                                                       |
+
+^1^ Nested array is in the format (name, label, description?).
+
+###### Dropdown Element Structure
+
+| Field   | Type                                                        | Description                            |
+| ------- | ----------------------------------------------------------- | -------------------------------------- |
+| title   | string                                                      | The title of the dropdown element      |
+| options | array[[dropdown option](#dropdown-option-structure) object] | The selectable options in the dropdown |
+
+###### Dropdown Option Structure
+
+| Field | Type   | Description                          |
+| ----- | ------ | ------------------------------------ |
+| value | string | The unique identifier for the option |
+| label | string | The display name of the option       |
+
+###### Free Text Element Structure
+
+| Field           | Type    | Description                               |
+| --------------- | ------- | ----------------------------------------- |
+| title?          | string  | The title of the free text element        |
+| subtitle?       | string  | An subtitle for the element               |
+| placeholder?    | string  | Placeholder text for the input field      |
+| rows            | integer | The number of visible text rows           |
+| character_limit | integer | The maximum number of characters allowed  |
+| pattern?        | string  | A regex pattern that the input must match |
+
+###### Text Line Resource Element Structure
+
+| Field        | Type    | Description                             |
+| ------------ | ------- | --------------------------------------- |
+| title        | string  | The title of the text line resource     |
+| body         | string  | The body text of the text line resource |
+| sms          | string  | The SMS number to text                  |
+| sms_body?    | string  | Example SMS message to send             |
+| is_localized | boolean | Whether this element has been localized |
+
+###### Text Resource Element Structure
+
+| Field        | Type    | Description                             |
+| ------------ | ------- | --------------------------------------- |
+| header       | string  | The header text of the text resource    |
+| body         | string  | The body text of the text resource      |
+| is_localized | boolean | Whether this element has been localized |
+
+###### External Link Element Structure
+
+| Field             | Type    | Description                             |
+| ----------------- | ------- | --------------------------------------- |
+| url               | string  | The URL for the external link           |
+| link_text         | string  | The display text for the external link  |
+| link_description? | string  | A description of the link's purpose     |
+| is_localized      | boolean | Whether this element has been localized |
+
+###### Report Menu Type
+
+| Value                 | Description                      |
+| --------------------- | -------------------------------- |
+| guild                 | Report a guild                   |
+| guild_discovery       | Report a guild discovery listing |
+| guild_directory_entry | Report a guild directory entry   |
+| guild_scheduled_event | Report a guild scheduled event   |
+| message               | Report a message                 |
+| stage_channel         | Report a stage channel           |
+| first_dm              | Report the first message in a DM |
+| user                  | Report a user                    |
+| application           | Report an application            |
+| widget                | Report a profile widget          |
+
+###### Example Report Menu
+
+```json
+{
+  "name": "user",
+  "variant": "3",
+  "version": "1.0",
+  "postback_url": "/api/reporting/user",
+  "root_node_id": 1,
+  "success_node_id": 1,
+  "fail_node_id": 1,
+  "nodes": {
+    "1": {
+      "id": 1,
+      "key": "GENERIC_SUBMIT",
+      "header": "Report Summary",
+      "subheader": "Review your report before submitting.",
+      "info": null,
+      "button": {
+        "type": "submit",
+        "target": null
+      },
+      "elements": [
+        {
+          "name": "breadcrumbs",
+          "type": "breadcrumbs",
+          "data": null,
+          "should_submit_data": false,
+          "skip_if_unlocalized": false,
+          "is_localized": true
+        }
+      ],
+      "report_type": null,
+      "children": [],
+      "is_multi_select_required": false,
+      "is_auto_submit": false
+    }
+  }
+}
+```
+
+### Endpoints
+
+<RouteHeader method="GET" url="/reporting/menu/{type}">
+  Get Report Menu
+</RouteHeader>
+
+Returns a [report menu](#report-menu-object) object for the specified [type](#report-menu-type). The menu contains a hierarchical tree of nodes that guide users through the reporting process, including questions, options, and submission steps.
+
+###### Query String Params
+
+| Field    | Type   | Description                                                                      |
+| -------- | ------ | -------------------------------------------------------------------------------- |
+| variant? | string | The version variant of the menu to retrieve (max 256 characters, default latest) |
+
+<RouteHeader method="POST" url="/reporting/{type}">
+  Submit Report Menu
+</RouteHeader>
+
+Submits a completed report based on the user's navigation through a report menu. This endpoint processes the collected information from the menu flow and creates a formal report for review by Discord's Trust and Safety team.
+
+###### JSON Params
+
+| Field                     | Type                       | Description                                                                                                                                                                           |
+| ------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| version                   | string                     | The version of the report menu schema that was used                                                                                                                                   |
+| variant                   | string                     | The variant of the menu that was used                                                                                                                                                 |
+| name                      | string                     | The [report menu type](#report-menu-type)                                                                                                                                             |
+| language                  | string                     | The language code used for the report                                                                                                                                                 |
+| breadcrumbs               | array[integer]             | Node IDs clicked in the report menu flow, representing the user's path through the menu                                                                                               |
+| elements?                 | map[string, array[string]] | Map of [element names to their selected values](#report-element-type) (for checkboxes and other inputs)                                                                               |
+| channel_id?               | snowflake                  | The ID of the channel being reported (required for [`message`, `first_dm`, `stage_channel`, and `guild_directory_entry` report menus](#report-menu-type))                             |
+| message_id?               | snowflake                  | The ID of the message being reported (required for [`message` and `first_dm` report menus](#report-menu-type))                                                                        |
+| guild_id?                 | snowflake                  | The ID of the guild being reported (required for [`guild`, `stage_channel`, `guild_scheduled_event`, `guild_directory_entry`, and `guild_discovery` report menus](#report-menu-type)) |
+| stage_instance_id?        | snowflake                  | The ID of the stage instance being reported (required for [`stage_channel` report menus](#report-menu-type))                                                                          |
+| guild_scheduled_event_id? | snowflake                  | The ID of the scheduled event being reported (required for [`guild_scheduled_event` report menus](#report-menu-type))                                                                 |
+| reported_user_id?         | snowflake                  | The ID of the user being reported (required for [`user` report menus](#report-menu-type))                                                                                             |
+| application_id?           | snowflake                  | The ID of the application being reported (required for [`application` report menus](#report-menu-type))                                                                               |
+| user_id?                  | snowflake                  | The ID of the user being reported (required for [`widget` report menus](#report-menu-type))                                                                                           |
+| widget_id?                | snowflake                  | The ID of the profile widget being reported (required for [`widget` report menus](#report-menu-type))                                                                                 |
+
+###### Response Body
+
+| Field     | Type      | Description                  |
+| --------- | --------- | ---------------------------- |
+| report_id | snowflake | The ID of the created report |
+
+<RouteHeader method="GET" url="/reporting/unauthenticated/experiment" unauthenticated>
+  Query Unauthenticated Report Eligibility
+</RouteHeader>
+
+Queries whether the user can use unauthenticated reporting. Returns an empty object on success.
+
+<RouteHeader method="GET" url="/reporting/unauthenticated/capabilities" unauthenticated>
+  Get Unauthenticated Report Capabilities
+</RouteHeader>
+
+Returns the report menu types available for unauthenticated reporting.
+
+###### Response Body
+
+| Field        | Type          | Description                     |
+| ------------ | ------------- | ------------------------------- |
+| capabilities | array[string] | The available report menu types |
+
+<RouteHeader method="POST" url="/reporting/unauthenticated/{type}/code">
+  Get Unauthenticated Report Verification Code
+</RouteHeader>
+
+Sends a verification code to the user's email address to initiate the unauthenticated reporting process for the specified type (must be one of the types returned by [Get Unauthenticated Report Capabilities](#get-unauthenticated-report-capabilities)). Returns an empty object on success.
+
+###### JSON Params
+
+| Field | Type   | Description                                                             |
+| ----- | ------ | ----------------------------------------------------------------------- |
+| name  | string | The report menu type (same as the `type` path parameter)                |
+| email | string | The email address to send the verification code to (max 320 characters) |
+
+<RouteHeader method="POST" url="/reporting/unauthenticated/{type}/verify">
+  Verify Unauthenticated Report
+</RouteHeader>
+
+Verifies the email code sent to the user to confirm their email address for unauthenticated reporting for the specified type (must be one of the types returned by [Get Unauthenticated Report Capabilities](#get-unauthenticated-report-capabilities)).
+
+###### JSON Params
+
+| Field | Type   | Description                                                |
+| ----- | ------ | ---------------------------------------------------------- |
+| name  | string | The report menu type (same as the `type` path parameter)   |
+| email | string | The email address used to request the code                 |
+| code  | string | The verification code sent to the email (max 6 characters) |
+
+###### Response Body
+
+| Field | Type   | Description                  |
+| ----- | ------ | ---------------------------- |
+| token | string | The email verification token |
+
+<RouteHeader method="GET" url="/reporting/unauthenticated/menu/{type}" unauthenticated>
+  Get Unauthenticated Report Menu
+</RouteHeader>
+
+Returns a [report menu](#report-menu-object) object for the specified type (must be one of the types returned by [Get Unauthenticated Report Capabilities](#get-unauthenticated-report-capabilities)).
+The menu contains a hierarchical tree of nodes that guide users through the reporting process, including questions, options, and submission steps.
+
+###### Query String Params
+
+| Field    | Type   | Description                                                                      |
+| -------- | ------ | -------------------------------------------------------------------------------- |
+| variant? | string | The version variant of the menu to retrieve (max 256 characters, default latest) |
+
+<RouteHeader method="POST" url="/reporting/unauthenticated/{type}" unauthenticated>
+  Submit Unauthenticated Report Menu
+</RouteHeader>
+
+Submits a completed unauthenticated report based on the user's navigation through a report menu. This endpoint processes the collected information from the menu flow and creates a formal report for review by Discord's Trust and Safety team.
+
+###### JSON Params
+
+| Field       | Type                       | Description                                                                                                       |
+| ----------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| version     | string                     | The version of the report menu schema that was used                                                               |
+| variant     | string                     | The variant of the menu that was used                                                                             |
+| name        | string                     | The [report menu type](#report-menu-type)                                                                         |
+| language    | string                     | The language code used for the report                                                                             |
+| breadcrumbs | array[integer]             | Node IDs clicked in the report menu flow, representing the user's path through the menu                           |
+| elements?   | map[string, array[string]] | Map of [element names to their selected values](#report-element-type) (for checkboxes and other inputs)           |
+| email_token | string                     | The verification token obtained from the [Verify Unauthenticated Report](#verify-unauthenticated-report) endpoint |
+
+<RouteHeader method="POST" url="/reporting/review" unauthenticated>
+  Request Report Review
+</RouteHeader>
+
+Submits a request to have a report on your account reviewed. Report review links are present in emails sent informing you of actions taken on your account.
+When clicked, these links redirect to `https://discord.com/report-review?token=...`, where the token can be used with this endpoint to request a review.
+Returns an empty object on success.
+
+###### JSON Params
+
+| Field | Type   | Description                                                  |
+| ----- | ------ | ------------------------------------------------------------ |
+| token | string | The report review token obtained from the report review link |

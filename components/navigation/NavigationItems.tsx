@@ -1,11 +1,12 @@
 import classNames from "@lib/classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { Fragment, useEffect, useState } from "react";
+import React, { createElement, Fragment, useEffect, useState } from "react";
 import useToggle from "../../hooks/useToggle";
 import Caret from "../icons/Caret";
 import CaretFill from "../icons/CaretFill";
 import Searchbar from "../Searchbar";
+import { ICONS } from "./NavigationList";
 
 interface MenuSelectionProps {
   title?: string;
@@ -31,9 +32,10 @@ interface NavigationLinkProps {
   subLinks?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
+  icon: keyof typeof ICONS | null;
 }
 
-export function NavigationLink({ href, subLinks, className, children }: NavigationLinkProps) {
+export function NavigationLink({ href, subLinks, className, children, icon }: NavigationLinkProps) {
   const router = useRouter();
   const { value: isOpen, toggle } = useToggle(router.pathname === href);
 
@@ -71,6 +73,10 @@ export function NavigationLink({ href, subLinks, className, children }: Navigati
             <CaretFill className={caretClasses} />
           </button>
         )}
+        {icon != null &&
+          createElement(ICONS[icon], {
+            className: "ml-2 -mr-6 size-5",
+          })}
         <Link href={href} className={linkClasses}>
           {children}
         </Link>

@@ -14,7 +14,7 @@ Used to represent a webhook.
 | type                | integer                                                                     | The [type of webhook](#webhook-types)                                                              |
 | guild_id?           | ?snowflake                                                                  | The guild ID this webhook is for, if any                                                           |
 | channel_id          | ?snowflake                                                                  | The channel ID this webhook is for, if any                                                         |
-| user?               | ?partial [user](/resources/user#user-object) object                         | The user this webhook was created by                                                               |
+| user? ^3^           | ?partial [user](/resources/user#user-object) object                         | The user this webhook was created by                                                               |
 | name                | ?string                                                                     | The default name of the webhook (1-80 characters)                                                  |
 | avatar              | ?string                                                                     | The default [avatar hash](/reference#cdn-formatting) of the webhook                                |
 | token? ^1^          | string                                                                      | The secure token of the webhook (returned for `INCOMING` webhooks)                                 |
@@ -26,6 +26,8 @@ Used to represent a webhook.
 ^1^ For application-owned webhooks, this field is only returned to the application that created the webhook.
 
 ^2^ These fields will not be included if the webhook creator has since lost access to the followed channel's guild.
+
+^3^ This field is not included when the webhook is retrieved with its token.
 
 ###### Webhook Types
 
@@ -163,7 +165,7 @@ Returns a [webhook](#webhook-object) object for the given webhook ID. Requires t
   Get Webhook with Token
 </RouteHeader>
 
-Same as above, except this call does not require authentication.
+Same as above, except this call does not require authentication and omits the `user` field in the response.
 
 <RouteHeader method="PATCH" url="/webhooks/{webhook.id}" supportsAuditReason>
   Modify Webhook
@@ -183,7 +185,7 @@ Modifies a webhook. Requires the `MANAGE_WEBHOOKS` permission. Returns the updat
   Modify Webhook with Token
 </RouteHeader>
 
-Same as above, except this call does not require authentication and does not accept a `channel_id` parameter.
+Same as above, except this call does not require authentication, does not accept a `channel_id` parameter, and omits the `user` field in the response.
 
 ###### JSON Params
 
@@ -227,7 +229,7 @@ Files must be attached using a `multipart/form-data` body (or pre-uploaded to Di
 ###### Limitations
 
 - When executing on a forum channel, _one of_ `thread_id` or `thread_name` must be provided.
-- The maximum request size when sending a message is **100 MiB**.
+- The maximum request size when sending a message is **200 MiB**.
 - For the embed object, you can set every field except `type` (it will be `rich` regardless of if you try to set it), `provider`, `video`, and any `height`, `width`, or `proxy_url` values for images.
 
 <Alert type="info">
@@ -258,7 +260,6 @@ Note that when sending a message, you must provide a value for **at least one of
 | components? ^2^   | array[[message component](/resources/components#component-object) object] | The components to include with the message                                                                                                 |
 | flags?            | integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set) |
 | files[n]? ^1^     | file contents                                                             | Contents of the file being sent (max 10)                                                                                                   |
-| payload_json? ^1^ | string                                                                    | JSON-encoded body of non-file params                                                                                                       |
 | attachments? ^1^  | array[partial [attachment](/resources/message#attachment-object) object]  | Partial attachment objects with `filename` and `description` (max 10)                                                                      |
 | poll?             | [poll create request](/resources/message#poll-create-structure) object    | A poll!                                                                                                                                    |
 
@@ -266,11 +267,18 @@ Note that when sending a message, you must provide a value for **at least one of
 
 ^2^ Requires `with_components` query parameter. Interactions only work with an application-owned webhook.
 
-<RouteHeader method="POST" url="/webhooks/{webhook.id}/{webhook.token}/slack" unauthenticated>
-  Execute Slack-Compatible Webhook
+<RouteHeader method="GET" url="/webhooks/{webhook.id}/{webhook.token}/{webhook_service}" unauthenticated>
+  Get Service Webhook
 </RouteHeader>
 
-Refer to [Slack's documentation](https://api.slack.com/incoming-webhooks) for more information. We do not support Slack's `channel`, `icon_emoji`, `mrkdwn`, or `mrkdwn_in` properties.
+Validates a given webhook and service. Currently, the only supported services are `github` and `slack`. Returns a 200 OK response on success.
+
+<RouteHeader method="POST" url="/webhooks/{webhook.id}/{webhook.token}/{webhook_service}" unauthenticated>
+  Execute Service Webhook
+</RouteHeader>
+
+Posts a message to the webhook's channel from a supported service. Currently, the only supported services are `github` and `slack`. Returns a [message](/resources/message#message-object) object or 204 empty response, depending on `wait`.
+Fires a [Message Create](/topics/gateway-events#message-create) Gateway event. See [message formatting](/reference#message-formatting) for more information on how to properly format messages.
 
 <Alert type="warn">
 
@@ -278,30 +286,20 @@ This endpoint cannot be used from Discord client domain origins.
 
 </Alert>
 
-###### Query String Params
+###### Slack-Compatible Webhook
 
-| Field      | Type      | Description                                                                                                                                                                   | Required |
-| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| wait?      | boolean   | Waits for confirmation of message send before response, and returns the created message body (default false; when false a message that is not saved does not return an error) |
-| thread_id? | snowflake | Send a message to the specified thread within a webhook's channel; the thread will automatically be unarchived                                                                |
+Refer to [Slack's documentation](https://api.slack.com/incoming-webhooks) for more information. Does not support Slack's `channel`, `icon_emoji`, `mrkdwn`, or `mrkdwn_in` properties.
 
-<RouteHeader method="POST" url="/webhooks/{webhook.id}/{webhook.token}/github" unauthenticated>
-  Execute GitHub-Compatible Webhook
-</RouteHeader>
+###### Github-Compatible Webhook
 
-[Add a new webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) to your GitHub repo (in the repo's settings), and use this endpoint as the "Payload URL". You can choose what events your Discord channel receives by choosing the "Let me select individual events" option and selecting individual events for the new webhook you're configuring.
+[Add a new webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks), and use this endpoint as the "Payload URL".
+You can choose what events your Discord channel receives by choosing the "Let me select individual events" option and selecting individual events for the new webhook you're configuring.
 The supported [events](https://docs.github.com/en/webhooks/webhook-events-and-payloads) are `commit_comment`, `create`, `delete`, `fork`, `issue_comment`, `issues`, `member`, `public`, `pull_request`, `pull_request_review`, `pull_request_review_comment`, `push`, `release`, `watch`, `check_run`, `check_suite`, `discussion`, and `discussion_comment`.
 
-<Alert type="warn">
-
-This endpoint cannot be used from Discord client domain origins.
-
-</Alert>
-
 ###### Query String Params
 
-| Field      | Type      | Description                                                                                                                                                                   | Required |
-| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Field      | Type      | Description                                                                                                                                                                   |
+| ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | wait?      | boolean   | Waits for confirmation of message send before response, and returns the created message body (default false; when false a message that is not saved does not return an error) |
 | thread_id? | snowflake | Send a message to the specified thread within a webhook's channel; the thread will automatically be unarchived                                                                |
 
@@ -345,7 +343,6 @@ Starting with API v10, the `attachments` array must contain all attachments that
 | components? ^2^   | array[[message component](/resources/components#component-object) object] | The components to include with the message                                                                                                 |
 | flags?            | integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set) |
 | files[n]? ^1^     | file contents                                                             | Contents of the file being sent (max 10)                                                                                                   |
-| payload_json? ^1^ | string                                                                    | JSON-encoded body of non-file params                                                                                                       |
 | attachments? ^1^  | array[partial [attachment](/resources/message#attachment-object) object]  | Partial attachment objects with `filename` and `description` (max 10)                                                                      |
 
 ^1^ See [Uploading Files](/reference#uploading-files) for details.

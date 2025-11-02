@@ -339,6 +339,10 @@ export class Tokenizer {
     }
 
     for (const row of bodyRows) {
+      if (row.children[0].children[0].elem.tagName?.toLocaleLowerCase() === "del") {
+        continue;
+      }
+
       let field: TypeInfo | undefined;
       let type: TypeInfo | undefined;
       let description: TypeInfo | undefined;
@@ -348,7 +352,7 @@ export class Tokenizer {
         const columnName = tHeadRows[i].getTextContent().toLowerCase();
         switch (struct.type) {
           case TableType.Struct: {
-            if (columnName === "field") {
+            if (columnName === "field" || columnName === "name") {
               field = cell.getTypeInfo();
             } else if (columnName === "type") {
               type = cell.getTypeInfo();

@@ -65,6 +65,7 @@ A code that when used, adds a user to a guild or group DM channel, or creates a 
 | 2     | EMBEDDED_APPLICATION   | The invite is for an embedded application (activity) in a [voice channel](/resources/channel#channel-object) |
 | 3     | ROLE_SUBSCRIPTIONS ^1^ | The invite redirects to the role subscriptions page within a [guild](/resources/guild#guild-object)          |
 | 4     | CREATOR_PAGE ^1^       | The invite originates from the creator page of a [guild](/resources/guild#guild-object)                      |
+| 5     | LOBBY ^1^              | The invite is for a lobby member                                                                             |
 
 ^1^ Invites with these target types are not returned in the [Get Guild Invites](#get-guild-invites) and [Get Channel Invites](#get-channel-invites) endpoints.
 They are also not deletable through [Delete Invite](#delete-invite).
@@ -335,7 +336,7 @@ Deletes an invite. Requires the `MANAGE_CHANNELS` permission on the channel this
   Get Guild Invites
 </RouteHeader>
 
-Returns a list of [invite](#invite-object) objects (with [invite metadata](#invite-metadata-object)) for the guild. Requires the `MANAGE_GUILD` permission.
+Returns a list of [invite](#invite-object) objects for the guild. Requires the `MANAGE_GUILD` or `VIEW_AUDIT_LOG` permission. [Invite metadata](#invite-metadata-object) is included if the user has the `MANAGE_GUILD` permission.
 
 <RouteHeader method="GET" url="/channels/{channel.id}/invites">
   Get Channel Invites
@@ -361,23 +362,22 @@ In the case of a guild with the instant invite operation disabled by Discord, th
 
 </Alert>
 
-###### JSON Params
+###### JSON/Form Params
 
 | Field                  | Type      | Description                                                                                                                                                    |
 | ---------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | flags? ^1^             | integer   | The [invite's flags](#invite-flags) (only `IS_GUEST_INVITE` and `IS_APPLICATION_BYPASS` can be set)                                                            |
-| max_age? ^2^           | integer   | Number of seconds before expiry, or 0 for never (0-604800, default 86400)                                                                                      |
+| max_age? ^2^           | integer   | Number of seconds before expiry, or 0 for never (0-5184000, default 86400)                                                                                     |
 | max_uses?              | integer   | Max number of uses or 0 for unlimited (0-100, default 0)                                                                                                       |
 | temporary?             | boolean   | Whether this invite only grants temporary membership (default false)                                                                                           |
 | unique?                | boolean   | Whether to try to reuse a similar invite (useful for creating many unique one time use invites, default false)                                                 |
-| validate?              | ?string   | The invite code to validate and attempt to reuse; if nonexistant, a new invite will be created as usual                                                        |
 | target_type?           | integer   | The [type of target](#invite-target-type) for this voice channel invite                                                                                        |
-| target_user_id?        | snowflake | The ID of the user whose stream to display for this invite, required if `target_type` is `STREAM`, the user must be streaming in the channel                   |
-| target_application_id? | snowflake | The ID of the embedded application to open for this invite, required if `target_type` is `EMBEDDED_APPLICATION`, the application must have the `EMBEDDED` flag |
+| target_user_id?        | snowflake | The ID of the user whose stream to display for this invite, required if `target_type` is `STREAM`; the user must be streaming in the channel                   |
+| target_application_id? | snowflake | The ID of the embedded application to open for this invite, required if `target_type` is `EMBEDDED_APPLICATION`; the application must have the `EMBEDDED` flag |
 
 ^1^ Creating an invite with the `APPLICATION_BYPASS` flag requires the `KICK_MEMBERS` permission.
 
-^2^ For group DMs, `max_age` is the only supported parameter, and it does not support 0.
+^2^ For group DMs, `max_age` is the only supported parameter, and it accepts a value from 1 to 604800 (7 days).
 
 <RouteHeader method="GET" url="/users/@me/invites">
   Get User Invites

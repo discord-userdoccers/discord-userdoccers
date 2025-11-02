@@ -1,0 +1,1250 @@
+# Store
+
+Discord store resources have a long and convoluted history.
+
+The store was originally built to support game developers selling games and in-game items on Discord, as well as GameSDK features.
+While this was deprecated soon after, the store infrastructure remained in place, fully functional.
+It was then used internally to power the Discord Nitro subscription service, as well as other ventures such as the now-defunct paid sticker packs.
+
+Now, it has been repurposed to support guild and application monetization features, such as guild products and application subscriptions.
+As Discord has returned to gaming with the release of the Social SDK, it is now again being used to support sales of in-game items.
+
+While the store infrastructure is still in use, most of the new features being built with it offer newer APIs to manage and interact with them.
+Certain new features may require using these new APIs to function properly, and may not be fully compatible with the older store APIs, even though
+they are using [SKUs](#sku-object) and [store listings](#store-listing-object) under the hood.
+
+### SKU Object
+
+A purchasable item or group of items in Discord.
+
+###### SKU Structure
+
+SKU objects can either be localized or unlocalized. Localized SKUs only serialize strings and pricing for the user's location, while unlocalized SKUs serialize all strings and pricing for all locales.
+All objects serialized in the SKU inherit this behavior.
+
+| Field                                     | Type                                                                           | Description                                                                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| id                                        | snowflake                                                                      | The ID of the SKU                                                                                                   |
+| type                                      | integer                                                                        | The [type of SKU](#sku-type)                                                                                        |
+| application_id                            | snowflake                                                                      | The ID of the application the SKU belongs to                                                                        |
+| application?                              | partial [application](/resources/application#application-object)               | The application the SKU belongs to                                                                                  |
+| product_line                              | ?integer                                                                       | The [product line](#sku-product-line) the SKU belongs to                                                            |
+| product_id?                               | snowflake                                                                      | The ID of the storefront product the SKU is for                                                                     |
+| flags                                     | integer                                                                        | The [SKU flags](#sku-flags)                                                                                         |
+| name                                      | [localized string](/reference#localized-string)                                | The name of the SKU                                                                                                 |
+| summary?                                  | [localized string](/reference#localized-string)                                | The summary of the SKU                                                                                              |
+| description?                              | [localized string](/reference#localized-string)                                | The description of the SKU                                                                                          |
+| legal_notice?                             | [localized string](/reference#localized-string)                                | The legal notice for the SKU                                                                                        |
+| slug                                      | string                                                                         | The URL slug of the SKU                                                                                             |
+| thumbnail_asset_id?                       | snowflake                                                                      | The ID of the store asset for the SKU's thumbnail                                                                   |
+| dependent_sku_id?                         | ?snowflake                                                                     | The ID of the prerequisite required to buy this SKU                                                                 |
+| bundled_skus?                             | array[[SKU](#sku-object) object]                                               | The SKUs that are included when purchasing this SKU                                                                 |
+| bundled_sku_ids?                          | array[snowflake]                                                               | The IDs of the SKUs that are included when purchasing this SKU                                                      |
+| access_type                               | integer                                                                        | The [access level](#sku-access-type) of the SKU                                                                     |
+| manifest_labels?                          | ?array[snowflake]                                                              | The IDs of the manifest labels associated with the SKU                                                              |
+| features                                  | array[integer]                                                                 | The [features](#sku-feature) of the SKU                                                                             |
+| locales?                                  | array[string]                                                                  | The [locales](/reference#locales) the SKU is available in (default `en-US`)                                         |
+| genres?                                   | array[integer]                                                                 | The [genres](#sku-genre) of the SKU                                                                                 |
+| available_regions?                        | array[string]                                                                  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country codes where the SKU is available |
+| content_rating? ^1^                       | [content rating](#content-rating-structure) object                             | The content rating of the SKU                                                                                       |
+| content_rating_agency? ^1^                | integer                                                                        | The [agency](#content-rating-agency) that assigned the content rating                                               |
+| content_ratings? ^2^                      | map[integer, [content rating](#content-rating-structure) object]               | The content ratings of the SKU per [agency](#content-rating-agency)                                                 |
+| system_requirements?                      | map[integer, [system requirements](#system-requirements-structure) object]     | The system requirements for each [operating system](#operating-system) the SKU supports                             |
+| price? ^1^                                | [SKU price](#sku-price-structure) object                                       | The price of the SKU                                                                                                |
+| price_tier? ^2^                           | integer                                                                        | The [base price](#get-store-price-tiers) of the SKU                                                                 |
+| price? ^2^                                | map[string, integer]                                                           | Localized pricing overrides per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code        |
+| sale_price_tier? ^2^                      | integer                                                                        | The [sale price](#get-store-price-tiers) of the SKU                                                                 |
+| sale_price? ^2^                           | map[string, integer]                                                           | Localized sale pricing overrides per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code   |
+| created_at ^3^                            | ISO8601 datetime                                                               | When the SKU was created                                                                                            |
+| updated_at ^3^                            | ISO8601 datetime                                                               | When the SKU was last updated                                                                                       |
+| release_date?                             | ISO8601 date                                                                   | When the SKU will be released                                                                                       |
+| preorder_approximate_release_date?        | string                                                                         | When the developer has indicated the SKU will be released for preorders                                             |
+| preorder_released_at?                     | ISO8601 datetime                                                               | When the SKU was released for preorders                                                                             |
+| external_purchase_url?                    | string                                                                         | An external URL to purchase the SKU                                                                                 |
+| external_sku_strategies? **(deprecated)** | map[integer, [external SKU strategy](#external-sku-strategy-structure) object] | Sale strategies per [payment gateway](/resources/billing#payment-gateway) supported                                 |
+| eligible_payment_gateways?                | array[integer]                                                                 | The [payment gateways](/resources/billing#payment-gateway) the SKU can be purchased with                            |
+| premium                                   | boolean                                                                        | Whether the SKU is a premium user perk                                                                              |
+| show_age_gate                             | boolean                                                                        | Whether to show an age gate when purchasing the SKU                                                                 |
+| restricted? ^1^                           | boolean                                                                        | Whether the SKU is restricted in the user's region                                                                  |
+| exclusive?                                | boolean                                                                        | Whether the SKU is exclusively available on Discord                                                                 |
+| deleted?                                  | boolean                                                                        | Whether the SKU has been soft-deleted                                                                               |
+| tenant_metadata?                          | [tenant metadata](#tenant-metadata-structure) object                           | Tenant metadata for the SKU                                                                                         |
+| powerup_metadata?                         | [guild powerup metadata](#guild-powerup-metadata-structure) object             | Guild powerup metadata for the SKU                                                                                  |
+
+^1^ Only included for localized SKUs.
+
+^2^ Only included for unlocalized SKUs.
+
+^3^ Values have only been tracked since `2025-08-05T20:53:39.133830+00:00`. Earlier SKUs will have this field set to this timestamp. See the [snowflake format documentation](/reference#snowflake-format) for a more accurate creation timestamp.
+
+###### SKU Type
+
+| Value | Name               | Description                 |
+| ----- | ------------------ | --------------------------- |
+| 1     | DURABLE_PRIMARY    | Primary durable item        |
+| 2     | DURABLE            | Durable item                |
+| 3     | CONSUMABLE         | Consumable item             |
+| 4     | BUNDLE             | Bundle of items             |
+| 5     | SUBSCRIPTION       | Subscription item           |
+| 6     | SUBSCRIPTION_GROUP | Group of subscription items |
+
+###### SKU Product Line
+
+| Value | Name                   | Description                           |
+| ----- | ---------------------- | ------------------------------------- |
+| 1     | PREMIUM                | Premium (Nitro) subscription          |
+| 2     | PREMIUM_GUILD          | Premium guild (boosting) subscription |
+| 3     | ACTIVITY_IAP           | Embedded activity in-app purchase     |
+| 4     | GUILD_ROLE             | Guild role subscription               |
+| 5     | GUILD_PRODUCT          | Guild product                         |
+| 6     | APPLICATION            | Application item                      |
+| 7     | COLLECTIBLE            | Discord collectible                   |
+| 9     | PARTNER_QUEST_REWARD   | Partner quest reward                  |
+| 10    | QUEST_REWARD           | Quest reward                          |
+| 11    | FRACTIONAL_PREMIUM     | Fractional premium subscription       |
+| 12    | VIRTUAL_CURRENCY       | Virtual currency (Orbs)               |
+| 13    | GUILD_POWERUP          | Guild powerup                         |
+| 14    | SOCIAL_LAYER_GAME_ITEM | Social SDK game item                  |
+
+###### SKU Flags
+
+| Value   | Name                               | Description                                                         |
+| ------- | ---------------------------------- | ------------------------------------------------------------------- |
+| 1 << 0  | PREMIUM_PURCHASE                   | SKU is available for free to premium users                          |
+| 1 << 1  | HAS_FREE_PREMIUM_CONTENT           | SKU has free content for premium users                              |
+| 1 << 2  | AVAILABLE                          | SKU is available for purchase                                       |
+| 1 << 3  | PREMIUM_AND_DISTRIBUTION           | SKU is available for free to premium users and purchasable normally |
+| 1 << 4  | STICKER                            | SKU is a paid sticker pack                                          |
+| 1 << 5  | GUILD_ROLE                         | SKU is a guild role subscription                                    |
+| 1 << 6  | AVAILABLE_FOR_SUBSCRIPTION_GIFTING | SKU is a giftable Discord premium subscription                      |
+| 1 << 7  | APPLICATION_GUILD_SUBSCRIPTION     | SKU is an application subscription for guilds                       |
+| 1 << 8  | APPLICATION_USER_SUBSCRIPTION      | SKU is an application subscription for users                        |
+| 1 << 9  | CREATOR_MONETIZATION               | SKU is a guild creator monetization product                         |
+| 1 << 10 | GUILD_PRODUCT                      | SKU is a guild product                                              |
+| 1 << 11 | AVAILABLE_FOR_APPLICATION_GIFTING  | SKU is a giftable application product                               |
+
+###### SKU Access Type
+
+| Value | Name           | Description                      |
+| ----- | -------------- | -------------------------------- |
+| 1     | FULL           | SKU is fully accessible          |
+| 2     | EARLY_ACCESS   | SKU is in early access           |
+| ~~3~~ | ~~VIP_ACCESS~~ | ~~SKU has limited availability~~ |
+
+###### SKU Feature
+
+| Value | Name                 | Description                    |
+| ----- | -------------------- | ------------------------------ |
+| 1     | SINGLE_PLAYER        | Single player game             |
+| 2     | ONLINE_MULTIPLAYER   | Online multiplayer game        |
+| 3     | LOCAL_MULTIPLAYER    | Local multiplayer game         |
+| 4     | PVP                  | Player versus player game      |
+| 5     | LOCAL_COOP           | Local cooperative multiplayer  |
+| 6     | CROSS_PLATFORM       | Cross-platform play supported  |
+| 7     | RICH_PRESENCE        | Rich presence integration      |
+| 8     | DISCORD_GAME_INVITES | Discord game invites supported |
+| 9     | SPECTATOR_MODE       | Spectator mode supported       |
+| 10    | CONTROLLER_SUPPORT   | Controller support             |
+| 11    | CLOUD_SAVES          | Cloud saves supported          |
+| 12    | ONLINE_COOP          | Online cooperative multiplayer |
+| 13    | SECURE_NETWORKING    | Secure networking supported    |
+
+###### SKU Genre
+
+| Value | Name                  | Description                                |
+| ----- | --------------------- | ------------------------------------------ |
+| 1     | ACTION                | Action                                     |
+| 2     | ACTION_RPG            | Action RPG                                 |
+| 3     | BRAWLER               | Brawler                                    |
+| 4     | HACK_AND_SLASH        | Hack and Slash                             |
+| 5     | PLATFORMER            | Platformer                                 |
+| 6     | STEALTH               | Stealth                                    |
+| 7     | SURVIVAL              | Survival                                   |
+| 8     | ADVENTURE             | Adventure                                  |
+| 9     | ACTION_ADVENTURE      | Action Adventure                           |
+| 10    | METROIDVANIA          | Metroidvania                               |
+| 11    | OPEN_WORLD            | Open World                                 |
+| 12    | PSYCHOLOGICAL_HORROR  | Psychological Horror                       |
+| 13    | SANDBOX               | Sandbox                                    |
+| 14    | SURVIVAL_HORROR       | Survival Horror                            |
+| 15    | VISUAL_NOVEL          | Visual Novel                               |
+| 16    | DRIVING_RACING        | Driving / Racing                           |
+| 17    | VEHICULAR_COMBAT      | Vehicular Combat                           |
+| 18    | MASSIVELY_MULTIPLAYER | Massively Multiplayer                      |
+| 19    | MMORPG                | MMORPG                                     |
+| 20    | ROLE_PLAYING          | Role-Playing                               |
+| 21    | DUNGEON_CRAWLER       | Dungeon Crawler                            |
+| 22    | ROGUELIKE             | Roguelike                                  |
+| 23    | SHOOTER               | Shooter                                    |
+| 24    | LIGHT_GUN             | Light Gun                                  |
+| 25    | SHOOT_EM_UP           | Shoot 'Em Up                               |
+| 26    | FPS                   | First-Person Shooter                       |
+| 27    | DUAL_JOYSTICK_SHOOTER | Dual-Joystick Shooter                      |
+| 28    | SIMULATION            | Simulation                                 |
+| 29    | FLIGHT_SIMULATOR      | Flight Simulator                           |
+| 30    | TRAIN_SIMULATOR       | Train Simulator                            |
+| 31    | LIFE_SIMULATOR        | Life Simulator                             |
+| 32    | FISHING               | Fishing                                    |
+| 33    | SPORTS                | Sports                                     |
+| 34    | BASEBALL              | Baseball                                   |
+| 35    | BASKETBALL            | Basketball                                 |
+| 36    | BILLIARDS             | Billiards                                  |
+| 37    | BOWLING               | Bowling                                    |
+| 38    | BOXING                | Boxing                                     |
+| 39    | FOOTBALL              | Football                                   |
+| 40    | GOLF                  | Golf                                       |
+| 41    | HOCKEY                | Hockey                                     |
+| 42    | SKATEBOARDING_SKATING | Skateboarding / Skating                    |
+| 43    | SNOWBOARDING_SKIING   | Snowboarding / Skiing                      |
+| 44    | SOCCER                | Soccer                                     |
+| 45    | TRACK_FIELD           | Track & Field                              |
+| 46    | SURFING_WAKEBOARDING  | Surfing / Wakeboarding                     |
+| 47    | WRESTLING             | Wrestling                                  |
+| 48    | STRATEGY              | Strategy                                   |
+| 49    | FOUR_X                | 4X (explore, expand, exploit, exterminate) |
+| 50    | ARTILLERY             | Artillery                                  |
+| 51    | RTS                   | Real-Time Strategy                         |
+| 52    | TOWER_DEFENSE         | Tower Defense                              |
+| 53    | TURN_BASED_STRATEGY   | Turn-Based Strategy                        |
+| 54    | WARGAME               | Wargame                                    |
+| 55    | MOBA                  | Multiplayer Online Battle Arena            |
+| 56    | FIGHTING              | Fighting                                   |
+| 57    | PUZZLE                | Puzzle                                     |
+| 58    | CARD_GAME             | Card Game                                  |
+| 59    | EDUCATION             | Education                                  |
+| 60    | FITNESS               | Fitness                                    |
+| 61    | GAMBLING              | Gambling                                   |
+| 62    | MUSIC_RHYTHM          | Music / Rhythm                             |
+| 63    | PARTY_MINI_GAME       | Party / Mini Game                          |
+| 64    | PINBALL               | Pinball                                    |
+| 65    | TRIVIA_BOARD_GAME     | Trivia / Board Game                        |
+| 66    | TACTICAL              | Tactical                                   |
+| 67    | INDIE                 | Indie                                      |
+| 68    | ARCADE                | Arcade                                     |
+| 69    | POINT_AND_CLICK       | Point-and-Click                            |
+
+###### Content Rating Structure
+
+| Field       | Type           | Description                                       |
+| ----------- | -------------- | ------------------------------------------------- |
+| rating      | integer        | The [content rating](#content-rating-agency)      |
+| descriptors | array[integer] | The [content descriptors](#content-rating-agency) |
+
+###### Content Rating Agency
+
+| Value | Name | Description                         | Content Rating                              | Content Descriptor                                  |
+| ----- | ---- | ----------------------------------- | ------------------------------------------- | --------------------------------------------------- |
+| 1     | ESRB | Entertainment Software Rating Board | [ESRB Content Rating](#esrb-content-rating) | [ESRB Content Descriptor](#esrb-content-descriptor) |
+| 2     | PEGI | Pan European Game Information       | [PEGI Content Rating](#pegi-content-rating) | [PEGI Content Descriptor](#pegi-content-descriptor) |
+
+###### ESRB Content Rating
+
+| Value | Name              | Description                 |
+| ----- | ----------------- | --------------------------- |
+| 1     | EVERYONE          | Suitable for all ages       |
+| 2     | EVERYONE_TEN_PLUS | Suitable for ages 10 and up |
+| 3     | TEEN              | Suitable for ages 13 and up |
+| 4     | MATURE            | Suitable for ages 17 and up |
+| 5     | ADULTS_ONLY       | Suitable for ages 18 and up |
+| 6     | RATING_PENDING    | Rating is pending           |
+
+###### PEGI Content Rating
+
+| Value | Name     | Description                 |
+| ----- | -------- | --------------------------- |
+| 1     | THREE    | Suitable for all ages       |
+| 2     | SEVEN    | Suitable for ages 7 and up  |
+| 3     | TWELVE   | Suitable for ages 12 and up |
+| 4     | SIXTEEN  | Suitable for ages 16 and up |
+| 5     | EIGHTEEN | Suitable for ages 18 and up |
+
+###### ESRB Content Descriptor
+
+| Value | Name                   | Description                  |
+| ----- | ---------------------- | ---------------------------- |
+| 1     | ALCOHOL_REFERENCE      | References to alcohol        |
+| 2     | ANIMATED_BLOOD         | Animated blood               |
+| 3     | BLOOD                  | Blood                        |
+| 4     | BLOOD_AND_GORE         | Blood and gore               |
+| 5     | CARTOON_VIOLENCE       | Cartoon violence             |
+| 6     | COMIC_MISCHIEF         | Comic mischief               |
+| 7     | CRUDE_HUMOR            | Crude humor                  |
+| 8     | DRUG_REFERENCE         | References to drugs          |
+| 9     | FANTASY_VIOLENCE       | Fantasy violence             |
+| 10    | INTENSE_VIOLENCE       | Intense violence             |
+| 11    | LANGUAGE               | Use of strong language       |
+| 12    | LYRICS                 | Lyrics                       |
+| 13    | MATURE_HUMOR           | Mature humor                 |
+| 14    | NUDITY                 | Nudity                       |
+| 15    | PARTIAL_NUDITY         | Partial nudity               |
+| 16    | REAL_GAMBLING          | Real gambling                |
+| 17    | SEXUAL_CONTENT         | Sexual content               |
+| 18    | SEXUAL_THEMES          | Sexual themes                |
+| 19    | SEXUAL_VIOLENCE        | Sexual violence              |
+| 20    | SIMULATED_GAMBLING     | Simulated gambling           |
+| 21    | STRONG_LANGUAGE        | Strong language              |
+| 22    | STRONG_LYRICS          | Strong lyrics                |
+| 23    | STRONG_SEXUAL_CONTENT  | Strong sexual content        |
+| 24    | SUGGESTIVE_THEMES      | Suggestive themes            |
+| 25    | TOBACCO_REFERENCE      | References to tobacco        |
+| 26    | USE_OF_ALCOHOL         | Use of alcohol               |
+| 27    | USE_OF_DRUGS           | Use of drugs                 |
+| 28    | USE_OF_TOBACCO         | Use of tobacco               |
+| 29    | VIOLENCE               | Violence                     |
+| 30    | VIOLENT_REFERENCES     | Violent references           |
+| 31    | IN_GAME_PURCHASES      | In-game purchases            |
+| 32    | USERS_INTERACT         | User interaction             |
+| 33    | SHARES_LOCATION        | Location sharing             |
+| 34    | UNRESTRICTED_INTERNET  | Unrestricted internet access |
+| 35    | MILD_BLOOD             | Mild blood                   |
+| 36    | MILD_CARTOON_VIOLENCE  | Mild cartoon violence        |
+| 37    | MILD_FANTASY_VIOLENCE  | Mild fantasy violence        |
+| 38    | MILD_LANGUAGE          | Mild language                |
+| 39    | MILD_LYRICS            | Mild lyrics                  |
+| 40    | MILD_SEXUAL_THEMES     | Mild sexual themes           |
+| 41    | MILD_SUGGESTIVE_THEMES | Mild suggestive themes       |
+| 42    | MILD_VIOLENCE          | Mild violence                |
+| 43    | ANIMATED_VIOLENCE      | Animated violence            |
+
+###### PEGI Content Descriptor
+
+| Value | Name           | Description                  |
+| ----- | -------------- | ---------------------------- |
+| 1     | VIOLENCE       | Depictions of violence       |
+| 2     | BAD_LANGUAGE   | Use of bad language          |
+| 3     | FEAR           | Scenes that may frighten     |
+| 4     | GAMBLING       | Depictions of gambling       |
+| 5     | SEX            | Depictions of sexual content |
+| 6     | DRUGS          | Depictions of drugs          |
+| 7     | DISCRIMINATION | Depictions of discrimination |
+
+###### System Requirements Structure
+
+| Field        | Type                                                        | Description                         |
+| ------------ | ----------------------------------------------------------- | ----------------------------------- |
+| minimum?     | [system requirement](#system-requirements-structure) object | The minimum system requirements     |
+| recommended? | [system requirement](#system-requirements-structure) object | The recommended system requirements |
+
+###### System Requirement Structure
+
+| Field                     | Type                                            | Description                              |
+| ------------------------- | ----------------------------------------------- | ---------------------------------------- |
+| ram?                      | integer                                         | The amount of RAM in megabytes           |
+| disk?                     | integer                                         | The amount of disk space in megabytes    |
+| operating_system_version? | [localized string](/reference#localized-string) | The required operating system version    |
+| cpu?                      | [localized string](/reference#localized-string) | The required CPU                         |
+| gpu?                      | [localized string](/reference#localized-string) | The required GPU                         |
+| sound_card?               | [localized string](/reference#localized-string) | The required sound card                  |
+| directx?                  | [localized string](/reference#localized-string) | The required DirectX version             |
+| network?                  | [localized string](/reference#localized-string) | The required network connectivity status |
+| notes?                    | [localized string](/reference#localized-string) | Additional notes                         |
+
+###### Operating System
+
+| Value | Name    | Description |
+| ----- | ------- | ----------- |
+| 1     | WINDOWS | Windows OS  |
+| 2     | MACOS   | macOS       |
+| 3     | LINUX   | Linux       |
+
+###### SKU Price Structure
+
+| Field             | Type                                                           | Description                                                                      |
+| ----------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| currency          | string                                                         | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| currency_exponent | integer                                                        | The exponent to convert the amount to the displayed currency unit                |
+| amount            | integer                                                        | The price amount in the smallest currency unit                                   |
+| sale_amount?      | integer                                                        | The sale price amount in the smallest currency unit                              |
+| sale_percentage?  | integer                                                        | The percentage discount of the sale price                                        |
+| premium?          | map[integer, [premium price](#premium-price-structure) object] | The price for premium users per [premium type](/resources/user#premium-type)     |
+
+###### Premium Price Structure
+
+| Field      | Type    | Description                                    |
+| ---------- | ------- | ---------------------------------------------- |
+| amount     | integer | The price amount in the smallest currency unit |
+| percentage | integer | The percentage discount for premium users      |
+
+###### External SKU Strategy Structure
+
+| Field     | Type                | Description                                                      |
+| --------- | ------------------- | ---------------------------------------------------------------- |
+| type      | integer             | The [type of external SKU strategy](#external-sku-strategy-type) |
+| metadata? | map[string, string] | Additional metadata for the external SKU strategy                |
+
+###### External SKU Strategy Type
+
+| Value | Name          | Description                |
+| ----- | ------------- | -------------------------- |
+| 1     | CONSTANT      | Regular pricing            |
+| 2     | APPLE_STICKER | Apple sticker pack pricing |
+
+###### Tenant Metadata Structure
+
+| Field               | Type                                                                         | Description                 |
+| ------------------- | ---------------------------------------------------------------------------- | --------------------------- |
+| guild_monetization? | [guild monetization metadata](#guild-monetization-metadata-structure) object | Guild monetization data     |
+| social_layer?       | [social layer metadata](#social-layer-metadata-structure) object             | Social layer game item data |
+
+###### Guild Monetization Metadata Structure
+
+| Field        | Type                                                                           | Description                  |
+| ------------ | ------------------------------------------------------------------------------ | ---------------------------- |
+| powerup?     | [guild powerup metadata](#guild-powerup-metadata-structure) object             | Guild powerup metadata       |
+| game_server? | [game server powerup metadata](#game-server-powerup-metadata-structure) object | Game server powerup metadata |
+
+###### Guild Powerup Metadata Structure
+
+| Field              | Type                                                                               | Description                                                         |
+| ------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| boost_price        | integer                                                                            | The number of boosts the powerup costs                              |
+| purchase_limit     | integer                                                                            | The maximum number of entitlements a guild can have for the powerup |
+| guild_features     | [guild premium features](/resources/guild#guild-premium-features-structure) object | The features granted by the powerup                                 |
+| category_type      | string                                                                             | The [type of guild powerup](#guild-powerup-category-type)           |
+| static_image_url   | string                                                                             | URL of the static banner image for the powerup                      |
+| animated_image_url | string                                                                             | URL of the animated banner image for the powerup                    |
+
+###### Game Server Powerup Metadata Structure
+
+| Field               | Type                                                                               | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| boost_price         | integer                                                                            | The number of boosts the powerup costs                                       |
+| purchase_limit      | integer                                                                            | The maximum number of entitlements a guild can have for the powerup          |
+| guild_features      | [guild premium features](/resources/guild#guild-premium-features-structure) object | The features granted by the powerup                                          |
+| category_type       | string                                                                             | The [type of guild powerup](#guild-powerup-category-type)                    |
+| available_providers | array[string]                                                                      | The available providers (currently only `SHOCKBYTE`)                         |
+| memory              | integer                                                                            | The amount of RAM in megabytes that the game server provides                 |
+| cpu                 | integer                                                                            | The amount of CPU cores that the game server provides                        |
+| storage             | integer                                                                            | The amount of storage in gigabytes that the game server provides             |
+| max_slots           | integer                                                                            | Maximum amount of players that can connect to the game server                |
+| memory_string       | string                                                                             | Human-readable amount of RAM that the game server provides                   |
+| player_string       | string                                                                             | Human-readable maximum amount of players that can connect to the game server |
+
+###### Guild Powerup Category Type
+
+| Value       | Description                                         |
+| ----------- | --------------------------------------------------- |
+| level       | Guild [premium tier](/resources/guild#premium-tier) |
+| perk        | Additional guild perk                               |
+| game_server | Game server attached to the guild                   |
+
+###### Example Game Server Powerup Metadata Structure
+
+```json
+{
+  "boost_price": 5,
+  "purchase_limit": 1,
+  "guild_features": {
+    "features": ["GAME_SERVERS"],
+    "additional_emoji_slots": 0,
+    "additional_sticker_slots": 0,
+    "additional_sound_slots": 0
+  },
+  "category_type": "game_server",
+  "available_providers": ["SHOCKBYTE"],
+  "memory": 8192,
+  "cpu": 2,
+  "storage": 100,
+  "max_slots": 40,
+  "memory_string": "8GB",
+  "player_string": "40+"
+}
+```
+
+###### Social Layer Metadata Structure
+
+| Field                           | Type                                                                | Description                                      |
+| ------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------ |
+| carousel_items                  | array[[store carousel item](#store-carousel-item-structure) object] | The carousel items for the listing               |
+| label                           | string                                                              | The label for the listing                        |
+| expires_at                      | ?ISO8601 datetime                                                   | When the listing expires                         |
+| card_image_asset_id?            | snowflake                                                           | The store asset ID for the card image            |
+| card_background_image_asset_id? | snowflake                                                           | The store asset ID for the card background image |
+
+###### Example SKU
+
+```json
+{
+  "id": "1333912750274904064",
+  "type": 3,
+  "product_line": 11,
+  "dependent_sku_id": null,
+  "application_id": "521842831262875670",
+  "manifest_labels": null,
+  "access_type": 1,
+  "name": "3-Day Nitro Credit",
+  "features": [],
+  "release_date": null,
+  "premium": false,
+  "slug": "3-day-nitro-credit",
+  "flags": 4,
+  "show_age_gate": false,
+  "price": {
+    "amount": 1400,
+    "currency": "discord_orb",
+    "currency_exponent": 0,
+    "premium": {
+      "2": {
+        "amount": 1400,
+        "percentage": 0
+      }
+    }
+  },
+  "tenant_metadata": {},
+  "created_at": "2025-08-05T20:53:39.133830+00:00",
+  "updated_at": "2025-08-05T20:53:39.135755+00:00"
+}
+```
+
+### Store Listing Object
+
+A listing for a marketable item on Discord. Tied to a single SKU.
+
+###### Store Listing Structure
+
+Store listing objects can either be localized or unlocalized. Localized listings only serialize strings and pricing for the user's location, while unlocalized listings serialize all strings and pricing for all locales.
+All objects serialized in the listing inherit this behavior.
+
+| Field                    | Type                                                                     | Description                                         |
+| ------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------- |
+| id                       | snowflake                                                                | The ID of the listing                               |
+| sku                      | [SKU](#sku-object) object                                                | The SKU associated with the listing                 |
+| child_skus?              | array[[SKU](#sku-object) object]                                         | The child SKUs associated with the category listing |
+| alternative_skus?        | array[[SKU](#sku-object) object]                                         | Alternative SKUs for the listing                    |
+| summary                  | [localized string](/reference#localized-string)                          | A summary of the listing                            |
+| description?             | [localized string](/reference#localized-string)                          | A description of the listing                        |
+| tagline?                 | ?[localized string](/reference#localized-string)                         | A tagline for the listing                           |
+| flavor_text?             | ?string                                                                  | Flavor text for the listing                         |
+| benefits?                | ?array[[store listing benefit](#store-listing-benefit-structure) object] | The benefits of the listing                         |
+| published? ^1^           | boolean                                                                  | Whether the listing is published                    |
+| carousel_items?          | ?array[[store carousel item](#store-carousel-item-structure) object]     | The carousel items for the listing                  |
+| staff_notes?             | [store note](#store-note-structure) object                               | Notes from staff about the listing                  |
+| guild?                   | ?partial [guild](/resources/guild#guild-object) object                   | The public guild associated with the listing        |
+| assets?                  | array[[store asset](#store-asset-structure) object]                      | The store assets for the listing                    |
+| thumbnail?               | [store asset](#store-asset-structure) object                             | The thumbnail for the listing                       |
+| preview_video?           | [store asset](#store-asset-structure) object                             | The preview video for the listing                   |
+| header_background?       | [store asset](#store-asset-structure) object                             | The header background for the listing               |
+| header_logo_dark_theme?  | [store asset](#store-asset-structure) object                             | The dark theme header logo for the listing          |
+| header_logo_light_theme? | [store asset](#store-asset-structure) object                             | The light theme header logo for the listing         |
+| box_art?                 | [store asset](#store-asset-structure) object                             | The box art for the listing                         |
+| hero_background?         | [store asset](#store-asset-structure) object                             | The hero background for the listing                 |
+| hero_video?              | [store asset](#store-asset-structure) object                             | The hero video for the listing                      |
+| entitlement_branch_id?   | ?snowflake                                                               | The application branch ID granted by the listing    |
+| published_at?            | ISO8601 datetime                                                         | When the listing was published                      |
+| unpublished_at?          | ISO8601 datetime                                                         | When the listing was unpublished                    |
+
+^1^ Not included in contexts that are impossible for an unpublished listing to be in.
+
+###### Store Listing Benefit Structure
+
+| Field       | Type                                                       | Description                    |
+| ----------- | ---------------------------------------------------------- | ------------------------------ |
+| id          | snowflake                                                  | The ID of the benefit          |
+| name        | string                                                     | The name of the benefit        |
+| description | string                                                     | The description of the benefit |
+| icon        | [store listing icon](#store-listing-icon-structure) object | The icon for the benefit       |
+
+###### Store Listing Icon Structure
+
+| Field              | Type      | Description                                  |
+| ------------------ | --------- | -------------------------------------------- |
+| type               | integer   | The [type of icon](#store-listing-icon-type) |
+| store_asset_id ^1^ | snowflake | The store asset ID for the icon              |
+| emoji ^2^          | string    | The unicode emoji for the icon               |
+
+^1^ Only included if `type` is `STORE_ASSET`.
+
+^2^ Only included if `type` is `EMOJI`.
+
+###### Store Listing Icon Type
+
+| Value | Name        | Description             |
+| ----- | ----------- | ----------------------- |
+| 1     | STORE_ASSET | Icon is a store asset   |
+| 2     | EMOJI       | Icon is a unicode emoji |
+
+###### Store Carousel Item Structure
+
+| Field                 | Type      | Description                           |
+| --------------------- | --------- | ------------------------------------- |
+| youtube_video_id? ^1^ | string    | The YouTube video ID for the item     |
+| asset_id? ^1^         | snowflake | The store asset ID for the item       |
+| thumbnail_asset_id?   | snowflake | The store asset ID for the thumbnail  |
+| background_asset_id?  | snowflake | The store asset ID for the background |
+| label?                | string    | The label for the item                |
+| label_icon_asset_id?  | snowflake | The store asset ID for the label icon |
+
+^1^ One of `youtube_video_id` or `asset_id` must be provided.
+
+###### Store Note Structure
+
+| Field   | Type                                                | Description                |
+| ------- | --------------------------------------------------- | -------------------------- |
+| user    | ?partial [user](/resources/user#user-object) object | The user who made the note |
+| content | string                                              | The note content           |
+
+###### Example Store Listing
+
+```json
+{
+  "id": "983874530717990912",
+  "summary": { "default": "Support Discord and get sweet chat perks." },
+  "sku": {
+    "id": "978380684370378762",
+    "type": 5,
+    "product_line": 1,
+    "dependent_sku_id": null,
+    "application_id": "521842831262875670",
+    "manifest_labels": null,
+    "access_type": 1,
+    "name": { "default": "Nitro Basic" },
+    "features": [],
+    "release_date": null,
+    "premium": false,
+    "slug": "nitro-basic",
+    "flags": 68,
+    "tenant_metadata": {},
+    "created_at": "2025-08-05T20:53:39.133830+00:00",
+    "updated_at": "2025-08-05T20:53:39.135755+00:00"
+  },
+  "description": { "default": "Support Discord and get sweet chat perks." },
+  "published": true,
+  "thumbnail": { "id": "1039257000355307530", "size": 333286, "mime_type": "image/png", "width": 834, "height": 471 },
+  "benefits": []
+}
+```
+
+### Subscription Plan Object
+
+A recurring payment to maintain entitlement to an SKU.
+
+###### Subscription Plan Structure
+
+| Field                         | Type                                                                       | Description                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| id                            | snowflake                                                                  | The ID of the subscription plan                                                                         |
+| name                          | string                                                                     | The name of the subscription plan                                                                       |
+| sku_id                        | snowflake                                                                  | The ID of the SKU the plan belongs to                                                                   |
+| interval                      | integer                                                                    | The [interval](#subscription-interval) of the plan                                                      |
+| interval_count                | integer                                                                    | The number of intervals per billing cycle                                                               |
+| tax_inclusive                 | boolean                                                                    | Whether the plan's prices are tax inclusive                                                             |
+| price ^1^ **(deprecated)**    | integer                                                                    | The price amount in the smallest currency unit                                                          |
+| currency ^1^ **(deprecated)** | string                                                                     | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code of the plan's price    |
+| prices ^1^                    | map[integer, [subscription prices](#subscription-prices-structure) object] | The prices for the plan per [purchase type](#subscription-plan-purchase-type)                           |
+| price ^2^                     | map[string, integer]                                                       | The price for the plan per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+
+^1^ Only included when fetched from the [Get Published Subscription Plans](#get-published-subscription-plans) or [Get Bulk Published Subscription Plans](#get-bulk-published-subscription-plans) endpoints.
+
+^1^ Only included when fetched from the [Get Subscription Plans](#get-subscription-plans) endpoint.
+
+###### Partial Subscription Plan Structure
+
+| Field          | Type      | Description                                        |
+| -------------- | --------- | -------------------------------------------------- |
+| id             | snowflake | The ID of the subscription plan                    |
+| name           | string    | The name of the subscription plan                  |
+| sku_id         | snowflake | The ID of the SKU the plan belongs to              |
+| interval       | integer   | The [interval](#subscription-interval) of the plan |
+| interval_count | integer   | The number of intervals per billing cycle          |
+| tax_inclusive  | boolean   | Whether the plan's prices are tax inclusive        |
+
+###### Subscription Prices Structure
+
+| Field                 | Type                                                                                | Description                                        |
+| --------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------- |
+| country_prices        | [country prices](#country-prices-structure) object                                  | The prices for the plan for the given country      |
+| payment_source_prices | map[snowflake, array[[unit price](/resources/payment#unit-price-structure) object]] | The prices for the plan per user payment source ID |
+
+###### Country Prices Structure
+
+| Field        | Type                                                                | Description                                                                             |
+| ------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| country_code | string                                                              | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| prices       | array[[unit price](/resources/payment#unit-price-structure) object] | The prices for the plan in the given country                                            |
+
+###### Subscription Interval
+
+| Value | Name  | Description          |
+| ----- | ----- | -------------------- |
+| 1     | MONTH | Monthly subscription |
+| 2     | YEAR  | Yearly subscription  |
+| 3     | DAY   | Daily subscription   |
+
+###### Subscription Plan Purchase Type
+
+| Value | Name                  | Description                      |
+| ----- | --------------------- | -------------------------------- |
+| 0     | DEFAULT               | Default pricing                  |
+| 1     | GIFT                  | Gift purchase pricing            |
+| 2     | SALE                  | Sale pricing                     |
+| 3     | PREMIUM_TIER_1        | Nitro Classic subscriber pricing |
+| 4     | PREMIUM_TIER_2        | Nitro subscriber pricing         |
+| 5     | MOBILE                | Mobile purchase pricing          |
+| 6     | PREMIUM_TIER_0        | Nitro Basic subscriber pricing   |
+| 7     | MOBILE_PREMIUM_TIER_2 | Mobile Nitro subscriber pricing  |
+
+###### Example Subscription Plan
+
+```json
+{
+  "id": "944265636643602432",
+  "name": "None 6 Month",
+  "interval": 1,
+  "interval_count": 6,
+  "tax_inclusive": true,
+  "sku_id": "628379670982688768",
+  "currency": "usd",
+  "price": 0,
+  "price_tier": null,
+  "prices": {
+    "0": {
+      "country_prices": {
+        "country_code": "CA",
+        "prices": [{ "currency": "usd", "amount": 0, "exponent": 2 }]
+      },
+      "payment_source_prices": {}
+    }
+  }
+}
+```
+
+### Store Asset Object
+
+An image or video associated with a store resource.
+
+###### Store Asset Structure
+
+| Field        | Type      | Description                                                        |
+| ------------ | --------- | ------------------------------------------------------------------ |
+| id           | snowflake | The ID of the asset                                                |
+| size         | integer   | The size of the asset in bytes                                     |
+| mime_type    | string    | The asset's [media type](https://en.wikipedia.org/wiki/Media_type) |
+| filename ^1^ | string    | The filename of the asset                                          |
+| width        | integer   | The width of the asset in pixels                                   |
+| height       | integer   | The height of the asset in pixels                                  |
+
+^1^ Only included when fetched from the [Get Application Store Assets](#get-application-store-assets) or [Create Application Store Asset](#create-application-store-asset) endpoints.
+
+###### Example Store Asset
+
+```json
+{
+  "id": "1059634086995574874",
+  "size": 4161529,
+  "mime_type": "image/gif",
+  "filename": "kitties.gif",
+  "width": 464,
+  "height": 512
+}
+```
+
+### EULA Object
+
+An End User License Agreement represents a legal agreement between the application owner and the end user.
+
+###### EULA Structure
+
+| Field   | Type      | Description             |
+| ------- | --------- | ----------------------- |
+| id      | snowflake | The ID of the EULA      |
+| name    | string    | The name of the EULA    |
+| content | string    | The content of the EULA |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/applications/{application.id}/skus" supportsOAuth2="applications.store.update">
+  Get Application SKUs
+</RouteHeader>
+
+Returns a list of [SKU](#sku-object) objects for the given application. User must be the owner of the application or member of the owning team.
+
+###### Query String Params
+
+| Field              | Type    | Description                                                                             |
+| ------------------ | ------- | --------------------------------------------------------------------------------------- |
+| country_code?      | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?          | boolean | Whether to localize the SKUs for the user's location (default true)                     |
+| with_bundled_skus? | boolean | Whether to include bundled SKUs within SKU objects in the response (default false)      |
+
+<RouteHeader method="POST" url="/store/skus" supportsOAuth2="applications.store.update">
+  Create SKU
+</RouteHeader>
+
+Creates a new SKU. Returns the created [SKU](#sku-object) object on success. Requires an application with access to the store or monetization. User must be the owner of the application or member of the owning team.
+
+###### JSON Params
+
+| Field                | Type                                                                       | Description                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| type                 | integer                                                                    | The [type of SKU](#sku-type)                                                                                      |
+| application_id       | snowflake                                                                  | The ID of the application the SKU belongs to                                                                      |
+| name                 | [localized string](/reference#localized-string)                            | The name of the SKU (1-256 characters)                                                                            |
+| flags?               | integer                                                                    | The [SKU flags](#sku-flags) (only `AVAILABLE` can be set)                                                         |
+| legal_notice?        | [localized string](/reference#localized-string)                            | The legal notice for the SKU (max 1024 characters)                                                                |
+| dependent_sku_id?    | snowflake                                                                  | The ID of the prerequisite required to buy this SKU                                                               |
+| bundled_skus?        | array[snowflake]                                                           | The IDs of the SKUs that are included when purchasing this SKU                                                    |
+| access_type?         | integer                                                                    | The [access level](#sku-access-type) of the SKU                                                                   |
+| manifest_labels?     | array[snowflake]                                                           | The IDs of the manifest labels associated with the SKU                                                            |
+| features?            | array[integer]                                                             | The [features](#sku-feature) of the SKU                                                                           |
+| locales?             | array[string]                                                              | The [locales](/reference#locales) the SKU is available in                                                         |
+| genres?              | array[integer]                                                             | The [genres](#sku-genre) of the SKU                                                                               |
+| content_ratings?     | map[integer, [content rating](#content-rating-structure) object]           | The content ratings of the SKU per [agency](#content-rating-agency)                                               |
+| system_requirements? | map[integer, [system requirements](#system-requirements-structure) object] | The system requirements for each [operating system](#operating-system) the SKU supports                           |
+| price_tier?          | integer                                                                    | The [base price](#get-store-price-tiers) of the SKU                                                               |
+| price?               | map[string, integer]                                                       | Localized pricing overrides per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code      |
+| sale_price_tier?     | integer                                                                    | The [sale price](#get-store-price-tiers) of the SKU                                                               |
+| sale_price?          | map[string, integer]                                                       | Localized sale pricing overrides per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| release_date?        | ISO8601 date                                                               | When the SKU will be released                                                                                     |
+
+<RouteHeader method="GET" url="/store/skus/{sku.id}" supportsOAuth2="applications.store.update">
+  Get SKU
+</RouteHeader>
+
+Returns a [SKU](#sku-object) object for the given SKU ID. User must own the SKU's application or be a member of the owning team.
+
+###### Query String Params
+
+| Field         | Type    | Description                                                                             |
+| ------------- | ------- | --------------------------------------------------------------------------------------- |
+| country_code? | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?     | boolean | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="PATCH" url="/store/skus/{sku.id}" supportsOAuth2="applications.store.update">
+  Modify SKU
+</RouteHeader>
+
+Modifies an existing SKU. Returns the modified [SKU](#sku-object) object on success. User must own the SKU's application or be a developer of the owning team.
+
+###### JSON Params
+
+| Field                | Type                                                                       | Description                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| name?                | [localized string](/reference#localized-string)                            | The name of the SKU (1-256 characters)                                                                            |
+| flags?               | integer                                                                    | The [SKU flags](#sku-flags) (only `AVAILABLE` can be set)                                                         |
+| legal_notice?        | [localized string](/reference#localized-string)                            | The legal notice for the SKU (max 1024 characters)                                                                |
+| dependent_sku_id?    | snowflake                                                                  | The ID of the prerequisite required to buy this SKU                                                               |
+| bundled_skus?        | array[snowflake]                                                           | The IDs of the SKUs that are included when purchasing this SKU                                                    |
+| access_type?         | integer                                                                    | The [access level](#sku-access-type) of the SKU                                                                   |
+| manifest_labels?     | array[snowflake]                                                           | The IDs of the manifest labels associated with the SKU                                                            |
+| features?            | array[integer]                                                             | The [features](#sku-feature) of the SKU                                                                           |
+| locales?             | array[string]                                                              | The [locales](/reference#locales) the SKU is available in                                                         |
+| genres?              | array[integer]                                                             | The [genres](#sku-genre) of the SKU                                                                               |
+| content_ratings?     | map[integer, [content rating](#content-rating-structure) object]           | The content ratings of the SKU per [agency](#content-rating-agency)                                               |
+| system_requirements? | map[integer, [system requirements](#system-requirements-structure) object] | The system requirements for each [operating system](#operating-system) the SKU supports                           |
+| price_tier?          | integer                                                                    | The [base price](#get-store-price-tiers) of the SKU                                                               |
+| price?               | map[string, integer]                                                       | Localized pricing overrides per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code      |
+| sale_price_tier?     | integer                                                                    | The [sale price](#get-store-price-tiers) of the SKU                                                               |
+| sale_price?          | map[string, integer]                                                       | Localized sale pricing overrides per lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| release_date?        | ISO8601 date                                                               | When the SKU will be released                                                                                     |
+
+<RouteHeader method="GET" url="/store/skus/{sku.id}/listings" supportsOAuth2="applications.store.update">
+  Get SKU Store Listings
+</RouteHeader>
+
+Returns a list of [store listing](#store-listing-object) objects for the given SKU ID. User must own the SKU's application or be a member of the owning team.
+
+###### Query String Params
+
+| Field         | Type    | Description                                                                             |
+| ------------- | ------- | --------------------------------------------------------------------------------------- |
+| country_code? | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?     | boolean | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="POST" url="/store/listings" supportsOAuth2="applications.store.update">
+  Create Store Listing
+</RouteHeader>
+
+Creates a new store listing. Returns the created [store listing](#store-listing-object) object on success. User must own the SKU's application or be a member of the owning team.
+
+###### JSON Params
+
+| Field                             | Type                                                                 | Description                                                              |
+| --------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| application_id                    | snowflake                                                            | The ID of the application the listing belongs to                         |
+| sku_id                            | snowflake                                                            | The ID of the SKU the listing is associated with                         |
+| child_sku_ids?                    | array[snowflake]                                                     | The IDs of the child SKUs associated with the category listing (max 100) |
+| summary                           | [localized string](/reference#localized-string)                      | A summary of the listing (1-1024 characters)                             |
+| description                       | [localized string](/reference#localized-string)                      | A description of the listing (1-8192 characters)                         |
+| tagline?                          | [localized string](/reference#localized-string)                      | A tagline for the listing (max 1024 characters)                          |
+| published?                        | boolean                                                              | Whether the listing is published (default false)                         |
+| carousel_items? ^1^               | ?array[[store carousel item](#store-carousel-item-structure) object] | The carousel items for the listing                                       |
+| guild_id?                         | snowflake                                                            | The ID of the public guild associated with the listing                   |
+| thumbnail_asset_id?               | snowflake                                                            | The store asset ID for the thumbnail of the listing                      |
+| preview_video_asset_id?           | snowflake                                                            | The store asset ID for the preview video of the listing                  |
+| header_background_asset_id?       | snowflake                                                            | The store asset ID for the header background                             |
+| header_logo_dark_theme_asset_id?  | snowflake                                                            | The store asset ID for the dark theme header logo of the listing         |
+| header_logo_light_theme_asset_id? | snowflake                                                            | The store asset ID for the light theme header logo of the listing        |
+| box_art_asset_id?                 | snowflake                                                            |
+| hero_background_asset_id?         | snowflake                                                            | The store asset ID for the hero background of the listing                |
+| hero_video_asset_id?              | snowflake                                                            | The store asset ID for the hero video of the listing                     |
+
+^1^ Only `youtube_video_id` or `asset_id` can be set.
+
+<RouteHeader method="GET" url="/store/listings/{listing.id}" supportsOAuth2="applications.store.update">
+  Get Store Listing
+</RouteHeader>
+
+Returns a [store listing](#store-listing-object) object for the given listing ID. User must own the listing's application or be a member of the owning team.
+
+###### Query String Params
+
+| Field         | Type    | Description                                                                             |
+| ------------- | ------- | --------------------------------------------------------------------------------------- |
+| country_code? | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?     | boolean | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="PATCH" url="/store/listings/{listing.id}" supportsOAuth2="applications.store.update">
+  Modify Store Listing
+</RouteHeader>
+
+Modifies an existing store listing. Returns the modified [store listing](#store-listing-object) object on success. User must own the listing's application or be a developer of the owning team.
+
+###### JSON Params
+
+| Field                             | Type                                                                 | Description                                                              |
+| --------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| child_sku_ids?                    | array[snowflake]                                                     | The IDs of the child SKUs associated with the category listing (max 100) |
+| summary?                          | [localized string](/reference#localized-string)                      | A summary of the listing (1-1024 characters)                             |
+| description?                      | [localized string](/reference#localized-string)                      | A description of the listing (1-8192 characters)                         |
+| tagline?                          | [localized string](/reference#localized-string)                      | A tagline for the listing (max 1024 characters)                          |
+| published?                        | boolean                                                              | Whether the listing is published (default false)                         |
+| carousel_items? ^1^               | ?array[[store carousel item](#store-carousel-item-structure) object] | The carousel items for the listing                                       |
+| guild_id?                         | snowflake                                                            | The ID of the public guild associated with the listing                   |
+| thumbnail_asset_id?               | snowflake                                                            | The store asset ID for the thumbnail of the listing                      |
+| preview_video_asset_id?           | snowflake                                                            | The store asset ID for the preview video of the listing                  |
+| header_background_asset_id?       | snowflake                                                            | The store asset ID for the header background                             |
+| header_logo_dark_theme_asset_id?  | snowflake                                                            | The store asset ID for the dark theme header logo of the listing         |
+| header_logo_light_theme_asset_id? | snowflake                                                            | The store asset ID for the light theme header logo of the listing        |
+| box_art_asset_id?                 | snowflake                                                            |
+| hero_background_asset_id?         | snowflake                                                            | The store asset ID for the hero background of the listing                |
+| hero_video_asset_id?              | snowflake                                                            | The store asset ID for the hero video of the listing                     |
+
+^1^ Only `youtube_video_id` or `asset_id` can be set.
+
+<RouteHeader method="DELETE" url="/store/listings/{listing.id}" supportsOAuth2="applications.store.update">
+  Delete Store Listing
+</RouteHeader>
+
+Deletes an existing store listing. Returns a 204 empty response on success. User must own the listing's application or be a member of the owning team.
+
+<RouteHeader method="GET" url="/store/published-listings/skus" unauthenticated>
+  Get Application Published Store Listings
+</RouteHeader>
+
+Returns a list of published [store listing](#store-listing-object) objects for the given application ID.
+
+###### Query String Params
+
+| Field          | Type      | Description                                                                             |
+| -------------- | --------- | --------------------------------------------------------------------------------------- |
+| application_id | snowflake | The application ID to get the listings for                                              |
+| guild_id?      | snowflake | The guild ID to fetch hidden listings for                                               |
+| country_code?  | string    | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?      | boolean   | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="GET" url="/store/published-listings/applications/{application.id}" unauthenticated>
+  Get Application Primary Store Listing
+</RouteHeader>
+
+Returns a [store listing](#store-listing-object) object for the primary SKU of the given application ID.
+
+###### Query String Params
+
+| Field         | Type    | Description                                                                             |
+| ------------- | ------- | --------------------------------------------------------------------------------------- |
+| country_code? | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?     | boolean | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="GET" url="/store/published-listings/applications" unauthenticated>
+  Get Bulk Application Primary Store Listing
+</RouteHeader>
+
+Returns a list of [store listing](#store-listing-object) objects for the primary SKU of the given application IDs.
+
+###### Query String Params
+
+| Field           | Type             | Description                                                                             |
+| --------------- | ---------------- | --------------------------------------------------------------------------------------- |
+| application_ids | array[snowflake] | The application IDs to get the listings for (1-100)                                     |
+| country_code?   | string           | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?       | boolean          | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="GET" url="/store/published-listings/skus/{sku.id}" unauthenticated>
+  Get SKU Published Store Listing
+</RouteHeader>
+
+Returns the [store listing](#store-listing-object) object for the given SKU ID.
+
+###### Query String Params
+
+| Field         | Type    | Description                                                                             |
+| ------------- | ------- | --------------------------------------------------------------------------------------- |
+| country_code? | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| localize?     | boolean | Whether to localize the SKUs for the user's location (default true)                     |
+
+<RouteHeader method="GET" url="/store/skus/{sku.id}/plans" supportsOAuth2="applications.store.update">
+  Get Subscription Plans
+</RouteHeader>
+
+Returns a list of [subscription plan](#subscription-plan-object) objects for the given SKU ID. User must own the SKU's application or be a member of the owning team.
+
+<RouteHeader method="GET" url="/store/published-listings/skus/{sku.id}/subscription-plans">
+  Get Published Subscription Plans
+</RouteHeader>
+
+Returns a list of published [subscription plan](#subscription-plan-object) objects for the given SKU ID.
+
+###### Query String Params
+
+| Field                    | Type      | Description                                                                             |
+| ------------------------ | --------- | --------------------------------------------------------------------------------------- |
+| include_unpublished? ^1^ | boolean   | Whether to include unpublished subscription plans (default false)                       |
+| revenue_surface?         | integer   | The [revenue surface](#revenue-surface), used for analytics                             |
+| country_code?            | string    | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| payment_source_id?       | snowflake | The ID of the payment source to get prices for                                          |
+
+^1^ To access unpublished subscription plans, the user must own the SKU's application or be a member of the owning team.
+
+###### Revenue Surface
+
+| Value | Name      | Description            |
+| ----- | --------- | ---------------------- |
+| 0     | DISCOVERY | Subscription discovery |
+| 1     | CHECKOUT  | Subscription checkout  |
+
+<RouteHeader method="GET" url="/store/skus/subscription-plans" supportsOAuth2="applications.store.update">
+  Get Bulk Published Subscription Plans
+</RouteHeader>
+
+Returns a list of published [subscription plan](#subscription-plan-object) objects for the given SKU IDs.
+
+###### Query String Params
+
+| Field                    | Type             | Description                                                                             |
+| ------------------------ | ---------------- | --------------------------------------------------------------------------------------- |
+| sku_ids                  | array[snowflake] | The SKU IDs to get the subscription plans for (1-16)                                    |
+| include_unpublished? ^1^ | boolean          | Whether to include unpublished subscription plans (default false)                       |
+| revenue_surface?         | integer          | The [revenue surface](#revenue-surface), used for analytics                             |
+| country_code?            | string           | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| payment_source_id?       | snowflake        | The ID of the payment source to get prices for                                          |
+
+^1^ To access unpublished subscription plans, the user must own the SKUs' application or be a member of the owning team.
+
+<RouteHeader method="GET" url="/store/skus/{sku.id}/purchase">
+  Get SKU Purchase Preview
+</RouteHeader>
+
+Returns an [invoice](/resources/payment#invoice-object) object representing a purchase preview for the given SKU ID.
+
+###### Query String Params
+
+| Field                     | Type      | Description                                                                                  |
+| ------------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| payment_source_id?        | snowflake | The ID of the payment source to pay with                                                     |
+| currency?                 | string    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code to price in |
+| sku_subscription_plan_id? | snowflake | The ID of the subscription plan to purchase (required for subscription SKUs)                 |
+| gift?                     | boolean   | Whether the purchase is a gift (default false)                                               |
+| test_mode?                | boolean   | Whether the purchase is in test mode (default false)                                         |
+| load_id?                  | string    | A client-generated UUID used to identify the current checkout session                        |
+
+<RouteHeader method="POST" url="/store/skus/{sku.id}/purchase">
+  Create SKU Purchase
+</RouteHeader>
+
+Creates a new purchase for the given SKU ID. Fires an [Entitlement Create](/topics/gateway-events#entitlement-create) and [Payment Update](/topics/gateway-events#payment-update) Gateway event.
+
+###### JSON Params
+
+| Field                     | Type                                                                                      | Description                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| payment_source_id?        | snowflake                                                                                 | The ID of the payment source to pay with                                                                        |
+| payment_source_token?     | ?string                                                                                   | The token used to authorize with the payment source                                                             |
+| return_url? ^1^           | ?string                                                                                   | TThe URL to redirect to after payment is complete (max 2048 characters)                                         |
+| country_code?             | string                                                                                    | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code                         |
+| currency?                 | string                                                                                    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code                                |
+| sku_subscription_plan_id? | snowflake                                                                                 | The ID of the subscription plan to purchase (required for subscription SKUs)                                    |
+| gift?                     | boolean                                                                                   | Whether the purchase is a gift (default false)                                                                  |
+| gift_info_options?        | [gift info options](#gift-info-options-structure) object                                  | Additional metadata for gift purchases                                                                          |
+| test_mode?                | boolean                                                                                   | Whether the purchase is in test mode (default false)                                                            |
+| expected_amount? ^2^      | integer                                                                                   | The expected amount to be charged in the smallest currency unit                                                 |
+| expected_currency? ^2^    | string                                                                                    | The expected currency for the purchase in lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) format |
+| purchase_token ^2^        | string                                                                                    | The purchase token of the payment client (max 1024 characters)                                                  |
+| gateway_checkout_context? | ?[gateway checkout context](/resources/billing#gateway-checkout-context-structure) object | The context for the gateway checkout, if applicable                                                             |
+| load_id                   | string                                                                                    | A client-generated UUID used to identify the current checkout session, used for purchase deduplication          |
+
+^1^ If required, this URL is typically set to the [Create Billing Popup Bridge Redirect](/resources/billing#create-billing-popup-bridge-redirect) endpoint with a `response_type` of `return`, which redirects the user back to the Discord client for handling.
+
+^2^ If the actual currency or amount charged does not match these expected values, the purchase will fail.
+
+^3^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
+
+###### Gift Info Options Structure
+
+| Field           | Type             | Description                                                                                            |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
+| gift_style?     | ?integer         | The [style of the gift code](/resources/entitlement#gift-style)                                        |
+| recipient_id?   | snowflake        | The ID of the user to directly send the gift to                                                        |
+| custom_message? | ?string          | A custom message to include with the gift (max 190 characters)                                         |
+| emoji_id?       | ?snowflake       | The ID of a guild's custom emoji                                                                       |
+| emoji_name?     | ?string          | The unicode character of the emoji                                                                     |
+| sound_id?       | ?snowflake       | The ID of the default soundboard sound to play with the gift                                           |
+| reward_sku_ids? | array[snowflake] | The IDs of the promotional SKUs the gifter chooses to redeem as a reward for purchasing a gift (max 1) |
+
+###### Response Body
+
+| Field                   | Type                                                                               | Description                                      |
+| ----------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------ |
+| entitlements            | array[[entitlement](/resources/entitlement#entitlement-object) object]             | The entitlements granted by the purchase         |
+| library_applications?   | array[library application object]                                                  | The library applications granted by the purchase |
+| applied_user_discounts? | array[[user discount offer](/resources/billing#user-discount-offer-object) object] | The user discount offers applied to the purchase |
+| gift_code?              | string                                                                             | The gift code created by the purchase            |
+
+<RouteHeader method="GET" url="/store/applications/{application.id}/assets" supportsOAuth2="applications.store.update">
+  Get Application Store Assets
+</RouteHeader>
+
+Returns a list of [store asset](#store-asset-structure) objects for the given application ID. User must be the owner of the application or member of the owning team.
+
+<RouteHeader method="POST" url="/store/applications/{application.id}/assets" supportsOAuth2="applications.store.update">
+  Create Application Store Asset
+</RouteHeader>
+
+Uploads a new store asset for the given application ID. Returns the created [store asset](#store-asset-structure) object on success. User must be the owner of the application or developer of the owning team.
+
+###### Form Params
+
+| Field | Type          | Description                 |
+| ----- | ------------- | --------------------------- |
+| files | file contents | Contents of the store asset |
+
+<RouteHeader
+  method="DELETE"
+  url="/store/applications/{application.id}/assets/{asset.id}"
+  supportsOAuth2="applications.store.update"
+>
+  Delete Application Store Asset
+</RouteHeader>
+
+Deletes the store asset with the given ID. Returns a 204 empty response on success. User must be the owner of the application or member of the owning team.
+
+<RouteHeader method="GET" url="/store/price-tiers">
+  Get Store Price Tiers
+</RouteHeader>
+
+Returns a list of integers representing the available store price tiers.
+
+###### Query String Params
+
+| Field            | Type    | Description                                             |
+| ---------------- | ------- | ------------------------------------------------------- |
+| price_tier_type? | integer | The [type of price tiers](#price-tier-type) to retrieve |
+
+###### Price Tier Type
+
+| Value | Name                     | Description                                      |
+| ----- | ------------------------ | ------------------------------------------------ |
+| 1     | GUILD_ROLE_SUBSCRIPTIONS | Price tiers to use with guild role subscriptions |
+| 2     | GUILD_PRODUCTS           | Price tiers to use with guild products           |
+
+<RouteHeader method="GET" url="/store/price-tiers/{price_tier}">
+  Get Store Price Tier
+</RouteHeader>
+
+Returns a map of lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency codes to integer prices representing localized pricing for the given price tier.
+
+<RouteHeader method="GET" url="/store/eulas/{eula.id}" unauthenticated>
+  Get EULA
+</RouteHeader>
+
+Returns a [EULA](#eula-object) object for the given ID.
+
+<RouteHeader method="GET" url="/store/consumable/pricing/{sku.id}">
+  Get Consumable SKU Pricing
+</RouteHeader>
+
+Returns the pricing information for a consumable SKU. These are currently as follows:
+
+- HD Streaming (1285377810587979827)
+- Confetti (1316162456959057920)
+
+###### Response Body
+
+| Field | Type                                     | Description                         |
+| ----- | ---------------------------------------- | ----------------------------------- |
+| price | [SKU price](#sku-price-structure) object | The pricing information for the SKU |
+
+<RouteHeader method="GET" url="/users/@me/consumable/hd-streaming">
+  Get HD Streaming Consumable
+</RouteHeader>
+
+Returns the active HD streaming potion entitlement for the user.
+
+###### Response Body
+
+| Field       | Type                                                             | Description                         |
+| ----------- | ---------------------------------------------------------------- | ----------------------------------- |
+| entitlement | ?[entitlement](/resources/entitlement#entitlement-object) object | The active HD streaming entitlement |
+
+<RouteHeader method="POST" url="/users/@me/consumable/hd-streaming">
+  Apply HD Streaming Consumable
+</RouteHeader>
+
+Applies an HD streaming potion to a voice channel. Returns a 204 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+
+###### JSON Params
+
+| Field      | Type      | Description                             |
+| ---------- | --------- | --------------------------------------- |
+| channel_id | snowflake | The ID of the voice channel to apply to |
+
+<RouteHeader method="GET" url="/users/@me/consumable/confetti">
+  Get Confetti Consumable
+</RouteHeader>
+
+Returns the active confetti potion entitlement for the user.
+
+###### Response Body
+
+| Field       | Type                                                             | Description                            |
+| ----------- | ---------------------------------------------------------------- | -------------------------------------- |
+| entitlement | ?[entitlement](/resources/entitlement#entitlement-object) object | The active confetti potion entitlement |
+| num_potions | integer                                                          | Number of unused potions left          |
+
+<RouteHeader method="POST" url="/users/@me/consumable/confetti">
+  Apply Confetti Consumable
+</RouteHeader>
+
+Applies a confetti potion to a message. To use custom emoji, you must encode it in the format `name:id` with the emoji name and emoji ID. Returns a 204 empty response on success. Fires a [Message Update](/topics/gateway-events#message-update) Gateway event.
+
+###### JSON Params
+
+| Field      | Type      | Description                                           |
+| ---------- | --------- | ----------------------------------------------------- |
+| channel_id | snowflake | The ID of the channel the message is in               |
+| message_id | snowflake | The ID of the message to apply the confetti potion to |
+| emoji_name | string    | Unicode emoji or custom emoji name and ID             |
+
+<RouteHeader method="GET" url="/users/@me/virtual-currency/balance">
+  Get Virtual Currency Balance
+</RouteHeader>
+
+Returns the current user's Orbs balance.
+
+###### Response Body
+
+| Field   | Type    | Description                 |
+| ------- | ------- | --------------------------- |
+| balance | integer | Amount of Orbs the user has |
+
+<RouteHeader method="POST" url="/virtual-currency/skus/{sku.id}/redeem">
+  Redeem Virtual Currency
+</RouteHeader>
+
+Purchases a SKU using virtual currency. Returns a list of [entitlement](/resources/entitlement#entitlement-object) objects granted to the current user.
+Fires [Payment Update](/topics/gateway-events#payment-update), [Virtual Currency Balance Update](/topics/gateway-events#virtual-currency-balance-update), [Entitlement Create](/topics/gateway-events#entitlement-create), and [Entitlement Update](/topics/gateway-events#entitlement-update) Gateway events.
+
+###### JSON Params
+
+| Field               | Type   | Description                                                           |
+| ------------------- | ------ | --------------------------------------------------------------------- |
+| checkout_session_id | string | A client-generated UUID used to identify the current checkout session |

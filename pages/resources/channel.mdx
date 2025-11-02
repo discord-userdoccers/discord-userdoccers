@@ -16,7 +16,7 @@ A guild or private channel within Discord.
 | position?                           | integer                                                            | Sorting position of the channel                                                                                                                                                              |
 | permission_overwrites?              | array[[permission overwrite](#permission-overwrite-object) object] | Explicit permission overwrites for members and roles                                                                                                                                         |
 | name?                               | ?string                                                            | The name of the channel (1-100 characters)                                                                                                                                                   |
-| topic?                              | ?string                                                            | The channel topic (max 4096 characters for thread-only channels, max 1024 characters otherwise)                                                                                              |
+| topic?                              | ?string                                                            | The channel topic (max 4096 characters)                                                                                                                                                      |
 | nsfw?                               | boolean                                                            | Whether the channel is NSFW                                                                                                                                                                  |
 | last_message_id?                    | ?snowflake                                                         | The ID of the last message sent (or thread created for thread-only channels, guild added for directory channels) in this channel (may not point to an existing resource)                     |
 | bitrate?                            | integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                                   |
@@ -58,8 +58,8 @@ A guild or private channel within Discord.
 | is_spam?                            | boolean                                                            | Whether the DM is a spam message request                                                                                                                                                     |
 | theme_color?                        | ?integer                                                           | The background color of the channel icon emoji encoded as an integer representation of a hexadecimal color code                                                                              |
 | status? ^6^                         | ?string                                                            | The status of the voice channel (max 500 characters)                                                                                                                                         |
-| hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming entitlement expires for the voice channel                                                                                                                              |
-| hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming entitlement to the voice channel                                                                                                             |
+| hd_streaming_until?                 | ?ISO8601 timestamp                                                 | When the HD streaming consumable expires for the voice channel                                                                                                                               |
+| hd_streaming_buyer_id?              | ?snowflake                                                         | The ID of the user who applied the HD streaming consumable to the voice channel                                                                                                              |
 | linked_lobby?                       | ?[linked lobby](#linked-lobby-object) object                       | The lobby linked to the channel                                                                                                                                                              |
 
 ^1^ The maximum user limit for stage channels is always 10000 and cannot be set to 0.
@@ -70,7 +70,7 @@ A guild or private channel within Discord.
 
 ^4^ This field is not automatically copied into new threads created in the channel. It should be manually set when creating a thread.
 
-^5^ Only returned when part of the `resolved` data received in a slash command interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+^5^ Only returned when part of the `resolved` data received in an interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
 
 ^6^ Only included in the [Gateway Guild](/topics/gateway-events#gateway-guild-object) object.
 
@@ -128,7 +128,7 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 
 </Alert>
 
-| Type  | Name              | Description                                                                                                                                                        |
+| Value | Name              | Description                                                                                                                                                        |
 | ----- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 0     | GUILD_TEXT        | A text channel within a guild                                                                                                                                      |
 | 1     | DM                | A private channel between two users                                                                                                                                |
@@ -136,7 +136,7 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 | 3     | GROUP_DM          | A private channel between multiple users                                                                                                                           |
 | 4     | GUILD_CATEGORY    | An [organizational category](https://support.discord.com/hc/en-us/articles/115001580171-Channel-Categories-101) that contains up to 50 channels                    |
 | 5     | GUILD_NEWS        | Almost identical to `GUILD_TEXT`, a channel that [users can follow and crosspost into their own guild](https://support.discord.com/hc/en-us/articles/360032008192) |
-| 6     | GUILD_STORE       | A channel in which game developers can [sell their game on Discord](https://discord.com/developers/docs/game-and-server-management/special-channels)               |
+| 6     | GUILD_STORE       | A channel in which developers can showcase their SKUs                                                                                                              |
 | ~~7~~ | ~~GUILD_LFG~~     | ~~A channel where users can match up for various games~~                                                                                                           |
 | ~~8~~ | ~~LFG_GROUP_DM~~  | ~~A private channel between multiple users for a group within an LFG channel~~                                                                                     |
 | ~~9~~ | ~~THREAD_ALPHA~~  | ~~The first iteration of the threads feature, never widely used~~                                                                                                  |
@@ -170,6 +170,7 @@ Type `10`, `11` and `12` are only available in API v9 and above.
 | 1 << 15     | HIDE_MEDIA_DOWNLOAD_OPTIONS                   | Media channel has the embedded download options hidden for media attachments                                                                               |
 | 1 << 16     | IS_JOIN_REQUEST_INTERVIEW_CHANNEL             | Group DM is used for [guild join request interviews](https://support.discord.com/hc/en-us/articles/23187611406999-Guilds-FAQ#h_01HXW2MCD0BT70FB9SRV1YRPBV) |
 | 1 << 17     | OBFUSCATED ^2^                                | User does not have permission to view the channel                                                                                                          |
+| 1 << 19     | IS_MODERATOR_REPORT_CHANNEL                   | Forum channel is the guild's moderator queue                                                                                                               |
 
 ^1^ Media channels are now represented by the [`GUILD_MEDIA` channel type](#channel-type).
 
@@ -626,7 +627,7 @@ An object that represents a tag that is able to be applied to a thread in a `GUI
 | Field          | Type       | Description                                                                                                   |
 | -------------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
 | id             | snowflake  | The ID of the tag                                                                                             |
-| name           | string     | The name of the tag (max 20 characters)                                                                       |
+| name           | string     | The name of the tag (max 50 characters)                                                                       |
 | moderated      | boolean    | Whether this tag can only be added to or removed from threads by members with the `MANAGE_THREADS` permission |
 | emoji_id ^1^   | ?snowflake | The ID of a guild's custom emoji                                                                              |
 | emoji_name ^1^ | ?string    | The unicode character of the emoji                                                                            |
@@ -639,12 +640,13 @@ A lobby linked to a channel.
 
 ###### Linked Lobby Structure
 
-| Field          | Type              | Description                             |
-| -------------- | ----------------- | --------------------------------------- |
-| application_id | snowflake         | The ID of the application               |
-| lobby_id       | snowflake         | The ID of the lobby                     |
-| linked_by      | snowflake         | The ID of the user who linked the lobby |
-| linked_at      | ISO8601 timestamp | When the lobby was linked to channel    |
+| Field                             | Type              | Description                                                                  |
+| --------------------------------- | ----------------- | ---------------------------------------------------------------------------- |
+| application_id                    | snowflake         | The ID of the application                                                    |
+| lobby_id                          | snowflake         | The ID of the lobby                                                          |
+| linked_by                         | snowflake         | The ID of the user who linked the lobby                                      |
+| linked_at                         | ISO8601 timestamp | When the lobby was linked to channel                                         |
+| require_application_authorization | boolean           | Whether users must authorize the application to send messages in the channel |
 
 ## Endpoints
 
@@ -744,8 +746,8 @@ These limits are summarized in the following table by [premium tier](/resources/
 | ----------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
 | name                                | string                                                              | The name of the channel (1-100 characters)                                                                                                                                           | All                                    |
 | position?                           | ?integer                                                            | Sorting position of the channel                                                                                                                                                      | All                                    |
-| type?                               | ?integer                                                            | The [type of channel](#channel-type)                                                                                                                                                 | All                                    |
-| topic?                              | ?string                                                             | The channel topic (max 1024 characters)                                                                                                                                              | Text, News, Stage, Forum, Media        |
+| type?                               | ?integer                                                            | The [type of channel](#channel-type) (default `GUILD_TEXT`)                                                                                                                          | All                                    |
+| topic?                              | ?string                                                             | The channel topic (max 4096 characters)                                                                                                                                              | Text, News, Stage, Forum, Media        |
 | nsfw?                               | ?boolean                                                            | Whether the channel is NSFW                                                                                                                                                          | Text, News, Voice, Stage, Forum, Media |
 | rate_limit_per_user?                | ?integer                                                            | Duration in seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected | Text, News, Voice, Stage, Forum, Media |
 | bitrate? ^1^                        | ?integer                                                            | The bitrate (in bits) of the voice channel                                                                                                                                           | Voice, Stage                           |
@@ -754,9 +756,11 @@ These limits are summarized in the following table by [premium tier](/resources/
 | parent_id?                          | ?snowflake                                                          | The ID of the parent category for the guild channel                                                                                                                                  | Text, News, Voice, Stage, Forum, Media |
 | rtc_region?                         | ?string                                                             | The [voice region](/resources/voice#voice-region-object) ID for the voice channel (automatic when `null`)                                                                            | Voice, Stage                           |
 | video_quality_mode?                 | ?integer                                                            | The camera [video quality mode](#video-quality-mode) of the voice channel                                                                                                            | Voice, Stage                           |
+| sku_id                              | snowflake                                                           | The ID of the SKU showcased by the store channel                                                                                                                                     | Store                                  |
+| branch_id?                          | ?snowflake                                                          | The ID of the special branch granted by the store channel                                                                                                                            | Store                                  |
 | default_auto_archive_duration?      | ?integer                                                            | Default duration in minutes for newly created threads to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080)                                            | Text, News, Forum, Media               |
 | default_thread_rate_limit_per_user? | ?integer                                                            | Default duration in seconds a user has to wait before sending another message in newly created threads; this field is copied to the thread at creation time and does not live update | Text, News, Forum, Media               |
-| available_tags? ^3^                 | ?array[partial [tag](#forum-tag-object) object]                     | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                           |
+| available_tags? ^3^                 | ?array[partial [forum tag](#forum-tag-object) object]               | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                           |
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object                | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                    | Forum, Media                           |
 | default_forum_layout?               | ?integer                                                            | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                  |
 | default_sort_order?                 | ?integer                                                            | The default [sort order](#sort-order-type) of a thread-only channel's threads                                                                                                        | Forum, Media                           |
@@ -814,7 +818,7 @@ If modifying a thread and setting `archived` to `false`, when `locked` is also `
 | name?                               | string                                                              | The name of the channel (1-100 characters)                                                                                                                                           | Text, News, Voice, Category, Stage, Forum, Media, Thread, Group DM |
 | type?                               | integer                                                             | The [type of channel](#channel-type); only conversion between text and news is supported and only in guilds with the "NEWS" feature                                                  | Text, News                                                         |
 | position?                           | ?integer                                                            | Sorting position of the channel                                                                                                                                                      | Text, News, Voice, Category, Stage, Forum, Media                   |
-| topic?                              | ?string                                                             | The channel topic (max 1024 characters)                                                                                                                                              | Text, News, Stage, Forum, Media                                    |
+| topic?                              | ?string                                                             | The channel topic (max 4096 characters)                                                                                                                                              | Text, News, Stage, Forum, Media                                    |
 | icon?                               | [image data](/reference#cdn-data)                                   | The group DM's icon                                                                                                                                                                  | Group DM                                                           |
 | nsfw?                               | ?boolean                                                            | Whether the channel is NSFW                                                                                                                                                          | Text, News, Voice, Stage, Forum                                    |
 | rate_limit_per_user?                | ?integer                                                            | Duration in seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected | Text, News, Voice, Stage, Forum, Media, Thread                     |
@@ -832,7 +836,7 @@ If modifying a thread and setting `archived` to `false`, when `locked` is also `
 | locked?                             | ?boolean                                                            | Whether the thread is locked; when a thread is locked, only users with `MANAGE_THREADS` can unarchive it                                                                             | Thread                                                             |
 | invitable?                          | ?boolean                                                            | Whether non-moderators can add other non-moderators to a thread                                                                                                                      | Private Thread                                                     |
 | flags?                              | integer                                                             | The [channel's flags](#channel-flags) (only `GUILD_FEED_REMOVED`, `PINNED`, `ACTIVE_CHANNELS_REMOVED`, and `REQUIRE_TAG` can be set)                                                 | All                                                                |
-| available_tags? ^2^                 | array[partial [tag](#forum-tag-object) object]                      | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                                                       |
+| available_tags? ^3^                 | array[partial [forum tag](#forum-tag-object) object]                | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                                                       |
 | applied_tags?                       | array[snowflake]                                                    | The IDs of tags that are applied to a thread in a thread-only channel (max 5)                                                                                                        | Thread                                                             |
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object                | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                    | Forum, Media                                                       |
 | default_forum_layout?               | ?integer                                                            | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                                              |
@@ -1378,23 +1382,23 @@ In thread-only channels:
 - The maximum request size when sending a message is **100 MiB**.
 - For the embed object, you can set every field except `type` (it will be `rich` regardless of if you try to set it), `provider`, `video`, and any `height`, `width`, or `proxy_url` values for images.
 
-###### JSON Params
+###### JSON/Form Params
 
-| Field                  | Type                                                                                       | Description                                                                                                                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| name                   | string                                                                                     | The name of the channel (1-100 characters)                                                                                                                                           |
-| auto_archive_duration? | integer                                                                                    | Duration in minutes to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080, default 4320)                                                                |
-| rate_limit_per_user?   | integer                                                                                    | Duration in seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected |
-| type? ^1^              | integer                                                                                    | the [type of thread](#channel-type) to create (default `PRIVATE_THREAD`)                                                                                                             |
-| invitable?             | boolean                                                                                    | Whether non-moderators can add other non-moderators to a thread; only available when creating a private thread                                                                       |
-| applied_tags?          | array[snowflake]                                                                           | The IDs of the tags that are applied to a thread in a thread-only channel (max 5)                                                                                                    |
-| message? ^1^           | [thread-only channel message params](#thread-only-channel-message-params-structure) object | Contents of the first message in the thread                                                                                                                                          |
+| Field                  | Type                                                                         | Description                                                                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name                   | string                                                                       | The name of the channel (1-100 characters)                                                                                                                                           |
+| auto_archive_duration? | integer                                                                      | Duration in minutes to stop showing in the channel list after inactivity (one of 60, 1440, 4320, 10080, default 4320)                                                                |
+| rate_limit_per_user?   | integer                                                                      | Duration in seconds a user has to wait before sending another message (max 21600); bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected |
+| type? ^1^              | integer                                                                      | the [type of thread](#channel-type) to create (default `PRIVATE_THREAD`)                                                                                                             |
+| invitable?             | boolean                                                                      | Whether non-moderators can add other non-moderators to a thread; only available when creating a private thread                                                                       |
+| applied_tags?          | array[snowflake]                                                             | The IDs of the tags that are applied to a thread in a thread-only channel (max 5)                                                                                                    |
+| message? ^1^           | [thread-only channel message](#thread-only-channel-message-structure) object | Contents of the first message in the thread                                                                                                                                          |
 
 ^1^ In API v10, this will be changed to be a required field, with no default.
 
 ^2^ Required (and only available) when creating a thread in a thread-only channel.
 
-###### Thread-Only Channel Message Params Structure
+###### Thread-Only Channel Message Structure
 
 <Alert type="info">
 
@@ -1413,7 +1417,6 @@ Note that when sending a message, you must provide a value for **at least one of
 | application_id?   | snowflake                                                                 | The application ID of the activity to create a rich presence invite for (defaults to the primary activity if unspecified)                  |
 | flags?            | integer                                                                   | The [message's flags](/resources/message#message-flags) (only `SUPPRESS_EMBEDS`, `SUPPRESS_NOTIFICATIONS`, and `VOICE_MESSAGE` can be set) |
 | files[n]? ^1^     | file contents                                                             | Contents of the file being sent (max 10)                                                                                                   |
-| payload_json? ^1^ | string                                                                    | JSON-encoded body of non-file params                                                                                                       |
 | attachments? ^1^  | array[partial [attachment](/resources/message#attachment-object) object]  | Partial attachment objects with `filename` and `description` (max 10)                                                                      |
 
 ^1^ See [Uploading Files](/reference#uploading-files) for details.
@@ -1552,7 +1555,7 @@ Creates a new tag in the thread-only channel. Requires the `MANAGE_CHANNELS` per
 
 | Field           | Type       | Description                                                                                                                   |
 | --------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| name            | string     | The name of the tag (max 20 characters)                                                                                       |
+| name            | string     | The name of the tag (max 50 characters)                                                                                       |
 | moderated?      | boolean    | Whether this tag can only be added to or removed from threads by members with the `MANAGE_THREADS` permission (default false) |
 | emoji_id? ^1^   | ?snowflake | The ID of a guild's custom emoji                                                                                              |
 | emoji_name? ^1^ | ?string    | The unicode character of the emoji                                                                                            |
@@ -1569,7 +1572,7 @@ Replaces a tag in the thread-only channel. Requires the `MANAGE_CHANNELS` permis
 
 | Field           | Type       | Description                                                                                                                   |
 | --------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| name            | string     | The name of the tag (max 20 characters)                                                                                       |
+| name            | string     | The name of the tag (max 50 characters)                                                                                       |
 | moderated?      | boolean    | Whether this tag can only be added to or removed from threads by members with the `MANAGE_THREADS` permission (default false) |
 | emoji_id? ^1^   | ?snowflake | The ID of a guild's custom emoji                                                                                              |
 | emoji_name? ^1^ | ?string    | The unicode character of the emoji                                                                                            |

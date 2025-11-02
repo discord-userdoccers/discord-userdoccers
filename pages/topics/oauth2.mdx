@@ -15,18 +15,20 @@ After you create your application with Discord, make sure that you have your `cl
 
 ###### OAuth2 URLs
 
-| URL                                                 | Description                                                 |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| https://discord.com/oauth2/authorize                | Authorization URL                                           |
-| https://discord.com/api/v10/oauth2/authorize/device | Device Code Authorization URL                               |
-| https://discord.com/api/v10/oauth2/token            | Token URL                                                   |
-| https://discord.com/api/v10/oauth2/token/revoke     | [Token Revocation](https://tools.ietf.org/html/rfc7009) URL |
-| https://discord.com/api/v10/oauth2/keys             | JWKS URI                                                    |
-| https://discord.com/api/v10/oauth2/userinfo         | UserInfo URL                                                |
+| URL                                             | Description                                                 |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| https://discord.com/oauth2/authorize            | Authorization URL                                           |
+| https://discord.com/oauth2/authorize/device     | Device Code Authorization URL                               |
+| https://discord.com/api/v10/oauth2/token        | Token URL                                                   |
+| https://discord.com/api/v10/oauth2/token/revoke | [Token Revocation](https://tools.ietf.org/html/rfc7009) URL |
+| https://discord.com/api/v10/oauth2/keys         | JWKS URI                                                    |
+| https://discord.com/api/v10/oauth2/userinfo     | UserInfo URL                                                |
 
 <Alert type="warn">
 
 In accordance with the relevant RFCs, the token and token revocation URLs will **only** accept a content type of `x-www-form-urlencoded`. JSON content is not permitted and will return an error.
+
+Likewise, these endpoints will usually not return typical Discord error responses, opting for RFC-compliant formats.
 
 </Alert>
 
@@ -52,7 +54,7 @@ These are all the OAuth2 scopes that Discord supports. Some scopes require appro
 | applications.commands.permissions.update | Allows [updating the application's own command permissions](/interactions/application-commands#permissions) in guilds the user has permissions in | Yes    |
 | applications.commands.update ^2^         | Allows your app to update its own [commands](/interactions/application-commands/)                                                                 | Yes    |
 | applications.entitlements                | Allows [managing entitlements for the user's applications](/resources/entitlement)                                                                | Yes    |
-| applications.store.update                | Allows [managing store data (SKUs, store listings, achievements, etc.) for the user's applications](/resources/application)                       | Yes    |
+| applications.store.update                | Allows [managing store data (SKUs, store listings, achievements, etc.) for the user's applications](/resources/store)                             | Yes    |
 | bot                                      | Adds the application's bot to a user-selected guild                                                                                               | Yes    |
 | connections                              | Allows [retrieving a user's connected accounts](/resources/connected-accounts#get-user-connections), both public and private                      | Yes    |
 | dm_channels.read                         | Allows [reading information about the user's DMs and group DMs](/resources/channel)                                                               | No     |
@@ -493,7 +495,7 @@ def exchange_code(code):
 ```
 
 This will give you an [access token response](#oauth2-access-token-object) as usual.
-If you have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags) set, you can now [refresh the token](#refresh-token-grant) on the client, omitting the `client_secret` field depending on the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+You can now [refresh the token](#refresh-token-grant) on the client, omitting the `client_secret` field depending on the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
 
 ## Bots
 
@@ -612,7 +614,7 @@ you'll need to iterate over each stored `id:token` combination and make `POST` r
 
 | Field        | Type                                                                    | Description                                                                                                               |
 | ------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| id           | snowflake                                                               | The ID of the token                                                                                                       |
+| id           | snowflake                                                               | The ID of the authorization                                                                                               |
 | scopes       | array[string]                                                           | The scopes the user has authorized the application for                                                                    |
 | application  | partial [application](/resources/application#application-object) object | The authorized application                                                                                                |
 | disclosures? | array[integer]                                                          | The [application disclosures](/resources/application#application-disclosure-type) that have been acknowledged by the user |
@@ -704,7 +706,7 @@ Retrieves a device code and user code for the [device code grant](#device-code-g
 
 ^1^ You can also pass your `client_id` and `client_secret` as basic authentication with `client_id` as the username and `client_secret` as the password.
 
-^2^ Required if the application does not have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+^2^ Not required if the application has the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
 
 ###### Response Body
 
@@ -721,7 +723,7 @@ Retrieves a device code and user code for the [device code grant](#device-code-g
   Get OAuth2 Token
 </RouteHeader>
 
-Retrieves an OAuth2 access token for the given application credentials. Implements a number of different grants. Returns an [access token](#oauth2-access-token-object) object on success.
+Retrieves an OAuth2 access token for the given application credentials. Implements a number of different grants. Returns an [oauth2 access token](#oauth2-access-token-object) object on success.
 
 ###### Form Params
 
@@ -760,6 +762,12 @@ Retrieves an OAuth2 access token for the given application credentials. Implemen
 
 Revokes the given OAuth2 access or refresh token. Returns an empty object on success.
 
+<Alert type="warn">
+
+When any valid access or refresh token is revoked, all of the application's access and refresh tokens for that user are immediately invalidated.
+
+</Alert>
+
 ###### Form Params
 
 | Field                  | Type      | Description                           |
@@ -770,16 +778,54 @@ Revokes the given OAuth2 access or refresh token. Returns an empty object on suc
 
 ^1^ You can also pass your `client_id` and `client_secret` as basic authentication with `client_id` as the username and `client_secret` as the password.
 
-^2^ Required if the application does not have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+^2^ Not required if the application has the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
 
 <RouteHeader method="POST" url="/partner-sdk/token" unauthenticated>
   Get Provisional Account Token
 </RouteHeader>
 
-Retrieves an authentication for a provisional account with the given credentials. Returns an [access token](#oauth2-access-token-object) object on success.
-The response will only contain a `refresh_token` with certain external authentication types.
+Retrieves an access token for a provisional account with the given credentials. Returns an [OAuth2 access token](#oauth2-access-token-object) object on success.
+
+The response will only contain a `refresh_token` for OIDC when the application does not have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
 
 If an account isn't found but the provided external authentication token is valid, a new provisional account will be created.
+
+<Alert type="warn">
+
+When attempting to authenticate a provisional account that has been merged with a user account, the request will fail with a 400 bad request and a special error response body:
+
+```json
+{
+  "message": "User account is non-provisional and should be authed through OAuth2",
+  "code": 530010,
+  "user_id": "1001086404203389018",
+  "provider_type": "OIDC",
+  "provider_id": "https://auth.example.com",
+  "provider_issued_user_id": "123456789"
+}
+```
+
+This indicates that the provisional account has been merged with a user account, and the user should be authenticated through OAuth2 instead, unless the provisional account is [unmerged](#unmerge-provisional-account) first.
+
+</Alert>
+
+<Collapsible title="Display Names" description="How are provisional account display names determined?" icon="question">
+
+- For [bot-issued tokens](#get-provisional-account-token-with-bot), the `preferred_global_name` specified will be used.
+- For OIDC, a provisional account's display name will be the value of the `preferred_username` claim, if specified in
+  the ID token. This field is optional and should be between 1 and 32 characters. If not specified, the user's display
+  name will default to the user's unique username, which Discord generates on creation.
+- For [Steam session tickets](https://partner.steamgames.com/doc/features/auth), the display name of the user's Steam
+  account is used as the provisional account's display name.
+- For [EOS Auth](https://dev.epicgames.com/docs/epic-account-services/auth/auth-interface) Access Tokens or ID Tokens,
+  the name of the user's Epic account is used as the provisional account's display name. EOS Connect ID Tokens do
+  not expose any username, and thus the game will need to configure the display name manually.
+- For [Unity Services ID Tokens](https://services.docs.unity.com/docs/client-auth/),
+  the display name of the user's Unity Player Account is used as the provisional account's display name.
+
+To change the display name of a provisional account, use the [Modify Current User Account](/resources/user#modify-current-user-account) endpoint.
+
+</Collapsible>
 
 ###### JSON Params
 
@@ -790,17 +836,58 @@ If an account isn't found but the provided external authentication token is vali
 | external_auth_type  | string    | The [type of the external authentication provider](#external-provider-authentication-type) |
 | external_auth_token | string    | The external authentication token                                                          |
 
-^1^ Required if the application does not have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+^1^ Not required if the application has the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
 
 ###### External Provider Authentication Type
 
-| Value                             | Description                                                                          |
-| --------------------------------- | ------------------------------------------------------------------------------------ |
-| OIDC                              | OpenID Connect ID token                                                              |
-| EPIC_ONLINE_SERVICES_ACCESS_TOKEN | Access token for Epic Online Services (supports EOS Auth access tokens)              |
-| EPIC_ONLINE_SERVICES_ID_TOKEN     | ID token for Epic Online Services (supports both EOS Auth + Connect ID tokens)       |
-| STEAM_SESSION_TICKET              | A Steam authentication ticket for web generated with `discord` set as the `identity` |
-| UNITY_SERVICES_ID_TOKEN           | ID token for Unity Auth Services                                                     |
+| Value                             | Description                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| OIDC                              | OpenID Connect ID token                                                                             |
+| EPIC_ONLINE_SERVICES_ACCESS_TOKEN | Access token for Epic Online Services (supports EOS Auth access tokens)                             |
+| EPIC_ONLINE_SERVICES_ID_TOKEN     | ID token for Epic Online Services (supports both EOS Auth + Connect ID tokens)                      |
+| STEAM_SESSION_TICKET              | A Steam authentication ticket for web generated with `discord` set as the `identity`                |
+| UNITY_SERVICES_ID_TOKEN           | ID token for Unity Auth Services                                                                    |
+| DISCORD_BOT_ISSUED_ACCESS_TOKEN   | An access token for a user authenticated [via a bot token](#get-provisional-account-token-with-bot) |
+
+<RouteHeader method="POST" url="/partner-sdk/token/bot">
+  Get Provisional Account Token with Bot
+</RouteHeader>
+
+Retrieves an access token for a provisional account with the given credentials. Returns an [oauth2 access token](#oauth2-access-token-object) object on success.
+
+If an account isn't found, a new provisional account will be created.
+
+<Alert type="warn">
+
+When attempting to authenticate a provisional account that has been merged with a user account, the request will fail with a 400 bad request and a special error response body:
+
+```json
+{
+  "message": "User account is non-provisional and should be authed through OAuth2",
+  "code": 530010,
+  "user_id": "142007603549962240",
+  "provider_type": "DISCORD_BOT",
+  "provider_id": null,
+  "provider_issued_user_id": "123456789"
+}
+```
+
+This indicates that the provisional account has been merged with a user account, and the user should be authenticated through OAuth2 instead, unless the provisional account is [unmerged](#unmerge-provisional-account) first.
+
+</Alert>
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field                  | Type   | Description                                              |
+| ---------------------- | ------ | -------------------------------------------------------- |
+| external_user_id       | string | The ID of the user to authenticate (max 1024 characters) |
+| preferred_global_name? | string | The preferred global name for the user (1-32 characters) |
 
 <RouteHeader method="POST" url="/partner-sdk/provisional-accounts/unmerge" unauthenticated>
   Unmerge Provisional Account
@@ -808,6 +895,12 @@ If an account isn't found but the provided external authentication token is vali
 
 Unmerge a provisional account. Returns a 204 empty response on success.
 
+<Alert type="info">
+
+Unmerging invalidates all access and refresh tokens for the user. Users can also unmerge their account by [unauthorizing the OAuth2 application](#revoke-oauth2-token).
+
+</Alert>
+
 ###### JSON Params
 
 | Field               | Type      | Description                                                                                |
@@ -817,7 +910,31 @@ Unmerge a provisional account. Returns a 204 empty response on success.
 | external_auth_type  | string    | The [type of the external authentication provider](#external-provider-authentication-type) |
 | external_auth_token | string    | The external authentication token                                                          |
 
-^1^ Required if the application does not have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+^1^ Not required if the application has the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags).
+
+<RouteHeader method="POST" url="/partner-sdk/provisional-accounts/unmerge/bot">
+  Unmerge Provisional Account with Bot
+</RouteHeader>
+
+Unmerge a provisional account. Returns a 204 empty response on success.
+
+<Alert type="info">
+
+Unmerging invalidates all access and refresh tokens for the user. Users can also unmerge their account by [unauthorizing the OAuth2 application](#revoke-oauth2-token).
+
+</Alert>
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field            | Type   | Description                                         |
+| ---------------- | ------ | --------------------------------------------------- |
+| external_user_id | string | The ID of the user to unmerge (max 1024 characters) |
 
 <RouteHeader method="GET" url="/oauth2/tokens">
   Get OAuth2 Authorizations
