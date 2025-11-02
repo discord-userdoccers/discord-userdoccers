@@ -650,25 +650,17 @@ A recurring payment to maintain entitlement to an SKU.
 
 ###### Subscription Prices Structure
 
-| Field                 | Type                                                                              | Description                                        |
-| --------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------- |
-| country_prices        | [country prices](#country-prices-structure) object                                | The prices for the plan for the given country      |
-| payment_source_prices | map[snowflake, array[[subscription price](#subscription-price-structure) object]] | The prices for the plan per user payment source ID |
+| Field                 | Type                                                                                | Description                                        |
+| --------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------- |
+| country_prices        | [country prices](#country-prices-structure) object                                  | The prices for the plan for the given country      |
+| payment_source_prices | map[snowflake, array[[unit price](/resources/payment#unit-price-structure) object]] | The prices for the plan per user payment source ID |
 
 ###### Country Prices Structure
 
-| Field        | Type                                                              | Description                                                                             |
-| ------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| country_code | string                                                            | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
-| prices       | array[[subscription price](#subscription-price-structure) object] | The prices for the plan in the given country                                            |
-
-###### Subscription Price Structure
-
-| Field    | Type    | Description                                                                      |
-| -------- | ------- | -------------------------------------------------------------------------------- |
-| currency | string  | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
-| amount   | integer | The price amount in the smallest currency unit                                   |
-| exponent | integer | The exponent to convert the amount to the displayed currency unit                |
+| Field        | Type                                                                | Description                                                                             |
+| ------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| country_code | string                                                              | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| prices       | array[[unit price](/resources/payment#unit-price-structure) object] | The prices for the plan in the given country                                            |
 
 ###### Subscription Interval
 
@@ -1009,7 +1001,7 @@ Returns a list of published [subscription plan](#subscription-plan-object) objec
 | include_unpublished? ^1^ | boolean   | Whether to include unpublished subscription plans (default false)                       |
 | revenue_surface?         | integer   | The [revenue surface](#revenue-surface), used for analytics                             |
 | country_code?            | string    | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
-| payment_source_id?       | snowflake | The payment source ID to get localized prices for                                       |
+| payment_source_id?       | snowflake | The ID of the payment source to get prices for                                          |
 
 ^1^ To access unpublished subscription plans, the user must own the SKU's application or be a member of the owning team.
 
@@ -1034,9 +1026,80 @@ Returns a list of published [subscription plan](#subscription-plan-object) objec
 | include_unpublished? ^1^ | boolean          | Whether to include unpublished subscription plans (default false)                       |
 | revenue_surface?         | integer          | The [revenue surface](#revenue-surface), used for analytics                             |
 | country_code?            | string           | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
-| payment_source_id?       | snowflake        | The payment source ID to get localized prices for                                       |
+| payment_source_id?       | snowflake        | The ID of the payment source to get prices for                                          |
 
 ^1^ To access unpublished subscription plans, the user must own the SKUs' application or be a member of the owning team.
+
+<RouteHeader method="GET" url="/store/skus/{sku.id}/purchase">
+  Get SKU Purchase Preview
+</RouteHeader>
+
+Returns an [invoice](/resources/payment#invoice-object) object representing a purchase preview for the given SKU ID.
+
+###### Query String Params
+
+| Field                     | Type      | Description                                                                                  |
+| ------------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| payment_source_id?        | snowflake | The ID of the payment source to pay with                                                     |
+| currency?                 | string    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code to price in |
+| sku_subscription_plan_id? | snowflake | The ID of the subscription plan to purchase (required for subscription SKUs)                 |
+| gift?                     | boolean   | Whether the purchase is a gift (default false)                                               |
+| test_mode?                | boolean   | Whether the purchase is in test mode (default false)                                         |
+| load_id?                  | string    | A client-generated UUID used to identify the current checkout session                        |
+
+<RouteHeader method="POST" url="/store/skus/{sku.id}/purchase">
+  Create SKU Purchase
+</RouteHeader>
+
+Creates a new purchase for the given SKU ID. Fires an [Entitlement Create](/topics/gateway-events#entitlement-create) and [Payment Update](/topics/gateway-events#payment-update) Gateway event.
+
+###### JSON Params
+
+| Field                     | Type                                                                                      | Description                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| payment_source_id?        | snowflake                                                                                 | The ID of the payment source to pay with                                                                        |
+| payment_source_token?     | ?string                                                                                   | The token used to authorize with the payment source                                                             |
+| return_url? ^1^           | ?string                                                                                   | TThe URL to redirect to after payment is complete (max 2048 characters)                                         |
+| country_code?             | string                                                                                    | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code                         |
+| currency?                 | string                                                                                    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code                                |
+| sku_subscription_plan_id? | snowflake                                                                                 | The ID of the subscription plan to purchase (required for subscription SKUs)                                    |
+| gift?                     | boolean                                                                                   | Whether the purchase is a gift (default false)                                                                  |
+| gift_info_options?        | [gift info options](#gift-info-options-structure) object                                  | Additional metadata for gift purchases                                                                          |
+| test_mode?                | boolean                                                                                   | Whether the purchase is in test mode (default false)                                                            |
+| expected_amount? ^2^      | integer                                                                                   | The expected amount to be charged in the smallest unit of the currency                                          |
+| expected_currency? ^2^    | string                                                                                    | The expected currency for the purchase in lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) format |
+| purchase_token ^2^        | string                                                                                    | The purchase token of the payment client (max 1024 characters)                                                  |
+| gateway_checkout_context? | ?[gateway checkout context](/resources/billing#gateway-checkout-context-structure) object | The context for the gateway checkout, if applicable                                                             |
+| load_id?                  | string                                                                                    | A client-generated UUID used to identify the current checkout session                                           |
+
+^1^ This URL is typically set to the [Create Billing Popup Bridge Redirect](/resources/billing#create-billing-popup-bridge-redirect) endpoint with a `response_type` of `return`, which redirects the user back to the Discord client for handling.
+
+^2^ If the actual currency or amount charged does not match these expected values, the purchase will fail.
+
+^3^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
+
+###### Gift Info Options Structure
+
+| Field           | Type             | Description                                                                                    |
+| --------------- | ---------------- | ---------------------------------------------------------------------------------------------- |
+| gift_style?     | ?integer         | The [style of the gift code](/resources/entitlement#gift-style)                                |
+| recipient_id?   | snowflake        | The ID of the user to directly send the gift to                                                |
+| custom_message? | ?string          | A custom message to include with the gift (max characters)                                     |
+| emoji_id? ^1^   | ?snowflake       | The ID of a guild's custom emoji                                                               |
+| emoji_name? ^1^ | ?string          | The unicode character of the emoji                                                             |
+| sound_id?       | ?snowflake       | The ID of the default soundboard sound to play with the gift                                   |
+| reward_sku_ids? | array[snowflake] | The IDs of the promotional SKUs the gifter chooses to redeem as a reward for purchasing a gift |
+
+^1^ At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+###### Response Body
+
+| Field                   | Type                                                                               | Description                                      |
+| ----------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------ |
+| entitlements            | array[[entitlement](/resources/entitlement#entitlement-object) object]             | The entitlements granted by the purchase         |
+| library_applications?   | array[library application object]                                                  | The library applications granted by the purchase |
+| applied_user_discounts? | array[[user discount offer](/resources/billing#user-discount-offer-object) object] | The user discount offers applied to the purchase |
+| gift_code?              | string                                                                             | The gift code created by the purchase            |
 
 <RouteHeader method="GET" url="/store/applications/{application.id}/assets" supportsOAuth2="applications.store.update">
   Get Application Store Assets

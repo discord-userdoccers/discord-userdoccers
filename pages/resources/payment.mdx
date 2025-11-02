@@ -5,7 +5,7 @@ Payments are made by the user to Discord in exchange for first and third-party p
 ## Payment Clients
 
 Payment clients are a concept used to prevent fraudulent transactions across Discord. When a client first attempts to make a payment, it generates a UUIDv4 identifier to be used as the purchase token. This token is then persisted by the client and sent along with all future payment requests.
-It is mandatory that all purchase requests include this token in the `purchase_token` field of the request body, and the tokens expire after 60 days and must be regenerated.
+It is mandatory that all purchase requests include this token in the `purchase_token` field of the request body. The tokens expire after 60 days and must be regenerated.
 
 If Discord detects suspicious activity from a payment client during a transaction, it sends a verification email to the user asking them to authorize the purchase. In the meantime, all purchase requests will fail with a 400 bad request and a [`100056` JSON error code](/topics/opcodes-and-status-codes#json-error-codes):
 
@@ -90,6 +90,76 @@ Upon successful verification, the client will receive a [User Payment Client Add
 | 1 << 3 | PREORDER                | Payment is a preorder                                         |
 | 1 << 4 | PENDING                 | Automatic payment is pending manual authorization by the user |
 | 1 << 5 | TEMPORARY_AUTHORIZATION | Payment is a temporary authorization                          |
+
+### Invoice Object
+
+###### Invoice Structure
+
+| Field                     | Type                                                  | Description                                                                                        |
+| ------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| id                        | snowflake                                             | The ID of the invoice                                                                              |
+| status?                   | integer                                               | The [status](#invoice-status) of the invoice                                                       |
+| currency                  | string                                                | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code the invoice is in |
+| subtotal                  | integer                                               | The subtotal of the invoice                                                                        |
+| tax                       | integer                                               | The tax applied to the invoice                                                                     |
+| total                     | integer                                               | The total of the invoice                                                                           |
+| tax_inclusive             | boolean                                               | Whether the subtotal is inclusive of all taxes                                                     |
+| items                     | array[[invoice item](#invoice-item-structure) object] | The items in the invoice                                                                           |
+| subscription_period_start | ?ISO8601 timestamp                                    | When the current billing period started                                                            |
+| subscription_period_end   | ?ISO8601 timestamp                                    | When the current billing period ends                                                               |
+| applied_discount_ids?     | array[snowflake]                                      | The IDs of the discounts applied to the invoice                                                    |
+| applied_user_discounts?   | map[snowflake, ?ISO8601 timestamp]                    | The user discount offers applied to the invoice and their expiration dates                         |
+
+###### Invoice Status
+
+| Value | Name          | Description              |
+| ----- | ------------- | ------------------------ |
+| 1     | OPEN          | Invoice is open          |
+| 2     | PAID          | Invoice is paid          |
+| 3     | VOID          | Invoice is void          |
+| 4     | UNCOLLECTIBLE | Invoice is uncollectible |
+
+###### Invoice Item Structure
+
+| Field                       | Type                                                          | Description                                            |
+| --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
+| id                          | snowflake                                                     | The ID of the invoice item                             |
+| quantity                    | integer                                                       | How many of the item have been/are being purchased     |
+| amount                      | integer                                                       | The price of the item (includes discounts)             |
+| proration                   | boolean                                                       | Whether the item is prorated                           |
+| subscription_plan_id        | ?snowflake                                                    | The ID of the subscription plan the item represents    |
+| subscription_plan_price ^1^ | ?integer                                                      | The price of the subscription plan the item represents |
+| discounts                   | array[[invoice discount](#invoice-discount-structure) object] | The discounts applied to the item                      |
+| sku_id                      | ?snowflake                                                    | The ID of the SKU                                      |
+| unit_price ^1^              | ?[unit price](#unit-price-structure)                          | The unit price of the item                             |
+| tenant_metadata?            | map[string, any]                                              | Tenant metadata for the invoice item                   |
+
+^1^ Does not include discounts.
+
+###### Invoice Discount Structure
+
+| Field  | Type    | Description                                    |
+| ------ | ------- | ---------------------------------------------- |
+| type   | integer | The [type](#invoice-discount-type) of discount |
+| amount | integer | How much the discount is                       |
+
+###### Invoice Discount Type
+
+| Value | Name                             | Description                                                       |
+| ----- | -------------------------------- | ----------------------------------------------------------------- |
+| 1     | SUBSCRIPTION_PLAN                | Discount is from an existing subscription plan’s remaining credit |
+| 2     | ENTITLEMENT                      | Discount is from an applied entitlement                           |
+| 3     | PREMIUM_LEGACY_UPGRADE_PROMOTION | Discount is from a legacy premium plan promotion discount         |
+| 4     | PREMIUM_TRIAL                    | Discount is from a premium trial                                  |
+| 5     | DEFAULT                          | Discount is a default discount                                    |
+
+###### Unit Price Structure
+
+| Field    | Type    | Description                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------- |
+| currency | string  | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| amount   | integer | The price amount in the smallest currency unit                                   |
+| exponent | integer | The exponent to convert the amount to the displayed currency unit                |
 
 ### Endpoints
 

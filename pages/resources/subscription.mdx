@@ -27,7 +27,7 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | country_code                     | ?string                                                                            | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code the subscription is billed in |
 | trial_ends_at?                   | ISO8601 timestamp                                                                  | When the trial ends                                                                                                   |
 | metadata?                        | [subscription metadata](#subscription-metadata-structure) object                   | Extra metadata about the subscription                                                                                 |
-| latest_invoice?                  | [subscription invoice](#subscription-invoice-structure) object                     | The latest invoice for the subscription                                                                               |
+| latest_invoice?                  | [subscription invoice](/resources/payment#invoice-object) object                   | The latest invoice for the subscription                                                                               |
 | use_storekit_resubscribe         | boolean                                                                            | Whether the subscription should be managed through StoreKit                                                           |
 | price                            | ?integer                                                                           | The price of the subscription (only available for certain third-party subscriptions)                                  |
 
@@ -100,66 +100,6 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | user_discount_offer_id?            | snowflake         | The ID of the user discount offer on the subscription                                                                                             |
 | active_discount_id?                | snowflake         | The ID of the discount on the subscription                                                                                                        |
 | active_discount_expires_at?        | ISO8601 timestamp | When the subscription discount expires                                                                                                            |
-
-###### Subscription Invoice Structure
-
-| Field                   | Type                                                                            | Description                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| id                      | snowflake                                                                       | The ID of the invoice                                                                              |
-| status?                 | integer                                                                         | The [status](#subscription-invoice-status) of invoice                                              |
-| currency                | string                                                                          | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code the invoice is in |
-| subtotal                | integer                                                                         | The subtotal of the invoice                                                                        |
-| tax                     | integer                                                                         | The tax applied to the invoice                                                                     |
-| total                   | integer                                                                         | The total of the invoice                                                                           |
-| tax_inclusive           | boolean                                                                         | Whether the subtotal is inclusive of all taxes                                                     |
-| items                   | array[[subscription invoice item](#subscription-invoice-item-structure) object] | The items in the invoice                                                                           |
-| current_period_start    | ISO8601 timestamp                                                               | When the current billing period started                                                            |
-| current_period_end      | ISO8601 timestamp                                                               | When the current billing period ends                                                               |
-| applied_discount_ids?   | array[snowflake]                                                                | The IDs of the discounts applied to the invoice                                                    |
-| applied_user_discounts? | map[snowflake, ?ISO8601 timestamp]                                              | The user discount offers applied to the invoice and their expiration dates                         |
-
-###### Subscription Invoice Status
-
-| Value | Name          | Description              |
-| ----- | ------------- | ------------------------ |
-| 1     | OPEN          | Invoice is open          |
-| 2     | PAID          | Invoice is paid          |
-| 3     | VOID          | Invoice is void          |
-| 4     | UNCOLLECTIBLE | Invoice is uncollectible |
-
-###### Subscription Invoice Item Structure
-
-| Field                       | Type                                                                    | Description                                            |
-| --------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
-| id                          | snowflake                                                               | The ID of the invoice item                             |
-| quantity                    | integer                                                                 | How many of the item have been/are being purchased     |
-| amount                      | integer                                                                 | The price of the item (includes discounts)             |
-| proration                   | boolean                                                                 | Whether the item is prorated                           |
-| subscription_plan_id        | snowflake                                                               | The ID of the subscription plan the item represents    |
-| subscription_plan_price ^1^ | integer                                                                 | The price of the subscription plan the item represents |
-| discounts                   | array[[subscription discount](#subscription-discount-structure) object] | The discounts applied to the item                      |
-| sku_id                      | ?snowflake                                                              | The ID of the SKU                                      |
-| unit_price                  | ?integer                                                                | The unit price of the item                             |
-| tenant_metadata?            | map[string, any]                                                        | Tenant metadata for the invoice item                   |
-
-^1^ Does not include discounts.
-
-###### Subscription Discount Structure
-
-| Field  | Type    | Description                                         |
-| ------ | ------- | --------------------------------------------------- |
-| type   | integer | The [type](#subscription-discount-type) of discount |
-| amount | integer | How much the discount is                            |
-
-###### Subscription Discount Type
-
-| Value | Name                             | Description                                                       |
-| ----- | -------------------------------- | ----------------------------------------------------------------- |
-| 1     | SUBSCRIPTION_PLAN                | Discount is from an existing subscription plan’s remaining credit |
-| 2     | ENTITLEMENT                      | Discount is from an applied entitlement                           |
-| 3     | PREMIUM_LEGACY_UPGRADE_PROMOTION | Discount is from a legacy premium plan promotion discount         |
-| 4     | PREMIUM_TRIAL                    | Discount is from a premium trial                                  |
-| 5     | DEFAULT                          | Discount is a default discount                                    |
 
 ### Subscription Trial Object
 
@@ -266,7 +206,7 @@ Returns a [subscription](#subscription-object) object for the given subscription
   Create Subscription
 </RouteHeader>
 
-Creates a new subscription. Returns a [subscription](#subscription-object) object on success. Fires a [User Subscriptions Update](/topics/gateway-events#user-subscriptions-update) Gateway event.
+Creates a new subscription. Returns a [subscription](#subscription-object) object on success. Fires a [User Subscriptions Update](/topics/gateway-events#user-subscriptions-update) and [Payment Update](/topics/gateway-events#payment-update) Gateway event.
 
 ###### JSON Params
 
@@ -274,18 +214,20 @@ Creates a new subscription. Returns a [subscription](#subscription-object) objec
 | ------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | items ^1^                 | array[partial [subscription item](#subscription-item-structure) object]                   | The items in the subscription                                                    |
 | payment_source_id?        | snowflake                                                                                 | The ID of the payment source to pay with                                         |
+| payment_source_token?     | ?string                                                                                   | The token used to authorize with the payment source                              |
 | currency?                 | string                                                                                    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
 | trial_id?                 | ?snowflake                                                                                | The ID of the trial to apply to the subscription                                 |
-| payment_source_token?     | ?string                                                                                   | The token used to authorize with the payment source                              |
-| return_url?               | ?string                                                                                   | The URL to return to after the payment is complete                               |
-| purchase_token ^2^        | string                                                                                    | The purchase token of the payment client (max 1024 characters)                   |
+| return_url? ^2^           | ?string                                                                                   | TThe URL to redirect to after payment is complete (max 2048 characters)          |
+| purchase_token ^3^        | string                                                                                    | The purchase token of the payment client (max 1024 characters)                   |
 | gateway_checkout_context? | ?[gateway checkout context](/resources/billing#gateway-checkout-context-structure) object | The context for the gateway checkout, if applicable                              |
 | code?                     | string                                                                                    | Unknown                                                                          |
 | metadata?                 | map[string, any]                                                                          | Extra metadata about the subscription                                            |
 
 ^1^ Only the `plan_id` field is required.
 
-^2^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
+^2^ This URL is typically set to the [Create Billing Popup Bridge Redirect](/resources/billing#create-billing-popup-bridge-redirect) endpoint with a `response_type` of `return`, which redirects the user back to the Discord client for handling.
+
+^3^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
 
 <RouteHeader method="PATCH" url="/users/@me/billing/subscriptions/{subscription.id}">
   Modify Subscription
@@ -329,7 +271,7 @@ Deletes a subscription. Returns a 204 empty response on success. Fires a [User S
   Create Subscription Preview
 </RouteHeader>
 
-Previews a new subscription. Returns a [subscription invoice](#subscription-invoice-structure) object on success.
+Previews a new subscription. Returns an [invoice](/resources/payment#invoice-object) object on success.
 
 ###### JSON Params
 
@@ -350,13 +292,13 @@ Previews a new subscription. Returns a [subscription invoice](#subscription-invo
   Get Subscription Preview
 </RouteHeader>
 
-Returns a [subscription invoice](#subscription-invoice-structure) object representing the next upcoming invoice for the subscription.
+Returns an [invoice](/resources/payment#invoice-object) object representing the next upcoming invoice for the subscription.
 
 <RouteHeader method="PATCH" url="/users/@me/billing/subscriptions/{subscription.id}/preview">
   Modify Subscription Preview
 </RouteHeader>
 
-Previews an invoice for the given subscription ID. Returns a [subscription invoice](#subscription-invoice-structure) on success.
+Previews an invoice for the given subscription ID. Returns an [invoice](/resources/payment#invoice-object) on success.
 
 ###### JSON Params
 
@@ -375,7 +317,7 @@ Previews an invoice for the given subscription ID. Returns a [subscription invoi
   Get Subscription Invoices
 </RouteHeader>
 
-Returns a list of [subscription invoice](#subscription-invoice-structure) objects for the given subscription ID.
+Returns a list of [invoice](/resources/payment#invoice-object) objects for the given subscription ID.
 
 <RouteHeader
   method="POST"
