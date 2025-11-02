@@ -210,24 +210,42 @@ Creates a new subscription. Returns a [subscription](#subscription-object) objec
 
 ###### JSON Params
 
-| Field                     | Type                                                                                      | Description                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| items ^1^                 | array[partial [subscription item](#subscription-item-structure) object]                   | The items in the subscription                                                    |
-| payment_source_id?        | snowflake                                                                                 | The ID of the payment source to pay with                                         |
-| payment_source_token?     | ?string                                                                                   | The token used to authorize with the payment source                              |
-| currency?                 | string                                                                                    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
-| trial_id?                 | ?snowflake                                                                                | The ID of the trial to apply to the subscription                                 |
-| return_url? ^2^           | ?string                                                                                   | TThe URL to redirect to after payment is complete (max 2048 characters)          |
-| purchase_token ^3^        | string                                                                                    | The purchase token of the payment client (max 1024 characters)                   |
-| gateway_checkout_context? | ?[gateway checkout context](/resources/billing#gateway-checkout-context-structure) object | The context for the gateway checkout, if applicable                              |
-| code?                     | string                                                                                    | Unknown                                                                          |
-| metadata?                 | map[string, any]                                                                          | Extra metadata about the subscription                                            |
+| Field                       | Type                                                                                      | Description                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| items ^1^                   | array[partial [subscription item](#subscription-item-structure) object]                   | The items in the subscription                                                                          |
+| payment_source_id?          | snowflake                                                                                 | The ID of the payment source to pay with                                                               |
+| payment_source_token?       | ?string                                                                                   | The token used to authorize with the payment source                                                    |
+| return_url? ^2^             | ?string                                                                                   | TThe URL to redirect to after payment is complete (max 2048 characters)                                |
+| currency?                   | string                                                                                    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code                       |
+| trial_id?                   | ?snowflake                                                                                | The ID of the trial to apply to the subscription                                                       |
+| expected_invoice_price? ^3^ | ?[expected price structure](#expected-price-structure) object                             | The expected price for the invoice in the smallest currency unit                                       |
+| expected_renewal_price? ^3^ | ?[expected price structure](#expected-price-structure) object                             | The expected renewal price in the smallest currency unit                                               |
+| purchase_token ^4^          | string                                                                                    | The purchase token of the payment client (max 1024 characters)                                         |
+| gateway_checkout_context?   | ?[gateway checkout context](/resources/billing#gateway-checkout-context-structure) object | The context for the gateway checkout, if applicable                                                    |
+| code?                       | string                                                                                    | Unknown                                                                                                |
+| metadata?                   | [subscription metadata request](#subscription-metadata-request-structure) object          | Extra metadata about the subscription                                                                  |
+| load_id?                    | string                                                                                    | A client-generated UUID used to identify the current checkout session, used for purchase deduplication |
 
 ^1^ Only the `plan_id` field is required.
 
-^2^ This URL is typically set to the [Create Billing Popup Bridge Redirect](/resources/billing#create-billing-popup-bridge-redirect) endpoint with a `response_type` of `return`, which redirects the user back to the Discord client for handling.
+^2^ If required, this URL is typically set to the [Create Billing Popup Bridge Redirect](/resources/billing#create-billing-popup-bridge-redirect) endpoint with a `response_type` of `success`, which redirects the user back to the Discord client for handling.
 
-^3^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
+^3^ If the actual amount charged does not match these expected values, the purchase will fail.
+
+^4^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
+
+###### Expected Price Structure
+
+| Field    | Type    | Description                                                                      |
+| -------- | ------- | -------------------------------------------------------------------------------- |
+| currency | string  | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| amount   | integer | The price amount in the smallest currency unit                                   |
+
+###### Subscription Metadata Request Structure
+
+| Field     | Type      | Description                                                       |
+| --------- | --------- | ----------------------------------------------------------------- |
+| guild_id? | snowflake | The ID of the guild the subscription's entitlements will apply to |
 
 <RouteHeader method="PATCH" url="/users/@me/billing/subscriptions/{subscription.id}">
   Modify Subscription
@@ -244,15 +262,28 @@ Modifies a subscription. Returns the updated [subscription](#subscription-object
 
 ###### JSON Params
 
-| Field                 | Type                                                                    | Description                                                                      |
-| --------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| items? ^1^            | array[partial [subscription item](#subscription-item-structure) object] | The items in the subscription                                                    |
-| payment_source_id?    | snowflake                                                               | The ID of the payment source to pay with                                         |
-| payment_source_token? | string                                                                  | The token used to authorize with the payment source                              |
-| currency?             | string                                                                  | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
-| status?               | integer                                                                 | The [status](#subscription-status) of subscription                               |
+| Field                       | Type                                                                                      | Description                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| items? ^1^                  | array[partial [subscription item](#subscription-item-structure) object]                   | The items in the subscription                                                                          |
+| payment_source_id?          | snowflake                                                                                 | The ID of the payment source to pay with                                                               |
+| payment_source_token?       | string                                                                                    | The token used to authorize with the payment source                                                    |
+| return_url? ^2^             | ?string                                                                                   | TThe URL to redirect to after payment is complete (max 2048 characters)                                |
+| currency?                   | string                                                                                    | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code                       |
+| status?                     | integer                                                                                   | The [status](#subscription-status) of subscription                                                     |
+| pause_duration?             | integer                                                                                   | The duration to pause the subscription for, in days                                                    |
+| expected_invoice_price? ^3^ | ?[expected price structure](#expected-price-structure) object                             | The expected price for the invoice in the smallest currency unit                                       |
+| expected_renewal_price? ^3^ | ?[expected price structure](#expected-price-structure) object                             | The expected renewal price in the smallest currency unit                                               |
+| purchase_token? ^4^         | string                                                                                    | The purchase token of the payment client (max 1024 characters)                                         |
+| gateway_checkout_context?   | ?[gateway checkout context](/resources/billing#gateway-checkout-context-structure) object | The context for the gateway checkout, if applicable                                                    |
+| load_id?                    | string                                                                                    | A client-generated UUID used to identify the current checkout session, used for purchase deduplication |
 
 ^1^ Only the `plan_id` field is required.
+
+^2^ If required, this URL is typically set to the [Create Billing Popup Bridge Redirect](/resources/billing#create-billing-popup-bridge-redirect) endpoint with a `response_type` of `success`, which redirects the user back to the Discord client for handling.
+
+^3^ If the actual amount charged does not match these expected values, the purchase will fail.
+
+^4^ See the section on [payment clients](/resources/payment#payment-clients) for more information.
 
 <RouteHeader method="DELETE" url="/users/@me/billing/subscriptions/{subscription.id}">
   Delete Subscription
