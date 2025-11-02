@@ -205,6 +205,34 @@ A gift from one user to another, which can be redeemed for an entitlement.
 }
 ```
 
+### Gift Code Batch Object
+
+A batch of gift codes created together.
+
+###### Gift Code Batch Structure
+
+| Field                  | Type              | Description                                   |
+| ---------------------- | ----------------- | --------------------------------------------- |
+| id                     | snowflake         | The ID of the gift code batch                 |
+| sku_id                 | snowflake         | The ID of the SKU for the gift code batch     |
+| amount                 | integer           | The number of gift codes in the batch         |
+| description?           | string            | The description for the gift code batch       |
+| entitlement_branches?  | array[snowflake]  | The IDs of the application branches granted   |
+| entitlement_starts_at? | ISO8601 timestamp | When the entitlements' validity period starts |
+| entitlement_ends_at?   | ISO8601 timestamp | When the entitlements' validity period ends   |
+
+###### Example Gift Code Batch
+
+```json
+{
+  "id": "916443614618464296",
+  "sku_id": "557494559257526272",
+  "amount": 10,
+  "description": "Holiday Giveaway",
+  "entitlement_branches": ["557494559257526272"]
+}
+```
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/entitlements">
@@ -306,11 +334,11 @@ This endpoint is not usable by user accounts.
 
 ###### JSON Params
 
-| Field      | Type    | Description                                                     |
-| ---------- | ------- | --------------------------------------------------------------- |
-| sku_id     | string  | The ID of the SKU to grant the entitlement to                   |
-| owner_id   | string  | The ID of the guild or user to grant the entitlement to         |
-| owner_type | integer | The [type of owner](#entitlement-owner-type) of the entitlement |
+| Field      | Type      | Description                                                     |
+| ---------- | --------- | --------------------------------------------------------------- |
+| sku_id     | snowflake | The ID of the SKU to grant the entitlement to                   |
+| owner_id   | snowflake | The ID of the guild or user to grant the entitlement to         |
+| owner_type | integer   | The [type of owner](#entitlement-owner-type) of the entitlement |
 
 ###### Entitlement Owner Type
 
@@ -389,7 +417,7 @@ Creates a gift code. Requires an eligible giftable entitlement. Returns a [gift 
 
 | Field                 | Type      | Description                                               |
 | --------------------- | --------- | --------------------------------------------------------- |
-| sku_id                | string    | The ID of the SKU to create a gift code for               |
+| sku_id                | snowflake | The ID of the SKU to create a gift code for               |
 | subscription_plan_id? | snowflake | The ID of the subscription plan to create a gift code for |
 | gift_style?           | integer   | The [style of the gift](#gift-style) created              |
 
@@ -398,3 +426,32 @@ Creates a gift code. Requires an eligible giftable entitlement. Returns a [gift 
 </RouteHeader>
 
 Revokes a gift code created by the current user. Returns a 204 empty response on success.
+
+<RouteHeader method="GET" url="/applications/{application.id}/gift-code-batches">
+  Get Application Gift Code Batches
+</RouteHeader>
+
+Returns a list of [gift code batch](#gift-code-batch-object) objects for the given application. User must be the owner of the application or member of the owning team.
+
+<RouteHeader method="POST" url="/applications/{application.id}/gift-code-batches">
+  Create Application Gift Code Batch
+</RouteHeader>
+
+Creates a batch of gift codes. Returns a [gift code batch](#gift-code-batch-object) object on success. User must be the owner of the application or developer of the owning team.
+
+###### JSON Params
+
+| Field                  | Type              | Description                                                   |
+| ---------------------- | ----------------- | ------------------------------------------------------------- |
+| sku_id                 | snowflake         | The ID of the SKU to create gift codes for                    |
+| amount                 | integer           | The number of gift codes to create (1-2500)                   |
+| description            | string            | The description for the gift code batch                       |
+| entitlement_branches?  | array[snowflake]  | The IDs of the application branches granted by the gift codes |
+| entitlement_starts_at? | ISO8601 timestamp | When the entitlements' validity period starts                 |
+| entitlement_ends_at?   | ISO8601 timestamp | When the entitlements' validity period ends                   |
+
+<RouteHeader method="GET" url="/applications/{application.id}/gift-code-batches/{gift_code_batch.id}">
+  Get Application Gift Code Batch
+</RouteHeader>
+
+Returns a CSV file containing all gift codes in the given batch. User must be the owner of the application or member of the owning team.
