@@ -106,7 +106,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
         }) => (
           <pre
             className={classNames(
-              "relative m-0 mb-4 inline-grid w-full grid-rows-max-content overflow-auto leading-normal",
+              "relative m-0 inline-grid w-full grid-rows-max-content overflow-auto leading-normal",
               blockClassName,
             )}
           >
