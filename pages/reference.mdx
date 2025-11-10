@@ -406,10 +406,11 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | utm_term?                                       | string   | The UTM term that originally referred the user to Discord, parsed from the `utm_term` parameter of the referrer URL                                                             |
 | utm_term_current?                               | string   | Same as `utm_term` but for the current session                                                                                                                                  |
 | has_client_mods?                                | boolean  | Whether the connecting client has modifications (e.g. BetterDiscord)                                                                                                            |
+| launch_signature?                               | string   | The [launch signature](#launch-signature) of the client                                                                                                                         |
 | is_fast_connect? ^3^                            | boolean  | Whether the Gateway session sent the [identified](/topics/gateway#identifying) using fast connect (a preload script ran before the client was loaded)                           |
 | version? ^3^                                    | string   | The version of the client properties protocol                                                                                                                                   |
 
-^1^ These properties are used to gate experimental features and may be required for certain endpoints. `client_version` is used instead of `client_build_number` for mobile experiments. See the [experiments documentation](/topics/experiments) for more information.
+^1^ These properties are used to gate experimental features and may be required for certain endpoints. `client_version` may be used instead of `client_build_number` for mobile experiments. See the [experiments documentation](/topics/experiments) for more information.
 
 ^2^ If specified, this value should match the `User-Agent` header sent by the client.
 
@@ -535,6 +536,45 @@ Additionally, types of fields are not verified, and all documented enums are mer
 | yahoo      | [Yahoo search engine](https://www.yahoo.com/)       |
 | duckduckgo | [DuckDuckGo search engine](https://duckduckgo.com/) |
 
+###### Launch Signature
+
+While the launch signature may appear to be a random UUID, certain bits are used to encode information about the client, specifically whether certain client mods are detected. The UUID is encoded like so, where 0s represent random bits:
+
+```
+0000 0000 A000 0000 000B 0000 000C 0000 0000 D000 000E 0000 0100 F000 0000 0000 10G0 0000 H000 000I 0000 0000 0J00 0000 0000 000K 0000 0000 0000 L000 0000 0000
+```
+
+Where:
+
+| Bit   | Name          | Bit Index |
+| ----- | ------------- | --------- |
+| **A** | JQUERY        | 119       |
+| **B** | BETTERDISCORD | 108       |
+| **C** | RAMBOX        | 100       |
+| **D** | VENDETTA      | 91        |
+| **E** | VENCORD       | 84        |
+| **F** | REPLUGGED     | 75        |
+| **G** | LEGCORD       | 61        |
+| **H** | DORION        | 55        |
+| **I** | GOOFCORD      | 48        |
+| **J** | OPENASAR      | 38        |
+| **K** | SHELTER       | 24        |
+| **L** | MOONLIGHT     | 11        |
+
+A default launch signature can be generated with the following pseudocode:
+
+```py
+import uuid
+
+def generate_launch_signature() -> str:
+    bits = 0b00000000100000000001000000010000000010000001000000001000000000000010000010000001000000000100000000000001000000000000100000000000
+
+    # Force all bits to 0
+    random_uuid = uuid.uuid4().int & (~bits & ((1 << 128) - 1))
+    result = uuid.UUID(int=random_uuid)
+    return str(result)
+```
+
 ###### Example Client Properties (Web)
 
 ```json
@@ -557,6 +597,7 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "client_event_source": null,
   "has_client_mods": false,
   "client_launch_id": "9a65c85b-401d-4cf0-9c17-9676a68a482c",
+  "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
   "client_heartbeat_session_id": "2fc3cabd-3ca0-4716-b399-496780c302d1"
 }
 ```
@@ -575,6 +616,7 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "system_locale": "en-US",
   "has_client_mods": false,
   "client_launch_id": "466a709c-1d91-442d-a35f-34e8c834736e",
+  "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
   "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.328 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
   "browser_version": "35.1.5",
   "os_sdk_version": "26100",
@@ -599,6 +641,7 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "system_locale": "en-US",
   "has_client_mods": false,
   "client_launch_id": "c1f90baa-5390-43bd-a5eb-36a77d0c17c1",
+  "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
   "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.171 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
   "browser_version": "35.1.5",
   "os_sdk_version": "24",
@@ -623,6 +666,7 @@ Additionally, types of fields are not verified, and all documented enums are mer
   "system_locale": "en-US",
   "has_client_mods": false,
   "client_launch_id": "ee3d1bb9-761a-426e-a9e4-4962295ca5df",
+  "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
   "browser_user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.670 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
   "browser_version": "35.1.5",
   "window_manager": "Hyprland,unknown",
@@ -660,6 +704,7 @@ Given a client version of 280.2 and a release channel of alpha, the user agent v
   "client_build_number": 4025,
   "client_event_source": null,
   "client_launch_id": "9a65c85b-401d-4cf0-9c17-9676a68a482c",
+  "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
   "client_heartbeat_session_id": "2fc3cabd-3ca0-4716-b399-496780c302d1"
 }
 ```
@@ -683,6 +728,7 @@ Given a client version of 280.2 and a release channel of alpha, the user agent v
   "client_build_number": 58755,
   "client_event_source": null,
   "client_launch_id": "9a65c85b-401d-4cf0-9c17-9676a68a482c",
+  "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
   "client_heartbeat_session_id": "2fc3cabd-3ca0-4716-b399-496780c302d1"
 }
 ```
