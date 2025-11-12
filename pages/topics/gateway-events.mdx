@@ -926,6 +926,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Info](#channel-info)                                                               | Response to [Request Channel Info](#request-channel-info)                                      |
 | [Channel Member Count Update](#channel-member-count-update)                                 | Response to [Request Channel Member Count](#request-channel-member-count)                      |
 | [Channel Pins Update](#channel-pins-update)                                                 | Message was pinned or unpinned                                                                 |
+| [Channel Pins Ack](#channel-pins-ack)                                                       | Channel pins read state was updated                                                            |
 | [Channel Recipient Add](#channel-recipient-add)                                             | User joined a group DM channel                                                                 |
 | [Channel Recipient Remove](#channel-recipient-remove)                                       | User was removed from a group DM channel                                                       |
 | [Console Command Update](#console-command-update)                                           | Console command was updated                                                                    |
@@ -961,6 +962,7 @@ These events directly correspond with a specific action or state change that has
 | [Guild Directory Entry Delete](#guild-directory-entry-delete)                               | Guild directory entry was deleted                                                              |
 | [Guild Emojis Update](#guild-emojis-update)                                                 | Guild emoji were updated                                                                       |
 | [Guild Stickers Update](#guild-stickers-update)                                             | Guild stickers were updated                                                                    |
+| [Guild Feature Ack](#guild-feature-ack)                                                     | Guild feature read state was updated                                                           |
 | [Guild Join Request Create](#guild-join-request-create)                                     | Guild join request was created                                                                 |
 | [Guild Join Request Update](#guild-join-request-update)                                     | Guild join request was updated                                                                 |
 | [Guild Join Request Delete](#guild-join-request-delete)                                     | Guild join request was deleted                                                                 |
@@ -1002,6 +1004,7 @@ These events directly correspond with a specific action or state change that has
 | [Message Update](#message-update)                                                           | Message was edited                                                                             |
 | [Message Delete](#message-delete)                                                           | Message was deleted                                                                            |
 | [Message Delete Bulk](#message-delete-bulk)                                                 | Multiple messages were deleted at once                                                         |
+| [Message Ack](#message-ack)                                                                 | Channel read state was updated                                                                 |
 | [Message Poll Vote Add](#message-poll-vote-add)                                             | User voted on a poll                                                                           |
 | [Message Poll Vote Remove](#message-poll-vote-remove)                                       | User removed a vote on a poll                                                                  |
 | [Message Reaction Add](#message-reaction-add)                                               | User reacted to a message                                                                      |
@@ -1059,6 +1062,7 @@ These events directly correspond with a specific action or state change that has
 | [User Connections Update](#user-connections-update)                                         | User connection was created, updated, or deleted                                               |
 | [User Guild Settings Update](#user-guild-settings-update)                                   | User guild settings were updated                                                               |
 | [User Merge Operation Completed](#user-merge-operation-completed)                           | User has been merged with a provisional account                                                |
+| [User Non Channel Ack](#user-non-channel-ack)                                               | User feature read state was updated                                                            |
 | [User Note Update](#user-note-update)                                                       | User note was updated                                                                          |
 | [User Payment Browser Checkout Done](#user-payment-browser-checkout-done)                   | User finished checking out a purchase in-browser                                               |
 | [User Payment Client Add](#user-payment-client-add)                                         | User had a payment client authorized                                                           |
@@ -1560,6 +1564,18 @@ Sent when a message is pinned or unpinned in a text channel. This is not sent wh
 | channel_id          | snowflake          | The ID of the channel                          |
 | last_pin_timestamp? | ?ISO8601 timestamp | When the most recent pinned message was pinned |
 
+#### Channel Pins Ack
+
+Sent when the user acknowledges the current pinned messages in a channel.
+
+###### Channel Pins Ack Structure
+
+| Field      | Type              | Description                                    |
+| ---------- | ----------------- | ---------------------------------------------- |
+| channel_id | snowflake         | The ID of the channel                          |
+| timestamp  | ISO8601 timestamp | When the most recent pinned message was pinned |
+| version    | integer           | The user read state version                    |
+
 #### Channel Recipient Add
 
 Sent when a user is added to a group direct message channel.
@@ -1984,6 +2000,19 @@ Sent when a guild's stickers have been updated.
 | guild_id | snowflake                                                  | The ID of the guild       |
 | stickers | array[[sticker](/resources/sticker#sticker-object) object] | The stickers in the guild |
 
+#### Guild Feature Ack
+
+Sent when the user updates the read state for a guild feature, such as scheduled events or onboarding.
+
+###### Guild Feature Ack Structure
+
+| Field       | Type      | Description                                                           |
+| ----------- | --------- | --------------------------------------------------------------------- |
+| ack_type    | integer   | The [type of read state](/topics/read-state#read-state-types) updated |
+| resource_id | snowflake | The ID of the guild                                                   |
+| entity_id   | snowflake | The ID of the last acknowledged entity                                |
+| version     | integer   | The user read state version                                           |
+
 #### Guild Join Request Create
 
 Sent when a user creates a guild join request. Requires the `KICK_MEMBERS` permission for users other than the current user.
@@ -2257,7 +2286,7 @@ Sent when a guild soundboard sound is deleted.
 
 Sent in response to [Request Soundboard Sounds](#request-soundboard-sounds).
 
-###### Soundboard Sounds Event Fields
+###### Soundboard Sounds Event Structure
 
 | Field             | Type                                                                            | Description                    |
 | ----------------- | ------------------------------------------------------------------------------- | ------------------------------ |
@@ -2533,7 +2562,7 @@ Sent when multiple messages are deleted at once.
 
 Sent when a user votes on a poll. If the poll allows multiple selection, one event will be sent per answer.
 
-###### Message Poll Vote Add Fields
+###### Message Poll Vote Add Structure
 
 | Field      | Type      | Description       |
 | ---------- | --------- | ----------------- |
@@ -2547,7 +2576,7 @@ Sent when a user votes on a poll. If the poll allows multiple selection, one eve
 
 Sent when a user removes their vote on a poll. If the poll allows for multiple selections, one event will be sent per answer.
 
-###### Message Poll Vote Remove Fields
+###### Message Poll Vote Remove Structure
 
 | Field      | Type      | Description       |
 | ---------- | --------- | ----------------- |
@@ -3254,6 +3283,19 @@ Sent when the current user has their account merged with a provisional account. 
 | ------------------ | --------- | ------------------------------------------ |
 | merge_operation_id | snowflake | The ID of the merge operation              |
 | source_user_id     | snowflake | The ID of the account that was merged with |
+
+#### User Non Channel Ack
+
+Sent when the user updates the read state for a non-channel feature, such as notification center.
+
+###### User Non Channel Ack Structure
+
+| Field       | Type      | Description                                                           |
+| ----------- | --------- | --------------------------------------------------------------------- |
+| ack_type    | integer   | The [type of read state](/topics/read-state#read-state-types) updated |
+| resource_id | snowflake | The ID of the user                                                    |
+| entity_id   | snowflake | The ID of the last acknowledged entity                                |
+| version     | integer   | The user read state version                                           |
 
 #### User Note Update
 

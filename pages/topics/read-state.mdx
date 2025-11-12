@@ -1,0 +1,226 @@
+# Read State
+
+Initially, read states in Discord were built to keep track of unread messages and pings in channels. Over time, the system evolved and now powers the unread and badging system across many other surfaces, as indicated by [read state type](#read-state-type).
+
+## How Unreads Work
+
+Read states are a simple data store that contain the last acknowledged entity ID (message, guild scheduled event, etc.). As snowflakes are monotonically increasing, any entity with an ID greater than the last acknowledged ID is considered unread.
+A resource is considered unread if there exists at least one entity with an ID greater than the last acknowledged ID. For example, a channel is considered unread if there exists at least one message with an ID greater than the last acknowledged message ID.
+
+How this is determined depends on the read state type:
+
+- For read states of type `CHANNEL`, the [channel `last_message_id` field](/resources/channel#channel-object) is compared against the read state's `last_message_id`. The [channel `last_pin_timestamp` field](/resources/channel#channel-object) is also compared against the read state's `last_pin_timestamp` to determine if there are any unacknowledged pinned messages.
+- For read states of type `GUILD_EVENT`, the ID of the newest scheduled event in the guild is compared against the read state's `last_acked_id`.
+- For read states of type `GUILD_HOME`, no specific entity is tracked; guild home is considered unread if the timestamp of the read state's `last_acked_id` is more than 24 hours old.
+- For read states of type `GUILD_ONBOARDING_QUESTION`, the [guild `latest_onboarding_question_id` field](/resources/guild#guild-object) is compared against the read state's `last_acked_id`.
+- For read states of type `NOTIFICATION_CENTER`, the ID of the newest notification center item is compared against the read state's `last_acked_id`.
+- For read states of type `MESSAGE_REQUESTS`, the ID of the newest message request is compared against the read state's `last_acked_id`.
+
+These same principles can be applied to determine what entity ID to use when acknowledging a read state.
+
+## Automations
+
+As with all stateful resources in Discord, clients are expected to manage read states locally and update them as necessary from Gateway events such as
+[Message Ack](/topics/gateway-events#message-ack), [Channel Pins Ack](/topics/gateway-events#channel-pins-ack), [Guild Feature Ack](/topics/gateway-events#guild-feature-ack), and [User Non Channel Ack](/topics/gateway-events#user-non-channel-ack).
+
+However, certain read state updates are done automatically by Discord without firing ack events. As a result, clients must make sure to keep their local read state store in sync by implementing the same logic.
+
+#### Channel Read State Automations
+
+- When a [Message Create](/topics/gateway-events#message-create) Gateway event is received, if the author is not [blocked or ignored](/resources/relationships):
+  - If the message is in a private channel, the message type is not [`RECIPIENT_REMOVE`](/resources/message#message-type), and the private channel is not [muted](/resources/user-settings#user-guild-settings-object) or the message mentions the current user, the corresponding read state must be updated to increment `mention_count` by one. ^1^
+  - If the message is in a guild channel and the message mentions the current user, the corresponding read state must be updated to increment `mention_count` by one. ^1^
+  - If the message is not in a voice or stage channel, the channel is not [muted](/resources/user-settings#user-guild-settings-object), the channel's [notification level](/resources/user-settings#user-guild-settings-object) is set to `ALL_MESSAGES`, and the user has the [`MENTION_ON_ALL_MESSAGES` setting](/resources/user-settings#notification-settings-flags) enabled, the corresponding read state must be updated to increment `mention_count` by one. ^2^
+- When a [Message Create](/topics/gateway-events#message-create) Gateway event is received, if the message type is not [`POLL_RESULT`](/resources/message#message-type) and is authored by the current user, the corresponding read state must be updated to set `last_message_id` to the new message's ID, thereby resetting `mention_count` to zero.
+
+^1^ When considering if a message mentions the current user, clients must take into account user mentions, role mentions, and everyone mentions. When considering role and everyone mentions, clients must check the channel's [notification settings](/resources/user-settings#user-guild-settings-object) to ensure those mentions are not suppressed.
+
+^2^ These mentions are considered low importance as they do not ping the user. See the [Calculating Flags](#calculating-flags) section for more information.
+
+#### Guild Read State Automations
+
+- When a [Guild Scheduled Event Create](/topics/gateway-events#guild-scheduled-event-create) Gateway event is received, if the guild's [notification settings](/resources/user-settings#user-guild-settings-object) does not have `mute_scheduled_events` set, the corresponding read state must be updated to increment `badge_count` by one.
+- When a [Guild Scheduled Event Create](/topics/gateway-events#guild-scheduled-event-create) Gateway event is received, if the event's `creator_id` matches the current user's ID, the corresponding read state must be updated to set `last_acked_id` to the new event's ID, thereby resetting `badge_count` to zero.
+
+## Management
+
+Read states are almost entirely managed by clients, with the server not doing much other than storing them.
+
+#### Calculating Flags
+
+Flags are only applicable to read states of type `CHANNEL`. Clients must calculate the flags based on the channel's properties before acknowledging a message.
+If the calculated flags differ from the stored flags, clients must specify the `flags` field in the request.
+
+Flags must be calculated as follows:
+
+- If the channel has a `guild_id`, set the `IS_GUILD_CHANNEL` flag.
+- If the channel's `type` is one of the thread types (`NEWS_THREAD`, `PUBLIC_THREAD`, `PRIVATE_THREAD`), set the `IS_THREAD` flag.
+- If the read state's `mention_count` is comprised entirely of non-ping mentions, set the `IS_MENTION_LOW_IMPORTANCE` flag. ^1^
+
+^1^ When the user has the [`MENTION_ON_ALL_MESSAGES` setting](/resources/user-settings#notification-settings-flags) enabled and the channel's [notification level](/resources/user-settings#user-guild-settings-object) is set to `ALL_MESSAGES`, all messages in the channel increase the `mention_count`. However, these mentions are considered low importance as they do not ping the user. However, if there is at least one ping mention in the channel, the read state is not considered low importance.
+
+#### Calculating Last Viewed
+
+For read states of type `CHANNEL`, clients must calculate the `last_viewed` value before acknowledging a message.
+The value is the number of days since the Discord epoch (January 1, 2015 00:00:00 UTC) at the time the channel was viewed.
+If the calculated value differs from the stored value, clients must specify the `last_viewed` field in the request.
+
+#### Deleting Read States
+
+Clients should delete read states that are no longer relevant to the user. Official clients do this at application start, deleting read states that meet the following criteria:
+
+- Read states of type `CHANNEL` for channels that no longer exist (with a 30 day grace period to account for archived threads).
+- Read states of type `CHANNEL` for channels the user no longer has `VIEW_CHANNEL` and `READ_MESSAGE_HISTORY` permissions in.
+- Read states of type `GUILD_EVENT`, `GUILD_HOME`, or `GUILD_ONBOARDING_QUESTION` for guilds that the user is no longer a member of.
+
+Making sure to ignore unrecognized read state and channel types to allow for forward compatibility.
+
+## Ack Tokens
+
+<Alert type="info">
+
+The new, rust-based read state service no longer uses ack tokens, returning them as `null` in all responses. For backwards compatibility, clients may continue to send ack tokens, but they will be ignored.
+
+</Alert>
+
+Ack tokens are used to identify a specific client when interacting with read states.
+
+The client should initially set its ack token to `null` when making the first ack request. The server will respond with a new token in the `token` field of the response, which the client should store locally.
+When acknowledging a read state, the client should then send this token back to the server in the `token` field. The server will respond with an updated token, which the client should again store locally for future requests.
+
+The client should reset the ack token to `null` whenever it switches accounts or a [User Update](/topics/gateway-events#user-update) Gateway event is received.
+
+### Read State Object
+
+###### Read State Structure
+
+| Field                   | Type              | Description                                                         |
+| ----------------------- | ----------------- | ------------------------------------------------------------------- |
+| id ^1^                  | snowflake         | The ID of the resource the read state is for                        |
+| read_state_type?        | integer           | The [type of read state](#read-state-type) (default `CHANNEL`)      |
+| last_message_id? ^2^    | snowflake         | The ID of the last acknowledged message                             |
+| last_acked_id? ^2^      | snowflake         | The ID of the last acknowledged resource                            |
+| mention_count? ^3^      | integer           | The number of unread mentions                                       |
+| badge_count? ^3^        | integer           | The number of unread badges                                         |
+| last_pin_timestamp? ^4^ | ISO8601 timestamp | When the last acknowledged pinned message was pinned                |
+| flags? ^4^              | integer           | The [read state flags](#read-state-flags)                           |
+| last_viewed? ^4^        | ?integer          | When the resource was last viewed (in days since the Discord epoch) |
+
+^1^ For user features, the resource ID is the current user's ID.
+
+^2^ `last_message_id` and `last_acked_id` are mutually exclusive; only one will be present depending on the `read_state_type`.
+
+^3^ `mention_count` and `badge_count` are mutually exclusive; only one will be present depending on the `read_state_type`.
+
+^4^ Only applicable for read states of type `CHANNEL`.
+
+###### Read State Type
+
+| Value | Name                      | Description                   |
+| ----- | ------------------------- | ----------------------------- |
+| 0     | CHANNEL                   | Channel message unreads       |
+| 1     | GUILD_EVENT               | Guild scheduled event feature |
+| 2     | NOTIFICATION_CENTER       | Notification center feature   |
+| 3     | GUILD_HOME                | Guild home feature            |
+| 4     | GUILD_ONBOARDING_QUESTION | Guild onboarding feature      |
+| 5     | MESSAGE_REQUESTS          | Message requests feature      |
+
+###### Read State Flags
+
+| Value  | Name                      | Description                                    |
+| ------ | ------------------------- | ---------------------------------------------- |
+| 1 << 0 | IS_GUILD_CHANNEL          | Whether the channel is part of a guild         |
+| 1 << 1 | IS_THREAD                 | Whether the channel is a thread                |
+| 1 << 2 | IS_MENTION_LOW_IMPORTANCE | Whether channel mentions are of low importance |
+
+## Endpoints
+
+<RouteHeader method="POST" url="/channels/{channel.id}/messages/{message.id}/ack">
+  Acknowledge Message
+</RouteHeader>
+
+Updates the channel's read state for the current user. Fires a [Message Ack](/topics/gateway#message-ack) Gateway event.
+
+The message ID parameter does not need to be a valid message ID, but it must be a valid snowflake. If the message ID is being set to a message sent prior to the latest acknowledged one, `manual` should be `true` or the resulting read state update might be ignored by clients, resulting in undefined behavior.
+In this case, `mention_count` should also be updated to the amount of mentions unacknowledged as it is not automatically calculated by Discord.
+
+###### JSON Params
+
+| Field              | Type    | Description                                                        |
+| ------------------ | ------- | ------------------------------------------------------------------ |
+| token?             | ?string | The last received [ack token](#ack-token), or `null`               |
+| manual?            | boolean | Whether the acknowleged message ID is manually set                 |
+| mention_count? ^1^ | integer | The new unread indicator for the channel                           |
+| flags? ^2^         | integer | The [read state flags](#read-state-flags) for the channel          |
+| last_viewed? ^2^   | integer | When the channel was last viewed (in days since the Discord epoch) |
+
+^1^ Requires `manual` to be `true`.
+
+^2^ If omitted, the existing value is retained.
+
+###### Response Body
+
+| Field | Type    | Description                     |
+| ----- | ------- | ------------------------------- |
+| token | ?string | The new [ack token](#ack-token) |
+
+<RouteHeader method="POST" url="/channels/{channel.id}/pins/ack">
+  Acknowledge Pinned Messages
+</RouteHeader>
+
+Acknowledges the currently pinned messages in a channel. Returns a 204 empty response on success. Fires a [Channel Pins Ack](/topics/gateway#channel-pins-ack) Gateway event.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/ack/{read_state.type}/{entity.id}">
+  Acknowledge Guild Feature
+</RouteHeader>
+
+Updates a guild feature's read state for the current user. Fires a [Guild Feature Ack](/topics/gateway-events#guild-feature-ack) Gateway event.
+
+###### JSON Params
+
+| Field  | Type    | Description                                          |
+| ------ | ------- | ---------------------------------------------------- |
+| token? | ?string | The last received [ack token](#ack-token), or `null` |
+
+###### Response Body
+
+| Field | Type    | Description                     |
+| ----- | ------- | ------------------------------- |
+| token | ?string | The new [ack token](#ack-token) |
+
+<RouteHeader method="POST" url="/users/@me/{read_state.type}/{entity.id}/ack">
+  Acknowledge User Feature
+</RouteHeader>
+
+Updates a non-channel feature's read state for the current user. Fires a [User Non Channel Ack](/topics/gateway-events#user-non-channel-ack) Gateway event.
+
+###### JSON Params
+
+| Field  | Type    | Description                                          |
+| ------ | ------- | ---------------------------------------------------- |
+| token? | ?string | The last received [ack token](#ack-token), or `null` |
+
+###### Response Body
+
+| Field | Type    | Description                     |
+| ----- | ------- | ------------------------------- |
+| token | ?string | The new [ack token](#ack-token) |
+
+<RouteHeader method="DELETE" url="/channels/{read_state.id}/messages/ack">
+  Delete Read State
+</RouteHeader>
+
+Deletes a read state for the current user. Returns a 204 empty response on success.
+
+<Alert type="info">
+
+While this endpoint is under the channel resource, it can be used to delete read states of any type by specifying the appropriate resource ID.
+
+</Alert>
+
+###### JSON Params
+
+| Field            | Type    | Description                                                                                                                                 |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| read_state_type? | integer | The read state type to delete (default `CHANNEL`)                                                                                           |
+| version?         | integer | The version of the read state protocol the client has implemented, used to prevent accidental deletions from outdated clients (currently 2) |
