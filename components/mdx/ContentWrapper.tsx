@@ -11,7 +11,7 @@ export default function ContentWrapper({ children }: ContentWrapperProps) {
       style={{ scrollbarGutter: "stable" }}
     >
       <Header />
-      <main className="desktop-content-left-pad w-full max-w-6xl p-4 sm:px-6 sm:pb-6 sm:pt-0 lg:px-10 lg:pb-10">
+      <main className="desktop-content-left-pad desktop-content-max w-full p-4 sm:px-6 sm:pb-6 sm:pt-0 lg:px-10 lg:pb-10">
         <article className="m-auto mt-0 md:mt-4">{children}</article>
       </main>
     </div>
