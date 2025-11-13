@@ -18,7 +18,7 @@ import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
 
-const TITLE_REGEX = /<h1 .*?><a .*?>(\w+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
+const TITLE_REGEX = /<h1 .*?><a .*?>([^<]+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
 
 export default function App({
   Component,
