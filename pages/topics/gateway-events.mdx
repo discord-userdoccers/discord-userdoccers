@@ -925,6 +925,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Statuses](#channel-statuses)                                                       | Response to [Request Channel Statuses](#request-channel-statuses)                              |
 | [Channel Info](#channel-info)                                                               | Response to [Request Channel Info](#request-channel-info)                                      |
 | [Channel Member Count Update](#channel-member-count-update)                                 | Response to [Request Channel Member Count](#request-channel-member-count)                      |
+| [Channel Unread Update](#channel-unread-update)                                             | Guild channel unread state was updated                                                         |
 | [Channel Pins Update](#channel-pins-update)                                                 | Message was pinned or unpinned                                                                 |
 | [Channel Pins Ack](#channel-pins-ack)                                                       | Channel pins read state was updated                                                            |
 | [Channel Recipient Add](#channel-recipient-add)                                             | User joined a group DM channel                                                                 |
@@ -1041,6 +1042,8 @@ These events directly correspond with a specific action or state change that has
 | [Lobby Message Delete](#lobby-message-delete)                                               | Message was deleted in a lobby                                                                 |
 | [Lobby Voice State Update](#lobby-voice-state-update)                                       | User joined, left, or moved lobbies                                                            |
 | [Lobby Voice Server Update](#lobby-voice-server-update)                                     | Lobby voice connection server was updated                                                      |
+| [Passive Update V1](#passive-update-v1)                                                     | Guild channel unreads and voice state were updated                                             |
+| [Passive Update V2](#passive-update-v2)                                                     | Guild channel unreads and voice state were updated                                             |
 | [Saved Message Create](#saved-message-create)                                               | Message was bookmarked                                                                         |
 | [Saved Message Delete](#saved-message-delete)                                               | Bookmarked message was deleted                                                                 |
 | [Sessions Replace](#sessions-replace)                                                       | User session list was updated                                                                  |
@@ -1554,6 +1557,33 @@ Sent in response to [Request Channel Member Count](#request-channel-member-count
 | channel_id     | snowflake | The ID of the channel                                                        |
 | member_count   | integer   | The number of members that can currently see the channel                     |
 | presence_count | integer   | The number of members that can currently see the channel and are not offline |
+
+#### Channel Unread Update
+
+Sent periodically to inform the client of the current unread state in guilds it's not subscribed to.
+
+<Alert type="info">
+
+This event is not sent when using the `PASSIVE_GUILD_UPDATE` or `PASSIVE_GUILD_UPDATE_V2` [Gateway capabilities](/topics/gateway#gateway-capabilities).
+
+An exception is made for directory channels, which will still dispatch this event even when using those capabilities.
+
+</Alert>
+
+###### Channel Unread Update Structure
+
+| Field                  | Type                                                      | Description                                 |
+| ---------------------- | --------------------------------------------------------- | ------------------------------------------- |
+| guild_id               | snowflake                                                 | The ID of the guild                         |
+| channel_unread_updates | array[[channel unread](#channel-unread-structure) object] | The unread states for channels in the guild |
+
+###### Channel Unread Structure
+
+| Field               | Type               | Description                                                                                                                                                                          |
+| ------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| id                  | snowflake          | The ID of the channel                                                                                                                                                                |
+| last_message_id     | ?snowflake         | The ID of the last message sent (or thread created for thread-only channels, directory entry created for directory channels) in this channel (may not point to an existing resource) |
+| last_pin_timestamp? | ?ISO8601 timestamp | When the last pinned message was pinned, if any                                                                                                                                      |
 
 #### Channel Pins Update
 
@@ -3050,6 +3080,50 @@ A `null` endpoint means that the voice server allocated has gone away and is try
   "endpoint": "smart.loyal.discord.media:1337"
 }
 ```
+
+### Passive Update
+
+#### Passive Update V1
+
+Sent periodically to inform the client of the current unread state and active voice states in guilds it's not subscribed to.
+
+<Alert type="info">
+
+This event requires the `PASSIVE_GUILD_UPDATE` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+</Alert>
+
+###### Passive Update V1 Structure
+
+| Field             | Type                                                               | Description                                                |
+| ----------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| guild_id          | snowflake                                                          | The ID of the guild                                        |
+| channels          | array[[channel unread](#channel-unread-structure) object]          | The unread states for channels in the guild                |
+| voice_states? ^1^ | array[[voice state](/resources/voice#voice-state-object) object]   | The voice states of the users in the guild                 |
+| members?          | array[[guild member](/resources/guild#guild-member-object) object] | The members corresponding to the voice states in the guild |
+
+^1^ If empty or omitted, there are no voice states in the guild.
+
+#### Passive Update V2
+
+Sent periodically to inform the client of the current unread state and active voice states in guilds it's not subscribed to.
+Functionally the same as [Passive Update V1](#passive-update-v1), but uses a more efficient format.
+
+<Alert type="info">
+
+This event requires the `PASSIVE_GUILD_UPDATE_V2` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+</Alert>
+
+###### Passive Update V2 Structure
+
+| Field                | Type                                                               | Description                                                         |
+| -------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| guild_id             | snowflake                                                          | The ID of the guild                                                 |
+| updated_channels     | array[[channel unread](#channel-unread-structure) object]          | The modified unread states for channels in the guild                |
+| updated_voice_states | array[[voice state](/resources/voice#voice-state-object) object]   | The modified voice states of the users in the guild                 |
+| removed_voice_states | array[snowflake]                                                   | The IDs of the users who no longer have voice states in the guild   |
+| updated_members      | array[[guild member](/resources/guild#guild-member-object) object] | The members corresponding to the modified voice states in the guild |
 
 ### Saved Messages
 
