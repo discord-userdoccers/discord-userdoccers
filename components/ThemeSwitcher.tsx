@@ -24,7 +24,7 @@ export default function ThemeSwitcher() {
     <Menu as="div" className="relative inline-block text-left">
       <div>
         <Menu.Button
-          className="inline-flex w-full justify-center rounded-md bg-white p-2 text-sm font-medium text-black transition duration-100 hover:bg-brand-blurple hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 dark:bg-sidebar-secondary-dark dark:text-white dark:hover:bg-brand-blurple"
+          className="inline-flex w-full justify-center rounded-md bg-sidebar-tertiary-light p-2 text-sm font-medium text-black transition duration-100 hover:bg-brand-blurple hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75 dark:bg-sidebar-secondary-dark dark:text-white dark:hover:bg-brand-blurple"
           aria-label="Change Theme"
         >
           <Lightbulb className="h-4 w-4 md:h-6 md:w-6" aria-hidden="true" />
@@ -39,7 +39,7 @@ export default function ThemeSwitcher() {
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 z-40 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-brand-blurple ring-opacity-5 focus:outline-none dark:divide-gray-900 dark:bg-sidebar-secondary-dark">
+        <Menu.Items className="absolute right-0 z-40 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-sidebar-tertiary-light shadow-lg ring-1 ring-brand-blurple ring-opacity-5 focus:outline-none dark:divide-gray-900 dark:bg-sidebar-secondary-dark">
           <div className="px-1 py-1">
             <Menu.Item>
               {({ active }) => (

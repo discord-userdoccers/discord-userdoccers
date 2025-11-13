@@ -17,6 +17,7 @@ import "../stylesheets/prism.css";
 import "../stylesheets/youtube.css";
 import "../stylesheets/snowflake-deconstruction.css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
+import OnThisPage from "../components/OnThisPage";
 
 const TITLE_REGEX = /<h1 .*?><a .*?>([^<]+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
 
@@ -29,13 +30,10 @@ export default function App({
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
 
-  const fadeClasses = classNames(
-    "absolute z-30 left-0 top-0 w-full h-full bg-black duration-300 md:opacity-0 md:pointer-events-none",
-    {
-      "opacity-50": sidebarOpen,
-      "opacity-0 pointer-events-none": !sidebarOpen,
-    },
-  );
+  const fadeClasses = classNames("fixed z-30 inset-0 bg-black duration-300 md:opacity-0 md:pointer-events-none", {
+    "opacity-50": sidebarOpen,
+    "opacity-0 pointer-events-none": !sidebarOpen,
+  });
 
   const component = (
     <CodegenLanguageProvider>
@@ -60,18 +58,18 @@ export default function App({
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const meta = useMemo(() => getText(), [router.asPath]);
+  const meta = useMemo(() => getText(), [router.pathname]);
 
   return (
     <>
       <ThemeProvider defaultTheme="system" attribute="data-theme">
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
           <OpenGraph description={meta?.description} section={meta?.title} />
-          <div className="flex h-screen overflow-hidden bg-white dark:bg-background-dark">
+          <div className="flex min-h-[100dvh] overflow-hidden bg-white dark:bg-background-dark">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
-
             {component}
+            <OnThisPage />
           </div>
           <Footer />
         </MenuContext.Provider>
