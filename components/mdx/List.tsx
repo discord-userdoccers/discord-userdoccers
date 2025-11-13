@@ -11,7 +11,7 @@ interface ListProps {
 }
 
 function List({ className, as: As, ...props }: ListProps) {
-  const classes = classNames("mb-4 dark:text-text-dark text-text-light list-inside", className);
+  const classes = classNames("mb-4 dark:text-text-dark text-text-light", className);
 
   return <As className={classes} {...props} />;
 }
