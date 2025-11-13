@@ -39,7 +39,7 @@ export default function Menu() {
     <>
       {/* Mobile overlay */}
       <div className={classes}>
-        <div className="flex w-full flex-col bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark" ref={ref}>
+        <div className="flex w-full flex-col bg-white dark:bg-sidebar-tertiary-dark" ref={ref}>
           <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
             <div className="flex flex-1 flex-col items-start">
               <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black dark:text-white md:hidden" />
@@ -54,7 +54,7 @@ export default function Menu() {
         className="desktop-left-nav fixed top-0 z-20 hidden h-[100dvh] w-80 text-sm text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text sm:block"
         aria-hidden={false}
       >
-        <div className="flex h-full w-80 flex-col bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark">
+        <div className="flex h-full w-80 flex-col bg-white dark:bg-sidebar-tertiary-dark">
           <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
             <div className="flex flex-1 flex-col items-start">
               <Navigation />
