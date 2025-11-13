@@ -925,7 +925,9 @@ These events directly correspond with a specific action or state change that has
 | [Channel Statuses](#channel-statuses)                                                       | Response to [Request Channel Statuses](#request-channel-statuses)                              |
 | [Channel Info](#channel-info)                                                               | Response to [Request Channel Info](#request-channel-info)                                      |
 | [Channel Member Count Update](#channel-member-count-update)                                 | Response to [Request Channel Member Count](#request-channel-member-count)                      |
+| [Channel Unread Update](#channel-unread-update)                                             | Guild channel unread state was updated                                                         |
 | [Channel Pins Update](#channel-pins-update)                                                 | Message was pinned or unpinned                                                                 |
+| [Channel Pins Ack](#channel-pins-ack)                                                       | Channel pins read state was updated                                                            |
 | [Channel Recipient Add](#channel-recipient-add)                                             | User joined a group DM channel                                                                 |
 | [Channel Recipient Remove](#channel-recipient-remove)                                       | User was removed from a group DM channel                                                       |
 | [Console Command Update](#console-command-update)                                           | Console command was updated                                                                    |
@@ -961,6 +963,7 @@ These events directly correspond with a specific action or state change that has
 | [Guild Directory Entry Delete](#guild-directory-entry-delete)                               | Guild directory entry was deleted                                                              |
 | [Guild Emojis Update](#guild-emojis-update)                                                 | Guild emoji were updated                                                                       |
 | [Guild Stickers Update](#guild-stickers-update)                                             | Guild stickers were updated                                                                    |
+| [Guild Feature Ack](#guild-feature-ack)                                                     | Guild feature read state was updated                                                           |
 | [Guild Join Request Create](#guild-join-request-create)                                     | Guild join request was created                                                                 |
 | [Guild Join Request Update](#guild-join-request-update)                                     | Guild join request was updated                                                                 |
 | [Guild Join Request Delete](#guild-join-request-delete)                                     | Guild join request was deleted                                                                 |
@@ -1002,6 +1005,7 @@ These events directly correspond with a specific action or state change that has
 | [Message Update](#message-update)                                                           | Message was edited                                                                             |
 | [Message Delete](#message-delete)                                                           | Message was deleted                                                                            |
 | [Message Delete Bulk](#message-delete-bulk)                                                 | Multiple messages were deleted at once                                                         |
+| [Message Ack](#message-ack)                                                                 | Channel read state was updated                                                                 |
 | [Message Poll Vote Add](#message-poll-vote-add)                                             | User voted on a poll                                                                           |
 | [Message Poll Vote Remove](#message-poll-vote-remove)                                       | User removed a vote on a poll                                                                  |
 | [Message Reaction Add](#message-reaction-add)                                               | User reacted to a message                                                                      |
@@ -1038,6 +1042,8 @@ These events directly correspond with a specific action or state change that has
 | [Lobby Message Delete](#lobby-message-delete)                                               | Message was deleted in a lobby                                                                 |
 | [Lobby Voice State Update](#lobby-voice-state-update)                                       | User joined, left, or moved lobbies                                                            |
 | [Lobby Voice Server Update](#lobby-voice-server-update)                                     | Lobby voice connection server was updated                                                      |
+| [Passive Update V1](#passive-update-v1)                                                     | Guild channel unreads and voice state were updated                                             |
+| [Passive Update V2](#passive-update-v2)                                                     | Guild channel unreads and voice state were updated                                             |
 | [Saved Message Create](#saved-message-create)                                               | Message was bookmarked                                                                         |
 | [Saved Message Delete](#saved-message-delete)                                               | Bookmarked message was deleted                                                                 |
 | [Sessions Replace](#sessions-replace)                                                       | User session list was updated                                                                  |
@@ -1059,6 +1065,7 @@ These events directly correspond with a specific action or state change that has
 | [User Connections Update](#user-connections-update)                                         | User connection was created, updated, or deleted                                               |
 | [User Guild Settings Update](#user-guild-settings-update)                                   | User guild settings were updated                                                               |
 | [User Merge Operation Completed](#user-merge-operation-completed)                           | User has been merged with a provisional account                                                |
+| [User Non Channel Ack](#user-non-channel-ack)                                               | User feature read state was updated                                                            |
 | [User Note Update](#user-note-update)                                                       | User note was updated                                                                          |
 | [User Payment Browser Checkout Done](#user-payment-browser-checkout-done)                   | User finished checking out a purchase in-browser                                               |
 | [User Payment Client Add](#user-payment-client-add)                                         | User had a payment client authorized                                                           |
@@ -1093,6 +1100,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | user_settings_proto ^1^                | string                                                                                                                     | The base64-encoded serialized [preloaded user settings](/resources/user-settings-proto#preloaded-user-settings-object) protobuf for the user, (if missing, defaults should be used)                                                                                    |
 | notification_settings ^1^              | [notification settings](/resources/user-settings#notification-settings-object) object                                      | The notification settings for the user                                                                                                                                                                                                                                 |
 | user_guild_settings ^1^ ^9^            | [versioned array](#versioned-structure)[[user guild settings](/resources/user-settings#user-guild-settings-object) object] | The user settings for each guild                                                                                                                                                                                                                                       |
+| read_state ^1^ ^10^                    | [versioned array](#versioned-structure)[[read state](/topics/read-state#read-state-object) object]                         | The user read states                                                                                                                                                                                                                                                   |
 | guilds ^2^ ^6^                         | array[[gateway guild](#gateway-guild-object) object]                                                                       | The guilds the user is in                                                                                                                                                                                                                                              |
 | guild_join_requests ^1^                | array[partial [guild join request](/resources/guild#guild-join-request-object)]                                            | Active guild join requests the user has                                                                                                                                                                                                                                |
 | relationships ^1^                      | array[[relationship](/resources/relationships#relationship-object)]                                                        | The relationships the user has with other users                                                                                                                                                                                                                        |
@@ -1107,7 +1115,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | users ^6^                              | array[partial [user](/resources/user#user-object) object]                                                                  | The deduped users across all objects in the event                                                                                                                                                                                                                      |
 | linked_users ^1^                       | array[[linked user](/resources/family-center#linked-user-object) object]                                                   | The linked users connected to the account via [Family Center](/resources/family-center)                                                                                                                                                                                |
 | application?                           | [gateway application](#gateway-application-structure) object                                                               | The application of the connected bot or OAuth2 application                                                                                                                                                                                                             |
-| scopes? ^10^                           | array[string]                                                                                                              | The [OAuth2 scopes](/topics/oauth2#oauth2-scopes) the user has authorized for the application                                                                                                                                                                          |
+| scopes? ^11^                           | array[string]                                                                                                              | The [OAuth2 scopes](/topics/oauth2#oauth2-scopes) the user has authorized for the application                                                                                                                                                                          |
 | session_id                             | string                                                                                                                     | Unique session ID, used for resuming connections                                                                                                                                                                                                                       |
 | session_type                           | string                                                                                                                     | The [type of session](#session-type) that was started                                                                                                                                                                                                                  |
 | sessions ^1^                           | array[[session](/resources/presence#session-object) object]                                                                | The sessions that are currently active for the user                                                                                                                                                                                                                    |
@@ -1129,10 +1137,10 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | apex_experiments? ^1^                  | [apex experiments](/topics/experiments#apex-experiments-object) object                                                     | Apex experiment assignments for the `APP` surface                                                                                                                                                                                                                      |
 | explicit_content_scan_version          | integer                                                                                                                    | The latest version of the explicit content scan filter feature                                                                                                                                                                                                         |
 | pending_payments?                      | ?array[[payment](/resources/payment#payment-object) object]                                                                | The pending payments                                                                                                                                                                                                                                                   |
-| av_sf_protocol_floor? ^10^             | integer                                                                                                                    | The minimum supported version of the DAVE protocol in eligible voice connection                                                                                                                                                                                        |
-| feature_flags? ^10^                    | [gateway feature flags](#gateway-feature-flags-structure) object                                                           | Social layer SDK feature flags                                                                                                                                                                                                                                         |
-| lobbies? ^10^ ^11^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
-| user_application_profiles? ^10^        | map[snowflake, array[[user application profile](#user-application-profile-structure) object]]                              | A mapping of user IDs to provisional user accounts application profiles encountered across all objects in the event                                                                                                                                                    |
+| av_sf_protocol_floor? ^11^             | integer                                                                                                                    | The minimum supported version of the DAVE protocol in eligible voice connection                                                                                                                                                                                        |
+| feature_flags? ^11^                    | [gateway feature flags](#gateway-feature-flags-structure) object                                                           | Social layer SDK feature flags                                                                                                                                                                                                                                         |
+| lobbies? ^11^ ^12^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
+| user_application_profiles? ^11^        | map[snowflake, array[[user application profile](#user-application-profile-structure) object]]                              | A mapping of user IDs to provisional user accounts application profiles encountered across all objects in the event                                                                                                                                                    |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -1152,9 +1160,11 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 
 ^9^ The field will be a [versioned array](#versioned-structure) if the `VERSIONED_USER_GUILD_SETTINGS` [Gateway capability](/topics/gateway#gateway-capabilities) is enabled. Otherwise, it will be a regular array.
 
-^10^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
+^10^ The field will be a [versioned array](#versioned-structure) if the `VERSIONED_READ_STATES` [Gateway capability](/topics/gateway#gateway-capabilities) is enabled. Otherwise, it will be a regular array.
 
-^11^ Requires the `AUTO_LOBBY_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities).
+^11^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
+
+^12^ Requires the `AUTO_LOBBY_CONNECT` [Gateway capability](/topics/gateway#gateway-capabilities).
 
 ###### Versioned Structure
 
@@ -1482,7 +1492,7 @@ Sent when a new guild channel is created, relevant to the current user. The inne
 #### Channel Update
 
 Sent when a channel is updated. The inner payload is a [channel](/resources/channel#channel-object) object. This is not sent when the field `last_message_id` or `status` is altered.
-To keep track of the `last_message_id` changes, you must listen for [Message Create](#message-create) events (or [Thread Create](#thread-create) events for thread-only channels).
+To keep track of the `last_message_id` changes, you must listen for [Message Create](#message-create) events (or [Thread Create](#thread-create) events for thread-only channels, [Guild Directory Entry Create](#guild-directory-entry-create) events for directory channels, etc.).
 To keep track of the `status` changes, you must listen for [Voice Channel Status Update](#voice-channel-status-update) events.
 
 This event may reference roles or guild members that no longer exist in a guild.
@@ -1548,6 +1558,33 @@ Sent in response to [Request Channel Member Count](#request-channel-member-count
 | member_count   | integer   | The number of members that can currently see the channel                     |
 | presence_count | integer   | The number of members that can currently see the channel and are not offline |
 
+#### Channel Unread Update
+
+Sent periodically to inform the client of the current unread state in guilds it's not subscribed to.
+
+<Alert type="info">
+
+This event is not sent when using the `PASSIVE_GUILD_UPDATE` or `PASSIVE_GUILD_UPDATE_V2` [Gateway capabilities](/topics/gateway#gateway-capabilities).
+
+An exception is made for directory channels, which will still dispatch this event even when using those capabilities.
+
+</Alert>
+
+###### Channel Unread Update Structure
+
+| Field                  | Type                                                      | Description                                 |
+| ---------------------- | --------------------------------------------------------- | ------------------------------------------- |
+| guild_id               | snowflake                                                 | The ID of the guild                         |
+| channel_unread_updates | array[[channel unread](#channel-unread-structure) object] | The unread states for channels in the guild |
+
+###### Channel Unread Structure
+
+| Field               | Type               | Description                                                                                                                                                                          |
+| ------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| id                  | snowflake          | The ID of the channel                                                                                                                                                                |
+| last_message_id     | ?snowflake         | The ID of the last message sent (or thread created for thread-only channels, directory entry created for directory channels) in this channel (may not point to an existing resource) |
+| last_pin_timestamp? | ?ISO8601 timestamp | When the last pinned message was pinned, if any                                                                                                                                      |
+
 #### Channel Pins Update
 
 Sent when a message is pinned or unpinned in a text channel. This is not sent when a pinned message is deleted.
@@ -1559,6 +1596,18 @@ Sent when a message is pinned or unpinned in a text channel. This is not sent wh
 | guild_id?           | snowflake          | The ID of the guild                            |
 | channel_id          | snowflake          | The ID of the channel                          |
 | last_pin_timestamp? | ?ISO8601 timestamp | When the most recent pinned message was pinned |
+
+#### Channel Pins Ack
+
+Sent when the user acknowledges the current pinned messages in a channel.
+
+###### Channel Pins Ack Structure
+
+| Field      | Type              | Description                                    |
+| ---------- | ----------------- | ---------------------------------------------- |
+| channel_id | snowflake         | The ID of the channel                          |
+| timestamp  | ISO8601 timestamp | When the most recent pinned message was pinned |
+| version    | integer           | The user read state version                    |
 
 #### Channel Recipient Add
 
@@ -1984,6 +2033,19 @@ Sent when a guild's stickers have been updated.
 | guild_id | snowflake                                                  | The ID of the guild       |
 | stickers | array[[sticker](/resources/sticker#sticker-object) object] | The stickers in the guild |
 
+#### Guild Feature Ack
+
+Sent when the user updates the read state for a guild feature, such as scheduled events or onboarding.
+
+###### Guild Feature Ack Structure
+
+| Field       | Type      | Description                                                          |
+| ----------- | --------- | -------------------------------------------------------------------- |
+| ack_type    | integer   | The [type of read state](/topics/read-state#read-state-type) updated |
+| resource_id | snowflake | The ID of the guild                                                  |
+| entity_id   | snowflake | The ID of the last acknowledged entity                               |
+| version     | integer   | The user read state version                                          |
+
 #### Guild Join Request Create
 
 Sent when a user creates a guild join request. Requires the `KICK_MEMBERS` permission for users other than the current user.
@@ -2257,7 +2319,7 @@ Sent when a guild soundboard sound is deleted.
 
 Sent in response to [Request Soundboard Sounds](#request-soundboard-sounds).
 
-###### Soundboard Sounds Event Fields
+###### Soundboard Sounds Event Structure
 
 | Field             | Type                                                                            | Description                    |
 | ----------------- | ------------------------------------------------------------------------------- | ------------------------------ |
@@ -2529,11 +2591,30 @@ Sent when multiple messages are deleted at once.
 | channel_id | snowflake        | The ID of the channel           |
 | guild_id?  | snowflake        | The ID of the guild             |
 
+#### Message Ack
+
+Sent when the channel read state is updated for the current user. This indicates that the user has read up to a specific message in a channel.
+
+###### Message Ack Structure
+
+| Field              | Type      | Description                                                                  |
+| ------------------ | --------- | ---------------------------------------------------------------------------- |
+| ack_type?          | integer   | The [read state type](/topics/read-state#read-state-type) being acknowledged |
+| channel_id         | snowflake | The ID of the channel                                                        |
+| message_id         | snowflake | The ID of the last acknowledged message                                      |
+| manual?            | boolean   | Whether the acknowleged message ID is manually set                           |
+| mention_count? ^1^ | integer   | The number of mentions the user has in the channel                           |
+| flags ^1^          | ?integer  | The [read state flags](/topics/read-state#read-state-flags) for the channel  |
+| last_viewed ^1^    | ?integer  | When the channel was last viewed (in days since the Discord epoch)           |
+| version            | integer   | The user read state version                                                  |
+
+^1^ If omitted or `null`, the current value is retained.
+
 #### Message Poll Vote Add
 
 Sent when a user votes on a poll. If the poll allows multiple selection, one event will be sent per answer.
 
-###### Message Poll Vote Add Fields
+###### Message Poll Vote Add Structure
 
 | Field      | Type      | Description       |
 | ---------- | --------- | ----------------- |
@@ -2547,7 +2628,7 @@ Sent when a user votes on a poll. If the poll allows multiple selection, one eve
 
 Sent when a user removes their vote on a poll. If the poll allows for multiple selections, one event will be sent per answer.
 
-###### Message Poll Vote Remove Fields
+###### Message Poll Vote Remove Structure
 
 | Field      | Type      | Description       |
 | ---------- | --------- | ----------------- |
@@ -3000,6 +3081,50 @@ A `null` endpoint means that the voice server allocated has gone away and is try
 }
 ```
 
+### Passive Update
+
+#### Passive Update V1
+
+Sent periodically to inform the client of the current unread state and active voice states in guilds it's not subscribed to.
+
+<Alert type="info">
+
+This event requires the `PASSIVE_GUILD_UPDATE` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+</Alert>
+
+###### Passive Update V1 Structure
+
+| Field             | Type                                                               | Description                                                |
+| ----------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| guild_id          | snowflake                                                          | The ID of the guild                                        |
+| channels          | array[[channel unread](#channel-unread-structure) object]          | The unread states for channels in the guild                |
+| voice_states? ^1^ | array[[voice state](/resources/voice#voice-state-object) object]   | The voice states of the users in the guild                 |
+| members?          | array[[guild member](/resources/guild#guild-member-object) object] | The members corresponding to the voice states in the guild |
+
+^1^ If empty or omitted, there are no voice states in the guild.
+
+#### Passive Update V2
+
+Sent periodically to inform the client of the current unread state and active voice states in guilds it's not subscribed to.
+Functionally the same as [Passive Update V1](#passive-update-v1), but uses a more efficient format.
+
+<Alert type="info">
+
+This event requires the `PASSIVE_GUILD_UPDATE_V2` [Gateway capability](/topics/gateway#gateway-capabilities).
+
+</Alert>
+
+###### Passive Update V2 Structure
+
+| Field                | Type                                                               | Description                                                         |
+| -------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| guild_id             | snowflake                                                          | The ID of the guild                                                 |
+| updated_channels     | array[[channel unread](#channel-unread-structure) object]          | The modified unread states for channels in the guild                |
+| updated_voice_states | array[[voice state](/resources/voice#voice-state-object) object]   | The modified voice states of the users in the guild                 |
+| removed_voice_states | array[snowflake]                                                   | The IDs of the users who no longer have voice states in the guild   |
+| updated_members      | array[[guild member](/resources/guild#guild-member-object) object] | The members corresponding to the modified voice states in the guild |
+
 ### Saved Messages
 
 #### Saved Message Create
@@ -3254,6 +3379,19 @@ Sent when the current user has their account merged with a provisional account. 
 | ------------------ | --------- | ------------------------------------------ |
 | merge_operation_id | snowflake | The ID of the merge operation              |
 | source_user_id     | snowflake | The ID of the account that was merged with |
+
+#### User Non Channel Ack
+
+Sent when the user updates the read state for a non-channel feature, such as notification center.
+
+###### User Non Channel Ack Structure
+
+| Field       | Type      | Description                                                          |
+| ----------- | --------- | -------------------------------------------------------------------- |
+| ack_type    | integer   | The [type of read state](/topics/read-state#read-state-type) updated |
+| resource_id | snowflake | The ID of the user                                                   |
+| entity_id   | snowflake | The ID of the last acknowledged entity                               |
+| version     | integer   | The user read state version                                          |
 
 #### User Note Update
 
