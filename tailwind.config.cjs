@@ -16,44 +16,40 @@ module.exports = {
       },
       colors: {
         "brand-blurple": "#5865F2",
-        "brand-link": "#00AFF4",
+        "brand-link-dark": "#79adf1",
+        "brand-link-light": "#0073e1",
 
         "text-light": "#2e3338",
         "text-dark": "#dcddde",
-        "background-dark": "#36393f",
+        "background-dark": "#36373e",
 
         "icons-light": "#343331",
         "icons-dark": "#dedddc",
 
-        "sidebar-selected-primary-light": "#060607",
-        "sidebar-selected-tertiary-light": "#D4D7DC",
-        "sidebar-icon-primary-light": "#747f8d",
+        "sidebar-secondary-dark": "#323339",
         "sidebar-tertiary-light": "#f2f3f5",
-        "sidebar-tertiary-dark": "#2e3136",
+        "sidebar-tertiary-dark": "#36373e",
 
-        "table-head-background-dark": "#202225",
-        "table-row-background-secondary-dark": "#18191c",
+        "table-head-background-dark": "#27272a",
+        "table-row-background-secondary-dark": "#232428",
 
         "theme-light-sidebar": "#f2f3f5",
         "theme-light-sidebar-text": "#6a7480",
         "theme-light-sidebar-hover": "#D4D7DC",
         "theme-light-sidebar-hover-text": "#060607",
 
-        "theme-dark-sidebar": "#2e3136",
+        "theme-dark-sidebar": "#36373e",
         "theme-dark-sidebar-text": "#b9bbbe",
         "theme-dark-sidebar-hover": "#393C43",
-        "trueGray": colors.neutral,
+        "trueGray": colors.zinc,
 
         "theme-light-collapsible": "#e6e7e8",
         "theme-dark-collapsible": "#27292d",
 
         "green": colors.emerald,
         "yellow": colors.amber,
-        "purple": colors.violet,
       },
 
-      // TODO: Change these out for whatever legitimate font family names discord uses,
-      // just here to visualise what itd look like with them rn
       fontFamily: {
         "whitney": ["Whitney Medium", "sans-serif"],
         "whitney-bold": ["Whitney Semibold Regular", "sans-serif"],

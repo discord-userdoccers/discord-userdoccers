@@ -15,7 +15,7 @@ function DocLink({ href, ...props }: DocLinkProps) {
 }
 
 export default function Anchor({ href, className, ...props }: React.JSX.IntrinsicElements["a"]) {
-  const classes = classNames("text-brand-link hover:underline", className);
+  const classes = classNames("text-brand-link-light dark:text-brand-link-dark hover:underline", className);
 
   if (href?.startsWith("/")) {
     // @ts-expect-error This works but TypeScript hates it. Can't be bothered finding out why it errors
