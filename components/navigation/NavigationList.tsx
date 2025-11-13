@@ -1,6 +1,6 @@
 import { RobotIcon } from "../mdx/icons/RobotIcon";
 import data from "./data.json" with { type: "json" };
-import { NavigationLink, NavigationSection, NavigationSubLink, SearchItem } from "./NavigationItems";
+import { NavigationLink, NavigationSection, SearchItem } from "./NavigationItems";
 
 export const SITEMAP: NavigationData[] = data as unknown as NavigationData[];
 
@@ -36,20 +36,7 @@ export default function NavigationList() {
         <NavigationSection title={section.name ?? undefined} key={section.section}>
           {section.name === null ? SearchItem : null}
           {Object.values(section.pages).map((page) => (
-            <NavigationLink
-              href={page.link}
-              icon={page.icon}
-              subLinks={
-                page.subLinks.length === 0
-                  ? null
-                  : page.subLinks.map((subLink) => (
-                      <NavigationSubLink href={subLink.link} key={subLink.link}>
-                        {subLink.name}
-                      </NavigationSubLink>
-                    ))
-              }
-              key={page.link}
-            >
+            <NavigationLink href={page.link} icon={page.icon} key={page.link}>
               {page.name}
             </NavigationLink>
           ))}

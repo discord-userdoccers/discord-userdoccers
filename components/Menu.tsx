@@ -13,12 +13,12 @@ export default function Menu() {
 
   const classes = classNames(
     [
-      "text-theme-light-text absolute -left-full pr-16 md:pr-0 top-0 w-full h-full flex z-40 transition-duration-300 transform-gpu",
-      "md:flex md:shrink-0 md:left-auto md:relative md:w-auto md:transform-none md:transition-none",
+      // Mobile overlay only; hidden on sm and up
+      "text-theme-light-text fixed -left-full pr-16 sm:pr-0 top-0 w-full h-[100dvh] flex z-40 transition-duration-300 transform-gpu sm:hidden",
     ],
     {
       "translate-x-full ": open,
-      "translate-x-none md:flex": !open,
+      "translate-x-none": !open,
     },
   );
 
@@ -36,15 +36,32 @@ export default function Menu() {
   useOnClickOutside(ref as React.RefObject<HTMLDivElement>, setClose);
 
   return (
-    <div className={classes}>
-      <div className="flex w-full flex-col bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark md:w-80" ref={ref}>
-        <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
-          <div className="flex flex-1 flex-col items-start">
-            <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black dark:text-white md:hidden" />
-            <Navigation />
+    <>
+      {/* Mobile overlay */}
+      <div className={classes}>
+        <div className="flex w-full flex-col bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark" ref={ref}>
+          <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
+            <div className="flex flex-1 flex-col items-start">
+              <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black dark:text-white md:hidden" />
+              <Navigation />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Desktop fixed sidebar */}
+      <aside
+        className="desktop-left-nav fixed top-0 z-20 hidden h-[100dvh] w-80 text-sm text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text sm:block"
+        aria-hidden={false}
+      >
+        <div className="flex h-full w-80 flex-col bg-sidebar-tertiary-light dark:bg-sidebar-tertiary-dark">
+          <div className="flex flex-grow flex-col overflow-y-auto pb-4 pt-5">
+            <div className="flex flex-1 flex-col items-start">
+              <Navigation />
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

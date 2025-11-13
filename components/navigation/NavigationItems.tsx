@@ -1,10 +1,7 @@
 import classNames from "@lib/classnames";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { createElement, Fragment, useEffect, useState } from "react";
-import useToggle from "../../hooks/useToggle";
-import Caret from "../icons/Caret";
-import CaretFill from "../icons/CaretFill";
+import React, { createElement, Fragment } from "react";
 import Searchbar from "../Searchbar";
 import { ICONS } from "./NavigationList";
 
@@ -29,95 +26,36 @@ export function NavigationSection({ title, className, children }: MenuSelectionP
 
 interface NavigationLinkProps {
   href: string;
-  subLinks?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
   icon: keyof typeof ICONS | null;
 }
 
-export function NavigationLink({ href, subLinks, className, children, icon }: NavigationLinkProps) {
+export function NavigationLink({ href, className, children, icon }: NavigationLinkProps) {
   const router = useRouter();
-  const { value: isOpen, toggle } = useToggle(router.pathname === href);
 
-  // TODO: We currently have a bunch of listeners being added here - can this be improved?
-  useEffect(() => {
-    const handler = (url: string) => {
-      if (url.endsWith(href) && !isOpen) {
-        toggle();
-      }
-    };
-
-    router.events.on("routeChangeComplete", handler);
-    return () => router.events.off("routeChangeComplete", handler);
-  });
-
-  const classes = classNames("flex items-center font-whitney rounded-md", className, {
+  const classes = classNames("flex items-center font-whitney rounded-md pl-3 gap-1", className, {
     "bg-brand-blurple text-white": router.pathname === href,
     "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
       router.pathname !== href,
   });
 
-  const caretClasses = classNames("w-4 h-4", {
-    "rotate-90": isOpen,
-  });
-
-  const linkClasses = classNames("group flex items-center px-2 py-1 w-full font-medium", {
-    "ml-6": subLinks == null,
-  });
+  const linkClasses = classNames("group flex items-center pr-2 pl-0 py-1 w-full font-medium");
 
   return (
     <Fragment>
       <span className={classes}>
-        {subLinks != null && (
-          <button onClick={toggle} className="pl-2">
-            <CaretFill className={caretClasses} />
-          </button>
-        )}
-        {icon != null &&
-          createElement(ICONS[icon], {
-            className: "ml-2 -mr-6 size-5",
-          })}
+        {icon != null && createElement(ICONS[icon], { className: "size-5 shrink-0" })}
         <Link href={href} className={linkClasses}>
           {children}
         </Link>
       </span>
-      {isOpen && subLinks != null ? subLinks : null}
     </Fragment>
   );
 }
 
-interface NavigationSubLinkProps {
-  href: string;
-  children: React.ReactNode;
-}
-
-export function NavigationSubLink({ href, children }: NavigationSubLinkProps) {
-  const router = useRouter();
-
-  const [currentPath, setPath] = useState("");
-
-  const classes = classNames("group flex items-center ml-6 px-2 py-1 w-full text-sm font-medium rounded-md", {
-    "text-dark dark:text-white": currentPath === href,
-    "text-theme-light-sidebar-text hover:text-theme-light-sidebar-hover-text dark:hover:text-white":
-      currentPath !== href,
-  });
-
-  useEffect(() => {
-    setPath(router.asPath);
-  }, [router.asPath]);
-
-  return (
-    <span className="relative ml-4 flex items-center">
-      <Link href={href} className={classes}>
-        {currentPath === href ? <Caret className="absolute -ml-4 h-2 w-2" /> : null}
-        {children}
-      </Link>
-    </span>
-  );
-}
-
 export const SearchItem = (
-  <div id="searchContainer" className="flex w-full flex-1">
+  <div id="searchContainer" className="w-full flex-1 sm:flex">
     <Searchbar />
   </div>
 );
