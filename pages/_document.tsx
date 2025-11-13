@@ -13,7 +13,7 @@ export default function Document() {
 
         <link rel="preconnect" href={ALGOLIA_HOST} crossOrigin="anonymous" />
       </Head>
-      <body>
+      <body className="bg-white dark:bg-background-dark">
         <Main />
         <NextScript />
       </body>
