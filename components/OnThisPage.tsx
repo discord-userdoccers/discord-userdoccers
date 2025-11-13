@@ -59,7 +59,12 @@ export default function OnThisPage() {
     if (initialHash) setActiveId(initialHash);
     onScroll();
 
-    const add = (el: EventTarget | null, name: string, handler: EventListenerOrEventListenerObject, opts?: AddEventListenerOptions) => {
+    const add = (
+      el: EventTarget | null,
+      name: string,
+      handler: EventListenerOrEventListenerObject,
+      opts?: AddEventListenerOptions,
+    ) => {
       if (el && el.addEventListener) el.addEventListener(name, handler, opts);
     };
     const remove = (el: EventTarget | null, name: string, handler: EventListenerOrEventListenerObject) => {
