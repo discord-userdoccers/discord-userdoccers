@@ -2,7 +2,7 @@ import classNames from "@lib/classnames";
 import { Highlight, type Language as TLanguage } from "prism-react-renderer";
 import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
 import CopyButton from "../Copy";
-import CopyIcon from "../icons/Copy";
+import { CopyIcon } from "./icons/CopyIcon";
 
 // import FileIcon from "../icons/File";
 

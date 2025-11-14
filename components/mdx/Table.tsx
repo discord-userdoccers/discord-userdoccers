@@ -1,6 +1,6 @@
 import Chevron from "@components/icons/Chevron";
-import CopyIcon from "@components/icons/Copy";
-import TickIcon from "@components/icons/Tick";
+import { CopyIcon } from "@components/mdx/icons/CopyIcon";
+import { CheckmarkLargeIcon as TickIcon } from "@components/mdx/icons/CheckmarkLargeIcon";
 import { Language, LANGUAGE_CONFIG } from "@lib/type-generator/languageConfig";
 import { useCodegenLanguage, useToast } from "@lib/type-generator/store";
 import React, { RefObject, useEffect, useRef, useState } from "react";
