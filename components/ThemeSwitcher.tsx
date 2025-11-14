@@ -2,11 +2,11 @@ import { Menu, Transition } from "@headlessui/react";
 import classNames from "@lib/classnames";
 import { useTheme } from "next-themes";
 import { Fragment, useCallback } from "react";
-import Check from "./icons/Check";
-import Gear from "./icons/Gear";
-import Lightbulb from "./icons/Lightbulb";
-import Moon from "./icons/Moon";
-import Sun from "./icons/Sun";
+import { CheckmarkLargeBoldIcon as Check } from "./mdx/icons/CheckmarkLargeBoldIcon";
+import { GearIcon as Gear } from "./mdx/icons/GearIcon";
+import { LightbulbIcon as Lightbulb } from "./mdx/icons/LightbulbIcon";
+import { ThemeDarkIcon as Moon } from "./mdx/icons/ThemeDarkIcon";
+import { ThemeLightIcon as Sun } from "./mdx/icons/ThemeLightIcon";
 
 export default function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
@@ -39,7 +39,7 @@ export default function ThemeSwitcher() {
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 z-40 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-sidebar-tertiary-light shadow-lg ring-1 ring-brand-blurple ring-opacity-5 focus:outline-none dark:divide-gray-900 dark:bg-sidebar-secondary-dark">
+        <Menu.Items className="absolute right-0 z-40 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-sidebar-tertiary-light shadow-lg ring-1 ring-brand-blurple ring-opacity-5 focus:outline-none dark:divide-gray-900 dark:bg-theme-dark-collapsible">
           <div className="px-1 py-1">
             <Menu.Item>
               {({ active }) => (

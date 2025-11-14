@@ -45,9 +45,6 @@ module.exports = {
 
         "theme-light-collapsible": "#e6e7e8",
         "theme-dark-collapsible": "#27292d",
-
-        "green": colors.emerald,
-        "yellow": colors.amber,
       },
 
       fontFamily: {
