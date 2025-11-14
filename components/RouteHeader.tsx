@@ -66,7 +66,7 @@ export default function RouteHeader({
         </a>
         <span className="ml-2 flex items-center gap-2">
           {supportsBot ? (
-            <IconBadge href="/resources/application" tooltip="This endpoint can be used by bots" icon={RobotIcon} />
+            <IconBadge href="/resources/application" tooltip="Supports bot users" icon={RobotIcon} />
           ) : null}
           {supportsOAuth2 ? (
             <IconBadge
@@ -78,30 +78,22 @@ export default function RouteHeader({
             />
           ) : null}
           {unauthenticated ? (
-            <IconBadge
-              href="/reference#unauthenticated-request"
-              tooltip="Does not require authentication"
-              icon={LockUnlockedIcon}
-            />
+            <IconBadge href="/reference#authentication" tooltip="Unauthenticated" icon={LockUnlockedIcon} />
           ) : null}
           {mfa ? (
-            <IconBadge
-              href="/resources/user#user-object"
-              tooltip="Requires a user with MFA enabled to provide a valid MFA code in the body for certain operations"
-              icon={KeyIcon}
-            />
+            <IconBadge href="/authentication#mfa-verification" tooltip="MFA may be required" icon={KeyIcon} />
           ) : null}
           {supportsAuditReason ? (
             <IconBadge
               href="/resources/audit-log#x-audit-log-reason"
-              tooltip="Supports the X-Audit-Log-Reason header"
+              tooltip="Supports audit log reason"
               icon={TopicsIcon}
             />
           ) : null}
           {deprecated ? (
             <IconBadge
               href="/reference#deprecated-endpoint"
-              tooltip="This endpoint is still active but should be avoided as it is considered deprecated"
+              tooltip="Endpoint is still active but should be avoided"
               icon={WarningIcon}
             />
           ) : null}
