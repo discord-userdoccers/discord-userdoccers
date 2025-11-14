@@ -2,8 +2,9 @@ import { DocSearch } from "@docsearch/react";
 
 const config = {
   appId: process.env.NEXT_PUBLIC_ALGOLIA_APP_ID ?? "JAJUDFJBI4",
-  apiKey: process.env.NEXT_PUBLIC_ALGOLIA_API_KEY ?? "13092021a31a84e0e8676c10affb9a16",
+  apiKey: process.env.NEXT_PUBLIC_ALGOLIA_API_KEY ?? "bcee8efed01610170148dca8c067e80c",
   index: process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME ?? "discord-usercers",
+  askAi: process.env.NEXT_PUBLIC_ALGOLIA_AI_ASSISTANT ?? 'wJV42XivQUJI',
 };
 
 export default function Searchbar() {
@@ -11,7 +12,8 @@ export default function Searchbar() {
     <DocSearch
       appId={config.appId}
       apiKey={config.apiKey}
-      indexName={config.index}
+      indices={[config.index]}
+      askAi={config.askAi}
       placeholder="Search documentation"
       transformItems={(items) =>
         items.map((hit) => {
