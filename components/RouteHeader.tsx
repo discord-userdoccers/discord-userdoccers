@@ -1,7 +1,7 @@
 import classNames from "@lib/classnames";
 import { Fragment } from "react";
 import IconBadge from "./IconBadge";
-import { H3, getNormalisedText } from "./mdx/Heading";
+import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
 import { RobotIcon } from "./mdx/icons/RobotIcon";
 import { WrenchIcon } from "./mdx/icons/WrenchIcon";

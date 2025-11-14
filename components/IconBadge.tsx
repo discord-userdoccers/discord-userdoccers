@@ -1,11 +1,10 @@
 import Link from "next/link";
-import classNames from "@lib/classnames";
-import type { ComponentType } from "react";
+import type { FC } from "react";
 
 interface IconBadgeProps {
   href: string;
   tooltip: string;
-  icon: ComponentType<any>;
+  icon: FC<React.JSX.IntrinsicElements["svg"]>;
 }
 
 export default function IconBadge(props: IconBadgeProps) {
