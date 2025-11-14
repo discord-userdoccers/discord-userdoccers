@@ -65,6 +65,25 @@ export default function RouteHeader({
           {children}
         </a>
         <span className="ml-2 flex items-center gap-2">
+          {supportsBot ? (
+            <IconBadge href="/resources/application" tooltip="This endpoint can be used by bots" icon={RobotIcon} />
+          ) : null}
+          {supportsOAuth2 ? (
+            <IconBadge
+              href="/topics/oauth2"
+              tooltip={`Supports OAuth2 for authentication${
+                supportsOAuth2 !== true ? ` with the "${supportsOAuth2}" scope` : ""
+              }`}
+              icon={WrenchIcon}
+            />
+          ) : null}
+          {unauthenticated ? (
+            <IconBadge
+              href="/reference#unauthenticated-request"
+              tooltip="Does not require authentication"
+              icon={LockUnlockedIcon}
+            />
+          ) : null}
           {mfa ? (
             <IconBadge
               href="/resources/user#user-object"
@@ -78,25 +97,6 @@ export default function RouteHeader({
               tooltip="Supports the X-Audit-Log-Reason header"
               icon={TopicsIcon}
             />
-          ) : null}
-          {unauthenticated ? (
-            <IconBadge
-              href="/reference#unauthenticated-request"
-              tooltip="Does not require authentication"
-              icon={LockUnlockedIcon}
-            />
-          ) : null}
-          {supportsOAuth2 ? (
-            <IconBadge
-              href="/topics/oauth2"
-              tooltip={`Supports OAuth2 for authentication${
-                supportsOAuth2 !== true ? ` with the "${supportsOAuth2}" scope` : ""
-              }`}
-              icon={WrenchIcon}
-            />
-          ) : null}
-          {supportsBot ? (
-            <IconBadge href="/resources/application" tooltip="This endpoint can be used by bots" icon={RobotIcon} />
           ) : null}
           {deprecated ? (
             <IconBadge
