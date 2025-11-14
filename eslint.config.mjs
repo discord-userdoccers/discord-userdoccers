@@ -1,10 +1,15 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextOnPages from "eslint-plugin-next-on-pages";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import nextPlugin from "@next/eslint-plugin-next";
+import nextOnPages from "eslint-plugin-next-on-pages";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
+import reactPlugin from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
+
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
@@ -14,17 +19,29 @@ const compat = new FlatCompat({
 });
 
 export default defineConfig([
-  globalIgnores(["dist/*", ".next/*", "**/*.js", "**/next-env.d.ts"]),
+  globalIgnores([
+    "dist/*",
+    ".next/*",
+    "**/*.js",
+    "**/next-env.d.ts",
+    "ci/*",
+    "*.config.cjs",
+    "*.config.mjs",
+    "*.config.ts",
+  ]),
   {
     extends: compat.extends(
-      "next",
-      "next/core-web-vitals",
       "plugin:@typescript-eslint/recommended",
       "plugin:eslint-plugin-next-on-pages/recommended",
+      "plugin:react-hooks/recommended",
     ),
 
     plugins: {
+      "@next/next": nextPlugin,
       "next-on-pages": nextOnPages,
+      "@typescript-eslint": tsPlugin,
+      "react": reactPlugin,
+      "react-hooks": reactHooksPlugin,
     },
 
     languageOptions: {
@@ -32,7 +49,7 @@ export default defineConfig([
       sourceType: "script",
 
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        project: path.resolve(__dirname, "tsconfig.eslint.json"),
       },
     },
 
