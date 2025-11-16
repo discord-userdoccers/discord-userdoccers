@@ -21,7 +21,6 @@ export interface Page {
 
 export const ICONS = {
   Robot: RobotIcon,
-  Shield: ShieldIcon,
 };
 
 export interface SubLink {
