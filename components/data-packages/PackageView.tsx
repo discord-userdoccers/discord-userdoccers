@@ -18,7 +18,6 @@ export interface Setters {
 }
 
 // TODO(arhsm): display stats instead of json
-// TODO(arhsm): add download & submit buttons
 export default function PackageView() {
   const [state, setState] = useState<State>(State.Upload);
   const [output, setOutput] = useState<Output | null>(null);
@@ -105,12 +104,28 @@ export default function PackageView() {
       </div>
       {state == State.Processed && (
         <div className="mt-4 flex gap-4">
-          <button className="rounded-md bg-brand-blurple px-4 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75">
-            Download
-          </button>
+          <button
+            className="rounded-md bg-brand-blurple px-4 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75"
+            onClick={() => {
+              const json = JSON.stringify(output?.data, (_, v) => {
+                if (v instanceof Set) return Array.from(v);
 
-          <button className="rounded-md bg-brand-blurple px-4 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-opacity-75">
-            Submit
+                return v;
+              });
+
+              const blob = new Blob([json], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+
+              const link = document.createElement("a");
+
+              link.href = url;
+              link.download = "data-package.json";
+              link.click();
+
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Download
           </button>
         </div>
       )}
