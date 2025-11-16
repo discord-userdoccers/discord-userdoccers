@@ -7,7 +7,6 @@ export type Event<N extends string, T> = {
 } & T;
 
 // TODO(arhsm): flag events
-// TODO(arhsm): domain prop
 export type Events =
   | Event<"user_flag_updated", { old_flags: string; new_flags: string }>
   | Event<"user_safety_flag_added", { smite_label: string; flag_type: number }>

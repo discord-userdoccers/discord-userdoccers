@@ -4,6 +4,7 @@ export interface V1 {
   applications: Application[];
   event_types: Set<string>;
   freight_hostnames: Set<string>;
+  domains: Set<string>;
   user_flows: Set<string>;
   email_types: Set<string>;
   experiments: Experiments;

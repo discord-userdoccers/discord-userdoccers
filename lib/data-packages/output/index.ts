@@ -15,6 +15,7 @@ export type Command =
   | Cmd<"application", Output["data"]["applications"][number]>
   | Cmd<"event_type", string>
   | Cmd<"freight_hostname", string>
+  | Cmd<"domain", string>
   | Cmd<"user_flow", string>
   | Cmd<"email_type", string>
   | Cmd<"experiment", { type: ExperimentType; common: ExperimentCommon }>
@@ -105,6 +106,8 @@ export class EventLoop {
 
         break;
       case "freight_hostname": {
+        // I CAN EXPLAIN MYSELF
+        // https://canary.discord.com/channels/1029315212005888060/1034238059899789373/1434303882791485481
         const last = command.data.lastIndexOf("-");
         const slice = command.data.slice(
           0,
@@ -113,6 +116,11 @@ export class EventLoop {
         );
 
         this.#output.freight_hostnames.add(slice);
+
+        break;
+      }
+      case "domain": {
+        this.#output.domains.add(command.data);
 
         break;
       }
