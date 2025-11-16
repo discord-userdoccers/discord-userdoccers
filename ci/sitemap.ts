@@ -25,6 +25,19 @@ const SPECIAL_PAGES: Record<string, { content: string; data: any }> = {
       "icon": "Robot",
     },
   },
+  "datamining/packages": {
+    content: "",
+    data: {
+      "name": "Data Packages",
+      "sort": 1,
+      "sort-name": "data-packages",
+      "show-sublinks": false,
+      // TODO: fetch it here and create sublinks
+      "sublinks": [],
+      "max-sublink-level": 3,
+      "icon": "Shield",
+    },
+  },
 };
 
 async function walk(path: string, filter: (file: string) => boolean): Promise<string[]> {
