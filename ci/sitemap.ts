@@ -24,7 +24,7 @@ const SPECIAL_PAGES: Record<string, { content: string; data: any }> = {
       "max-sublink-level": 3,
       "icon": "Robot",
     },
-  }
+  },
 };
 
 async function walk(path: string, filter: (file: string) => boolean): Promise<string[]> {

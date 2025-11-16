@@ -1,4 +1,3 @@
-import { ShieldIcon } from "@components/mdx/icons/ShieldIcon";
 import { RobotIcon } from "../mdx/icons/RobotIcon";
 import data from "./data.json" with { type: "json" };
 import { NavigationLink, NavigationSection, SearchItem } from "./NavigationItems";
