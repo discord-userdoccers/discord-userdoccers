@@ -26,6 +26,7 @@ export async function readLines(file: File, callback: (line: string) => void) {
       if (buffer) {
         callback(buffer);
       }
+
       break;
     }
   }

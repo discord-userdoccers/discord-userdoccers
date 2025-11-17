@@ -11,4 +11,7 @@ export async function handle(file: File) {
     id: application.id,
     flags: application.flags,
   });
+
+  postCommand("__file_advance", file.size);
+  postCommand("__file_end", void 0);
 }

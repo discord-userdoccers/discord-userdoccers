@@ -13,6 +13,9 @@ export async function handle(file: File) {
     flags: user.flags,
     payment_sources: user.payment_sources.map((source) => ({ id: source.id, flags: source.flags })),
     safety_flags: new Set(),
-    historical_flags: new Set(),
+    historical_flags: [],
   });
+
+  postCommand("__file_advance", file.size);
+  postCommand("__file_end", void 0);
 }
