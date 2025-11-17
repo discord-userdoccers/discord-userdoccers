@@ -17,7 +17,7 @@ export interface Setters {
   progress: Setter<number>;
 }
 
-// TODO(arhsm): display stats instead of json
+// TODO(arhsm): display output
 export default function PackageView() {
   const [state, setState] = useState<State>(State.Upload);
   const [output, setOutput] = useState<Output | null>(null);
@@ -44,62 +44,6 @@ export default function PackageView() {
               style={{ width: `${(progress / target) * 100}%` }}
             ></div>
           </div>
-        )}
-        {state == State.Processed && (
-          <pre className="min-h-full w-full p-3 text-sm text-black/50 dark:text-white/50">
-            {Object.entries({
-              "time                ": `${Math.ceil(output!.span / 1000)}s`,
-              "version             ": output!.data.version,
-              "user                ": {
-                "__value": output!.data.user.id,
-                "flags             ": output!.data.user.flags.length,
-                "payment sources   ": output!.data.user.payment_sources.length,
-              },
-              "applications        ": output!.data.applications.length,
-              "event types         ": output!.data.event_types.size,
-              "freight hostnames   ": output!.data.freight_hostnames.size,
-              "user flows          ": output!.data.user_flows.size,
-              "email types         ": output!.data.email_types.size,
-              "experiments         ": {
-                "user              ": Object.keys(output!.data.experiments.user).length,
-                "guild             ": Object.keys(output!.data.experiments.guild).length,
-              },
-            }).map(([k, v]) => (
-              <>
-                <code>{k}</code>
-                {typeof v === "object" ? (
-                  <>
-                    {v.__value && (
-                      <code>
-                        <b>{v.__value}</b>
-                      </code>
-                    )}
-                    {Object.entries(v).map(
-                      ([k, v]) =>
-                        k !== "__value" && (
-                          <>
-                            {"\n"}
-                            <code>
-                              {"  "}
-                              {k}
-                            </code>
-                            <code>
-                              <b>{v}</b>
-                            </code>
-                          </>
-                        ),
-                    )}
-                  </>
-                ) : (
-                  <code>
-                    <b>{v}</b>
-                  </code>
-                )}
-                {"\n"}
-                {k.trim() == "time" && "\n"}
-              </>
-            ))}
-          </pre>
         )}
       </div>
       {state == State.Processed && (
