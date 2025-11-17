@@ -1,40 +1,31 @@
 import type { Command } from "./output";
 
-// TODO(arhsm): make this less stupid
 export async function readLines(file: File, callback: (line: string) => void) {
   const reader = file.stream().getReader();
   const decoder = new TextDecoder();
-
   let buffer = "";
 
   while (true) {
     const { value, done } = await reader.read();
 
-    if (value != null) {
+    if (value) {
       postCommand("__file_advance", value.length);
     }
 
-    buffer += decoder.decode(value, { stream: true });
+    buffer += decoder.decode(value, { stream: !done });
 
-    while (buffer.length) {
-      const idx = buffer.indexOf("\n");
+    const lines = buffer.split("\n");
 
-      if (idx !== -1) {
-        const line = buffer.slice(0, idx);
+    buffer = lines.pop() || "";
 
-        buffer = buffer.slice(idx + 1);
-
-        callback(line);
-      } else if (done) {
-        callback(buffer);
-
-        buffer = "";
-      } else {
-        break;
-      }
+    for (const line of lines) {
+      callback(line);
     }
 
     if (done) {
+      if (buffer) {
+        callback(buffer);
+      }
       break;
     }
   }
