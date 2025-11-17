@@ -8,9 +8,11 @@ export async function handle(file: File) {
     payment_sources: { id: string; flags: string[] }[];
   };
 
-    postCommand("user", {
+  postCommand("user", {
     id: user.id,
     flags: user.flags,
     payment_sources: user.payment_sources.map((source) => ({ id: source.id, flags: source.flags })),
+    safety_flags: new Set(),
+    historical_flags: new Set(),
   });
 }

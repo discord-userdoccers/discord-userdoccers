@@ -14,6 +14,13 @@ export interface User {
   id: string;
   flags: string[];
   payment_sources: PaymentSource[];
+  safety_flags: Set<SafetyFlags>;
+  historical_flags: Set<number>;
+}
+
+interface SafetyFlags {
+  type: number;
+  label: string;
 }
 
 export interface PaymentSource {
@@ -26,7 +33,6 @@ export interface Application {
   flags: string[];
 }
 
-// TODO(arhsm): sorting
 export interface Experiments {
   user: Record<string, Set<Experiment>>;
   guild: Record<string, Set<Experiment>>;
@@ -38,6 +44,6 @@ export interface Experiment {
   hash_result: string;
   population?: string;
   excluded?: boolean;
-  // TODO(arhsm): handle this
-  // timestamp: string;
+  // unix timestamp in seconds
+  timestamp: number;
 }

@@ -6,7 +6,6 @@ export type Event<N extends string, T> = {
   user_flow?: string;
 } & T;
 
-// TODO(arhsm): flag events
 export type Events =
   | Event<"user_flag_updated", { old_flags: string; new_flags: string }>
   | Event<"user_safety_flag_added", { smite_label: string; flag_type: number }>
@@ -66,6 +65,14 @@ function dispatchEvent(event: Events) {
   }
 
   switch (event.event_type) {
+    case "user_flag_updated":
+      postCommand("user_flag", { old: event.old_flags, new: event.new_flags });
+
+      break;
+    case "user_safety_flag_added":
+      postCommand("user_safety_flag", { type: event.flag_type, label: event.smite_label });
+
+      break;
     case "email_sent":
       postCommand("email_type", event.email_type);
 

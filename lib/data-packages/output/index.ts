@@ -12,6 +12,8 @@ export type ExperimentType = "user" | "guild";
 
 export type Command =
   | Cmd<"user", Output["data"]["user"]>
+  | Cmd<"user_safety_flag", Output["data"]["user"]["safety_flags"] extends Set<infer T> ? T : never>
+  | Cmd<"user_flag", { old: string; new: string }>
   | Cmd<"application", Output["data"]["applications"][number]>
   | Cmd<"event_type", string>
   | Cmd<"freight_hostname", string>
@@ -42,8 +44,16 @@ export class EventLoop {
   constructor(files: number, workers: Worker[], resolve: (output: Output) => void, setters: Setters) {
     this.#output = {
       version: 1,
-      // @ts-ignore
-      user: undefined,
+      user: {
+        // @ts-expect-error filled in later
+        id: undefined,
+        // @ts-expect-error filled in later
+        flags: undefined,
+        // @ts-expect-error filled in later
+        payment_sources: undefined,
+        safety_flags: new Set(),
+        historical_flags: new Set(),
+      },
       applications: [],
       event_types: new Set(),
       freight_hostnames: new Set(),
@@ -75,6 +85,10 @@ export class EventLoop {
 
   addFile(file: File) {
     // TODO(arhsm): maybe a better scheduling stratergy
+    //              since there are more than 4 files being handled
+    //              (4 being the minimum amount of workers spawned)
+    //              there needs to be a better way to schedule workers
+    //              something based on work completion?
     this.#workers[this.#files % this.#workers.length]!.postMessage(file);
   }
 
@@ -83,6 +97,9 @@ export class EventLoop {
 
     if (this.#files === 0) {
       const end = performance.now();
+
+      sortExperiments(this.#output.experiments.user);
+      sortExperiments(this.#output.experiments.guild);
 
       this.#resolve({
         data: this.#output,
@@ -94,7 +111,20 @@ export class EventLoop {
   processCommand(command: Command) {
     switch (command.type) {
       case "user":
+        command.data.safety_flags = this.#output.user.safety_flags;
+        command.data.historical_flags = this.#output.user.historical_flags;
+
         this.#output.user = command.data;
+
+        break;
+      case "user_flag":
+        for (const offset of toBitOffsets(command.data.old).concat(toBitOffsets(command.data.new))) {
+          this.#output.user.historical_flags.add(offset);
+        }
+
+        break;
+      case "user_safety_flag":
+        this.#output.user.safety_flags.add(command.data);
 
         break;
       case "application":
@@ -106,14 +136,19 @@ export class EventLoop {
 
         break;
       case "freight_hostname": {
-        // I CAN EXPLAIN MYSELF
-        // https://canary.discord.com/channels/1029315212005888060/1034238059899789373/1434303882791485481
-        const last = command.data.lastIndexOf("-");
-        const slice = command.data.slice(
+        let last = command.data.lastIndexOf("-");
+        let slice = command.data.slice(
           0,
           // (almost) never -1
           last !== -1 ? last : command.data.length,
         );
+
+        last = slice.lastIndexOf("-");
+
+        // remove anything that looks like a hex string
+        if (/^[0-9a-f]+$/i.test(slice.slice(last + 1))) {
+          slice = slice.slice(0, last);
+        }
 
         this.#output.freight_hostnames.add(slice);
 
@@ -143,8 +178,7 @@ export class EventLoop {
           hash_result: common.hash_result,
           population: common.population,
           excluded: common.excluded,
-          // TODO(arhsm): handle this
-          // timestamp: common.timestamp,
+          timestamp: Date.parse(common.timestamp) / 1000,
         });
 
         break;
@@ -171,4 +205,30 @@ export class EventLoop {
         break;
     }
   }
+}
+
+function sortExperiments(experiments: Output["data"]["experiments"]["user"]) {
+  for (const [name, set] of Object.entries(experiments)) {
+    // @ts-expect-error i don't care!
+    experiments[name] = Array.from(set).sort((a, b) => a.timestamp - b.timestamp);
+  }
+}
+
+function toBitOffsets(str: string) {
+  let num = BigInt(str);
+  let offset = 0;
+
+  const offsets: number[] = [];
+
+  while (num > 0) {
+    if ((num & 1n) == 1n) {
+      offsets.push(offset);
+    }
+
+    num >>= 1n;
+
+    offset++;
+  }
+
+  return offsets;
 }
