@@ -15,12 +15,17 @@ export interface User {
   flags: string[];
   payment_sources: PaymentSource[];
   safety_flags: Set<SafetyFlags>;
-  historical_flags: Set<number>;
+  historical_flags: FlagUpdate[];
 }
 
 interface SafetyFlags {
   type: number;
   label: string;
+}
+
+interface FlagUpdate {
+  old: string;
+  new: string;
 }
 
 export interface PaymentSource {

@@ -13,7 +13,7 @@ export type ExperimentType = "user" | "guild";
 export type Command =
   | Cmd<"user", Output["data"]["user"]>
   | Cmd<"user_safety_flag", Output["data"]["user"]["safety_flags"] extends Set<infer T> ? T : never>
-  | Cmd<"user_flag", { old: string; new: string }>
+  | Cmd<"user_flag", Output["data"]["user"]["historical_flags"][number]>
   | Cmd<"application", Output["data"]["applications"][number]>
   | Cmd<"event_type", string>
   | Cmd<"freight_hostname", string>
@@ -52,7 +52,7 @@ export class EventLoop {
         // @ts-expect-error filled in later
         payment_sources: undefined,
         safety_flags: new Set(),
-        historical_flags: new Set(),
+        historical_flags: [],
       },
       applications: [],
       event_types: new Set(),
@@ -118,9 +118,7 @@ export class EventLoop {
 
         break;
       case "user_flag":
-        for (const offset of toBitOffsets(command.data.old).concat(toBitOffsets(command.data.new))) {
-          this.#output.user.historical_flags.add(offset);
-        }
+        this.#output.user.historical_flags.push(command.data);
 
         break;
       case "user_safety_flag":
@@ -212,23 +210,4 @@ function sortExperiments(experiments: Output["data"]["experiments"]["user"]) {
     // @ts-expect-error i don't care!
     experiments[name] = Array.from(set).sort((a, b) => a.timestamp - b.timestamp);
   }
-}
-
-function toBitOffsets(str: string) {
-  let num = BigInt(str);
-  let offset = 0;
-
-  const offsets: number[] = [];
-
-  while (num > 0) {
-    if ((num & 1n) == 1n) {
-      offsets.push(offset);
-    }
-
-    num >>= 1n;
-
-    offset++;
-  }
-
-  return offsets;
 }
