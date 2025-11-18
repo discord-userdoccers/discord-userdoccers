@@ -1,20 +1,41 @@
-import { Setters } from "@components/data-packages/PackageView";
-import type { ExperimentCommon } from "../handlers/activity";
-import type { V1 } from "./v1";
+import z from "zod";
+import { Schema } from "./v1";
+import { Dispatch, SetStateAction, createContext } from "react";
 
-export type Output = {
-  data: V1;
-  // in milliseconds
-  span: number;
+export type Output = z.infer<typeof Schema>;
+
+export type ExperimentType = "guild" | "user";
+
+export interface ExperimentCommon {
+  name: string;
+  bucket: string;
+  revision: string;
+  population?: string;
+  hash_result: string;
+  excluded?: boolean;
+  timestamp: string;
+}
+
+export type Error = {
+  file: string;
+  line: number;
+  message: string;
+  contents: string;
+  // fatal       - error procuring required information, cannot download the
+  //               dump as it may or may not be incomplete
+  //               (ig we can short-circuit the entire operation here)
+  //               TODO(arhsm): ^
+  // recoverable - warn user that some information may be missing, can download
+  //               the dump
+  // trivial     - something went wrong, but its fine
+  type: "fatal" | "recoverable" | "trivial";
 };
 
-export type ExperimentType = "user" | "guild";
-
 export type Command =
-  | Cmd<"user", Output["data"]["user"]>
-  | Cmd<"user_safety_flag", Output["data"]["user"]["safety_flags"] extends Set<infer T> ? T : never>
-  | Cmd<"user_flag", Output["data"]["user"]["historical_flags"][number]>
-  | Cmd<"application", Output["data"]["applications"][number]>
+  | Cmd<"user", Omit<Output["user"], "safety_flags" | "historical_flags">>
+  | Cmd<"user_safety_flag", Output["user"]["safety_flags"][number]>
+  | Cmd<"user_flag", Output["user"]["historical_flags"][number]>
+  | Cmd<"application", Output["applications"][number]>
   | Cmd<"event_type", string>
   | Cmd<"freight_hostname", string>
   | Cmd<"domain", string>
@@ -22,88 +43,199 @@ export type Command =
   | Cmd<"email_type", string>
   | Cmd<"experiment", { type: ExperimentType; common: ExperimentCommon }>
   | Cmd<"experiment_name", { type: ExperimentType; name: string }>
-  | Cmd<"__file_size", number>
-  | Cmd<"__file_advance", number>
-  | Cmd<"__file_end", void>;
+  | Cmd<"$error", Error>
+  | Cmd<"$file_size", number>
+  | Cmd<"$file_advance", number>
+  | Cmd<"$file_end", void>;
+
+export type State =
+  | { t: "idle" }
+  | { t: "processing"; v: number }
+  | {
+      t: "processed";
+      v: { name: string; output: Output; errors: Error[]; time: number };
+    };
+
+type StateContext = [State, Dispatch<SetStateAction<State>>];
 
 interface Cmd<T extends string, D> {
   type: T;
   data: D;
 }
 
-export class EventLoop {
-  #output: Output["data"];
-  #start: number;
-  #setters: Setters;
+// @ts-expect-error this will be provided through a component
+export const PackageContext = createContext<StateContext>(null);
 
-  #files: number;
-  #workers: Worker[];
+let workers: Worker[];
 
-  #resolve: (output: Output) => void;
+// TODO(arhsm): I dont like this class
+//              only once instance can and should exist, so like...
+//              can I have something else?
+class EventLoop {
+  // @ts-expect-error set in reset.
+  totalSize: number;
+  // @ts-expect-error set in reset.
+  advancedSize: number;
+  // @ts-expect-error set in reset.
+  lastReport: number;
+  // @ts-expect-error set in reset.
+  startTime: number;
 
-  constructor(files: number, workers: Worker[], resolve: (output: Output) => void, setters: Setters) {
-    this.#output = {
-      version: 1,
-      user: {
-        // @ts-expect-error filled in later
-        id: undefined,
-        // @ts-expect-error filled in later
-        flags: undefined,
-        // @ts-expect-error filled in later
-        payment_sources: undefined,
-        safety_flags: new Set(),
-        historical_flags: [],
-      },
+  // @ts-expect-error set in reset.
+  errors: Error[];
+
+  // @ts-expect-error set in reset.
+  name: string;
+  // @ts-expect-error set in reset.
+  files: number;
+
+  // @ts-expect-error set in reset.
+  setState: StateContext[1];
+
+  // @ts-expect-error set in reset.
+  cache: {
+    user: Extract<Command, { type: "user" }>["data"];
+    userSafetyFlags: Set<Extract<Command, { type: "user_safety_flag" }>["data"]>;
+    userHistoricalFlags: Extract<Command, { type: "user_flag" }>["data"][];
+    applications: Extract<Command, { type: "application" }>["data"][];
+    eventTypes: Set<string>;
+    freightHostnames: Set<string>;
+    domains: Set<string>;
+    userFlows: Set<string>;
+    emailTypes: Set<string>;
+    experiments: { [K in "user" | "guild"]: Record<string, Set<Output["experiments"][K][string][number]>> };
+  };
+
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.setState?.({ t: "idle" });
+
+    this.totalSize = 0;
+    this.advancedSize = 0;
+    this.lastReport = 0;
+    this.startTime = 0;
+    this.errors = [];
+    this.name = "data-package";
+    this.files = 0;
+    this.setState = () => {};
+
+    this.cache = {
+      // @ts-expect-error this will be filled in later,
+      //                  in the event this can't be filled in (which is only,
+      //                  when user.json handler fails) a fatal error will
+      //                  be emitted
+      user: null,
+      userSafetyFlags: new Set(),
+      userHistoricalFlags: [],
       applications: [],
-      event_types: new Set(),
-      freight_hostnames: new Set(),
-      user_flows: new Set(),
-      email_types: new Set(),
+      eventTypes: new Set(),
+      freightHostnames: new Set(),
+      domains: new Set(),
+      userFlows: new Set(),
+      emailTypes: new Set(),
       experiments: {
         user: {},
         guild: {},
       },
     };
-    this.#start = performance.now();
-    this.#setters = setters;
+  }
 
-    this.#files = files;
-    this.#workers = workers;
+  start(files: FileList, setState: StateContext[1]) {
+    if (workers == null) {
+      workers = new Array(Math.min(4, navigator.hardwareConcurrency)).fill(undefined).map((_, i) => {
+        const worker = new Worker(new URL("../worker", import.meta.url), {
+          type: "module",
+          name: `worker-${i}`,
+        });
 
-    this.#resolve = resolve;
+        worker.addEventListener("message", (event) => this.processCommand(event.data));
 
-    if (this.#workers.length === 0) {
-      throw new Error("no workers");
+        return worker;
+      });
     }
 
-    for (const worker of this.#workers) {
-      worker.addEventListener("message", (event) => {
-        this.processCommand(event.data);
-      });
+    this.startTime = performance.now();
+
+    // caller holds the responsibility for ensuring non zero files
+    this.name = files.item(0)!.webkitRelativePath.split("/")[0];
+    this.files = files.length;
+
+    this.setState = setState;
+
+    this.reportProgress();
+
+    for (const file of files) {
+      // TODO(arhsm): maybe a better scheduling stratergy
+      //              since there are more than 4 files being handled
+      //              (4 being the minimum amount of workers spawned (unless
+      //              max hw concurrency is less than 4))
+      //              there needs to be a better way to schedule workers
+      //              something based on work completion/freelist?
+      workers[this.files % workers.length]!.postMessage(file);
     }
   }
 
-  addFile(file: File) {
-    // TODO(arhsm): maybe a better scheduling stratergy
-    //              since there are more than 4 files being handled
-    //              (4 being the minimum amount of workers spawned)
-    //              there needs to be a better way to schedule workers
-    //              something based on work completion?
-    this.#workers[this.#files % this.#workers.length]!.postMessage(file);
+  reportProgress() {
+    const { totalSize, advancedSize } = this;
+
+    const now = performance.now();
+
+    if (now - this.lastReport < 2000) return;
+
+    this.lastReport = now;
+
+    if (totalSize === 0 || advancedSize === 0) {
+      this.setState({ t: "processing", v: 0 });
+
+      return;
+    }
+
+    const progress = (advancedSize / totalSize) * 100;
+
+    this.setState({ t: "processing", v: progress });
+  }
+
+  static sortExperiments(exp: EventLoop["cache"]["experiments"]["user" | "guild"]) {
+    return Object.fromEntries(
+      Object.entries(exp).map(([name, set]) => [name, Array.from(set).sort((a, b) => a.timestamp - b.timestamp)]),
+    );
   }
 
   fileEnd() {
-    this.#files--;
+    this.files--;
 
-    if (this.#files === 0) {
+    if (this.files === 0) {
       const end = performance.now();
+      const time = (end - this.startTime) / 1000;
 
-      sortExperiments(this.#output.experiments.user);
-      sortExperiments(this.#output.experiments.guild);
-
-      this.#resolve({
-        data: this.#output,
-        span: end - this.#start,
+      this.setState({
+        t: "processed",
+        v: {
+          name: this.name,
+          output: Schema.parse({
+            version: 1,
+            user: {
+              ...this.cache.user,
+              safety_flags: Array.from(this.cache.userSafetyFlags),
+              historical_flags: this.cache.userHistoricalFlags,
+            },
+            applications: this.cache.applications,
+            event_types: Array.from(this.cache.eventTypes),
+            frieght_hostnames: Array.from(this.cache.freightHostnames),
+            domains: Array.from(this.cache.domains),
+            user_flows: Array.from(this.cache.userFlows),
+            email_types: Array.from(this.cache.emailTypes),
+            experiments: {
+              user: EventLoop.sortExperiments(this.cache.experiments.user),
+              guild: EventLoop.sortExperiments(this.cache.experiments.guild),
+            },
+          }),
+          errors: this.errors,
+          time,
+        },
       });
     }
   }
@@ -111,26 +243,23 @@ export class EventLoop {
   processCommand(command: Command) {
     switch (command.type) {
       case "user":
-        command.data.safety_flags = this.#output.user.safety_flags;
-        command.data.historical_flags = this.#output.user.historical_flags;
-
-        this.#output.user = command.data;
-
-        break;
-      case "user_flag":
-        this.#output.user.historical_flags.push(command.data);
+        this.cache.user = command.data;
 
         break;
       case "user_safety_flag":
-        this.#output.user.safety_flags.add(command.data);
+        this.cache.userSafetyFlags.add(command.data);
+
+        break;
+      case "user_flag":
+        this.cache.userHistoricalFlags.push(command.data);
 
         break;
       case "application":
-        this.#output.applications.push(command.data);
+        this.cache.applications.push(command.data);
 
         break;
       case "event_type":
-        this.#output.event_types.add(command.data);
+        this.cache.eventTypes.add(command.data);
 
         break;
       case "freight_hostname": {
@@ -148,26 +277,25 @@ export class EventLoop {
           slice = slice.slice(0, last);
         }
 
-        this.#output.freight_hostnames.add(slice);
+        this.cache.freightHostnames.add(slice);
 
         break;
       }
-      case "domain": {
-        this.#output.domains.add(command.data);
+      case "domain":
+        this.cache.domains.add(command.data);
 
         break;
-      }
       case "user_flow":
-        this.#output.user_flows.add(command.data);
+        this.cache.userFlows.add(command.data);
 
         break;
       case "email_type":
-        this.#output.email_types.add(command.data);
+        this.cache.emailTypes.add(command.data);
 
         break;
       case "experiment": {
         const { type, common } = command.data;
-        const target = this.#output.experiments[type];
+        const target = this.cache.experiments[type];
 
         target[common.name] ??= new Set();
         target[common.name]!.add({
@@ -183,21 +311,27 @@ export class EventLoop {
       }
       case "experiment_name": {
         const { type, name } = command.data;
-        const target = this.#output.experiments[type];
+        const target = this.cache.experiments[type];
 
         target[name] ??= new Set();
 
         break;
       }
-      case "__file_size":
-        this.#setters.target((old) => old + command.data);
+      case "$error":
+        this.errors.push(command.data);
 
         break;
-      case "__file_advance":
-        this.#setters.progress((old) => old + command.data);
+      case "$file_size":
+        this.totalSize += command.data;
+        this.reportProgress();
 
         break;
-      case "__file_end":
+      case "$file_advance":
+        this.advancedSize += command.data;
+        this.reportProgress();
+
+        break;
+      case "$file_end":
         this.fileEnd();
 
         break;
@@ -205,9 +339,4 @@ export class EventLoop {
   }
 }
 
-function sortExperiments(experiments: Output["data"]["experiments"]["user"]) {
-  for (const [name, set] of Object.entries(experiments)) {
-    // @ts-expect-error i don't care!
-    experiments[name] = Array.from(set).sort((a, b) => a.timestamp - b.timestamp);
-  }
-}
+export const LOOP = new EventLoop();

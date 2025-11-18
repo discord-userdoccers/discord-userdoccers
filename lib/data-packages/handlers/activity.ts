@@ -1,68 +1,74 @@
-import { postCommand, readLines } from "../utils";
+import z from "zod";
+import { Handler, postCommand, readLines } from "../utils";
+import { $ZodLooseShape } from "zod/v4/core";
+import { error } from "console";
 
-export type Event<N extends string, T> = {
-  event_type: N;
-  freight_hostname?: string;
-  user_flow?: string;
-} & T;
+type Events = z.infer<typeof EventsSchema>;
 
-export type Events =
-  | Event<"user_flag_updated", { old_flags: string; new_flags: string }>
-  | Event<"user_safety_flag_added", { smite_label: string; flag_type: number }>
-  | Event<"email_sent", { email_type: string }>
-  | Event<"experiment_user_triggered", ExperimentCommon>
-  | Event<"experiment_user_triggered_fallback", ExperimentCommon>
-  | Event<"experiment_user_triggered_ignored", ExperimentCommon>
-  | Event<"experiment_guild_triggered", ExperimentCommon>
-  | Event<"experiment_guild_triggered_fallback", ExperimentCommon>
-  | Event<"experiment_guild_triggered_ignored", ExperimentCommon>
-  | Event<"quest_aligibility_checked", { experiment?: string }>
-  | Event<"ai_endpoint_requested", { experiment?: string }>
-  | Event<"experiment_user_exposure_suppressed", { experiment?: string }>
-  | Event<"experiment_user_evaluation_exposed", { experiment?: string }>
-  | Event<"redeem_holiday_prize", { experiment_id?: string }>
-  | Event<"ad_decision_final_selector_stage_decision_v2", AdDecisionCommon>
-  | Event<"ad_decision_stage_decision", AdDecisionCommon>
-  | Event<"ad_decision_filter_stage_decision_v2", AdDecisionCommon>
-  | Event<"ad_decision_business_rule_stage_decision_v2", AdDecisionCommon>
-  | Event<"ad_decision_provider_stage_decision_v2", AdDecisionCommon>
-  | Event<"ads_auction_participant", AdDecisionCommon>
-  | Event<"ads_auction_ml_data", AdDecisionCommon>;
+const Event = z.object({
+  // event_type: z.string(),
+  freight_hostname: z.string().optional(),
+  domain: z.string().optional(),
+  user_flow: z.string().optional(),
+});
 
-export interface ExperimentCommon {
-  name: string;
-  bucket: string;
-  revision: string;
+const ExperimentCommon = {
+  name: z.string(),
+  bucket: z.string(),
+  revision: z.string(),
   // only in user events
-  population?: string;
-  hash_result: string;
-  excluded?: boolean;
+  population: z.string().optional(),
+  hash_result: z.string(),
+  excluded: z.boolean().optional(),
   // ISO-8601 timestamp
-  timestamp: string;
-}
+  timestamp: z.iso.datetime(),
+};
 
-export interface AdDecisionCommon {
-  budget_ab_tracking_experiment_names?: string[];
-  budget_ab_hash_key?: string;
+const AdDecisionCommon = {
+  budget_ab_tracking_experiment_names: z.string().array().optional(),
+  budget_ab_hash_key: z.string().optional(),
+};
+
+const ExperimentNameOptional = {
+  experiment: z.string().optional(),
+};
+
+const EventsSchema = z.discriminatedUnion("event_type", [
+  event("user_flag_updated", { old_flags: z.string(), new_flags: z.string() }),
+  // (arhsm): I hate js, I can't use int64 here
+  event("user_safety_flag_added", { smite_label: z.string(), flag_type: z.int32() }),
+  event("email_sent", { email_type: z.string() }),
+  event("experiment_user_triggered", ExperimentCommon),
+  event("experiment_user_triggered_fallback", ExperimentCommon),
+  event("experiment_user_triggered_ignored", ExperimentCommon),
+  event("experiment_guild_triggered", ExperimentCommon),
+  event("experiment_guild_triggered_fallback", ExperimentCommon),
+  event("experiment_guild_triggered_ignored", ExperimentCommon),
+  event("quest_eligibility_checked", ExperimentNameOptional),
+  event("ai_endpoint_requested", ExperimentNameOptional),
+  event("experiment_user_exposure_suppressed", ExperimentNameOptional),
+  event("experiment_user_evaluation_exposed", ExperimentNameOptional),
+  event("redeem_holiday_prize", { experiment_id: z.string().optional() }),
+  event("ad_decision_final_selector_stage_decision_v2", AdDecisionCommon),
+  event("ad_decision_stage_decision", AdDecisionCommon),
+  event("ad_decision_filter_stage_decision_v2", AdDecisionCommon),
+  event("ad_decision_business_rule_stage_decision_v2", AdDecisionCommon),
+  event("ad_decision_provider_stage_decision_v2", AdDecisionCommon),
+  event("ads_auction_participant", AdDecisionCommon),
+  event("ads_auction_ml_data", AdDecisionCommon),
+]);
+
+const EventTypes = new Set(EventsSchema.def.options.flatMap((o) => [...o.shape.event_type.values]));
+
+function event<const S extends string, U extends $ZodLooseShape>(type: S, shape: U) {
+  return Event.extend({
+    event_type: z.literal(type),
+    ...shape,
+  });
 }
 
 function dispatchEvent(event: Events) {
-  // degenerate case
-  if (event.event_type == null) {
-    console.debug('got "event" without a type:', event);
-
-    return;
-  }
-
-  postCommand("event_type", event.event_type);
-
-  if (event.freight_hostname != null) {
-    postCommand("freight_hostname", event.freight_hostname);
-  }
-
-  if (event.user_flow != null) {
-    postCommand("user_flow", event.user_flow);
-  }
+  emitCommon(event);
 
   switch (event.event_type) {
     case "user_flag_updated":
@@ -89,7 +95,7 @@ function dispatchEvent(event: Events) {
       postCommand("experiment", { type: "guild", common: event });
 
       break;
-    case "quest_aligibility_checked":
+    case "quest_eligibility_checked":
     case "ai_endpoint_requested":
     case "experiment_user_exposure_suppressed":
     case "experiment_user_evaluation_exposed":
@@ -132,10 +138,71 @@ function dispatchEvent(event: Events) {
   }
 }
 
-export async function handle(file: File) {
-  await readLines(file, (line) => {
-    const hopefullyEvent = JSON.parse(line);
+function emitCommon(event: Events) {
+  postCommand("event_type", event.event_type);
 
-    dispatchEvent(hopefullyEvent);
-  });
+  if (event.freight_hostname != null) {
+    postCommand("freight_hostname", event.freight_hostname);
+  }
+
+  if (event.domain != null) {
+    postCommand("domain", event.domain);
+  }
+
+  if (event.user_flow != null) {
+    postCommand("user_flow", event.user_flow);
+  }
 }
+
+export default {
+  match(path) {
+    const segments = path.split("/");
+
+    return segments.length > 2 && segments[1]!.toLowerCase() === "activity";
+  },
+  async handle(jsFile) {
+    const file = jsFile.webkitRelativePath;
+
+    for await (const { index: line, line: contents } of readLines(jsFile)) {
+      let json;
+      let jsonErrorType = "recoverable";
+
+      try {
+        json = JSON.parse(contents);
+
+        if (typeof json != "object" || json == null) {
+          throw new Error(`expected object got ${json == null ? "null" : typeof json}`);
+        }
+
+        if (json.event_type == null) {
+          // (arhsm): as far as i'm aware there's only one place where this
+          //          happens, which are the age and gender prediction "events"
+          //          so this is a very trivial error
+          jsonErrorType = "trivial";
+
+          throw new Error("got an event without `event_type`");
+        }
+      } catch (e) {
+        postCommand("$error", { file, line, message: (e as Error).message, contents, type: jsonErrorType });
+
+        continue;
+      }
+
+      if (!EventTypes.has(json.event_type)) {
+        emitCommon(json);
+
+        continue;
+      }
+
+      const parsed = EventsSchema.safeParse(json);
+
+      if (!parsed.success) {
+        postCommand("$error", { file, line, message: z.prettifyError(parsed.error), contents, type: "fatal" });
+
+        continue;
+      }
+
+      dispatchEvent(parsed.data);
+    }
+  },
+} satisfies Handler;

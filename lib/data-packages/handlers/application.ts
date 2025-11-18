@@ -1,17 +1,28 @@
-import { postCommand } from "../utils";
+import z from "zod";
+import { Handler, parseZod, postCommand } from "../utils";
 
-export async function handle(file: File) {
-  const contents = await file.text();
-  const application = JSON.parse(contents.trim()) as {
-    id: string;
-    flags: string[];
-  };
+const Application = z.object({
+  id: z.string(),
+  flags: z.string().array(),
+});
 
-  postCommand("application", {
-    id: application.id,
-    flags: application.flags,
-  });
+export default {
+  match(path) {
+    const segments = path.split("/");
 
-  postCommand("__file_advance", file.size);
-  postCommand("__file_end", void 0);
-}
+    return (
+      segments.length == 5 &&
+      segments[1].toLowerCase() === "account" &&
+      segments[2] === "applications" &&
+      segments[4] === "application.json"
+    );
+  },
+  async handle(file: File) {
+    const contents = await file.text();
+
+    const application = parseZod(Application, contents.trim(), file.webkitRelativePath, 1, "fatal");
+    if (application == null) return;
+
+    postCommand("application", application);
+  },
+} satisfies Handler;

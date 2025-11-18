@@ -1,54 +1,57 @@
-export interface V1 {
-  version: 1;
-  user: User;
-  applications: Application[];
-  event_types: Set<string>;
-  freight_hostnames: Set<string>;
-  domains: Set<string>;
-  user_flows: Set<string>;
-  email_types: Set<string>;
-  experiments: Experiments;
-}
+import z from "zod";
 
-export interface User {
-  id: string;
-  flags: string[];
-  payment_sources: PaymentSource[];
-  safety_flags: Set<SafetyFlags>;
-  historical_flags: FlagUpdate[];
-}
+export const PaymentSource = z.object({
+  id: z.string(),
+  flags: z.string().array(),
+});
 
-interface SafetyFlags {
-  type: number;
-  label: string;
-}
+export const SafetyFlag = z.object({
+  // (arhsm): I hate js, I can't use int64 here
+  type: z.int32(),
+  label: z.string(),
+});
 
-interface FlagUpdate {
-  old: string;
-  new: string;
-}
+export const HistoricalFlag = z.object({
+  old: z.string(),
+  new: z.string(),
+});
 
-export interface PaymentSource {
-  id: string;
-  flags: string[];
-}
+export const User = z.object({
+  id: z.string(),
+  flags: z.string().array(),
+  payment_sources: PaymentSource.array(),
+  safety_flags: SafetyFlag.array(),
+  historical_flags: HistoricalFlag.array(),
+});
 
-export interface Application {
-  id: string;
-  flags: string[];
-}
+export const Application = z.object({
+  id: z.string(),
+  flags: z.string().array(),
+});
 
-export interface Experiments {
-  user: Record<string, Set<Experiment>>;
-  guild: Record<string, Set<Experiment>>;
-}
+export const Experiment = z.object({
+  bucket: z.string(),
+  revision: z.string(),
+  hash_result: z.string(),
+  population: z.string().optional(),
+  excluded: z.boolean().optional(),
+  // (arhsm): I hate js, I can't use int64 here
+  timestamp: z.int32(),
+});
 
-export interface Experiment {
-  bucket: string;
-  revision: string;
-  hash_result: string;
-  population?: string;
-  excluded?: boolean;
-  // unix timestamp in seconds
-  timestamp: number;
-}
+export const Experiments = z.object({
+  user: z.record(z.string(), Experiment.array()),
+  guild: z.record(z.string(), Experiment.array()),
+});
+
+export const Schema = z.object({
+  version: z.literal(1),
+  user: User,
+  applications: Application.array(),
+  event_types: z.string().array(),
+  frieght_hostnames: z.string().array(),
+  domains: z.string().array(),
+  user_flows: z.string().array(),
+  email_types: z.string().array(),
+  experiments: Experiments,
+});

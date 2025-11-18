@@ -1,21 +1,35 @@
-import { postCommand } from "../utils";
+import z from "zod";
+import { Handler, postCommand, parseZod } from "../utils";
 
-export async function handle(file: File) {
-  const contents = await file.text();
-  const user = JSON.parse(contents.trim()) as {
-    id: string;
-    flags: string[];
-    payment_sources: { id: string; flags: string[] }[];
-  };
+// duplicated definition(s) from ../output/v1.ts
+// I just don't want to import those because I want the schema version to be
+// transparent to anything that isn't the event loop
+// - arhsm
 
-  postCommand("user", {
-    id: user.id,
-    flags: user.flags,
-    payment_sources: user.payment_sources.map((source) => ({ id: source.id, flags: source.flags })),
-    safety_flags: new Set(),
-    historical_flags: [],
-  });
+const PaymentSource = z.object({
+  id: z.string(),
+  flags: z.string().array(),
+});
 
-  postCommand("__file_advance", file.size);
-  postCommand("__file_end", void 0);
-}
+const User = z.object({
+  id: z.string(),
+  flags: z.string().array(),
+  payment_sources: PaymentSource.array(),
+});
+
+export default {
+  match(path) {
+    const segments = path.split("/");
+
+    return segments.length == 3 && segments[1].toLowerCase() === "account" && segments[2] === "user.json";
+  },
+
+  async handle(file: File) {
+    const contents = await file.text();
+
+    const user = parseZod(User, contents.trim(), file.webkitRelativePath, 1, "fatal");
+    if (user == null) return;
+
+    postCommand("user", user);
+  },
+} satisfies Handler;
