@@ -3,12 +3,12 @@ import { basename, join, sep } from "path";
 import matter from "gray-matter";
 
 /**
- * This script generates a sitemap.xml file & navigation sidebar for the website. It's meant to be run just before the site is deployed.
+ * This script generates a sitemap.xml, llms.txt file, and the navigation sidebar for the website. It's meant to be run just before the site is deployed.
  *
  * Overview:
  * 1. List all the .mdx files in the `pages` directory
- * 2. Generate a valid sitemap with the filenames
- * 3. Extract markdown headings and create a navigation outline for use by <Navigation /> coponent
+ * 2. Generate a valid sitemap with the filenames, throw content in llms.txt
+ * 3. Extract markdown headings and create a navigation outline for use by <Navigation /> component
  */
 
 const SPECIAL_PAGES: Record<string, { content: string; data: any }> = {
@@ -72,6 +72,13 @@ const sitemap = generateSiteMap(files);
 
 await writeFile(join(process.cwd(), "public", "sitemap.xml"), sitemap);
 
+// llms.txt
+let llmsContent = `# Discord Userdoccers
+# Generated: ${new Date().toISOString()}
+# Base URL: https://${BASE_DOMAIN}
+
+# Docs`;
+
 // NAVIGATION LINKS
 
 interface Page {
@@ -96,14 +103,6 @@ for (const file of files) {
 
   const parsed =
     file in SPECIAL_PAGES ? SPECIAL_PAGES[file] : await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
-
-  navigationLinks[section] ??= {
-    name: section ? section.replaceAll("-", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()) : null,
-    items: {},
-    pages: [],
-  };
-  const sectionList = navigationLinks[section];
-
   const name =
     parsed.data.name ??
     parsed.content
@@ -111,6 +110,20 @@ for (const file of files) {
       .split("\n")
       .find((line) => line.startsWith("#"))
       ?.replace("# ", "");
+
+  const pageUrl = createLink(file === "index" ? "" : file);
+
+  const contentBelowHeader = parsed.content.split("\n").slice(parsed.content.split("\n").findIndex(line => line.startsWith("#")) + 1).join("\n");
+  if (contentBelowHeader) {
+    llmsContent += `\n\n# ${name}\nLink: ${pageUrl}\n${contentBelowHeader}\n\n---\n`;
+  }
+
+  navigationLinks[section] ??= {
+    name: section ? section.replaceAll("-", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()) : null,
+    items: {},
+    pages: [],
+  };
+  const sectionList = navigationLinks[section];
 
   sectionList.items![link] ??= {
     name,
@@ -155,6 +168,8 @@ for (const file of files) {
     console.error(`Invalid data.sublinks in /${file}`);
   }
 }
+
+await writeFile(join(process.cwd(), "public", "llms.txt"), llmsContent);
 
 // SORTING NAVBAR
 
