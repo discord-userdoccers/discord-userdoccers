@@ -67,6 +67,9 @@ async function sendApiRequest(options: {
   if (token) {
     headers.set("Authorization", token);
   }
+  if (body) {
+    headers.set("Content-Type", "application/json");
+  }
 
   headers.set("X-Debug-Options", "bugReporterEnabled"); // TODO: Do we expose trace / canary through here?
   headers.set("X-Discord-Locale", locale);
