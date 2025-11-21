@@ -1,0 +1,691 @@
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
+import { Fragment, RefObject, useEffect, useState } from "react";
+import classNames from "../lib/classnames";
+import Styles from "../stylesheets/modules/Errors.module.css";
+import { H2 } from "./mdx/Heading";
+import Code from "./mdx/Code";
+import { CircleErrorIcon as SettingsIcon } from "./mdx/icons/SettingsIcon";
+import { Tokenizer } from "../lib/type-generator/tokenizer";
+import { MethodBadge, type RESTMethod } from "./RouteHeader";
+
+const USER_TOKEN_REGEX: RegExp = /[\w]{24}\.[\w]{6}\.[\w-_]{27}/;
+const BOT_TOKEN_REGEX: RegExp = /^Bot\s+([\w]{24}\.[\w]{6}\.[\w-_]{27})/;
+const BEARER_TOKEN_REGEX: RegExp = /^(?:Bearer\s+)?([\w]{24}\.[\w-_]{30})$/;
+
+let cachedSuperProperties: string | undefined;
+
+async function fetchSuperProperties(): Promise<string> {
+  if (cachedSuperProperties) return cachedSuperProperties;
+
+  // TODO: Determine browser & OS
+  const result = await fetch("https://cordapi.dolfi.es/api/v2/properties/web", {
+    method: "POST",
+  });
+  if (!result.ok) {
+    throw new Error(`Failed to fetch super properties: ${result.status} ${result.statusText} (${await result.text()})`);
+  }
+  const { encoded } = await result.json();
+
+  cachedSuperProperties = encoded;
+  return encoded;
+}
+
+async function sendApiRequest(options: {
+  url: string;
+  method: string;
+  pathParams: Record<string, string>;
+  queryParams: { key: string; value: string }[];
+  body: string;
+  token: string;
+  apiVersion: string;
+  useCanary: boolean;
+  locale: string;
+  customHeaders: { key: string; value: string }[];
+}) {
+  const { url, method, pathParams, queryParams, body, token, apiVersion, useCanary, locale, customHeaders } = options;
+
+  const domain = useCanary ? "canary.discord.com" : "discord.com";
+  let finalUrl = `https://${domain}/api/v${apiVersion}${url}`;
+
+  // Replace path params
+  Object.entries(pathParams).forEach(([key, value]) => {
+    finalUrl = finalUrl.replace(`{${key}}`, value);
+  });
+
+  // Add query params
+  const searchParams = new URLSearchParams();
+  queryParams.forEach(({ key, value }) => {
+    if (key) searchParams.append(key, value);
+  });
+  const queryString = searchParams.toString();
+  if (queryString) {
+    finalUrl += "?" + queryString;
+  }
+
+  // Headers
+  const headers = new Headers();
+  if (token) {
+    headers.set("Authorization", token);
+  }
+
+  headers.set("X-Debug-Options", "bugReporterEnabled"); // TODO: Do we expose trace / canary through here?
+  headers.set("X-Discord-Locale", locale);
+  headers.set("X-Discord-TimeZone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+  // TODO: Maybe handle fingerprint? Auth endpoints don't work cross-origin anyway...
+
+  try {
+    headers.set("X-Super-Properties", await fetchSuperProperties());
+  } catch (error) {
+    console.error("Failed to fetch super properties:", error);
+  }
+
+  customHeaders.forEach(({ key, value }) => {
+    if (key) headers.set(key, value);
+  });
+
+  const fetchOptions: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (method !== "GET" && method !== "HEAD" && body) {
+    fetchOptions.body = body;
+  }
+
+  try {
+    const res = await fetch(finalUrl, fetchOptions);
+
+    const resBody = await res.text();
+    let parsedBody = resBody;
+    try {
+      parsedBody = JSON.parse(resBody);
+    } catch {}
+
+    const resHeaders: Record<string, string> = {};
+    res.headers.forEach((value, key) => {
+      resHeaders[key] = value;
+    });
+
+    return {
+      status: res.status,
+      statusText: res.statusText,
+      headers: resHeaders,
+      body: parsedBody,
+    };
+  } catch (error: unknown) {
+    return {
+      status: 0,
+      statusText: "Error",
+      headers: {},
+      body: (error as Error).message,
+    };
+  }
+}
+
+function prettifyHeader(header: string): string {
+  const replacements: Record<string, string> = {
+    ratelimit: "RateLimit",
+    rpc: "RPC",
+  };
+  return header
+    .split("-")
+    .map((part) => replacements[part] || part.charAt(0).toUpperCase() + part.slice(1))
+    .join("-");
+}
+
+interface RouteTestDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  method: RESTMethod;
+  url: string;
+  triggerRef?: RefObject<HTMLElement | null>;
+}
+
+export default function RouteTestDialog({ isOpen, onClose, method, url, triggerRef }: RouteTestDialogProps) {
+  const [pathParams, setPathParams] = useState<Record<string, string>>({});
+  const [queryParams, setQueryParams] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
+  const [optionalQueryParams, setOptionalQueryParams] = useState<string[]>([]);
+  const [token, setToken] = useState("");
+  const [tokenType, setTokenType] = useState<"user" | "bot" | "bearer" | "invalid" | null>(null);
+  const [body, setBody] = useState(method === "GET" ? "" : "{}");
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [apiVersion, setApiVersion] = useState("9");
+  const [useCanary, setUseCanary] = useState(false);
+  const [locale, setLocale] = useState("en-US");
+  const [customHeaders, setCustomHeaders] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
+  const [activeTab, setActiveTab] = useState<"body" | "headers">("body"); // Could be expanded to parse rate limits etc.
+
+  const [response, setResponse] = useState<{
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    body: unknown;
+  } | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const matches = url.match(/\{([^}]+)\}/g);
+    if (matches) {
+      const params: Record<string, string> = {};
+      matches.forEach((match) => {
+        const key = match.slice(1, -1);
+        params[key] = "";
+      });
+      setPathParams(params);
+    } else {
+      setPathParams({});
+    }
+    setQueryParams([{ key: "", value: "" }]);
+    setOptionalQueryParams([]);
+    setResponse(null);
+    setBody("");
+    setActiveTab("body");
+
+    if (isOpen) {
+      const storedToken = localStorage.getItem("discord_api_token");
+      if (storedToken) {
+        setToken(storedToken);
+        if (BOT_TOKEN_REGEX.test(storedToken)) setTokenType("bot");
+        else if (USER_TOKEN_REGEX.test(storedToken)) setTokenType("user");
+        else if (BEARER_TOKEN_REGEX.test(storedToken)) setTokenType("bearer");
+        else setTokenType("invalid");
+      }
+
+      const storedVersion = localStorage.getItem("discord_api_version");
+      if (storedVersion) {
+        setApiVersion(storedVersion);
+      }
+
+      const storedCanary = localStorage.getItem("discord_api_use_canary");
+      if (storedCanary) {
+        setUseCanary(storedCanary === "true");
+      }
+
+      const storedLocale = localStorage.getItem("discord_api_locale");
+      if (storedLocale) {
+        setLocale(storedLocale);
+      }
+
+      const storedHeaders = localStorage.getItem("discord_api_custom_headers");
+      if (storedHeaders) {
+        try {
+          const parsed = JSON.parse(storedHeaders);
+          if (Array.isArray(parsed)) {
+            const last = parsed[parsed.length - 1];
+            if (!last || last.key || last.value) {
+              parsed.push({ key: "", value: "" });
+            }
+            setCustomHeaders(parsed);
+          }
+        } catch {}
+      }
+
+      // Parse query params from DOM
+      if (triggerRef?.current) {
+        let node = triggerRef.current.nextElementSibling;
+        let foundTable = false;
+        let attempts = 0;
+        while (node && !foundTable && attempts < 50) {
+          if (node.tagName === "H2" || node.tagName === "H3") {
+            break;
+          }
+
+          const table = node.tagName === "TABLE" ? (node as HTMLTableElement) : node.querySelector("table");
+          if (table) {
+            try {
+              const tokenizer = new Tokenizer(table);
+              const layout = tokenizer.getLayout();
+
+              if (
+                layout &&
+                (layout.title.type === "QueryStringParams" || layout.title.type?.includes("QueryStringParams"))
+              ) {
+                console.debug("RouteTestDialog: Found QueryStringParams", layout);
+                const required: { key: string; value: string }[] = [];
+                const optional: string[] = [];
+
+                layout.contents.forEach((item) => {
+                  const name = item.field.type;
+                  if (!name) return;
+                  if (item.field.undefinable || item.type?.optional) {
+                    optional.push(name);
+                  } else {
+                    required.push({ key: name, value: "" });
+                  }
+                });
+
+                if (required.length > 0) {
+                  setQueryParams((prev) => {
+                    if (prev.length === 1 && prev[0].key === "" && prev[0].value === "") {
+                      return [...required, { key: "", value: "" }];
+                    }
+                    return prev;
+                  });
+                }
+                setOptionalQueryParams(optional);
+                foundTable = true;
+              }
+            } catch (e) {
+              console.error("Failed to parse table", e);
+            }
+          }
+          node = node.nextElementSibling;
+          attempts++;
+        }
+      }
+    }
+  }, [url, isOpen, triggerRef]);
+
+  const handleSend = async () => {
+    setLoading(true);
+    setResponse(null);
+
+    let finalToken = token;
+    if (tokenType === "bearer" && !token.startsWith("Bearer ")) {
+      finalToken = `Bearer ${token}`;
+    }
+
+    const result = await sendApiRequest({
+      url,
+      method,
+      pathParams,
+      queryParams,
+      body,
+      token: finalToken,
+      apiVersion,
+      useCanary,
+      locale,
+      customHeaders,
+    });
+
+    setResponse(result);
+    setLoading(false);
+  };
+
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/70" />
+        </TransitionChild>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <DialogPanel className={classNames(Styles.dialogPanel, "!max-w-4xl")}>
+                <div className="flex items-center justify-between">
+                  <DialogTitle as={H2} useAnchor={false} useCopy={false}>
+                    {isSettingsOpen ? "Settings" : "Test Endpoint"}
+                  </DialogTitle>
+                  <button
+                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <SettingsIcon className="h-6 w-6 fill-black dark:fill-white" />
+                  </button>
+                </div>
+
+                {!isSettingsOpen && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <MethodBadge method={method} />
+                    <code className="break-all text-base text-text-light dark:text-text-dark">{url}</code>
+                  </div>
+                )}
+
+                {isSettingsOpen ? (
+                  <div className="mt-4 flex flex-col gap-4">
+                    <div>
+                      <label className={Styles.dialogLabel}>API Version</label>
+                      <select
+                        className={Styles.dialogInput}
+                        value={apiVersion}
+                        onChange={(e) => {
+                          setApiVersion(e.target.value);
+                          localStorage.setItem("discord_api_version", e.target.value);
+                        }}
+                      >
+                        {["6", "7", "8", "9", "10"].map((v) => (
+                          <option key={v} value={v}>
+                            v{v}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="useCanary"
+                        checked={useCanary}
+                        onChange={(e) => {
+                          setUseCanary(e.target.checked);
+                          localStorage.setItem("discord_api_use_canary", String(e.target.checked));
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
+                      />
+                      <label htmlFor="useCanary" className={classNames(Styles.dialogLabel, "!mb-0")}>
+                        Use Canary
+                      </label>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className={Styles.dialogLabel}>Locale</label>
+                        <a
+                          href="/reference#locales"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-brand-blurple hover:underline"
+                        >
+                          View Options
+                        </a>
+                      </div>
+                      <input
+                        type="text"
+                        className={Styles.dialogInput}
+                        value={locale}
+                        onChange={(e) => {
+                          setLocale(e.target.value);
+                          localStorage.setItem("discord_api_locale", e.target.value);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className={Styles.dialogLabel}>Custom Headers</label>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {customHeaders.map((header, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Key"
+                              className={classNames(Styles.dialogInput, "flex-1")}
+                              value={header.key}
+                              onChange={(e) => {
+                                const newHeaders = [...customHeaders];
+                                newHeaders[index].key = e.target.value;
+                                if (index === newHeaders.length - 1 && (e.target.value || newHeaders[index].value)) {
+                                  newHeaders.push({ key: "", value: "" });
+                                }
+                                setCustomHeaders(newHeaders);
+                                localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Value"
+                              className={classNames(Styles.dialogInput, "flex-1")}
+                              value={header.value}
+                              onChange={(e) => {
+                                const newHeaders = [...customHeaders];
+                                newHeaders[index].value = e.target.value;
+                                if (index === newHeaders.length - 1 && (newHeaders[index].key || e.target.value)) {
+                                  newHeaders.push({ key: "", value: "" });
+                                }
+                                setCustomHeaders(newHeaders);
+                                localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newHeaders = customHeaders.filter((_, i) => i !== index);
+                                if (newHeaders.length === 0) {
+                                  newHeaders.push({ key: "", value: "" });
+                                }
+                                setCustomHeaders(newHeaders);
+                                localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                              }}
+                              className="px-2 text-red-500 hover:text-red-700"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-end gap-2">
+                      <button
+                        className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2"
+                        onClick={() => setIsSettingsOpen(false)}
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-col gap-4">
+                    <div>
+                      <label className={Styles.dialogLabel}>
+                        Authorization Token
+                        {tokenType === "user" && (
+                          <>
+                            <span className="ml-2 font-normal">—</span>
+                            <span className="ml-2 font-normal text-red-500">
+                              Automating user accounts is against platform Terms of Service. Proceed with caution.
+                            </span>
+                          </>
+                        )}
+                        {tokenType === "bot" && (
+                          <>
+                            <span className="ml-2 font-normal">—</span>
+                            <span className="ml-2 font-normal text-orange-500">
+                              Bot tokens are blocked in browsers.
+                            </span>
+                          </>
+                        )}
+                      </label>
+                      <input
+                        type="password"
+                        className={classNames(Styles.dialogInput, {
+                          "!border-red-500 focus:!border-red-500 focus:!ring-red-500":
+                            tokenType === "invalid" && token.length > 0,
+                        })}
+                        placeholder="User or bearer token"
+                        value={token}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setToken(val);
+                          localStorage.setItem("discord_api_token", val);
+
+                          if (val.length === 0) setTokenType(null);
+                          else if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
+                          else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
+                          else if (BEARER_TOKEN_REGEX.test(val)) setTokenType("bearer");
+                          else setTokenType("invalid");
+                        }}
+                      />
+                    </div>
+
+                    {Object.keys(pathParams).length > 0 && (
+                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {Object.keys(pathParams).map((key) => (
+                          <div key={key}>
+                            <label className={Styles.dialogLabel}>{key}</label>
+                            <input
+                              type="text"
+                              className={Styles.dialogInput}
+                              value={pathParams[key]}
+                              onChange={(e) => setPathParams((prev) => ({ ...prev, [key]: e.target.value }))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className={Styles.dialogLabel}>Query Parameters</label>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <datalist id="query-params-options">
+                          {optionalQueryParams.map((param) => (
+                            <option key={param} value={param} />
+                          ))}
+                        </datalist>
+                        {queryParams.map((param, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Key"
+                              list="query-params-options"
+                              className={classNames(Styles.dialogInput, "flex-1")}
+                              value={param.key}
+                              onChange={(e) => {
+                                const newParams = [...queryParams];
+                                newParams[index].key = e.target.value;
+                                if (index === newParams.length - 1 && (e.target.value || newParams[index].value)) {
+                                  newParams.push({ key: "", value: "" });
+                                }
+                                setQueryParams(newParams);
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Value"
+                              className={classNames(Styles.dialogInput, "flex-1")}
+                              value={param.value}
+                              onChange={(e) => {
+                                const newParams = [...queryParams];
+                                newParams[index].value = e.target.value;
+                                if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
+                                  newParams.push({ key: "", value: "" });
+                                }
+                                setQueryParams(newParams);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newParams = queryParams.filter((_, i) => i !== index);
+                                if (newParams.length === 0) {
+                                  newParams.push({ key: "", value: "" });
+                                }
+                                setQueryParams(newParams);
+                              }}
+                              className="px-2 text-red-500 hover:text-red-700"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {method !== "GET" && (
+                      <div>
+                        <label className={Styles.dialogLabel}>Request Body (JSON)</label>
+                        <textarea
+                          className={classNames(Styles.dialogInput, "font-mono text-sm")}
+                          rows={5}
+                          value={body}
+                          onChange={(e) => setBody(e.target.value)}
+                          placeholder="{ ... }"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      <button
+                        className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                        onClick={onClose}
+                      >
+                        Close
+                      </button>
+                      <button
+                        className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2 disabled:opacity-50"
+                        onClick={handleSend}
+                        disabled={loading}
+                      >
+                        {loading ? "Sending..." : "Send Request"}
+                      </button>
+                    </div>
+
+                    {response && (
+                      <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Response</h3>
+                        <div className="mt-2 text-left">
+                          <div className="flex gap-2 text-sm">
+                            <span
+                              className={classNames("font-bold", {
+                                "text-green-600": response.status >= 200 && response.status < 300,
+                                "text-red-600": response.status >= 400,
+                              })}
+                            >
+                              {response.status} {response.statusText}
+                            </span>
+                          </div>
+
+                          <div className="mt-2 border-b border-gray-200 dark:border-gray-700">
+                            <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                              <button
+                                onClick={() => setActiveTab("body")}
+                                className={classNames(
+                                  activeTab === "body"
+                                    ? "border-brand-blurple text-brand-blurple"
+                                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                                )}
+                              >
+                                Response Body
+                              </button>
+                              <button
+                                onClick={() => setActiveTab("headers")}
+                                className={classNames(
+                                  activeTab === "headers"
+                                    ? "border-brand-blurple text-brand-blurple"
+                                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                                )}
+                              >
+                                Headers
+                              </button>
+                            </nav>
+                          </div>
+
+                          <div className="mt-2 max-h-96 overflow-auto rounded text-xs">
+                            {activeTab === "body" ? (
+                              <Code className="language-json" forceCopy>
+                                {JSON.stringify(response.body, null, 2)}
+                              </Code>
+                            ) : (
+                              <Code className="language-http" forceCopy>
+                                {Object.entries(response.headers)
+                                  .map(([key, value]) => `${prettifyHeader(key)}: ${value}`)
+                                  .join("\n")}
+                              </Code>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+}

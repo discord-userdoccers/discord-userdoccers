@@ -1,5 +1,5 @@
 import classNames from "@lib/classnames";
-import { Fragment } from "react";
+import { Fragment, useRef, useState } from "react";
 import IconBadge from "./IconBadge";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
@@ -8,14 +8,15 @@ import { WrenchIcon } from "./mdx/icons/WrenchIcon";
 import { LockUnlockedIcon } from "./mdx/icons/LockUnlockedIcon";
 import { TopicsIcon } from "./mdx/icons/TopicsIcon";
 import { KeyIcon } from "./mdx/icons/KeyIcon";
+import RouteTestDialog from "./RouteTestDialog";
 
-type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+export type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 interface MethodBadgeProps {
   method: RESTMethod;
 }
 
-function MethodBadge({ method }: MethodBadgeProps) {
+export function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
   const classes = classNames(
@@ -56,6 +57,8 @@ export default function RouteHeader({
   supportsBot,
 }: RouteHeaderProps) {
   const anchor = getNormalisedText(children);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   return (
     <Fragment>
@@ -99,10 +102,23 @@ export default function RouteHeader({
           ) : null}
         </span>
       </H3>
-      <div className="mt-1 flex items-center">
+      <div ref={containerRef} className="mt-1 flex items-center">
         <MethodBadge method={method} />
         <code className="break-all p-2 text-base text-text-light dark:text-text-dark">{url}</code>
+        <button
+          onClick={() => setIsTestDialogOpen(true)}
+          className="ml-auto rounded bg-brand-blurple px-3 py-1 text-xs font-bold text-white hover:bg-brand-blurple/80"
+        >
+          Test
+        </button>
       </div>
+      <RouteTestDialog
+        isOpen={isTestDialogOpen}
+        onClose={() => setIsTestDialogOpen(false)}
+        method={method}
+        url={url}
+        triggerRef={containerRef}
+      />
     </Fragment>
   );
 }
