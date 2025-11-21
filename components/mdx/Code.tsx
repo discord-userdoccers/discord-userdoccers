@@ -1,12 +1,34 @@
 import classNames from "@lib/classnames";
-import { Highlight, type Language as TLanguage } from "prism-react-renderer";
+import { Highlight, Prism, type Language as TLanguage } from "prism-react-renderer";
 import { DetailedHTMLProps, HTMLAttributes, ReactNode } from "react";
 import CopyButton from "../Copy";
 import { CopyIcon } from "./icons/CopyIcon";
 
-// import FileIcon from "../icons/File";
+Prism.languages.http = {
+  "request-line": {
+    pattern: /^(?:POST|GET|PUT|DELETE|OPTIONS|PATCH|TRACE|CONNECT)\s(?:https?:\/\/|\/)\S+\sHTTP\/[0-9.]+/m,
+    inside: {
+      "property": /^(?:POST|GET|PUT|DELETE|OPTIONS|PATCH|TRACE|CONNECT)\b/,
+      "attr-name": /:\/\/\S+/,
+      "string": /\S+(?=\sHTTP\/)/,
+      "important": /HTTP\/[0-9.]+/,
+    },
+  },
+  "response-status": {
+    pattern: /^HTTP\/[0-9.]+\s\d+\s.+/m,
+    inside: {
+      important: /HTTP\/[0-9.]+/,
+      property: /\d{3}/,
+      string: /.+/,
+    },
+  },
+  "header": {
+    pattern: /^[\w-]+:(?=.)/m,
+    alias: "keyword",
+  },
+};
 
-// this isn't exported for some reason
+// This isn't exported for some reason
 type Token = {
   types: string[];
   content: string;
@@ -42,31 +64,13 @@ function cleanTokens(tokens: Token[][]): Token[][] {
   return tokens;
 }
 
-// interface InfoBarProps {
-//   fileName?: string | null;
-//   language: string;
-// }
-
-// function InfoBar({ fileName, language }: InfoBarProps) {
-//   return (
-//     <div className="flex mb-2 text-black dark:text-white text-sm font-bold">
-//       {fileName == null ? null : (
-//         <span className="inline-flex items-center">
-//           <FileIcon className="mr-2 w-4 h-4" />
-//           {fileName}
-//         </span>
-//       )}
-//       <span className="ml-auto">{language}</span>
-//     </div>
-//   );
-// }
-
 interface ICodeProps {
   // we know this is going to be a string
   children?: ReactNode;
   className?: string;
   file?: string | true;
   noCopy?: boolean;
+  forceCopy?: boolean;
   isTerminal?: boolean;
   hasLines?: boolean;
 }
@@ -83,7 +87,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
 
   const breakWords = propList.includes(language!);
 
-  const hasCopy = !(props.noCopy || language === "json");
+  const hasCopy = !(props.noCopy || language === "json") || props.forceCopy;
   const isTerminal = props.isTerminal || language === "terminal";
   const hasLines = file != null || props.hasLines;
 
@@ -91,7 +95,6 @@ export default function Code({ children, className, file, ...props }: CodeProps)
 
   return (
     <div className="code-block relative my-3 rounded-md font-mono">
-      {/* <InfoBar fileName={file} language={language} /> */}
       <Highlight code={children} language={language! as TLanguage} theme={{ styles: [], plain: {} }}>
         {({
           className: blockClassName,
@@ -151,7 +154,6 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                           Object.values(SYMBOLS).includes(token.content.charAt(0) as string)
                         ) {
                           return (
-                            // eslint-disable-next-line react/jsx-key
                             <span
                               {...getTokenProps({
                                 token: {
@@ -163,7 +165,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                             />
                           );
                         }
-                        // eslint-disable-next-line react/jsx-key
+
                         return <span {...getTokenProps({ token, key })} />;
                       })}
                     </span>
