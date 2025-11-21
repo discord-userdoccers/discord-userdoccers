@@ -278,6 +278,8 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
   }, [url, isOpen, triggerRef]);
 
   const handleSend = async () => {
+    if (Object.values(pathParams).some((val) => !val)) return;
+
     setLoading(true);
     setResponse(null);
 
@@ -688,7 +690,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                       <button
                         className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2 disabled:opacity-50"
                         onClick={handleSend}
-                        disabled={loading}
+                        disabled={loading || Object.values(pathParams).some((val) => !val)}
                       >
                         {loading ? "Sending..." : "Send Request"}
                       </button>
