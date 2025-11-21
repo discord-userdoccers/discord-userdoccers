@@ -339,14 +339,19 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
             >
               <DialogPanel className={classNames(Styles.dialogPanel, "flex max-h-[85vh] !max-w-4xl flex-col !p-0")}>
                 <div className="flex items-center justify-between p-6 pb-2">
-                  <DialogTitle as={H2} useAnchor={false} useCopy={false} className="!mb-0">
+                  <DialogTitle
+                    as={H2}
+                    useAnchor={false}
+                    useCopy={false}
+                    className="!mb-0 text-text-light dark:text-text-dark"
+                  >
                     {isSettingsOpen ? "Settings" : "Test Endpoint"}
                   </DialogTitle>
                   <button
                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   >
-                    <SettingsIcon className="h-6 w-6 fill-black dark:fill-white" />
+                    <SettingsIcon className="h-6 w-6 fill-current dark:fill-white" />
                   </button>
                 </div>
 
