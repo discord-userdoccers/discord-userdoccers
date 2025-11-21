@@ -33,14 +33,12 @@ export class RustGenerator {
       const isEnum = layout.type === TableType.Enum;
       let field = this.typeToString(property.field, true);
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
-      const isUndefinable = field.endsWith("?");
-      if (isUndefinable) field = this.stripQuestionMark(field);
 
       if (property.type?.type) {
         property.type = new TypeInfo([this.typeMapper(`${property.type.optional ? "?" : ""}${property.type.type}`)]);
       }
       const onlyFirstWord = isEnum && layout.type !== TableType.Bitfield;
-      let type = property.type && this.typeToString(property.type, onlyFirstWord, isUndefinable);
+      let type = property.type && this.typeToString(property.type, onlyFirstWord, property.field.undefinable);
       if (!isEnum) type = type && this.typeMapper(type);
 
       const description = property.description ? this.typeToString(property.description) : "";
@@ -54,7 +52,7 @@ export class RustGenerator {
         type,
         description,
         isDeprecated,
-        isUndefinable,
+        isUndefinable: property.field.undefinable,
       });
     }
 

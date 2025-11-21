@@ -32,8 +32,6 @@ export class GoGenerator {
 
       let rawField = this.typeToString(property.field, true);
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
-      const isUndefinable = rawField.endsWith("?");
-      if (isUndefinable) rawField = this.stripQuestionMark(rawField);
 
       const jsonKey = rawField;
       const field = this.toExportedName(rawField);
@@ -60,7 +58,7 @@ export class GoGenerator {
         description,
         otherColumns,
         isDeprecated,
-        isUndefinable,
+        isUndefinable: property.field.undefinable,
         isOptionalType: Boolean(property.type?.optional),
       });
     }
@@ -170,12 +168,6 @@ export class GoGenerator {
       return onlyFirstWord ? mapped.split(" ")[0] : mapped;
     }
     throw new Error("Invalid TypeInfo provided.");
-  }
-
-  private stripQuestionMark(input: string): string {
-    if (input.startsWith("?")) input = input.slice(1);
-    if (input.endsWith("?")) input = input.slice(0, -1);
-    return input;
   }
 
   private toExportedName(input: string): string {

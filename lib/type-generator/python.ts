@@ -31,8 +31,6 @@ export class PythonGenerator {
     for (const property of layout.contents) {
       const isEnum = layout.type === TableType.Enum;
       let field = this.typeToString(property.field, true);
-      const isUndefinable = field.endsWith("?");
-      if (isUndefinable) field = this.stripQuestionMark(field);
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
@@ -56,7 +54,7 @@ export class PythonGenerator {
         description,
         otherColumns,
         isDeprecated,
-        isUndefinable,
+        isUndefinable: property.field.undefinable,
       });
     }
 
@@ -135,16 +133,6 @@ export class PythonGenerator {
       if (input === k) {
         return v;
       }
-    }
-    return input;
-  }
-
-  private stripQuestionMark(input: string): string {
-    if (input.startsWith("?")) {
-      input = input.slice(1);
-    }
-    if (input.endsWith("?")) {
-      input = input.slice(0, -1);
     }
     return input;
   }

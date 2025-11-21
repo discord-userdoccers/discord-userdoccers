@@ -10,6 +10,7 @@ export enum NodeType {
 
 export class TypeInfo {
   public readonly optional: boolean;
+  public readonly undefinable: boolean;
   public readonly type?: string;
   public readonly multiline?: string[];
   public readonly map?: [TypeInfo, TypeInfo];
@@ -17,6 +18,7 @@ export class TypeInfo {
 
   public constructor(inner: string[], multiline = false) {
     this.optional = false;
+    this.undefinable = false;
 
     if (multiline) {
       this.multiline = inner;
@@ -29,6 +31,10 @@ export class TypeInfo {
     if (inner[0].startsWith("?")) {
       this.optional = true;
       inner[0] = inner[0].slice(1);
+      this.type = inner.join(" ");
+    } else if (inner[0].endsWith("?")) {
+      this.undefinable = true;
+      inner[0] = inner[0].slice(0, -1);
       this.type = inner.join(" ");
     }
 

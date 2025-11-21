@@ -29,11 +29,16 @@ export class TypescriptGenerator {
     for (const property of layout.contents) {
       const isEnum = layout.type === TableType.Enum;
       const field = this.typeToString(property.field, true);
+      const isUndefinable = property.field.undefinable;
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
       if (property.type?.type) {
-        property.type = new TypeInfo([this.typeMapper(`${property.type.optional ? "?" : ""}${property.type.type}`)]);
+        property.type = new TypeInfo([
+          this.typeMapper(
+            `${property.type.optional ? "?" : ""}${property.type.type}${property.type.undefinable ? "?" : ""}`,
+          ),
+        ]);
       }
       const onlyFirstWord = isEnum && layout.type !== TableType.Bitfield;
       let type = property.type && this.typeToString(property.type, onlyFirstWord);
@@ -52,6 +57,7 @@ export class TypescriptGenerator {
         description,
         otherColumns,
         isDeprecated,
+        isUndefinable,
       });
     }
 
@@ -93,7 +99,7 @@ export class TypescriptGenerator {
       }
 
       if (layout.type === TableType.Struct) {
-        output += `\t${property.field}: ${property.type};\n`;
+        output += `\t${property.field}${property.isUndefinable ? "?" : ""}: ${property.type};\n`;
       } else if (layout.type === TableType.Enum || layout.type === TableType.Event) {
         if (property.type) {
           output += `\t${property.field} = ${property.type},\n`;
@@ -154,15 +160,16 @@ export class TypescriptGenerator {
     if (type.multiline) {
       return type.multiline.join("\n");
     }
-    if (type.type && type.optional) {
-      const t = this.typeMapper(type.type);
-      if (isInArray) {
-        return `(${t} | null)`;
-      }
-      return `${t} | null`;
-    }
     if (type.type && onlyFirstWord) {
       return type.type.split(" ")[0];
+    }
+    if (type.type && (type.optional || type.undefinable)) {
+      const t = this.typeMapper(type.type);
+      const suffix = `${type.optional ? " | null" : ""}${type.undefinable ? " | undefined" : ""}`;
+      if (isInArray) {
+        return `(${t}${suffix})`;
+      }
+      return `${t}${suffix}`;
     }
     if (typeof type.type === "string") {
       return type.type;
