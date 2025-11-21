@@ -403,7 +403,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                             rel="noopener noreferrer"
                             className="text-xs text-brand-blurple hover:underline"
                           >
-                            View Options
+                            Documentation
                           </a>
                         </div>
                         <input
