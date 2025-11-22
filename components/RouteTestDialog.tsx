@@ -7,6 +7,7 @@ import Code from "./mdx/Code";
 import { CircleErrorIcon as SettingsIcon } from "./mdx/icons/SettingsIcon";
 import { Tokenizer } from "../lib/type-generator/tokenizer";
 import { MethodBadge, type RESTMethod } from "./RouteHeader";
+import { toast } from "react-toastify";
 import platform from "platform";
 
 const USER_TOKEN_REGEX: RegExp = /[\w]{24}\.[\w]{6}\.[\w-_]{27}/;
@@ -163,7 +164,8 @@ async function sendApiRequest(options: {
   try {
     headers.set("X-Super-Properties", await getSuperProperties());
   } catch (error) {
-    console.error("Failed to fetch super properties:", error);
+    console.error(error);
+    toast.error("Failed to fetch super properties!");
   }
 
   customHeaders.forEach(({ key, value }) => {
@@ -190,7 +192,7 @@ async function sendApiRequest(options: {
 
     return {
       status: res.status,
-      statusText: res.heade,
+      statusText: res.statusText,
       headers: Object.fromEntries(res.headers.entries()),
       body: parsedBody,
     };
@@ -350,6 +352,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
               }
             } catch (e) {
               console.error("Failed to parse table", e);
+              toast.error("Failed to parse documentation.");
             }
           }
           node = node.nextElementSibling;
@@ -438,13 +441,6 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-2">
-                  {!isSettingsOpen && (
-                    <div className="mb-4 flex items-center gap-2">
-                      <MethodBadge method={method} />
-                      <code className="break-all text-base text-text-light dark:text-text-dark">{url}</code>
-                    </div>
-                  )}
-
                   {isSettingsOpen ? (
                     <div className="flex flex-col gap-4 pb-4">
                       <div>
@@ -561,199 +557,205 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-4 pb-4">
-                      <div>
-                        <label className={Styles.dialogLabel}>
-                          Authorization Token
-                          {tokenType === "user" && (
-                            <>
-                              <span className="ml-2 font-normal">—</span>
-                              <span className="ml-2 font-normal text-red-500">
-                                Automating user accounts is against platform Terms of Service. Proceed with caution.
-                              </span>
-                            </>
-                          )}
-                          {tokenType === "bot" && (
-                            <>
-                              <span className="ml-2 font-normal">—</span>
-                              <span className="ml-2 font-normal text-orange-500">
-                                Bot tokens are blocked in browsers.
-                              </span>
-                            </>
-                          )}
-                        </label>
-                        <input
-                          type="password"
-                          className={classNames(Styles.dialogInput, {
-                            "!border-red-500 focus:!border-red-500 focus:!ring-red-500":
-                              tokenType == null && token.length > 0,
-                          })}
-                          placeholder="User or bearer token"
-                          value={token}
-                          onKeyDown={handleKeyDown}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setToken(val);
-                            localStorage.setItem("discord_api_token", val);
-
-                            if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
-                            else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
-                            else if (BEARER_TOKEN_REGEX.test(val)) setTokenType("bearer");
-                            else setTokenType(null);
-                          }}
-                        />
+                    <>
+                      <div className="mb-4 flex items-center gap-2">
+                        <MethodBadge method={method} />
+                        <code className="break-all text-base text-text-light dark:text-text-dark">{url}</code>
                       </div>
-
-                      {Object.keys(pathParams).length > 0 && (
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                          {Object.keys(pathParams).map((key) => (
-                            <div key={key}>
-                              <label className={Styles.dialogLabel}>{key}</label>
-                              <input
-                                type="text"
-                                className={Styles.dialogInput}
-                                value={pathParams[key]}
-                                onKeyDown={handleKeyDown}
-                                onChange={(e) => setPathParams((prev) => ({ ...prev, [key]: e.target.value }))}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className={Styles.dialogLabel}>Query Parameters</label>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <datalist id="query-params-options">
-                            {optionalQueryParams.map((param) => (
-                              <option key={param} value={param} />
-                            ))}
-                          </datalist>
-                          {queryParams.map((param, index) => (
-                            <div key={index} className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Key"
-                                list="query-params-options"
-                                className={classNames(Styles.dialogInput, "flex-1")}
-                                value={param.key}
-                                onKeyDown={handleKeyDown}
-                                onChange={(e) => {
-                                  const newParams = [...queryParams];
-                                  newParams[index].key = e.target.value;
-                                  if (index === newParams.length - 1 && (e.target.value || newParams[index].value)) {
-                                    newParams.push({ key: "", value: "" });
-                                  }
-                                  setQueryParams(newParams);
-                                }}
-                              />
-                              <input
-                                type="text"
-                                placeholder="Value"
-                                className={classNames(Styles.dialogInput, "flex-1")}
-                                value={param.value}
-                                onKeyDown={handleKeyDown}
-                                onChange={(e) => {
-                                  const newParams = [...queryParams];
-                                  newParams[index].value = e.target.value;
-                                  if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
-                                    newParams.push({ key: "", value: "" });
-                                  }
-                                  setQueryParams(newParams);
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newParams = queryParams.filter((_, i) => i !== index);
-                                  if (newParams.length === 0) {
-                                    newParams.push({ key: "", value: "" });
-                                  }
-                                  setQueryParams(newParams);
-                                }}
-                                className="px-2 text-red-500 hover:text-red-700"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {method !== "GET" && (
+                      <div className="flex flex-col gap-4 pb-4">
                         <div>
-                          <label className={Styles.dialogLabel}>Request Body (JSON)</label>
-                          <textarea
-                            className={classNames(Styles.dialogInput, "font-mono text-sm")}
-                            rows={5}
-                            value={body}
-                            onChange={(e) => setBody(e.target.value)}
-                            placeholder="{ ... }"
+                          <label className={Styles.dialogLabel}>
+                            Authorization Token
+                            {tokenType === "user" && (
+                              <>
+                                <span className="ml-2 font-normal">—</span>
+                                <span className="ml-2 font-normal text-red-500">
+                                  Automating user accounts is against platform Terms of Service. Proceed with caution.
+                                </span>
+                              </>
+                            )}
+                            {tokenType === "bot" && (
+                              <>
+                                <span className="ml-2 font-normal">—</span>
+                                <span className="ml-2 font-normal text-orange-500">
+                                  Bot tokens are blocked in browsers.
+                                </span>
+                              </>
+                            )}
+                          </label>
+                          <input
+                            type="password"
+                            className={classNames(Styles.dialogInput, {
+                              "!border-red-500 focus:!border-red-500 focus:!ring-red-500":
+                                tokenType == null && token.length > 0,
+                            })}
+                            placeholder="User or bearer token"
+                            value={token}
+                            onKeyDown={handleKeyDown}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setToken(val);
+                              localStorage.setItem("discord_api_token", val);
+
+                              if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
+                              else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
+                              else if (BEARER_TOKEN_REGEX.test(val)) setTokenType("bearer");
+                              else setTokenType(null);
+                            }}
                           />
                         </div>
-                      )}
 
-                      {response && (
-                        <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Response</h3>
-                          <div className="mt-2 text-left">
-                            <div className="flex gap-2 text-sm">
-                              <span
-                                className={classNames("font-bold", {
-                                  "text-green-600": response.status >= 200 && response.status < 300,
-                                  "text-red-600": response.status >= 400,
-                                })}
-                              >
-                                {response.status} {response.statusText}
-                              </span>
-                            </div>
+                        {Object.keys(pathParams).length > 0 && (
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                            {Object.keys(pathParams).map((key) => (
+                              <div key={key}>
+                                <label className={Styles.dialogLabel}>{key}</label>
+                                <input
+                                  type="text"
+                                  className={Styles.dialogInput}
+                                  value={pathParams[key]}
+                                  onKeyDown={handleKeyDown}
+                                  onChange={(e) => setPathParams((prev) => ({ ...prev, [key]: e.target.value }))}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
-                            <div className="mt-2 border-b border-gray-200 dark:border-gray-700">
-                              <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <label className={Styles.dialogLabel}>Query Parameters</label>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <datalist id="query-params-options">
+                              {optionalQueryParams.map((param) => (
+                                <option key={param} value={param} />
+                              ))}
+                            </datalist>
+                            {queryParams.map((param, index) => (
+                              <div key={index} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Key"
+                                  list="query-params-options"
+                                  className={classNames(Styles.dialogInput, "flex-1")}
+                                  value={param.key}
+                                  onKeyDown={handleKeyDown}
+                                  onChange={(e) => {
+                                    const newParams = [...queryParams];
+                                    newParams[index].key = e.target.value;
+                                    if (index === newParams.length - 1 && (e.target.value || newParams[index].value)) {
+                                      newParams.push({ key: "", value: "" });
+                                    }
+                                    setQueryParams(newParams);
+                                  }}
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Value"
+                                  className={classNames(Styles.dialogInput, "flex-1")}
+                                  value={param.value}
+                                  onKeyDown={handleKeyDown}
+                                  onChange={(e) => {
+                                    const newParams = [...queryParams];
+                                    newParams[index].value = e.target.value;
+                                    if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
+                                      newParams.push({ key: "", value: "" });
+                                    }
+                                    setQueryParams(newParams);
+                                  }}
+                                />
                                 <button
-                                  onClick={() => setActiveTab("body")}
-                                  className={classNames(
-                                    activeTab === "body"
-                                      ? "border-brand-blurple text-brand-blurple"
-                                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                    "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                                  )}
+                                  type="button"
+                                  onClick={() => {
+                                    const newParams = queryParams.filter((_, i) => i !== index);
+                                    if (newParams.length === 0) {
+                                      newParams.push({ key: "", value: "" });
+                                    }
+                                    setQueryParams(newParams);
+                                  }}
+                                  className="px-2 text-red-500 hover:text-red-700"
                                 >
-                                  Response Body
+                                  ✕
                                 </button>
-                                <button
-                                  onClick={() => setActiveTab("headers")}
-                                  className={classNames(
-                                    activeTab === "headers"
-                                      ? "border-brand-blurple text-brand-blurple"
-                                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                    "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                                  )}
-                                >
-                                  Headers
-                                </button>
-                              </nav>
-                            </div>
-
-                            <div className="mt-2 max-h-96 overflow-auto rounded text-xs">
-                              {activeTab === "body" ? (
-                                <Code className="language-json" forceCopy>
-                                  {JSON.stringify(response.body, null, 2)}
-                                </Code>
-                              ) : (
-                                <Code className="language-http" forceCopy>
-                                  {Object.entries(response.headers)
-                                    .map(([key, value]) => `${prettifyHeader(key)}: ${value}`)
-                                    .join("\n")}
-                                </Code>
-                              )}
-                            </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      )}
-                    </div>
+
+                        {method !== "GET" && (
+                          <div>
+                            <label className={Styles.dialogLabel}>Request Body (JSON)</label>
+                            <textarea
+                              className={classNames(Styles.dialogInput, "font-mono text-sm")}
+                              rows={5}
+                              value={body}
+                              onChange={(e) => setBody(e.target.value)}
+                              placeholder="{ ... }"
+                            />
+                          </div>
+                        )}
+
+                        {response && (
+                          <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Response</h3>
+                            <div className="mt-2 text-left">
+                              <div className="flex gap-2 text-sm">
+                                <span
+                                  className={classNames("font-bold", {
+                                    "text-green-600": response.status >= 200 && response.status < 300,
+                                    "text-red-600": response.status >= 400,
+                                  })}
+                                >
+                                  {response.status} {response.statusText}
+                                </span>
+                              </div>
+
+                              <div className="mt-2 border-b border-gray-200 dark:border-gray-700">
+                                <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                                  <button
+                                    onClick={() => setActiveTab("body")}
+                                    className={classNames(
+                                      activeTab === "body"
+                                        ? "border-brand-blurple text-brand-blurple"
+                                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                                    )}
+                                  >
+                                    Response Body
+                                  </button>
+                                  <button
+                                    onClick={() => setActiveTab("headers")}
+                                    className={classNames(
+                                      activeTab === "headers"
+                                        ? "border-brand-blurple text-brand-blurple"
+                                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                                    )}
+                                  >
+                                    Headers
+                                  </button>
+                                </nav>
+                              </div>
+
+                              <div className="mt-2 max-h-96 overflow-auto rounded text-xs">
+                                {activeTab === "body" ? (
+                                  <Code className="language-json" forceCopy>
+                                    {JSON.stringify(response.body, null, 2)}
+                                  </Code>
+                                ) : (
+                                  <Code className="language-http" forceCopy>
+                                    {Object.entries(response.headers)
+                                      .map(([key, value]) => `${prettifyHeader(key)}: ${value}`)
+                                      .join("\n")}
+                                  </Code>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
 
