@@ -16,35 +16,7 @@ const BEARER_TOKEN_REGEX: RegExp = /^(?:Bearer\s+)?([\w]{24}\.[\w-_]{30})$/;
 
 let cachedSuperProperties: string | undefined;
 
-async function getSuperProperties(): Promise<string> {
-  if (cachedSuperProperties) return cachedSuperProperties;
-
-  const result = await fetch("https://cordapi.dolfi.es/api/v2/properties/web", {
-    method: "POST",
-  });
-
-  const { properties } = await result.json();
-  if (!result.ok || !properties) {
-    throw new Error(`Failed to fetch super properties: ${result.status} ${result.statusText} (${await result.text()})`);
-  }
-
-  const superProperties = {
-    ...properties,
-    os: getOS(),
-    os_version: platform?.os?.version ?? "",
-    browser: getBrowser(),
-    browser_user_agent: navigator.userAgent || "",
-    browser_version: platform.version || "",
-    device: getDevice(),
-    // @ts-expect-error legacy fields
-    system_locale: navigator.language ?? navigator.browserLanguage ?? navigator.userLanguage ?? "",
-  };
-
-  cachedSuperProperties = btoa(JSON.stringify(superProperties));
-  return cachedSuperProperties;
-}
-
-export function getOS(): string {
+function getOS(): string {
   const { userAgent } = window.navigator;
   if (/Windows/i.test(userAgent)) {
     return /Phone/.test(userAgent) ? "Windows Mobile" : "Windows";
@@ -96,7 +68,7 @@ function getBrowser(): string {
   }
 }
 
-export function getDevice(): string {
+function getDevice(): string {
   const { userAgent } = window.navigator;
   if (/(BlackBerry|PlayBook|BB10)/i.test(userAgent)) {
     return "BlackBerry";
@@ -111,6 +83,34 @@ export function getDevice(): string {
   } else {
     return "";
   }
+}
+
+async function getSuperProperties(): Promise<string> {
+  if (cachedSuperProperties) return cachedSuperProperties;
+
+  const result = await fetch("https://cordapi.dolfi.es/api/v2/properties/web", {
+    method: "POST",
+  });
+
+  const { properties } = await result.json();
+  if (!result.ok || !properties) {
+    throw new Error(`Failed to fetch super properties: ${result.status} ${result.statusText} (${await result.text()})`);
+  }
+
+  const superProperties = {
+    ...properties,
+    os: getOS(),
+    os_version: platform?.os?.version ?? "",
+    browser: getBrowser(),
+    browser_user_agent: navigator.userAgent || "",
+    browser_version: platform.version || "",
+    device: getDevice(),
+    // @ts-expect-error legacy fields
+    system_locale: navigator.language ?? navigator.browserLanguage ?? navigator.userLanguage ?? "",
+  };
+
+  cachedSuperProperties = btoa(JSON.stringify(superProperties));
+  return cachedSuperProperties;
 }
 
 const STATUS_CODES: Record<number, string> = {
@@ -455,14 +455,14 @@ function RequestView({
               <>
                 <span className="ml-2 font-normal">—</span>
                 <span className="ml-2 font-normal text-red-500">
-                  Automating user accounts is against platform Terms of Service. Proceed with caution.
+                  Automating user accounts is against platform Terms of Service. Proceed at your own risk.
                 </span>
               </>
             )}
             {tokenType === "bot" && (
               <>
                 <span className="ml-2 font-normal">—</span>
-                <span className="ml-2 font-normal text-orange-500">Bot tokens are blocked in browsers.</span>
+                <span className="ml-2 font-normal text-orange-500">Bot tokens are blocked in browsers by Discord.</span>
               </>
             )}
           </label>
