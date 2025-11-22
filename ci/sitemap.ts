@@ -113,7 +113,10 @@ for (const file of files) {
 
   const pageUrl = createLink(file === "index" ? "" : file);
 
-  const contentBelowHeader = parsed.content.split("\n").slice(parsed.content.split("\n").findIndex(line => line.startsWith("#")) + 1).join("\n");
+  const contentBelowHeader = parsed.content
+    .split("\n")
+    .slice(parsed.content.split("\n").findIndex((line) => line.startsWith("#")) + 1)
+    .join("\n");
   if (contentBelowHeader) {
     llmsContent += `\n\n# ${name}\nLink: ${pageUrl}\n${contentBelowHeader}\n\n---\n`;
   }
