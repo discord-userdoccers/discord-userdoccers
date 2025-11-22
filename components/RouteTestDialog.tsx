@@ -188,15 +188,10 @@ async function sendApiRequest(options: {
       parsedBody = JSON.parse(resBody);
     } catch {}
 
-    const resHeaders: Record<string, string> = {};
-    res.headers.forEach((value, key) => {
-      resHeaders[key] = value;
-    });
-
     return {
       status: res.status,
-      statusText: res.statusText,
-      headers: resHeaders,
+      statusText: res.heade,
+      headers: Object.fromEntries(res.headers.entries()),
       body: parsedBody,
     };
   } catch (error: unknown) {
