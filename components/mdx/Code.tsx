@@ -91,7 +91,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
 
   const breakWords = propList.includes(language!);
 
-  const hasCopy = !(props.noCopy || language === "json") || props.forceCopy;
+  const hasCopy = props.forceCopy || !(props.noCopy || language === "json");
   const isTerminal = props.isTerminal || language === "terminal";
   const hasLines = file != null || props.hasLines;
 
