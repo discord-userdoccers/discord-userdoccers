@@ -422,7 +422,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className={classNames(Styles.dialogPanel, "flex max-h-[85vh] !max-w-4xl flex-col !p-0")}>
+              <DialogPanel className={classNames(Styles.dialogPanel, "flex h-[72vh] !max-w-4xl flex-col !p-0")}>
                 <div className="flex items-center justify-between p-6 pb-2">
                   <DialogTitle
                     as={H2}
