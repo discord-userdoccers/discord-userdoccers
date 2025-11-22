@@ -249,6 +249,441 @@ function prettifyHeader(header: string): string {
     .join("-");
 }
 
+interface SettingsViewProps {
+  apiVersion: string;
+  setApiVersion: (v: string) => void;
+  useCanary: boolean;
+  setUseCanary: (v: boolean) => void;
+  locale: string;
+  setLocale: (v: string) => void;
+}
+
+function SettingsView({ apiVersion, setApiVersion, useCanary, setUseCanary, locale, setLocale }: SettingsViewProps) {
+  return (
+    <div className="flex flex-col gap-4 pb-4">
+      <div>
+        <label className={Styles.dialogLabel}>API Version</label>
+        <select
+          className={Styles.dialogInput}
+          value={apiVersion}
+          onChange={(e) => {
+            setApiVersion(e.target.value);
+            localStorage.setItem("discord_api_version", e.target.value);
+          }}
+        >
+          {["6", "7", "8", "9", "10"].map((v) => (
+            <option key={v} value={v}>
+              v{v}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="useCanary"
+          checked={useCanary}
+          onChange={(e) => {
+            setUseCanary(e.target.checked);
+            localStorage.setItem("discord_api_use_canary", String(e.target.checked));
+          }}
+          className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
+        />
+        <label htmlFor="useCanary" className={classNames(Styles.dialogLabel, "!mb-0")}>
+          Use Canary
+        </label>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between">
+          <label className={Styles.dialogLabel}>Locale</label>
+          <a
+            href="/reference#locales"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-brand-blurple hover:underline"
+          >
+            Documentation
+          </a>
+        </div>
+        <input
+          type="text"
+          className={Styles.dialogInput}
+          value={locale}
+          onChange={(e) => {
+            setLocale(e.target.value);
+            localStorage.setItem("discord_api_locale", e.target.value);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+interface RequestViewProps {
+  method: RESTMethod;
+  url: string;
+  pathParams: Record<string, string>;
+  setPathParams: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  queryParams: { key: string; value: string }[];
+  setQueryParams: React.Dispatch<React.SetStateAction<{ key: string; value: string }[]>>;
+  optionalQueryParams: string[];
+  token: string;
+  setToken: (v: string) => void;
+  tokenType: "user" | "bot" | "bearer" | null;
+  setTokenType: (v: "user" | "bot" | "bearer" | null) => void;
+  body: string;
+  setBody: (v: string) => void;
+  customHeaders: { key: string; value: string }[];
+  setCustomHeaders: React.Dispatch<React.SetStateAction<{ key: string; value: string }[]>>;
+  activeRequestTab: "path" | "query" | "headers" | "body";
+  setActiveRequestTab: (v: "path" | "query" | "headers" | "body") => void;
+  response: {
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    body: unknown;
+  } | null;
+  activeTab: "body" | "headers";
+  setActiveTab: (v: "body" | "headers") => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
+}
+
+function RequestView({
+  method,
+  url,
+  pathParams,
+  setPathParams,
+  queryParams,
+  setQueryParams,
+  optionalQueryParams,
+  token,
+  setToken,
+  tokenType,
+  setTokenType,
+  body,
+  setBody,
+  customHeaders,
+  setCustomHeaders,
+  activeRequestTab,
+  setActiveRequestTab,
+  response,
+  activeTab,
+  setActiveTab,
+  handleKeyDown,
+}: RequestViewProps) {
+  return (
+    <>
+      <div className="mb-4 flex items-center gap-2">
+        <MethodBadge method={method} />
+        <code className="break-all text-base text-text-light dark:text-text-dark">
+          {Object.entries(pathParams).reduce((acc, [key, value]) => {
+            return value ? acc.replace(`{${key}}`, value) : acc;
+          }, url)}
+        </code>
+      </div>
+      <div className="flex flex-col gap-4 pb-4">
+        <div>
+          <label className={Styles.dialogLabel}>
+            Authorization Token
+            {tokenType === "user" && (
+              <>
+                <span className="ml-2 font-normal">—</span>
+                <span className="ml-2 font-normal text-red-500">
+                  Automating user accounts is against platform Terms of Service. Proceed with caution.
+                </span>
+              </>
+            )}
+            {tokenType === "bot" && (
+              <>
+                <span className="ml-2 font-normal">—</span>
+                <span className="ml-2 font-normal text-orange-500">Bot tokens are blocked in browsers.</span>
+              </>
+            )}
+          </label>
+          <input
+            type="password"
+            className={classNames(Styles.dialogInput, {
+              "!border-red-500 focus:!border-red-500 focus:!ring-red-500": tokenType == null && token.length > 0,
+            })}
+            placeholder="User or bearer token"
+            value={token}
+            onKeyDown={handleKeyDown}
+            onChange={(e) => {
+              const val = e.target.value;
+              setToken(val);
+              localStorage.setItem("discord_api_token", val);
+
+              if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
+              else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
+              else if (BEARER_TOKEN_REGEX.test(val)) setTokenType("bearer");
+              else setTokenType(null);
+            }}
+          />
+        </div>
+
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+            {Object.keys(pathParams).length > 0 && (
+              <button
+                onClick={() => setActiveRequestTab("path")}
+                className={classNames(
+                  activeRequestTab === "path"
+                    ? "border-brand-blurple text-brand-blurple"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                )}
+              >
+                Path Params
+              </button>
+            )}
+            <button
+              onClick={() => setActiveRequestTab("query")}
+              className={classNames(
+                activeRequestTab === "query"
+                  ? "border-brand-blurple text-brand-blurple"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+              )}
+            >
+              Query Params
+            </button>
+            {method !== "GET" && (
+              <button
+                onClick={() => setActiveRequestTab("body")}
+                className={classNames(
+                  activeRequestTab === "body"
+                    ? "border-brand-blurple text-brand-blurple"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                )}
+              >
+                Body
+              </button>
+            )}
+            <button
+              onClick={() => setActiveRequestTab("headers")}
+              className={classNames(
+                activeRequestTab === "headers"
+                  ? "border-brand-blurple text-brand-blurple"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+              )}
+            >
+              Headers
+            </button>
+          </nav>
+        </div>
+
+        {activeRequestTab === "path" && Object.keys(pathParams).length > 0 && (
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {Object.keys(pathParams).map((key) => (
+              <div key={key}>
+                <label className={Styles.dialogLabel}>{key}</label>
+                <input
+                  type="text"
+                  className={Styles.dialogInput}
+                  value={pathParams[key]}
+                  onKeyDown={handleKeyDown}
+                  onChange={(e) => setPathParams((prev) => ({ ...prev, [key]: e.target.value }))}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeRequestTab === "query" && (
+          <div>
+            <div className="flex flex-col gap-2">
+              <datalist id="query-params-options">
+                {optionalQueryParams.map((param) => (
+                  <option key={param} value={param} />
+                ))}
+              </datalist>
+              {queryParams.map((param, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    list="query-params-options"
+                    className={classNames(Styles.dialogInput, "flex-1")}
+                    value={param.key}
+                    onKeyDown={handleKeyDown}
+                    onChange={(e) => {
+                      const newParams = [...queryParams];
+                      newParams[index].key = e.target.value;
+                      if (index === newParams.length - 1 && (e.target.value || newParams[index].value)) {
+                        newParams.push({ key: "", value: "" });
+                      }
+                      setQueryParams(newParams);
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    className={classNames(Styles.dialogInput, "flex-1")}
+                    value={param.value}
+                    onKeyDown={handleKeyDown}
+                    onChange={(e) => {
+                      const newParams = [...queryParams];
+                      newParams[index].value = e.target.value;
+                      if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
+                        newParams.push({ key: "", value: "" });
+                      }
+                      setQueryParams(newParams);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newParams = queryParams.filter((_, i) => i !== index);
+                      if (newParams.length === 0) {
+                        newParams.push({ key: "", value: "" });
+                      }
+                      setQueryParams(newParams);
+                    }}
+                    className="px-2 text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeRequestTab === "headers" && (
+          <div>
+            <div className="flex flex-col gap-2">
+              {customHeaders.map((header, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    className={classNames(Styles.dialogInput, "flex-1")}
+                    value={header.key}
+                    onChange={(e) => {
+                      const newHeaders = [...customHeaders];
+                      newHeaders[index].key = e.target.value;
+                      if (index === newHeaders.length - 1 && (e.target.value || newHeaders[index].value)) {
+                        newHeaders.push({ key: "", value: "" });
+                      }
+                      setCustomHeaders(newHeaders);
+                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    className={classNames(Styles.dialogInput, "flex-1")}
+                    value={header.value}
+                    onChange={(e) => {
+                      const newHeaders = [...customHeaders];
+                      newHeaders[index].value = e.target.value;
+                      if (index === newHeaders.length - 1 && (newHeaders[index].key || e.target.value)) {
+                        newHeaders.push({ key: "", value: "" });
+                      }
+                      setCustomHeaders(newHeaders);
+                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newHeaders = customHeaders.filter((_, i) => i !== index);
+                      if (newHeaders.length === 0) {
+                        newHeaders.push({ key: "", value: "" });
+                      }
+                      setCustomHeaders(newHeaders);
+                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                    }}
+                    className="px-2 text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeRequestTab === "body" && method !== "GET" && (
+          <div>
+            <textarea
+              className={classNames(Styles.dialogInput, "font-mono text-sm")}
+              rows={5}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="{ ... }"
+            />
+          </div>
+        )}
+
+        {response && (
+          <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Response</h3>
+            <div className="mt-2 text-left">
+              <div className="flex gap-1 text-sm">
+                <span
+                  className={classNames("font-bold", {
+                    "text-green-600": response.status >= 200 && response.status < 300,
+                    "text-red-600": response.status >= 400,
+                  })}
+                >
+                  {response.status}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400">{response.statusText}</span>
+              </div>
+
+              <div className="mt-2 border-b border-gray-200 dark:border-gray-700">
+                <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                  <button
+                    onClick={() => setActiveTab("body")}
+                    className={classNames(
+                      activeTab === "body"
+                        ? "border-brand-blurple text-brand-blurple"
+                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                    )}
+                  >
+                    Response Body
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("headers")}
+                    className={classNames(
+                      activeTab === "headers"
+                        ? "border-brand-blurple text-brand-blurple"
+                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                    )}
+                  >
+                    Headers
+                  </button>
+                </nav>
+              </div>
+
+              <div className="mt-2 max-h-96 overflow-auto rounded text-xs">
+                {activeTab === "body" ? (
+                  <Code className="language-json" forceCopy>
+                    {JSON.stringify(response.body, null, 2)}
+                  </Code>
+                ) : (
+                  <Code className="language-http" forceCopy>
+                    {Object.entries(response.headers)
+                      .map(([key, value]) => `${prettifyHeader(key)}: ${value}`)
+                      .join("\n")}
+                  </Code>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 interface RouteTestDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -477,384 +912,38 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
 
                 <div className="flex-1 overflow-y-auto px-6 py-2">
                   {isSettingsOpen ? (
-                    <div className="flex flex-col gap-4 pb-4">
-                      <div>
-                        <label className={Styles.dialogLabel}>API Version</label>
-                        <select
-                          className={Styles.dialogInput}
-                          value={apiVersion}
-                          onChange={(e) => {
-                            setApiVersion(e.target.value);
-                            localStorage.setItem("discord_api_version", e.target.value);
-                          }}
-                        >
-                          {["6", "7", "8", "9", "10"].map((v) => (
-                            <option key={v} value={v}>
-                              v{v}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="useCanary"
-                          checked={useCanary}
-                          onChange={(e) => {
-                            setUseCanary(e.target.checked);
-                            localStorage.setItem("discord_api_use_canary", String(e.target.checked));
-                          }}
-                          className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
-                        />
-                        <label htmlFor="useCanary" className={classNames(Styles.dialogLabel, "!mb-0")}>
-                          Use Canary
-                        </label>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className={Styles.dialogLabel}>Locale</label>
-                          <a
-                            href="/reference#locales"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-brand-blurple hover:underline"
-                          >
-                            Documentation
-                          </a>
-                        </div>
-                        <input
-                          type="text"
-                          className={Styles.dialogInput}
-                          value={locale}
-                          onChange={(e) => {
-                            setLocale(e.target.value);
-                            localStorage.setItem("discord_api_locale", e.target.value);
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <SettingsView
+                      apiVersion={apiVersion}
+                      setApiVersion={setApiVersion}
+                      useCanary={useCanary}
+                      setUseCanary={setUseCanary}
+                      locale={locale}
+                      setLocale={setLocale}
+                    />
                   ) : (
-                    <>
-                      <div className="mb-4 flex items-center gap-2">
-                        <MethodBadge method={method} />
-                        <code className="break-all text-base text-text-light dark:text-text-dark">
-                          {Object.entries(pathParams).reduce((acc, [key, value]) => {
-                            return value ? acc.replace(`{${key}}`, value) : acc;
-                          }, url)}
-                        </code>
-                      </div>
-                      <div className="flex flex-col gap-4 pb-4">
-                        <div>
-                          <label className={Styles.dialogLabel}>
-                            Authorization Token
-                            {tokenType === "user" && (
-                              <>
-                                <span className="ml-2 font-normal">—</span>
-                                <span className="ml-2 font-normal text-red-500">
-                                  Automating user accounts is against platform Terms of Service. Proceed with caution.
-                                </span>
-                              </>
-                            )}
-                            {tokenType === "bot" && (
-                              <>
-                                <span className="ml-2 font-normal">—</span>
-                                <span className="ml-2 font-normal text-orange-500">
-                                  Bot tokens are blocked in browsers.
-                                </span>
-                              </>
-                            )}
-                          </label>
-                          <input
-                            type="password"
-                            className={classNames(Styles.dialogInput, {
-                              "!border-red-500 focus:!border-red-500 focus:!ring-red-500":
-                                tokenType == null && token.length > 0,
-                            })}
-                            placeholder="User or bearer token"
-                            value={token}
-                            onKeyDown={handleKeyDown}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setToken(val);
-                              localStorage.setItem("discord_api_token", val);
-
-                              if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
-                              else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
-                              else if (BEARER_TOKEN_REGEX.test(val)) setTokenType("bearer");
-                              else setTokenType(null);
-                            }}
-                          />
-                        </div>
-
-                        <div className="border-b border-gray-200 dark:border-gray-700">
-                          <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-                            {Object.keys(pathParams).length > 0 && (
-                              <button
-                                onClick={() => setActiveRequestTab("path")}
-                                className={classNames(
-                                  activeRequestTab === "path"
-                                    ? "border-brand-blurple text-brand-blurple"
-                                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                                )}
-                              >
-                                Path Params
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setActiveRequestTab("query")}
-                              className={classNames(
-                                activeRequestTab === "query"
-                                  ? "border-brand-blurple text-brand-blurple"
-                                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                              )}
-                            >
-                              Query Params
-                            </button>
-                            {method !== "GET" && (
-                              <button
-                                onClick={() => setActiveRequestTab("body")}
-                                className={classNames(
-                                  activeRequestTab === "body"
-                                    ? "border-brand-blurple text-brand-blurple"
-                                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                                )}
-                              >
-                                Body
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setActiveRequestTab("headers")}
-                              className={classNames(
-                                activeRequestTab === "headers"
-                                  ? "border-brand-blurple text-brand-blurple"
-                                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                              )}
-                            >
-                              Headers
-                            </button>
-                          </nav>
-                        </div>
-
-                        {activeRequestTab === "path" && Object.keys(pathParams).length > 0 && (
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                            {Object.keys(pathParams).map((key) => (
-                              <div key={key}>
-                                <label className={Styles.dialogLabel}>{key}</label>
-                                <input
-                                  type="text"
-                                  className={Styles.dialogInput}
-                                  value={pathParams[key]}
-                                  onKeyDown={handleKeyDown}
-                                  onChange={(e) => setPathParams((prev) => ({ ...prev, [key]: e.target.value }))}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {activeRequestTab === "query" && (
-                          <div>
-                            <div className="flex flex-col gap-2">
-                              <datalist id="query-params-options">
-                                {optionalQueryParams.map((param) => (
-                                  <option key={param} value={param} />
-                                ))}
-                              </datalist>
-                              {queryParams.map((param, index) => (
-                                <div key={index} className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Key"
-                                    list="query-params-options"
-                                    className={classNames(Styles.dialogInput, "flex-1")}
-                                    value={param.key}
-                                    onKeyDown={handleKeyDown}
-                                    onChange={(e) => {
-                                      const newParams = [...queryParams];
-                                      newParams[index].key = e.target.value;
-                                      if (
-                                        index === newParams.length - 1 &&
-                                        (e.target.value || newParams[index].value)
-                                      ) {
-                                        newParams.push({ key: "", value: "" });
-                                      }
-                                      setQueryParams(newParams);
-                                    }}
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Value"
-                                    className={classNames(Styles.dialogInput, "flex-1")}
-                                    value={param.value}
-                                    onKeyDown={handleKeyDown}
-                                    onChange={(e) => {
-                                      const newParams = [...queryParams];
-                                      newParams[index].value = e.target.value;
-                                      if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
-                                        newParams.push({ key: "", value: "" });
-                                      }
-                                      setQueryParams(newParams);
-                                    }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newParams = queryParams.filter((_, i) => i !== index);
-                                      if (newParams.length === 0) {
-                                        newParams.push({ key: "", value: "" });
-                                      }
-                                      setQueryParams(newParams);
-                                    }}
-                                    className="px-2 text-red-500 hover:text-red-700"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {activeRequestTab === "headers" && (
-                          <div>
-                            <div className="flex flex-col gap-2">
-                              {customHeaders.map((header, index) => (
-                                <div key={index} className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Key"
-                                    className={classNames(Styles.dialogInput, "flex-1")}
-                                    value={header.key}
-                                    onChange={(e) => {
-                                      const newHeaders = [...customHeaders];
-                                      newHeaders[index].key = e.target.value;
-                                      if (
-                                        index === newHeaders.length - 1 &&
-                                        (e.target.value || newHeaders[index].value)
-                                      ) {
-                                        newHeaders.push({ key: "", value: "" });
-                                      }
-                                      setCustomHeaders(newHeaders);
-                                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
-                                    }}
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Value"
-                                    className={classNames(Styles.dialogInput, "flex-1")}
-                                    value={header.value}
-                                    onChange={(e) => {
-                                      const newHeaders = [...customHeaders];
-                                      newHeaders[index].value = e.target.value;
-                                      if (
-                                        index === newHeaders.length - 1 &&
-                                        (newHeaders[index].key || e.target.value)
-                                      ) {
-                                        newHeaders.push({ key: "", value: "" });
-                                      }
-                                      setCustomHeaders(newHeaders);
-                                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
-                                    }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newHeaders = customHeaders.filter((_, i) => i !== index);
-                                      if (newHeaders.length === 0) {
-                                        newHeaders.push({ key: "", value: "" });
-                                      }
-                                      setCustomHeaders(newHeaders);
-                                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
-                                    }}
-                                    className="px-2 text-red-500 hover:text-red-700"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {activeRequestTab === "body" && method !== "GET" && (
-                          <div>
-                            <textarea
-                              className={classNames(Styles.dialogInput, "font-mono text-sm")}
-                              rows={5}
-                              value={body}
-                              onChange={(e) => setBody(e.target.value)}
-                              placeholder="{ ... }"
-                            />
-                          </div>
-                        )}
-
-                        {response && (
-                          <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Response</h3>
-                            <div className="mt-2 text-left">
-                              <div className="flex gap-1 text-sm">
-                                <span
-                                  className={classNames("font-bold", {
-                                    "text-green-600": response.status >= 200 && response.status < 300,
-                                    "text-red-600": response.status >= 400,
-                                  })}
-                                >
-                                  {response.status}
-                                </span>
-                                <span className="text-gray-500 dark:text-gray-400">{response.statusText}</span>
-                              </div>
-
-                              <div className="mt-2 border-b border-gray-200 dark:border-gray-700">
-                                <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-                                  <button
-                                    onClick={() => setActiveTab("body")}
-                                    className={classNames(
-                                      activeTab === "body"
-                                        ? "border-brand-blurple text-brand-blurple"
-                                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                                    )}
-                                  >
-                                    Response Body
-                                  </button>
-                                  <button
-                                    onClick={() => setActiveTab("headers")}
-                                    className={classNames(
-                                      activeTab === "headers"
-                                        ? "border-brand-blurple text-brand-blurple"
-                                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
-                                    )}
-                                  >
-                                    Headers
-                                  </button>
-                                </nav>
-                              </div>
-
-                              <div className="mt-2 max-h-96 overflow-auto rounded text-xs">
-                                {activeTab === "body" ? (
-                                  <Code className="language-json" forceCopy>
-                                    {JSON.stringify(response.body, null, 2)}
-                                  </Code>
-                                ) : (
-                                  <Code className="language-http" forceCopy>
-                                    {Object.entries(response.headers)
-                                      .map(([key, value]) => `${prettifyHeader(key)}: ${value}`)
-                                      .join("\n")}
-                                  </Code>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </>
+                    <RequestView
+                      method={method}
+                      url={url}
+                      pathParams={pathParams}
+                      setPathParams={setPathParams}
+                      queryParams={queryParams}
+                      setQueryParams={setQueryParams}
+                      optionalQueryParams={optionalQueryParams}
+                      token={token}
+                      setToken={setToken}
+                      tokenType={tokenType}
+                      setTokenType={setTokenType}
+                      body={body}
+                      setBody={setBody}
+                      customHeaders={customHeaders}
+                      setCustomHeaders={setCustomHeaders}
+                      activeRequestTab={activeRequestTab}
+                      setActiveRequestTab={setActiveRequestTab}
+                      response={response}
+                      activeTab={activeTab}
+                      setActiveTab={setActiveTab}
+                      handleKeyDown={handleKeyDown}
+                    />
                   )}
                 </div>
 
