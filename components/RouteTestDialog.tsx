@@ -228,7 +228,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
   const [queryParams, setQueryParams] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [optionalQueryParams, setOptionalQueryParams] = useState<string[]>([]);
   const [token, setToken] = useState("");
-  const [tokenType, setTokenType] = useState<"user" | "bot" | "bearer" | "invalid" | null>(null);
+  const [tokenType, setTokenType] = useState<"user" | "bot" | "bearer" | null>(null);
   const [body, setBody] = useState(method === "GET" ? "" : "{}");
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
