@@ -586,7 +586,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                           type="password"
                           className={classNames(Styles.dialogInput, {
                             "!border-red-500 focus:!border-red-500 focus:!ring-red-500":
-                              tokenType === "invalid" && token.length > 0,
+                              tokenType == null && token.length > 0,
                           })}
                           placeholder="User or bearer token"
                           value={token}
@@ -596,11 +596,10 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                             setToken(val);
                             localStorage.setItem("discord_api_token", val);
 
-                            if (val.length === 0) setTokenType(null);
-                            else if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
+                            if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
                             else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
                             else if (BEARER_TOKEN_REGEX.test(val)) setTokenType("bearer");
-                            else setTokenType("invalid");
+                            else setTokenType(null);
                           }}
                         />
                       </div>
