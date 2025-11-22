@@ -113,6 +113,38 @@ export function getDevice(): string {
   }
 }
 
+const STATUS_CODES: Record<number, string> = {
+  200: "OK",
+  201: "Created",
+  202: "Accepted",
+  204: "No Content",
+  304: "Not Modified",
+  400: "Bad Request",
+  401: "Unauthorized",
+  403: "Forbidden",
+  404: "Not Found",
+  405: "Method Not Allowed",
+  409: "Conflict",
+  410: "Gone",
+  413: "Payload Too Large",
+  415: "Unsupported Media Type",
+  422: "Unprocessable Entity",
+  423: "Locked",
+  429: "Too Many Requests",
+  500: "Internal Server Error",
+  501: "Not Implemented",
+  502: "Bad Gateway",
+  503: "Service Unavailable",
+  504: "Gateway Timeout",
+  507: "Insufficient Storage",
+  520: "Unknown Error",
+  522: "Connection Timed Out",
+  523: "Origin Unreachable",
+  524: "Timeout Occurred",
+  525: "SSL Handshake Failed",
+  526: "Invalid SSL Certificate",
+};
+
 async function sendApiRequest(options: {
   url: string;
   method: string;
@@ -192,7 +224,7 @@ async function sendApiRequest(options: {
 
     return {
       status: res.status,
-      statusText: res.statusText,
+      statusText: STATUS_CODES[res.status] || res.statusText || "",
       headers: Object.fromEntries(res.headers.entries()),
       body: parsedBody,
     };
@@ -239,6 +271,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
   const [locale, setLocale] = useState("en-US");
   const [customHeaders, setCustomHeaders] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [activeTab, setActiveTab] = useState<"body" | "headers">("body"); // Could be expanded to parse rate limits et al
+  const [activeRequestTab, setActiveRequestTab] = useState<"path" | "query" | "headers" | "body">("query");
 
   const [response, setResponse] = useState<{
     status: number;
@@ -257,8 +290,10 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
         params[key] = "";
       });
       setPathParams(params);
+      setActiveRequestTab("path");
     } else {
       setPathParams({});
+      setActiveRequestTab("query");
     }
     setQueryParams([{ key: "", value: "" }]);
     setOptionalQueryParams([]);
@@ -499,68 +534,16 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                           }}
                         />
                       </div>
-
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className={Styles.dialogLabel}>Custom Headers</label>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          {customHeaders.map((header, index) => (
-                            <div key={index} className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Key"
-                                className={classNames(Styles.dialogInput, "flex-1")}
-                                value={header.key}
-                                onChange={(e) => {
-                                  const newHeaders = [...customHeaders];
-                                  newHeaders[index].key = e.target.value;
-                                  if (index === newHeaders.length - 1 && (e.target.value || newHeaders[index].value)) {
-                                    newHeaders.push({ key: "", value: "" });
-                                  }
-                                  setCustomHeaders(newHeaders);
-                                  localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
-                                }}
-                              />
-                              <input
-                                type="text"
-                                placeholder="Value"
-                                className={classNames(Styles.dialogInput, "flex-1")}
-                                value={header.value}
-                                onChange={(e) => {
-                                  const newHeaders = [...customHeaders];
-                                  newHeaders[index].value = e.target.value;
-                                  if (index === newHeaders.length - 1 && (newHeaders[index].key || e.target.value)) {
-                                    newHeaders.push({ key: "", value: "" });
-                                  }
-                                  setCustomHeaders(newHeaders);
-                                  localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newHeaders = customHeaders.filter((_, i) => i !== index);
-                                  if (newHeaders.length === 0) {
-                                    newHeaders.push({ key: "", value: "" });
-                                  }
-                                  setCustomHeaders(newHeaders);
-                                  localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
-                                }}
-                                className="px-2 text-red-500 hover:text-red-700"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   ) : (
                     <>
                       <div className="mb-4 flex items-center gap-2">
                         <MethodBadge method={method} />
-                        <code className="break-all text-base text-text-light dark:text-text-dark">{url}</code>
+                        <code className="break-all text-base text-text-light dark:text-text-dark">
+                          {Object.entries(pathParams).reduce((acc, [key, value]) => {
+                            return value ? acc.replace(`{${key}}`, value) : acc;
+                          }, url)}
+                        </code>
                       </div>
                       <div className="flex flex-col gap-4 pb-4">
                         <div>
@@ -605,7 +588,60 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                           />
                         </div>
 
-                        {Object.keys(pathParams).length > 0 && (
+                        <div className="border-b border-gray-200 dark:border-gray-700">
+                          <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                            {Object.keys(pathParams).length > 0 && (
+                              <button
+                                onClick={() => setActiveRequestTab("path")}
+                                className={classNames(
+                                  activeRequestTab === "path"
+                                    ? "border-brand-blurple text-brand-blurple"
+                                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                                )}
+                              >
+                                Path Params
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setActiveRequestTab("query")}
+                              className={classNames(
+                                activeRequestTab === "query"
+                                  ? "border-brand-blurple text-brand-blurple"
+                                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                              )}
+                            >
+                              Query Params
+                            </button>
+                            {method !== "GET" && (
+                              <button
+                                onClick={() => setActiveRequestTab("body")}
+                                className={classNames(
+                                  activeRequestTab === "body"
+                                    ? "border-brand-blurple text-brand-blurple"
+                                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                                )}
+                              >
+                                Body
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setActiveRequestTab("headers")}
+                              className={classNames(
+                                activeRequestTab === "headers"
+                                  ? "border-brand-blurple text-brand-blurple"
+                                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
+                                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                              )}
+                            >
+                              Headers
+                            </button>
+                          </nav>
+                        </div>
+
+                        {activeRequestTab === "path" && Object.keys(pathParams).length > 0 && (
                           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                             {Object.keys(pathParams).map((key) => (
                               <div key={key}>
@@ -622,70 +658,132 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                           </div>
                         )}
 
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <label className={Styles.dialogLabel}>Query Parameters</label>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <datalist id="query-params-options">
-                              {optionalQueryParams.map((param) => (
-                                <option key={param} value={param} />
-                              ))}
-                            </datalist>
-                            {queryParams.map((param, index) => (
-                              <div key={index} className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="Key"
-                                  list="query-params-options"
-                                  className={classNames(Styles.dialogInput, "flex-1")}
-                                  value={param.key}
-                                  onKeyDown={handleKeyDown}
-                                  onChange={(e) => {
-                                    const newParams = [...queryParams];
-                                    newParams[index].key = e.target.value;
-                                    if (index === newParams.length - 1 && (e.target.value || newParams[index].value)) {
-                                      newParams.push({ key: "", value: "" });
-                                    }
-                                    setQueryParams(newParams);
-                                  }}
-                                />
-                                <input
-                                  type="text"
-                                  placeholder="Value"
-                                  className={classNames(Styles.dialogInput, "flex-1")}
-                                  value={param.value}
-                                  onKeyDown={handleKeyDown}
-                                  onChange={(e) => {
-                                    const newParams = [...queryParams];
-                                    newParams[index].value = e.target.value;
-                                    if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
-                                      newParams.push({ key: "", value: "" });
-                                    }
-                                    setQueryParams(newParams);
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newParams = queryParams.filter((_, i) => i !== index);
-                                    if (newParams.length === 0) {
-                                      newParams.push({ key: "", value: "" });
-                                    }
-                                    setQueryParams(newParams);
-                                  }}
-                                  className="px-2 text-red-500 hover:text-red-700"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {method !== "GET" && (
+                        {activeRequestTab === "query" && (
                           <div>
-                            <label className={Styles.dialogLabel}>Request Body (JSON)</label>
+                            <div className="flex flex-col gap-2">
+                              <datalist id="query-params-options">
+                                {optionalQueryParams.map((param) => (
+                                  <option key={param} value={param} />
+                                ))}
+                              </datalist>
+                              {queryParams.map((param, index) => (
+                                <div key={index} className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Key"
+                                    list="query-params-options"
+                                    className={classNames(Styles.dialogInput, "flex-1")}
+                                    value={param.key}
+                                    onKeyDown={handleKeyDown}
+                                    onChange={(e) => {
+                                      const newParams = [...queryParams];
+                                      newParams[index].key = e.target.value;
+                                      if (
+                                        index === newParams.length - 1 &&
+                                        (e.target.value || newParams[index].value)
+                                      ) {
+                                        newParams.push({ key: "", value: "" });
+                                      }
+                                      setQueryParams(newParams);
+                                    }}
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Value"
+                                    className={classNames(Styles.dialogInput, "flex-1")}
+                                    value={param.value}
+                                    onKeyDown={handleKeyDown}
+                                    onChange={(e) => {
+                                      const newParams = [...queryParams];
+                                      newParams[index].value = e.target.value;
+                                      if (index === newParams.length - 1 && (newParams[index].key || e.target.value)) {
+                                        newParams.push({ key: "", value: "" });
+                                      }
+                                      setQueryParams(newParams);
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newParams = queryParams.filter((_, i) => i !== index);
+                                      if (newParams.length === 0) {
+                                        newParams.push({ key: "", value: "" });
+                                      }
+                                      setQueryParams(newParams);
+                                    }}
+                                    className="px-2 text-red-500 hover:text-red-700"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {activeRequestTab === "headers" && (
+                          <div>
+                            <div className="flex flex-col gap-2">
+                              {customHeaders.map((header, index) => (
+                                <div key={index} className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Key"
+                                    className={classNames(Styles.dialogInput, "flex-1")}
+                                    value={header.key}
+                                    onChange={(e) => {
+                                      const newHeaders = [...customHeaders];
+                                      newHeaders[index].key = e.target.value;
+                                      if (
+                                        index === newHeaders.length - 1 &&
+                                        (e.target.value || newHeaders[index].value)
+                                      ) {
+                                        newHeaders.push({ key: "", value: "" });
+                                      }
+                                      setCustomHeaders(newHeaders);
+                                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                                    }}
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Value"
+                                    className={classNames(Styles.dialogInput, "flex-1")}
+                                    value={header.value}
+                                    onChange={(e) => {
+                                      const newHeaders = [...customHeaders];
+                                      newHeaders[index].value = e.target.value;
+                                      if (
+                                        index === newHeaders.length - 1 &&
+                                        (newHeaders[index].key || e.target.value)
+                                      ) {
+                                        newHeaders.push({ key: "", value: "" });
+                                      }
+                                      setCustomHeaders(newHeaders);
+                                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newHeaders = customHeaders.filter((_, i) => i !== index);
+                                      if (newHeaders.length === 0) {
+                                        newHeaders.push({ key: "", value: "" });
+                                      }
+                                      setCustomHeaders(newHeaders);
+                                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                                    }}
+                                    className="px-2 text-red-500 hover:text-red-700"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {activeRequestTab === "body" && method !== "GET" && (
+                          <div>
                             <textarea
                               className={classNames(Styles.dialogInput, "font-mono text-sm")}
                               rows={5}
@@ -700,15 +798,16 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                           <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Response</h3>
                             <div className="mt-2 text-left">
-                              <div className="flex gap-2 text-sm">
+                              <div className="flex gap-1 text-sm">
                                 <span
                                   className={classNames("font-bold", {
                                     "text-green-600": response.status >= 200 && response.status < 300,
                                     "text-red-600": response.status >= 400,
                                   })}
                                 >
-                                  {response.status} {response.statusText}
+                                  {response.status}
                                 </span>
+                                <span className="text-gray-500 dark:text-gray-400">{response.statusText}</span>
                               </div>
 
                               <div className="mt-2 border-b border-gray-200 dark:border-gray-700">

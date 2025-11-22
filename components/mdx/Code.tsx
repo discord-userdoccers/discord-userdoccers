@@ -22,6 +22,10 @@ Prism.languages.http = {
       string: /.+/,
     },
   },
+  "pseudo-header": {
+    pattern: /^:[\w-]+:(?=.)/m,
+    alias: "property",
+  },
   "header": {
     pattern: /^[\w-]+:(?=.)/m,
     alias: "keyword",
