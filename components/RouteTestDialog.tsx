@@ -271,7 +271,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
         if (BOT_TOKEN_REGEX.test(storedToken)) setTokenType("bot");
         else if (USER_TOKEN_REGEX.test(storedToken)) setTokenType("user");
         else if (BEARER_TOKEN_REGEX.test(storedToken)) setTokenType("bearer");
-        else setTokenType("invalid");
+        else setTokenType(null);
       }
 
       const storedVersion = localStorage.getItem("discord_api_version");
