@@ -7,6 +7,7 @@ import Code from "./mdx/Code";
 import { CircleErrorIcon as SettingsIcon } from "./mdx/icons/SettingsIcon";
 import { Tokenizer } from "../lib/type-generator/tokenizer";
 import { MethodBadge, type RESTMethod } from "./RouteHeader";
+import platform from "platform";
 
 const USER_TOKEN_REGEX: RegExp = /[\w]{24}\.[\w]{6}\.[\w-_]{27}/;
 const BOT_TOKEN_REGEX: RegExp = /^Bot\s+([\w]{24}\.[\w]{6}\.[\w-_]{27})/;
@@ -14,20 +15,101 @@ const BEARER_TOKEN_REGEX: RegExp = /^(?:Bearer\s+)?([\w]{24}\.[\w-_]{30})$/;
 
 let cachedSuperProperties: string | undefined;
 
-async function fetchSuperProperties(): Promise<string> {
+async function getSuperProperties(): Promise<string> {
   if (cachedSuperProperties) return cachedSuperProperties;
 
-  // TODO: Determine browser & OS
   const result = await fetch("https://cordapi.dolfi.es/api/v2/properties/web", {
     method: "POST",
   });
-  if (!result.ok) {
+
+  const { properties } = await result.json();
+  if (!result.ok || !properties) {
     throw new Error(`Failed to fetch super properties: ${result.status} ${result.statusText} (${await result.text()})`);
   }
-  const { encoded } = await result.json();
 
-  cachedSuperProperties = encoded;
-  return encoded;
+  const superProperties = {
+    ...properties,
+    os: getOS(),
+    os_version: platform?.os?.version ?? "",
+    browser: getBrowser(),
+    browser_user_agent: navigator.userAgent || "",
+    browser_version: platform.version || "",
+    device: getDevice(),
+    // @ts-expect-error legacy fields
+    system_locale: navigator.language ?? navigator.browserLanguage ?? navigator.userLanguage ?? "",
+  };
+
+  cachedSuperProperties = btoa(JSON.stringify(superProperties));
+  return cachedSuperProperties;
+}
+
+export function getOS(): string {
+  const { userAgent } = window.navigator;
+  if (/Windows/i.test(userAgent)) {
+    return /Phone/.test(userAgent) ? "Windows Mobile" : "Windows";
+  } else if (/(iPhone|iPad|iPod)/.test(userAgent)) {
+    return "iOS";
+  } else if (/Android/.test(userAgent)) {
+    return "Android";
+  } else if (/(BlackBerry|PlayBook|BB10)/i.test(userAgent)) {
+    return "BlackBerry";
+  } else if (/Mac/i.test(userAgent)) {
+    return window.navigator.maxTouchPoints > 2 ? "iOS" : "Mac OS X";
+  } else if (/Linux/i.test(userAgent)) {
+    return "Linux";
+  } else {
+    return "";
+  }
+}
+
+function getBrowser(): string {
+  const { userAgent, vendor = "" } = window.navigator;
+
+  // @ts-expect-error opera may exist
+  if (window.opera) {
+    return /Mini/.test(userAgent) ? "Opera Mini" : "Opera";
+  } else if (/(BlackBerry|PlayBook|BB10)/i.test(userAgent)) {
+    return "BlackBerry";
+  } else if (/FBIOS/.test(userAgent)) {
+    return "Facebook Mobile";
+  } else if (/CriOS/.test(userAgent)) {
+    return "Chrome iOS";
+  } else if (/Apple/.test(vendor)) {
+    return /Mobile/.test(userAgent) || window.navigator.maxTouchPoints > 2 ? "Mobile Safari" : "Safari";
+  } else if (/Android/.test(userAgent)) {
+    return /Chrome/.test(userAgent) ? "Android Chrome" : "Android Mobile";
+  } else if (/Edge/.test(userAgent)) {
+    return "Edge";
+  } else if (/Chrome/.test(userAgent)) {
+    return "Chrome";
+  } else if (/Konqueror/.test(userAgent)) {
+    return "Konqueror";
+  } else if (/Firefox/.test(userAgent)) {
+    return "Firefox";
+  } else if (/MSIE|Trident\//.test(userAgent)) {
+    return "Internet Explorer";
+  } else if (/Gecko/.test(userAgent)) {
+    return "Mozilla";
+  } else {
+    return "";
+  }
+}
+
+export function getDevice(): string {
+  const { userAgent } = window.navigator;
+  if (/(BlackBerry|PlayBook|BB10)/i.test(userAgent)) {
+    return "BlackBerry";
+  } else if (/Windows Phone/i.test(userAgent)) {
+    return "Windows Phone";
+  } else if (/Android/.test(userAgent)) {
+    return "Android";
+  } else if (/iPhone/.test(userAgent)) {
+    return "iPhone";
+  } else if (/iPad/.test(userAgent)) {
+    return "iPad";
+  } else {
+    return "";
+  }
 }
 
 async function sendApiRequest(options: {
@@ -77,7 +159,7 @@ async function sendApiRequest(options: {
   // TODO: Maybe handle fingerprint? Auth endpoints don't work cross-origin anyway...
 
   try {
-    headers.set("X-Super-Properties", await fetchSuperProperties());
+    headers.set("X-Super-Properties", await getSuperProperties());
   } catch (error) {
     console.error("Failed to fetch super properties:", error);
   }
@@ -278,7 +360,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
         }
       }
     }
-  }, [url, isOpen, triggerRef]);
+  }, [url, method, isOpen, triggerRef]);
 
   const handleSend = async () => {
     if (Object.values(pathParams).some((val) => !val)) return;
