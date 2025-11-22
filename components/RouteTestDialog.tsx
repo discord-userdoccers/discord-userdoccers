@@ -156,8 +156,21 @@ async function sendApiRequest(options: {
   useCanary: boolean;
   locale: string;
   customHeaders: { key: string; value: string }[];
+  auditLogReason?: string;
 }) {
-  const { url, method, pathParams, queryParams, body, token, apiVersion, useCanary, locale, customHeaders } = options;
+  const {
+    url,
+    method,
+    pathParams,
+    queryParams,
+    body,
+    token,
+    apiVersion,
+    useCanary,
+    locale,
+    customHeaders,
+    auditLogReason,
+  } = options;
 
   let finalUrl = `https://discord.com/api/v${apiVersion}${url}`;
 
@@ -183,6 +196,9 @@ async function sendApiRequest(options: {
   }
   if (body) {
     headers.set("Content-Type", "application/json");
+  }
+  if (auditLogReason) {
+    headers.set("X-Audit-Log-Reason", encodeURIComponent(auditLogReason));
   }
 
   const debugOptions = ["bugReporterEnabled"];
@@ -256,9 +272,22 @@ interface SettingsViewProps {
   setUseCanary: (v: boolean) => void;
   locale: string;
   setLocale: (v: string) => void;
+  auditLogReason: string;
+  setAuditLogReason: (v: string) => void;
+  supportsAuditReason?: boolean;
 }
 
-function SettingsView({ apiVersion, setApiVersion, useCanary, setUseCanary, locale, setLocale }: SettingsViewProps) {
+function SettingsView({
+  apiVersion,
+  setApiVersion,
+  useCanary,
+  setUseCanary,
+  locale,
+  setLocale,
+  auditLogReason,
+  setAuditLogReason,
+  supportsAuditReason,
+}: SettingsViewProps) {
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div>
@@ -317,6 +346,30 @@ function SettingsView({ apiVersion, setApiVersion, useCanary, setUseCanary, loca
           }}
         />
       </div>
+
+      {supportsAuditReason && (
+        <div>
+          <div className="flex items-center justify-between">
+            <label className={Styles.dialogLabel}>Audit Log Reason</label>
+            <a
+              href="/resources/audit-log#audit-reason"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-brand-blurple hover:underline"
+            >
+              Documentation
+            </a>
+          </div>
+          <input
+            type="text"
+            className={Styles.dialogInput}
+            value={auditLogReason}
+            onChange={(e) => setAuditLogReason(e.target.value)}
+            placeholder="Reason for this action"
+            maxLength={512}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -690,9 +743,17 @@ interface RouteTestDialogProps {
   method: RESTMethod;
   url: string;
   triggerRef?: RefObject<HTMLElement | null>;
+  supportsAuditReason?: boolean;
 }
 
-export default function RouteTestDialog({ isOpen, onClose, method, url, triggerRef }: RouteTestDialogProps) {
+export default function RouteTestDialog({
+  isOpen,
+  onClose,
+  method,
+  url,
+  triggerRef,
+  supportsAuditReason,
+}: RouteTestDialogProps) {
   const [pathParams, setPathParams] = useState<Record<string, string>>({});
   const [queryParams, setQueryParams] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [optionalQueryParams, setOptionalQueryParams] = useState<string[]>([]);
@@ -704,6 +765,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
   const [apiVersion, setApiVersion] = useState("9");
   const [useCanary, setUseCanary] = useState(false);
   const [locale, setLocale] = useState("en-US");
+  const [auditLogReason, setAuditLogReason] = useState("");
   const [customHeaders, setCustomHeaders] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [activeTab, setActiveTab] = useState<"body" | "headers">("body"); // Could be expanded to parse rate limits et al
   const [activeRequestTab, setActiveRequestTab] = useState<"path" | "query" | "headers" | "body">("query");
@@ -854,6 +916,7 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
       useCanary,
       locale,
       customHeaders,
+      auditLogReason,
     });
 
     setResponse(result);
@@ -919,6 +982,9 @@ export default function RouteTestDialog({ isOpen, onClose, method, url, triggerR
                       setUseCanary={setUseCanary}
                       locale={locale}
                       setLocale={setLocale}
+                      auditLogReason={auditLogReason}
+                      setAuditLogReason={setAuditLogReason}
+                      supportsAuditReason={supportsAuditReason}
                     />
                   ) : (
                     <RequestView
