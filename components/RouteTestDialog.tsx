@@ -654,7 +654,7 @@ function RequestView({
                   <button
                     type="button"
                     onClick={() => {
-                      const newHeaders = customHeaders.filter((_, i) => i !== index);
+                      const newHeaders = customHeaders.splice(index, 1);
                       if (newHeaders.length === 0) {
                         newHeaders.push({ key: "", value: "" });
                       }
