@@ -118,6 +118,7 @@ export default function RouteHeader({
         method={method}
         url={url}
         triggerRef={containerRef}
+        supportsAuditReason={supportsAuditReason}
       />
     </Fragment>
   );
