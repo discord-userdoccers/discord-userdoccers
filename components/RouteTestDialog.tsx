@@ -145,7 +145,7 @@ const STATUS_CODES: Record<number, string> = {
   526: "Invalid SSL Certificate",
 };
 
-async function sendApiRequest(options: {
+interface APIRequestOptions {
   url: string;
   method: string;
   pathParams: Record<string, string>;
@@ -157,8 +157,9 @@ async function sendApiRequest(options: {
   locale: string;
   customHeaders: { key: string; value: string }[];
   auditLogReason?: string;
-}) {
-  const {
+}
+
+async function sendApiRequest({
     url,
     method,
     pathParams,
@@ -170,7 +171,7 @@ async function sendApiRequest(options: {
     locale,
     customHeaders,
     auditLogReason,
-  } = options;
+  }: APIRequestOptions) {
 
   let finalUrl = `https://discord.com/api/v${apiVersion}${url}`;
 
