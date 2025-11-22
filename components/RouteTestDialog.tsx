@@ -126,8 +126,7 @@ async function sendApiRequest(options: {
 }) {
   const { url, method, pathParams, queryParams, body, token, apiVersion, useCanary, locale, customHeaders } = options;
 
-  const domain = useCanary ? "canary.discord.com" : "discord.com";
-  let finalUrl = `https://${domain}/api/v${apiVersion}${url}`;
+  let finalUrl = `https://discord.com/api/v${apiVersion}${url}`;
 
   // Replace path params
   Object.entries(pathParams).forEach(([key, value]) => {
@@ -153,7 +152,10 @@ async function sendApiRequest(options: {
     headers.set("Content-Type", "application/json");
   }
 
-  headers.set("X-Debug-Options", "bugReporterEnabled"); // TODO: Do we expose trace / canary through here?
+  const debugOptions = ["bugReporterEnabled"];
+  if (useCanary) debugOptions.push("canary");
+
+  headers.set("X-Debug-Options", debugOptions.join(",")); // TODO: Do we expose trace through here?
   headers.set("X-Discord-Locale", locale);
   headers.set("X-Discord-TimeZone", Intl.DateTimeFormat().resolvedOptions().timeZone);
   // TODO: Maybe handle fingerprint? Auth endpoints don't work cross-origin anyway...
