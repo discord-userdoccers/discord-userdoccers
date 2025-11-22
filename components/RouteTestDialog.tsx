@@ -291,7 +291,17 @@ function SettingsView({
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div>
-        <label className={Styles.dialogLabel}>API Version</label>
+        <div className="flex items-center justify-between">
+          <label className={Styles.dialogLabel}>API Version</label>
+          <a
+            href="/reference#api-versions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-brand-blurple hover:underline"
+          >
+            Documentation
+          </a>
+        </div>
         <select
           className={Styles.dialogInput}
           value={apiVersion}
