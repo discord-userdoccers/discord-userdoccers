@@ -1,4 +1,5 @@
 import { RobotIcon } from "../mdx/icons/RobotIcon";
+// @ts-ignore will be missing in CI
 import data from "./data.json" with { type: "json" };
 import { NavigationLink, NavigationSection, SearchItem } from "./NavigationItems";
 

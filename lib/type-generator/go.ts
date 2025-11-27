@@ -171,8 +171,7 @@ export class GoGenerator {
   }
 
   private toExportedName(input: string): string {
-    const cleaned = this.stripQuestionMark(input);
-    const parts = cleaned
+    const parts = input
       .replace(/[^a-zA-Z0-9]+/g, " ")
       .trim()
       .split(/\s+/)
