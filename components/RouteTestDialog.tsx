@@ -160,19 +160,18 @@ interface APIRequestOptions {
 }
 
 async function sendApiRequest({
-    url,
-    method,
-    pathParams,
-    queryParams,
-    body,
-    token,
-    apiVersion,
-    useCanary,
-    locale,
-    customHeaders,
-    auditLogReason,
-  }: APIRequestOptions) {
-
+  url,
+  method,
+  pathParams,
+  queryParams,
+  body,
+  token,
+  apiVersion,
+  useCanary,
+  locale,
+  customHeaders,
+  auditLogReason,
+}: APIRequestOptions) {
   let finalUrl = `https://discord.com/api/v${apiVersion}${url}`;
 
   // Replace path params
