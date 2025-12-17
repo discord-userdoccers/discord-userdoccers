@@ -29,7 +29,7 @@ interface RouteTestSettings {
 function getSettings(): RouteTestSettings {
   if (typeof localStorage === "undefined") return {};
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage?.getItem?.(STORAGE_KEY);
     return stored ? JSON.parse(stored) : {};
   } catch {
     return {};
@@ -39,7 +39,7 @@ function getSettings(): RouteTestSettings {
 function updateSettings(updates: Partial<RouteTestSettings>) {
   if (typeof localStorage === "undefined") return;
   const settings = getSettings();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings, ...updates }));
+  localStorage?.setItem?.(STORAGE_KEY, JSON.stringify({ ...settings, ...updates }));
 }
 
 let cachedSuperProperties: string | undefined;
