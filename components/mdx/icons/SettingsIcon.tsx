@@ -1,6 +1,6 @@
 import { FC } from "react";
 
-export const CircleErrorIcon: FC<React.JSX.IntrinsicElements["svg"]> = (props) => (
+export const SettingsIcon: FC<React.JSX.IntrinsicElements["svg"]> = (props) => (
   <svg
     aria-label="SettingsIcon"
     aria-hidden="false"

@@ -4,7 +4,7 @@ import classNames from "../lib/classnames";
 import Styles from "../stylesheets/modules/Errors.module.css";
 import { H2 } from "./mdx/Heading";
 import Code from "./mdx/Code";
-import { CircleErrorIcon as SettingsIcon } from "./mdx/icons/SettingsIcon";
+import { SettingsIcon } from "./mdx/icons/SettingsIcon";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
 import { Tokenizer } from "../lib/type-generator/tokenizer";
 import { MethodBadge, type RESTMethod } from "./RouteHeader";
