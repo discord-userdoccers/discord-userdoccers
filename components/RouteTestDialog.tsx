@@ -5,6 +5,7 @@ import Styles from "../stylesheets/modules/Errors.module.css";
 import { H2 } from "./mdx/Heading";
 import Code from "./mdx/Code";
 import { CircleErrorIcon as SettingsIcon } from "./mdx/icons/SettingsIcon";
+import { WarningIcon } from "./mdx/icons/WarningIcon";
 import { Tokenizer } from "../lib/type-generator/tokenizer";
 import { MethodBadge, type RESTMethod } from "./RouteHeader";
 import { toast } from "react-toastify";
@@ -13,6 +14,33 @@ import platform from "platform";
 const USER_TOKEN_REGEX: RegExp = /[\w]{24}\.[\w]{6}\.[\w-_]{27}/;
 const BOT_TOKEN_REGEX: RegExp = /^Bot\s+([\w]{24}\.[\w]{6}\.[\w-_]{27})/;
 const BEARER_TOKEN_REGEX: RegExp = /^(?:Bearer\s+)?([\w]{24}\.[\w-_]{30})$/;
+
+const STORAGE_KEY = "route_test_settings";
+
+interface RouteTestSettings {
+  version?: string;
+  useCanary?: boolean;
+  locale?: string;
+  token?: string;
+  customHeaders?: { key: string; value: string }[];
+  tosFollower?: boolean;
+}
+
+function getSettings(): RouteTestSettings {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function updateSettings(updates: Partial<RouteTestSettings>) {
+  if (typeof localStorage === "undefined") return;
+  const settings = getSettings();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings, ...updates }));
+}
 
 let cachedSuperProperties: string | undefined;
 
@@ -207,7 +235,6 @@ async function sendApiRequest({
   headers.set("X-Debug-Options", debugOptions.join(",")); // TODO: Do we expose trace through here?
   headers.set("X-Discord-Locale", locale);
   headers.set("X-Discord-TimeZone", Intl.DateTimeFormat().resolvedOptions().timeZone);
-  // TODO: Maybe handle fingerprint? Auth endpoints don't work cross-origin anyway...
 
   try {
     headers.set("X-Super-Properties", await getSuperProperties());
@@ -308,7 +335,7 @@ function SettingsView({
           value={apiVersion}
           onChange={(e) => {
             setApiVersion(e.target.value);
-            localStorage.setItem("discord_api_version", e.target.value);
+            updateSettings({ version: e.target.value });
           }}
         >
           {["6", "7", "8", "9", "10"].map((v) => (
@@ -326,7 +353,7 @@ function SettingsView({
           checked={useCanary}
           onChange={(e) => {
             setUseCanary(e.target.checked);
-            localStorage.setItem("discord_api_use_canary", String(e.target.checked));
+            updateSettings({ useCanary: e.target.checked });
           }}
           className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
         />
@@ -353,7 +380,7 @@ function SettingsView({
           value={locale}
           onChange={(e) => {
             setLocale(e.target.value);
-            localStorage.setItem("discord_api_locale", e.target.value);
+            updateSettings({ locale: e.target.value });
           }}
         />
       </div>
@@ -453,16 +480,20 @@ function RequestView({
             Authorization Token
             {tokenType === "user" && (
               <>
-                <span className="ml-2 font-normal">—</span>
-                <span className="ml-2 font-normal text-red-500">
-                  Automating user accounts is against platform Terms of Service. Proceed at your own risk.
-                </span>
+                <span className="ml-2 font-normal">•</span>
+                <span className="ml-2 font-normal text-red-500">User token (proceed at your own risk)</span>
               </>
             )}
             {tokenType === "bot" && (
               <>
-                <span className="ml-2 font-normal">—</span>
-                <span className="ml-2 font-normal text-orange-500">Bot tokens are blocked in browsers by Discord.</span>
+                <span className="ml-2 font-normal">•</span>
+                <span className="ml-2 font-normal text-orange-500">Bot token (blocked in browsers)</span>
+              </>
+            )}
+            {tokenType === "bearer" && (
+              <>
+                <span className="ml-2 font-normal">•</span>
+                <span className="ml-2 font-normal text-yellow-500">Bearer token (API access limited)</span>
               </>
             )}
           </label>
@@ -477,7 +508,7 @@ function RequestView({
             onChange={(e) => {
               const val = e.target.value;
               setToken(val);
-              localStorage.setItem("discord_api_token", val);
+              updateSettings({ token: val });
 
               if (BOT_TOKEN_REGEX.test(val)) setTokenType("bot");
               else if (USER_TOKEN_REGEX.test(val)) setTokenType("user");
@@ -634,7 +665,7 @@ function RequestView({
                         newHeaders.push({ key: "", value: "" });
                       }
                       setCustomHeaders(newHeaders);
-                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                      updateSettings({ customHeaders: newHeaders });
                     }}
                   />
                   <input
@@ -649,7 +680,7 @@ function RequestView({
                         newHeaders.push({ key: "", value: "" });
                       }
                       setCustomHeaders(newHeaders);
-                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                      updateSettings({ customHeaders: newHeaders });
                     }}
                   />
                   <button
@@ -660,7 +691,7 @@ function RequestView({
                         newHeaders.push({ key: "", value: "" });
                       }
                       setCustomHeaders(newHeaders);
-                      localStorage.setItem("discord_api_custom_headers", JSON.stringify(newHeaders));
+                      updateSettings({ customHeaders: newHeaders });
                     }}
                     className="px-2 text-red-500 hover:text-red-700"
                   >
@@ -748,6 +779,46 @@ function RequestView({
   );
 }
 
+function WarningView({ onClose, setHasAgreed }: { onClose: () => void; setHasAgreed: (v: boolean) => void }) {
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      <WarningIcon className="h-16 w-16 text-red-500" />
+      <DialogTitle as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+        Warning
+      </DialogTitle>
+      <div className="mt-2">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          This tool allows you to execute requests against the Discord API using a user or bearer token. Note that
+          automating user accounts is against Discord's Terms of Service.
+        </p>
+        <p className="mt-2 text-sm font-bold text-gray-900 dark:text-gray-100">
+          Utilizing this tool with a user token is done at your own risk.
+        </p>
+      </div>
+
+      <div className="mt-4 flex gap-4">
+        <button
+          type="button"
+          className="inline-flex justify-center rounded-md border border-transparent bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+          onClick={() => {
+            updateSettings({ tosFollower: true });
+            setHasAgreed(true);
+          }}
+        >
+          I Understand & Agree
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface RouteTestDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -788,6 +859,7 @@ export default function RouteTestDialog({
     body: unknown;
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [hasAgreed, setHasAgreed] = useState(false);
 
   useEffect(() => {
     const matches = url.match(/\{([^}]+)\}/g);
@@ -810,42 +882,37 @@ export default function RouteTestDialog({
     setActiveTab("body");
 
     if (isOpen) {
-      const storedToken = localStorage.getItem("discord_api_token");
-      if (storedToken) {
-        setToken(storedToken);
-        if (BOT_TOKEN_REGEX.test(storedToken)) setTokenType("bot");
-        else if (USER_TOKEN_REGEX.test(storedToken)) setTokenType("user");
-        else if (BEARER_TOKEN_REGEX.test(storedToken)) setTokenType("bearer");
+      const settings = getSettings();
+
+      setHasAgreed(settings.tosFollower ?? false);
+
+      if (settings.token) {
+        setToken(settings.token);
+        if (BOT_TOKEN_REGEX.test(settings.token)) setTokenType("bot");
+        else if (USER_TOKEN_REGEX.test(settings.token)) setTokenType("user");
+        else if (BEARER_TOKEN_REGEX.test(settings.token)) setTokenType("bearer");
         else setTokenType(null);
       }
 
-      const storedVersion = localStorage.getItem("discord_api_version");
-      if (storedVersion) {
-        setApiVersion(storedVersion);
+      if (settings.version) {
+        setApiVersion(settings.version);
       }
 
-      const storedCanary = localStorage.getItem("discord_api_use_canary");
-      if (storedCanary) {
-        setUseCanary(storedCanary === "true");
+      if (settings.useCanary !== undefined) {
+        setUseCanary(settings.useCanary);
       }
 
-      const storedLocale = localStorage.getItem("discord_api_locale");
-      if (storedLocale) {
-        setLocale(storedLocale);
+      if (settings.locale) {
+        setLocale(settings.locale);
       }
 
-      const storedHeaders = localStorage.getItem("discord_api_custom_headers");
-      if (storedHeaders) {
-        try {
-          const parsed = JSON.parse(storedHeaders);
-          if (Array.isArray(parsed)) {
-            const last = parsed[parsed.length - 1];
-            if (!last || last.key || last.value) {
-              parsed.push({ key: "", value: "" });
-            }
-            setCustomHeaders(parsed);
-          }
-        } catch {}
+      if (settings.customHeaders) {
+        const headers = [...settings.customHeaders];
+        const last = headers[headers.length - 1];
+        if (!last || last.key || last.value) {
+          headers.push({ key: "", value: "" });
+        }
+        setCustomHeaders(headers);
       }
 
       // Parse query params from DOM
@@ -930,7 +997,7 @@ export default function RouteTestDialog({
       auditLogReason,
     });
 
-    setResponse(result);
+    if (result) setResponse(result);
     setLoading(false);
   };
 
@@ -966,90 +1033,101 @@ export default function RouteTestDialog({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className={classNames(Styles.dialogPanel, "flex h-[72vh] !max-w-4xl flex-col !p-0")}>
-                <div className="flex items-center justify-between p-6 pb-2">
-                  <DialogTitle
-                    as={H2}
-                    useAnchor={false}
-                    useCopy={false}
-                    className="!mb-0 text-text-light dark:text-text-dark"
-                  >
-                    {isSettingsOpen ? "Settings" : "Test Endpoint"}
-                  </DialogTitle>
-                  <button
-                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <SettingsIcon className="h-6 w-6 fill-current dark:fill-white" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-6 py-2">
-                  {isSettingsOpen ? (
-                    <SettingsView
-                      apiVersion={apiVersion}
-                      setApiVersion={setApiVersion}
-                      useCanary={useCanary}
-                      setUseCanary={setUseCanary}
-                      locale={locale}
-                      setLocale={setLocale}
-                      auditLogReason={auditLogReason}
-                      setAuditLogReason={setAuditLogReason}
-                      supportsAuditReason={supportsAuditReason}
-                    />
-                  ) : (
-                    <RequestView
-                      method={method}
-                      url={url}
-                      pathParams={pathParams}
-                      setPathParams={setPathParams}
-                      queryParams={queryParams}
-                      setQueryParams={setQueryParams}
-                      optionalQueryParams={optionalQueryParams}
-                      token={token}
-                      setToken={setToken}
-                      tokenType={tokenType}
-                      setTokenType={setTokenType}
-                      body={body}
-                      setBody={setBody}
-                      customHeaders={customHeaders}
-                      setCustomHeaders={setCustomHeaders}
-                      activeRequestTab={activeRequestTab}
-                      setActiveRequestTab={setActiveRequestTab}
-                      response={response}
-                      activeTab={activeTab}
-                      setActiveTab={setActiveTab}
-                      handleKeyDown={handleKeyDown}
-                    />
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-2 border-t border-gray-200 bg-white p-6 pt-4 dark:border-gray-700 dark:bg-[#2f3136]">
-                  {isSettingsOpen ? (
-                    <button
-                      className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2"
-                      onClick={() => setIsSettingsOpen(false)}
-                    >
-                      Done
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
-                        onClick={onClose}
+              <DialogPanel
+                className={classNames(
+                  Styles.dialogPanel,
+                  !hasAgreed ? "max-w-md p-6" : "flex h-[72vh] !max-w-4xl flex-col !p-0",
+                )}
+              >
+                {!hasAgreed ? (
+                  <WarningView onClose={onClose} setHasAgreed={setHasAgreed} />
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-6 pb-2">
+                      <DialogTitle
+                        as={H2}
+                        useAnchor={false}
+                        useCopy={false}
+                        className="!mb-0 text-text-light dark:text-text-dark"
                       >
-                        Close
-                      </button>
+                        {isSettingsOpen ? "Settings" : "Test Endpoint"}
+                      </DialogTitle>
                       <button
-                        className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2 disabled:opacity-50"
-                        onClick={handleSend}
-                        disabled={loading || Object.values(pathParams).some((val) => !val)}
+                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                       >
-                        {loading ? "Sending..." : "Send Request"}
+                        <SettingsIcon className="h-6 w-6 fill-current dark:fill-white" />
                       </button>
-                    </>
-                  )}
-                </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-6 py-2">
+                      {isSettingsOpen ? (
+                        <SettingsView
+                          apiVersion={apiVersion}
+                          setApiVersion={setApiVersion}
+                          useCanary={useCanary}
+                          setUseCanary={setUseCanary}
+                          locale={locale}
+                          setLocale={setLocale}
+                          auditLogReason={auditLogReason}
+                          setAuditLogReason={setAuditLogReason}
+                          supportsAuditReason={supportsAuditReason}
+                        />
+                      ) : (
+                        <RequestView
+                          method={method}
+                          url={url}
+                          pathParams={pathParams}
+                          setPathParams={setPathParams}
+                          queryParams={queryParams}
+                          setQueryParams={setQueryParams}
+                          optionalQueryParams={optionalQueryParams}
+                          token={token}
+                          setToken={setToken}
+                          tokenType={tokenType}
+                          setTokenType={setTokenType}
+                          body={body}
+                          setBody={setBody}
+                          customHeaders={customHeaders}
+                          setCustomHeaders={setCustomHeaders}
+                          activeRequestTab={activeRequestTab}
+                          setActiveRequestTab={setActiveRequestTab}
+                          response={response}
+                          activeTab={activeTab}
+                          setActiveTab={setActiveTab}
+                          handleKeyDown={handleKeyDown}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 border-t border-gray-200 bg-white p-6 pt-4 dark:border-gray-700 dark:bg-[#2f3136]">
+                      {isSettingsOpen ? (
+                        <button
+                          className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2"
+                          onClick={() => setIsSettingsOpen(false)}
+                        >
+                          Done
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                            onClick={onClose}
+                          >
+                            Close
+                          </button>
+                          <button
+                            className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2 disabled:opacity-50"
+                            onClick={handleSend}
+                            disabled={loading || Object.values(pathParams).some((val) => !val)}
+                          >
+                            {loading ? "Sending..." : "Send Request"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </DialogPanel>
             </TransitionChild>
           </div>

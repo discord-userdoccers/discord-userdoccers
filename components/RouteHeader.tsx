@@ -107,7 +107,7 @@ export default function RouteHeader({
         <code className="break-all p-2 text-base text-text-light dark:text-text-dark">{url}</code>
         <button
           onClick={() => setIsTestDialogOpen(true)}
-          className="ml-auto rounded bg-brand-blurple px-3 py-1 text-xs font-bold text-white hover:bg-brand-blurple/80"
+          className="ml-auto rounded bg-brand-blurple px-3 py-1 text-xs text-white hover:bg-brand-blurple/80"
         >
           Test
         </button>
