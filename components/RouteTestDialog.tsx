@@ -214,6 +214,7 @@ async function sendApiRequest({
   } catch (error) {
     console.error(error);
     toast.error("Failed to fetch super properties!");
+    return;
   }
 
   customHeaders.forEach(({ key, value }) => {
