@@ -788,11 +788,20 @@ function WarningView({ onClose, setHasAgreed }: { onClose: () => void; setHasAgr
       </DialogTitle>
       <div className="mt-2">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          This tool allows you to execute requests against the Discord API using a user or bearer token. Note that
-          automating user accounts is against Discord's Terms of Service.
+          This tool allows you to execute requests against the Discord API using a user or bearer token. You are fully
+          responsible for your own compliance with Discord's{" "}
+          <a
+            href="https://discord.com/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-link-light hover:underline dark:text-brand-link-dark"
+          >
+            Terms of Service
+          </a>{" "}
+          while using this tool.
         </p>
         <p className="mt-2 text-sm font-bold text-gray-900 dark:text-gray-100">
-          Utilizing this tool with a user token is done at your own risk.
+          Using this tool with a user token is done at your own risk.
         </p>
       </div>
 

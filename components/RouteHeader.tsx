@@ -1,5 +1,5 @@
 import classNames from "@lib/classnames";
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import IconBadge from "./IconBadge";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
@@ -61,7 +61,7 @@ export default function RouteHeader({
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Fragment>
+    <div className="group">
       <H3 className="mb-0" useAnchor={false} useCopy={false}>
         {/* NOTE: this margin is a hack cause the font sucks */}
         <a className="mb-[1px]" href={`#${anchor}`}>
@@ -107,7 +107,7 @@ export default function RouteHeader({
         <code className="break-all p-2 text-base text-text-light dark:text-text-dark">{url}</code>
         <button
           onClick={() => setIsTestDialogOpen(true)}
-          className="ml-auto rounded bg-brand-blurple px-3 py-1 text-xs text-white hover:bg-brand-blurple/80"
+          className="ml-auto rounded bg-brand-blurple px-3 py-1 text-xs text-white opacity-0 transition-opacity hover:bg-brand-blurple/80 focus:opacity-100 group-hover:opacity-100"
         >
           Test
         </button>
@@ -120,6 +120,6 @@ export default function RouteHeader({
         triggerRef={containerRef}
         supportsAuditReason={supportsAuditReason}
       />
-    </Fragment>
+    </div>
   );
 }
