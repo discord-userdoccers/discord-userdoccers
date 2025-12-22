@@ -91,7 +91,7 @@ export default function Errors() {
             Search error codes
           </label>
           <div className="flex flex-row items-center justify-start">
-            <SearchIcon className="z-10 -mr-7 ml-3 size-4 text-text-light dark:text-text-dark" />
+            <SearchIcon className="z-10 -mr-7 ml-3 size-4 text-[var(--docsearch-muted-color)]" />
             <input
               id="error-search"
               type="search"

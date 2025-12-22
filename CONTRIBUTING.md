@@ -109,4 +109,4 @@ If flags are used in multiple places, they should be defined by the most relevan
 
 This is a collection of guidelines that apply to the whole documentation.
 
-- The documentation should be written in American English, as this reflects what the API uses. This means that words like "color" should be used instead of "colour", and "favorite" should be used instead of "favourite".
+- The documentation should be written in American English, as this reflects what the API uses. Oxford commas should always be used.
