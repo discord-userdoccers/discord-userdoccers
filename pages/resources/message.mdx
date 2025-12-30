@@ -294,13 +294,17 @@ Activity invites are only valid while the user is still participating in the act
 
 ###### Message Activity Structure
 
-| Field          | Type    | Description                                                              |
-| -------------- | ------- | ------------------------------------------------------------------------ |
-| type           | integer | The [type of activity request](/resources/presence#activity-action-type) |
-| session_id ^1^ | string  | The session ID associated with this activity                             |
-| party_id?      | string  | The activity's party ID                                                  |
+| Field              | Type    | Description                                                                                   |
+| ------------------ | ------- | --------------------------------------------------------------------------------------------- |
+| type               | integer | The [type of activity request](/resources/presence#activity-action-type)                      |
+| session_id ^1^     | string  | The session ID associated with this activity                                                  |
+| party_id?          | string  | The activity's party ID                                                                       |
+| name_override? ^2^ | string  | The overridden activity name for the invite                                                   |
+| icon_override? ^2^ | string  | The overriden [activity asset image](/resources/presence#activity-asset-image) for the invite |
 
 ^1^ This field is send-only.
+
+^2^ This field is receive-only.
 
 ### Message Call Object
 
@@ -1402,15 +1406,11 @@ Preloads the last message sent in a series of private channels. Returns a list o
 | ----------- | ---------------- | ---------------------------------------------------------- |
 | channel_ids | array[snowflake] | The IDs of the channels to preload messages from (max 100) |
 
-<RouteHeader
-  method="GET"
-  url="/guilds/{guild.id}/messages/search OR /channels/{channel.id}/messages/search"
-  supportsBot
->
-  Search Messages
+<RouteHeader method="GET" url="/guilds/{guild.id}/messages/search" supportsBot>
+  Search Guild Messages
 </RouteHeader>
 
-Returns a list of messages without the `reactions` key that match a search query in the guild or private channel. Requires the `READ_MESSAGE_HISTORY` permission if operating on a guild channel.
+Returns a list of messages without the `reactions` key that match a search query in the guild. Requires the `READ_MESSAGE_HISTORY` permission.
 
 <Alert type="warn">
 
@@ -1586,15 +1586,19 @@ These do not correspond 1:1 to actual [embed types](#embed-type) and encompass a
 }
 ```
 
-<RouteHeader
-  method="POST"
-  url="/guilds/{guild.id}/messages/search/tabs OR /channels/{channel.id}/messages/search/tabs OR /users/@me/messages/search/tabs"
->
-  Search Messages by Tab
+<RouteHeader method="GET" url="/channels/{channel.id}/messages/search">
+  Search Channel Messages
 </RouteHeader>
 
-Returns a list of messages without the `reactions` key that match a set of parallelized search queries in the guild, private channel, or globally across all user private channels.
-Requires the `READ_MESSAGE_HISTORY` permission if operating on a guild channel.
+Returns a list of messages without the `reactions` key that match a search query in the private channel.
+
+See [Search Guild Messages](#search-guild-messages) for more information.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/messages/search/tabs">
+  Search Guild Messages by Tab
+</RouteHeader>
+
+Returns a list of messages without the `reactions` key that match a set of parallelized search queries in the guild. Requires the `READ_MESSAGE_HISTORY` permission.
 
 <Alert type="warn">
 
@@ -1735,6 +1739,22 @@ While the tab names themselves are enforced, what they are used for is not. Clie
 
 ^3^ Amount will be capped at 1001 if `track_exact_total_hits` is set to `false`.
 
+<RouteHeader method="POST" url="/channels/{channel.id}/messages/search/tabs">
+  Search Channel Messages by Tab
+</RouteHeader>
+
+Returns a list of messages without the `reactions` key that match a set of parallelized search queries in the private channel.
+
+See [Search Guild Messages by Tab](#search-guild-messages-by-tab) for more information.
+
+<RouteHeader method="POST" url="/users/@me/messages/search/tabs">
+  Search User Messages by Tab
+</RouteHeader>
+
+Returns a list of messages without the `reactions` key that match a set of parallelized search queries across all user private channels.
+
+See [Search Guild Messages by Tab](#search-guild-messages-by-tab) for more information.
+
 <RouteHeader method="GET" url="/channels/{channel.id}/messages/{message.id}" supportsBot>
   Get Message
 </RouteHeader>
@@ -1775,7 +1795,7 @@ Files must be attached using a `multipart/form-data` body (or pre-uploaded to Di
 
 <Alert type="info">
 
-Note that when sending a message, you must provide a value for **at least one of** `content`, `embeds`, `components`, `sticker_ids`, `activity`, `files[n]`, `poll`, `shared_client_theme`, or a forwarded `message_reference`.
+Note that when sending a message, you must provide a value for **at least one of** `content`, `embeds`, `components`, `sticker_ids`, `activity`, `files[n]`, `poll`, `shared_client_theme`, `with_checkpoint`, or a forwarded `message_reference`.
 
 </Alert>
 
@@ -1799,6 +1819,7 @@ Note that when sending a message, you must provide a value for **at least one of
 | poll?                | [poll create](#poll-create-structure) object                              | A poll!                                                                                                                                                                     |
 | confetti_potion?     | [confetti potion](#confetti-potion-structure) object                      | A confetti potion to apply to the message                                                                                                                                   |
 | shared_client_theme? | [shared client theme](#shared-client-theme-object) object                 | A shared client theme                                                                                                                                                       |
+| with_checkpoint?     | boolean                                                                   | Whether to send a [checkpoint card](/resources/components#checkpoint-card) component (default false)                                                                        |
 
 ^1^ See [Uploading Files](/reference#uploading-files) for details.
 
@@ -1882,22 +1903,22 @@ Creates attachment URLs to upload the intended attachments directly to Discord's
 
 ###### Upload Attachment Structure
 
-| Field        | Type    | Description                                                                                                                              |
-| ------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| id?          | ?string | The ID of the attachment to reference in the response                                                                                    |
-| filename     | string  | The name of the file being uploaded                                                                                                      |
-| file_size    | integer | The size of the file being uploaded in bytes                                                                                             |
-| is_clip? ^1^ | boolean | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
+| Field        | Type       | Description                                                                                                                              |
+| ------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| id?          | ?snowflake | The ID of the attachment to reference in the response                                                                                    |
+| filename     | string     | The name of the file being uploaded                                                                                                      |
+| file_size    | integer    | The size of the file being uploaded in bytes                                                                                             |
+| is_clip? ^1^ | boolean    | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
 
 ^1^ When uploading a clip, `is_clip` must be `true`. [See message types](#clips) for more information.
 
 ###### Cloud Attachment Structure
 
-| Field           | Type    | Description                                                 |
-| --------------- | ------- | ----------------------------------------------------------- |
-| id              | ?string | The ID of the attachment upload, if provided in the request |
-| upload_url      | string  | The URL to upload the file to                               |
-| upload_filename | string  | The name of the uploaded file                               |
+| Field           | Type       | Description                                                 |
+| --------------- | ---------- | ----------------------------------------------------------- |
+| id              | ?snowflake | The ID of the attachment upload, if provided in the request |
+| upload_url      | string     | The URL to upload the file to                               |
+| upload_filename | string     | The name of the uploaded file                               |
 
 ###### Example Response
 

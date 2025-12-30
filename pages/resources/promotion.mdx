@@ -1,0 +1,156 @@
+# Promotions
+
+Promotions are special offers that users can redeem for various benefits, such as discounts or free trials. Outbound promotions are offers to third-party services, while inbound promotions are in-platform offers sponsored by third-party services.
+
+### Promotion Object
+
+###### Promotion Structure
+
+| Field                                   | Type                                                                                 | Description                                                                                                                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                                      | snowflake                                                                            | The ID of the promotion                                                                                                                       |
+| trial_id?                               | snowflake                                                                            | The ID of the subscription trial associated with the promotion                                                                                |
+| start_date                              | ISO8601 timestamp                                                                    | When the promotion starts                                                                                                                     |
+| end_date                                | ISO8601 timestamp                                                                    | When the promotion ends                                                                                                                       |
+| outbound_redemption_end_date?           | ISO8601 timestamp                                                                    | When the promotion's redemption period ends                                                                                                   |
+| inbound_header_text?                    | string                                                                               | The title of the inbound promotion                                                                                                            |
+| inbound_body_text?                      | string                                                                               | The description of the inbound promotion                                                                                                      |
+| inbound_help_center_link?               | string                                                                               | The help center link of the inbound promotion                                                                                                 |
+| outbound_title?                         | string                                                                               | The title of the outbound promotion                                                                                                           |
+| outbound_redemption_modal_body?         | string                                                                               | The description of the outbound promotion                                                                                                     |
+| outbound_terms_and_conditions?          | string                                                                               | The terms and conditions of the promotion                                                                                                     |
+| outbound_redemption_page_link? ^1^      | string                                                                               | The redemption page to claim the outbound promotion                                                                                           |
+| outbound_redemption_url_format? ^1^ ^2^ | string                                                                               | The redemption page to claim the outbound promotion                                                                                           |
+| flags?                                  | integer                                                                              | The [promotion's flags](#promotion-flags)                                                                                                     |
+| inbound_restricted_countries?           | array[string]                                                                        | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) codes of countries that the inbound promotion is not available in  |
+| outbound_restricted_countries?          | array[string]                                                                        | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) codes of countries that the outbound promotion is not available in |
+| promotion_type                          | integer                                                                              | The [type of promotion](#promotion-type)                                                                                                      |
+| partner_id?                             | string                                                                               | The [type of promotion partner](#promotion-partner-type)                                                                                      |
+| marketing_components?                   | array[[promotion marketing component](#promotion-marketing-component-object) object] | The components used in marketing                                                                                                              |
+
+^1^ Only either `outbound_redemption_page_link` or `outbound_redemption_url_format` will be present.
+
+^2^ This field is a formatted string. `{code}` should be replaced with the claimed `code`.
+
+###### Promotion Flags
+
+| Value  | Name                                  | Description                                      |
+| ------ | ------------------------------------- | ------------------------------------------------ |
+| 1 << 5 | IS_BLOCKED_IOS                        | Promotion is not shown on iOS                    |
+| 1 << 6 | IS_OUTBOUND_REDEEMABLE_BY_TRIAL_USERS | Promotion is redeemable by trial user            |
+| 1 << 7 | SUPPRESS_NOTIFICATION                 | Notifications about the promotion are suppressed |
+
+###### Promotion Type
+
+| Value | Name                 | Description                    |
+| ----- | -------------------- | ------------------------------ |
+| 0     | THIRD_PARTY          | Third-party promotion          |
+| 1     | BOGO                 | BOGO promotion                 |
+| 3     | THIRD_PARTY_INBOUND  | Third-party inbound promotion  |
+| 4     | THIRD_PARTY_OUTBOUND | Third-party outbound promotion |
+| 5     | MARKETING_MOMENT     | Marketing moment               |
+| 6     | GIFT_PROMOTION       | Gift promotion                 |
+
+###### Promotion Partner Type
+
+| Value        | Description                                   |
+| ------------ | --------------------------------------------- |
+| steelseries  | [SteelSeries](https://steelseries.com/)       |
+| kontrolfreek | [KontrolFreek](https://www.kontrolfreek.com/) |
+
+### Promotion Marketing Component Object
+
+###### Promotion Marketing Component Structure
+
+| Field          | Type      | Description                                                                                                                                                                                                                   |
+| -------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| component_type | integer   | The [type of marketing component](#promotion-marketing-component-type)                                                                                                                                                        |
+| id             | integer   | The ID of the component                                                                                                                                                                                                       |
+| promotion_id   | snowflake | The ID of the promotion                                                                                                                                                                                                       |
+| properties     | string    | The base64-encoded serialized [PremiumMarketingComponentProperties](https://github.com/discord-userdoccers/discord-protos/blob/master/discord_protos/premium_marketing/v1/PremiumMarketingComponentProperties.proto) protobuf |
+
+###### Promotion Marketing Component Type
+
+| Value | Name                  | Description            |
+| ----- | --------------------- | ---------------------- |
+| 0     | ANNOUNCEMENT_MODAL    | Annonucement modal     |
+| 1     | PREMIUM_TAB           | Premium tab            |
+| 2     | MARKETING_PAGE_BANNER | Marketing page banner  |
+| 3     | PAYMENT_MODAL_BANNER  | Payment modal banner   |
+| 4     | MOBILE_BOTTOM_SHEET   | Bottom sheet on mobile |
+
+### Claimed Promotion Object
+
+###### Claimed Promotion Structure
+
+| Field      | Type                                  | Description                                  |
+| ---------- | ------------------------------------- | -------------------------------------------- |
+| code       | string                                | The code of the claimed promotion            |
+| user_id    | snowflake                             | The ID of the user who claimed the promotion |
+| claimed_at | ISO8601 timestamp                     | When the promotion was claimed at            |
+| promotion  | [promotion](#promotion-object) object | The promotion                                |
+
+## Endpoints
+
+<RouteHeader method="GET" url="/outbound-promotions" deprecated supportsBot>
+  Get Outbound Promotions
+</RouteHeader>
+
+Returns a list of [promotion](#promotion-object) objects the current user is eligible for.
+
+###### Query String Params
+
+| Field     | Type    | Description                                                    |
+| --------- | ------- | -------------------------------------------------------------- |
+| locale?   | string  | The [language](/reference#locales) to return promotions in     |
+| platform? | integer | The [platform](#promotion-platform-type) to get promotions for |
+
+###### Promotion Platform Type
+
+| Value | Name    | Description |
+| ----- | ------- | ----------- |
+| 0     | DESKTOP | Desktop     |
+| 1     | MOBILE  | Mobile      |
+
+<RouteHeader method="GET" url="/promotions" supportsBot>
+  Get Promotions
+</RouteHeader>
+
+Returns a list of [promotion](#promotion-object) objects the current user is eligible for.
+
+###### Query String Params
+
+| Field     | Type    | Description                                                    |
+| --------- | ------- | -------------------------------------------------------------- |
+| locale?   | string  | The [language](/reference#locales) to return promotions in     |
+| platform? | integer | The [platform](#promotion-platform-type) to get promotions for |
+
+<RouteHeader method="GET" url="/bogo-promotions">
+  Get BOGO Promotions
+</RouteHeader>
+
+Same as above, except only returns promotions of type [`BOGO`](#promotion-type).
+
+###### Query String Params
+
+| Field     | Type    | Description                                                |
+| --------- | ------- | ---------------------------------------------------------- |
+| locale?   | string  | The [language](/reference#locales) to return promotions in |
+
+<RouteHeader method="GET" url="/users/@me/outbound-promotions/codes">
+  Get Claimed Promotions
+</RouteHeader>
+
+Returns a list of [claimed promotion](#claimed-promotion-object) for the current user.
+
+###### Query String Params
+
+| Field     | Type    | Description                                                |
+| --------- | ------- | ---------------------------------------------------------- |
+| locale?   | string  | The [language](/reference#locales) to return promotions in |
+
+<RouteHeader method="POST" url="/outbound-promotions/{promotion.id}/claim">
+  Claim Promotion
+</RouteHeader>
+
+Claims a promotion. Returns a [claimed promotion](#claimed-promotion-object) object on success.

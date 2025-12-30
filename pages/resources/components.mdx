@@ -16,6 +16,7 @@ To use these components, you need to send the [`IS_COMPONENTS_V2` message flag](
 - Attachments won't show by default—they must be exposed through components
 - The `poll` and `stickers` fields are disabled
 - Messages allow up to 40 total components
+- The combined length of all text across all components cannot exceed 4000 characters
 
 ## What is a Component
 
@@ -54,6 +55,7 @@ Additionally, components of messages preceding components v2 will contain an `id
 | 17    | [CONTAINER](#container) ^1^                             | Container that visually groups a set of components             | Layout      | Message                         |
 | 18    | [LABEL](#label)                                         | Container associating a label and description with a component | Layout      | Modal                           |
 | 19    | [FILE_UPLOAD](#file-upload)                             | Component to upload one or more files                          | Interactive | Modal                           |
+| 20    | [CHECKPOINT_CARD](#checkpoint-card) ^2^                 | Displays a [checkpoint](/resources/checkpoint)                 | Content     | Message                         |
 
 ^1^ Requires the [`IS_COMPONENTS_V2` message flag](/resources/message#message-flags).
 
@@ -101,7 +103,7 @@ Action Rows can contain:
 | id?        | integer                                      | An optional identifier for the component                                            |
 | components | array[[component](#component-object) object] | Up to 5 [button](#button) components or a single [select](#string-select) component |
 
-###### Example
+###### Example Action Row
 
 ```json
 {
@@ -592,7 +594,7 @@ Media Galleries are only available in messages.
 | description? | string                                                    | Alt text for the media (max 1024 characters)            |
 | spoiler?     | boolean                                                   | Whether the media should be a spoilered (default false) |
 
-###### Example
+###### Example Media Gallery
 
 ```json
 {
@@ -633,7 +635,7 @@ Files are only available in messages.
 
 ^1^ This field is received only and cannot be set.
 
-###### Example
+###### Example File Component
 
 ```json
 {
@@ -666,7 +668,7 @@ Separators are only available in messages.
 | 1     | SMALL | 8px gap between elements, 16px with divider hidden  |
 | 2     | LARGE | 16px gap between elements, 32px with divider hidden |
 
-###### Example
+###### Example Separator
 
 ```json
 {
@@ -869,7 +871,7 @@ Content Inventory Entries cannot be sent directly.
 | kid       | string  | Key ID for the signature        |
 | version   | integer | Signature version (currently 1) |
 
-###### Example
+###### Example Content Inventory Entry
 
 ```json
 {
@@ -924,7 +926,7 @@ Containers are only available in messages.
 | accent_color? | ?integer                                     | Color for the accent on the container encoded as an integer representation of a hexadecimal color code                                                                                  |
 | spoiler?      | boolean                                      | Whether the container should be spoilered (default false)                                                                                                                               |
 
-###### Example
+###### Example Container
 
 ```json
 {
@@ -1010,6 +1012,90 @@ File Uploads can only be used within modals and must be placed inside a [Label](
 | min_values? | integer | Minimum number of items that must be uploaded (max 10, default 0)   |
 | max_values? | integer | Maximum number of items that can be chosen (max 10, default 10)     |
 | required?   | boolean | Whether the user must upload a file (default false)                 |
+
+### Checkpoint Card
+
+A Checkpoint Card is a top-level component that displays a summary of the user's [checkpoint](/resources/checkpoint).  
+
+Checkpoint cards cannot be sent directly.
+
+###### Checkpoint Card Structure
+
+| Field           | Type                                                 | Description                                 |
+| --------------- | ---------------------------------------------------- | ------------------------------------------- |
+| type            | integer                                              | Always [`CHECKPOINT_CARD`](#component-type) |
+| id?             | integer                                              | An optional identifier for the component    |
+| checkpoint_data | [checkpoint data](#checkpoint-data-structure) object | Checkpoint data                             |
+
+###### Checkpoint Data Structure
+
+| Field                  | Type                                                             | Description                                                                        |
+| ---------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| version                | integer                                                          | The version of checkpoint cards                                                    |
+| card_id                | integer                                                          | The [type of checkpoint card](/resources/checkpoint#checkpoint-card-type)          |
+| power_level            | float                                                            | A power level representing how active the user was on Discord                      |
+| power_level_percentile | float                                                            | The power level expressed as a percentile                                          |
+| num_messages_sent      | integer                                                          | Number of messages that the user during the year                                   |
+| total_voice_minutes    | float                                                            | Duration in seconds how much time the user spent in voice channels during the year |
+| num_emojis_sent        | integer                                                          | Number of emojis that the user during the year (includes messages and reactions)   |
+| top_guild?             | [checkpoint card guild](#checkpoint-card-guild-structure) object | The guild that the user have been participating the most in                        |
+| top_emoji?             | [checkpoint card emoji](#checkpoint-card-emoji-structure) object | The emoji that the user used the most                                              |
+| top_game?              | [checkpoint card game](#checkpoint-card-game-structure) object   | The game that the user have been played the most                                   |
+
+###### Checkpoint Card Guild Structure
+
+| Field      | Type      | Description                                        |
+| ---------- | --------- | -------------------------------------------------- |
+| guild_id   | snowflake | The ID of the guild                                |
+| guild_name | string    | The name of the guild                              |
+| guild_icon | ?string   | The guild's [icon hash](/reference#cdn-formatting) |
+
+###### Checkpoint Card Emoji Structure
+
+| Field      | Type       | Description                                |
+| ---------- | ---------- | ------------------------------------------ |
+| emoji_id   | ?snowflake | The ID of the guild's custom emoji         |
+| emoji_name | string     | The unicode character or name of the emoji |
+
+###### Checkpoint Card Game Structure
+
+| Field                | Type      | Description                                              |
+| -------------------- | --------- | -------------------------------------------------------- |
+| application_id       | snowflake | The ID of the application                                |
+| application_name     | string    | The name of the application                              |
+| application_image_id | ?string   | The application's [icon hash](/reference#cdn-formatting) |
+
+###### Example Checkpoint Card
+
+```json
+{
+  "type": 20,
+  "id": 1,
+  "checkpoint_data": {
+    "version": 0,
+    "num_messages_sent": 53146,
+    "total_voice_minutes": 6.3231166666666665,
+    "num_emojis_sent": 13096,
+    "top_emoji": {
+      "emoji_id": "1145727546747535412",
+      "emoji_name": "blobcatcozy"
+    },
+    "top_guild": {
+      "guild_id": "1046920999469330512",
+      "guild_name": "Alien Network",
+      "guild_icon": "66b0f4d96c145970fa9d96ada8afadf3",
+    },
+    "top_game": {
+      "application_id": "363445589247131668",
+      "application_name": "Roblox",
+      "application_image_id": "f2b60e350a2097289b3b0b877495e55f"
+    },
+    "card_id": 5,
+    "power_level": 83732.32311666667,
+    "power_level_percentile": 96.71
+  }
+}
+```
 
 ## Unfurled Media Item Object
 

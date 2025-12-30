@@ -203,7 +203,7 @@ Details about heartbeats are in the [Gateway documentation](/topics/gateway#send
 
 | Field   | Type          | Description                                                      |
 | ------- | ------------- | ---------------------------------------------------------------- |
-| ver     | integer       | The client heartbeat version (currently `25`)                    |
+| ver     | integer       | The client heartbeat version (currently `27`)                    |
 | active  | boolean       | Whether the session is currently active (has reasons of service) |
 | reasons | array[string] | [Reasons of Service](#reasons-of-service)                        |
 
@@ -222,7 +222,7 @@ Details about heartbeats are in the [Gateway documentation](/topics/gateway#send
   "d": {
     "seq": 1337,
     "qos": {
-      "ver": 25,
+      "ver": 27,
       "active": true,
       "reasons": ["foregrounded", "rtc_connected"]
     }
@@ -919,7 +919,7 @@ These events directly correspond with a specific action or state change that has
 | [Call Create](#call-create)                                                                 | Private channel call was created                                                               |
 | [Call Update](#call-update)                                                                 | Private channel call was updated                                                               |
 | [Call Delete](#call-delete)                                                                 | Private channel call was deleted                                                               |
-| [Channel Create](#channel-create)                                                           | New guild channel created                                                                      |
+| [Channel Create](#channel-create)                                                           | Channel was created                                                                            |
 | [Channel Update](#channel-update)                                                           | Channel was updated                                                                            |
 | [Channel Delete](#channel-delete)                                                           | Channel was deleted                                                                            |
 | [Channel Statuses](#channel-statuses)                                                       | Response to [Request Channel Statuses](#request-channel-statuses)                              |
@@ -943,6 +943,8 @@ These events directly correspond with a specific action or state change that has
 | [Entitlement Create](#entitlement-create)                                                   | Entitlement was created                                                                        |
 | [Entitlement Update](#entitlement-update)                                                   | Entitlement was updated                                                                        |
 | [Entitlement Delete](#entitlement-delete)                                                   | Entitlement was deleted                                                                        |
+| [Experiment Session Override Create](#experiment-session-override-create)                   | Apex experiment override was created                                                           |
+| [Experiment Session Override Delete](#experiment-session-override-delete)                   | Apex experiment override was deleted                                                           |
 | [Friend Suggestion Create](#friend-suggestion-create)                                       | Friend suggestion was created                                                                  |
 | [Friend Suggestion Delete](#friend-suggestion-delete)                                       | Friend suggestion was deleted                                                                  |
 | [Game Server Create](#game-server-create)                                                   | Guild game server was created                                                                  |
@@ -1015,6 +1017,10 @@ These events directly correspond with a specific action or state change that has
 | [Message Reaction Remove Emoji](#message-reaction-remove-emoji)                             | All reactions for a given emoji were explicitly removed from a message                         |
 | [Recent Mention Delete](#recent-mention-delete)                                             | Recent message that mentioned the current user was acknowledged                                |
 | [Last Messages](#last-messages)                                                             | Response to [Request Last Messages](#request-last-messages)                                    |
+| [Notification Center Item Create](#notification-center-item-create)                         | Notification center item was created                                                           |
+| [Notification Center Item Delete](#notification-center-item-delete)                         | Notification center item was deleted                                                           |
+| [Notification Center Items Ack](#notification-center-items-ack)                             | Notification center item was acknowledged                                                      |
+| [Notification Center Item Completed](#notification-center-item-completed)                   | Notification center item of a certain action type was completed                                |
 | [Notification Settings Update](#notification-settings-update)                               | User notification settings were updated                                                        |
 | [OAuth2 Token Create](#oauth2-token-create)                                                 | OAuth2 authorization was created                                                               |
 | [OAuth2 Token Delete](#oauth2-token-delete)                                                 | OAuth2 authorization was deleted                                                               |
@@ -1481,7 +1487,7 @@ Sent when a call is deleted, or becomes unavailable due to an outage.
 
 #### Channel Create
 
-Sent when a new guild channel is created, relevant to the current user. The inner payload is a [channel](/resources/channel#channel-object) object.
+Sent when a channel was created, relevant to the current user. The inner payload is a [channel](/resources/channel#channel-object) object.
 
 ###### Channel Create Structure Extra Fields
 
@@ -1764,6 +1770,29 @@ Entitlement deletions are infrequent, and occur when:
 - A test entitlement is deleted
 
 Entitlements are _not_ deleted when they expire.
+
+### Experiments
+
+#### Experiment Session Override Create
+
+Sent when an apex experiment override is created.
+
+###### Experiment Session Override Create Structure
+
+| Field           | Type    | Description                     |
+| --------------- | ------- | ------------------------------- |
+| experiment_name | string  | The name of the experiment      |
+| variant_id      | integer | The ID of the overriden variant |
+
+#### Experiment Session Override Delete
+
+Sent when an apex experiment override is deleted.
+
+###### Experiment Session Override Delete Structure
+
+| Field           | Type   | Description                |
+| --------------- | ------ | -------------------------- |
+| experiment_name | string | The name of the experiment |
 
 ### Friend Suggestions
 
@@ -2604,8 +2633,8 @@ Sent when the channel read state is updated for the current user. This indicates
 | message_id         | snowflake | The ID of the last acknowledged message                                      |
 | manual?            | boolean   | Whether the acknowleged message ID is manually set                           |
 | mention_count? ^1^ | integer   | The number of mentions the user has in the channel                           |
-| flags ^1^          | ?integer  | The [read state flags](/topics/read-state#read-state-flags) for the channel  |
-| last_viewed ^1^    | ?integer  | When the channel was last viewed (in days since the Discord epoch)           |
+| flags? ^1^         | ?integer  | The [read state flags](/topics/read-state#read-state-flags) for the channel  |
+| last_viewed? ^1^   | ?integer  | When the channel was last viewed (in days since the Discord epoch)           |
 | version            | integer   | The user read state version                                                  |
 
 ^1^ If omitted or `null`, the current value is retained.
@@ -2742,6 +2771,43 @@ Sent in response to [Request Last Messages](#request-last-messages).
 | -------- | ---------------------------------------------------------- | --------------------------------------- |
 | guild_id | snowflake                                                  | The ID of the guild                     |
 | messages | array[[message](/resources/message#message-object) object] | Last messages of the requested channels |
+
+### Notification Center
+
+#### Notification Center Item Create
+
+Sent when a notification center item is created. The inner payload is a [notification center item](/resources/notification-center#notification-center-item-object) object.
+
+#### Notification Center Item Delete
+
+Sent when a notification center item is deleted.
+
+###### Notification Center Item Delete Structure
+
+| Field   | Type      | Description                                    |
+| ------- | --------- | ---------------------------------------------- |
+| id      | snowflake | The ID of the deleted notification center item |
+| user_id | snowflake | The ID of the current user                     |
+
+#### Notification Center Items Ack
+
+Sent when a notification center item is acknowledged.
+
+###### Notification Center Items Ack Structure
+
+| Field | Type      | Description                                         |
+| ----- | --------- | --------------------------------------------------- |
+| id    | snowflake | The ID of the acknowledged notification center item |
+
+#### Notification Center Item Completed
+
+Sent when a notification center action set is completed.
+
+###### Notification Center Item Completed Structure
+
+| Field     | Type    | Description                                                                                                    |
+| --------- | ------- | -------------------------------------------------------------------------------------------------------------- |
+| item_enum | integer | The [type of completed notification center item](/resources/notification-center#notification-center-item-enum) |
 
 ### Notification Settings
 
