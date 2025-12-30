@@ -450,6 +450,92 @@ How a user's name gets displayed, such as font, colors, gradient, glow.
 | 5     | POP      | Colored dropshadow                  |
 | 6     | GLOW     | Alternate gradient style            |
 
+## Game widgets
+
+#### Game Widgets Terminology Specification
+This section may contain terminology which can easily get mixed up. This list specifies their definition.
+
+  - Game Widget: A game widget is a single widget list (e.g. favourite games, games in rotation) containing Game objects.
+  - Game/Game Object: A "Game" is in this case referring to a game within a game widget list, containing an optional comment and tags.
+  - Detailed Game Widget: A detailed game widget is a game widget where the games in the list can display tags and a comment.
+  - Application Game Widget: An application game widget is a special kind of game widget which displays special data/statistics specific to a supported game.
+
+### Game Widget object
+
+Contains a data field to provide the data of the widget.
+
+| Field       | Type                                            | Description                                                                                                                          |
+|-------------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| data        | [game widget data](#game-widget-data-structure) | Data field containing the data of the game widget.                                                                                   |
+| id?         | snowflake                                       | Snowflake assigned by the server when a new widget is created to identify the widget. Repeated by the client on subsequent requests. |
+| updated_at? | ISO8601 timestamp                               | Timestamp assigned by the server present on response bodies informing when the widget's data was last updated.                       |
+
+##### Game Widget Data Structure
+
+Contains the game widget type, and the list of games in the game widget.
+
+| Field           | Type                                       | Description                                                                                  |
+|-----------------|--------------------------------------------|----------------------------------------------------------------------------------------------|
+| type            | [game widget type](#game-widget-type) enum | The type of the game widget. (e.g. favourite game, games in rotation, application)           |
+| games?          | array[[game object](#game-object)]         | An array of select games, not present if the widget is an application game widget.           |
+| application_id? | snowflake                                  | Application Id for the game widget, only present if the widget is a application game widget. |
+
+### Game Object
+
+| Field    | Type                         | Description                                                                                         |
+|----------|------------------------------|-----------------------------------------------------------------------------------------------------|
+| game_id  | snowflake                    | The game id of the game. (only games that are eligble to be displayed as widgets)                   |
+| comment? | ?string                      | Optional comment to be displayed below the game in detailed game widgets.                           |
+| tags?    | array[[tag enum](#tag-enum)] | An array of select game tags (e.g. love_it, etc) displayed below the game in detailed game widgets. |
+
+##### Example Game Object:
+```
+{
+  "game_id": "700136079562375258",
+  "comment": null,
+  "tags": [
+    "rage_quitting"
+  ]
+}
+```
+
+### Game Widget Type
+
+| Variant           | Value (string)           | Game Limit | Detailed? |
+|-------------------|--------------------------|------------|-----------|
+| Favorite game     | ``"favorite_games"``     | 1          | true      |
+| Games I like      | ``"played_games"``       | 20         | false     |
+| Games in rotation | ``"current_games"``      | 5          | true      |
+| Want to play      | ``"want_to_play_games"`` | 20         | false     |
+| Application       | ``"application"``         | N/A        | N/A       |
+
+### Tag Enum
+
+| Variant                | Value (string)           | Category               |
+|------------------------|--------------------------|------------------------|
+| Casual                 | ``"casual"``             | Skill Level            |
+| Intermediate           | ``"intermediate"``       | Skill Level            |
+| Expert                 | ``"expert"``             | Skill Level            |
+| Better Than You        | ``"better_than_you"``    | Skill Level            |
+| Obsessed               | ``"obsessed"``           | Rating                 |
+| Love It                | ``"love_it"``            | Rating                 |
+| Kind of Love it        | ``"kind_of_love_it"``    | Rating                 |
+| Kind of Hate it        | ``"kind_of_hate_it"``    | Rating                 |
+| Rage Quitting          | ``"rage_quitting"``      | Rating                 |
+| Looking For Group      | ``"looking_for_group"``  | Looking For            |
+| Open To Play           | ``"open_to_play"``       | Looking For            |
+| Looking For Tips       | ``"looking_for_tips"``   | Looking For            |
+| Open To Teach          | ``"open_to_teach"``      | Looking For            |
+| Looking To Discuss     | ``"looking_to_discuss"`` | Looking For            |
+| Noob ^1^               | ``"noob"``               | presumably Skill Level |
+| Learning The Ropes ^1^ | ``"learning_the_ropes"`` | presumably Skill Level |
+| Getting Good ^1^       | ``"getting_good"``       | presumably Skill Level |
+| Like It ^1^            | ``"like_it"``            | presumably Rating      |
+| Frustrated ^1^         | ``"frustrated"``         | presumably Rating      |
+| Too Easy ^1^           | ``"too_easy"``           | presumably Skill Level |
+
+^1^ Not visually displayed in the client as a tag, only accepted at the API level and only shown in data responses.
+
 ### Profile Metadata Object
 
 A user's profile metadata.
@@ -934,6 +1020,7 @@ This endpoint requires one of the following:
 | guild_member? ^1^             | private [guild member](/resources/guild#guild-member-object) object                                    | The guild member in the guild specified                                       |
 | guild_member_profile? ^1^     | [profile metadata](#profile-metadata-object) object                                                    | The guild member's profile in the guild specified                             |
 | guild_badges ^1^              | array[[profile badge](#profile-badge-structure) objcet]                                                | The guild member's guild-specific profile badges                              |
+| widgets ^1^                   | array[[game widget](#game-widget-object)]                                                              | The user's game widgets.                                                      |
 | legacy_username? ^1^ ^2^      | ?string                                                                                                | The user's pre-migration `username#discriminator`, if applicable and shown    |
 | mutual_guilds? ^1^            | array[[mutual guild](#mutual-guild-structure) object]                                                  | The mutual guilds of the user with the current user                           |
 | mutual_friends? ^1^ ^3^       | array[partial [user](#user-object) object]                                                             | The mutual friends the user has with the current user                         |
@@ -2045,3 +2132,15 @@ Returns a [user identity verification](#user-identity-verification-object) objec
 This endpoint is deprecated. Applications must now belong to a team to be verified. As such it is replaced by [Get Team Identity Verification](/resources/team#get-team-identity-verification).
 
 </Alert>
+
+<RouteHeader method="PUT" url="/users/@me/widgets">
+  Update Profile Widgets
+</RouteHeader>
+
+###### JSON Params
+
+| Field   | Type                                             | Description                                                                                                               |
+|---------|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| widgets | array[[game widget object](#game-widget-object)] | Consists of the profile widgets on your board. A maximum of one of each [game widget type](#game-widget-type) is allowed. |
+
+Returns the request body back if successful.
