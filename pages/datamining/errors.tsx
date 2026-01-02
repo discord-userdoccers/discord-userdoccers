@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import Alert from "../../components/Alert";
 import ErrorCodeGroup from "../../components/error-codes/ErrorCodeGroups";
 import { SubmitErrorDialog } from "../../components/error-codes/ErrorSubmitDialog";
 import Anchor from "../../components/mdx/Anchor";
@@ -10,7 +9,6 @@ import { SearchIcon } from "../../components/mdx/icons/SearchIcon";
 import InlineCode from "../../components/mdx/InlineCode";
 import Paragraph from "../../components/mdx/Paragraph";
 import { HashProvider } from "../../hooks/useHash";
-import classNames from "../../lib/classnames";
 import Styles from "../../stylesheets/modules/Errors.module.css";
 
 export interface ErrorGroup {
@@ -60,48 +58,40 @@ export default function Errors() {
           submit it here with reproduction steps, and we will add it to the list. Thanks for your contribution!
         </Paragraph>
 
-        <Alert type="info">
-          <Paragraph>
-            Items marked with ⚠️ indicate unknown error messages. Found one?{" "}
-            <Anchor role="button" onClick={() => setIsDialogOpen(true)} style={{ cursor: "pointer" }}>
-              Submit it here
-            </Anchor>
-            .
-          </Paragraph>
-        </Alert>
         <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codes ?? []} />
 
-        <div className="flex-start flex w-full flex-col gap-3">
-          <div className="flex w-full items-center gap-2 px-1 md:self-end">
+        <div className="sticky top-0 z-10 mb-8 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white/80 p-4 backdrop-blur-md dark:border-gray-800 dark:bg-[#0b0c0f]/80 md:flex-row md:items-center md:justify-between">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
-              type="checkbox"
-              id="filter-by-unknown"
-              checked={filterByUnknown}
-              aria-checked={filterByUnknown}
-              onChange={(e) => setFilterByUnknown(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
-            ></input>
-
-            <label htmlFor="filter-by-unknown" className="cursor-pointer">
-              Filter by Unknown
-            </label>
+              type="search"
+              placeholder="Search error codes..."
+              className="w-full rounded-lg border border-gray-200 bg-transparent py-2 pl-9 pr-4 text-sm outline-none transition-colors focus:border-gray-200 dark:border-gray-700 dark:focus:border-gray-700"
+              onChange={(e) => setSearch(e.target.value.toLowerCase())}
+            />
           </div>
 
-          <div role="search">
-            <label id="error-search-description" htmlFor="error-search" className="sr-only">
-              Search error codes
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className="rounded-lg bg-brand-blurple px-4 py-2 text-sm text-white transition-colors hover:bg-brand-blurple/90"
+            >
+              Submit Error
+            </button>
+
+            <label className="flex cursor-pointer select-none items-center gap-3">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter Unknown</span>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={filterByUnknown}
+                  onChange={(e) => setFilterByUnknown(e.target.checked)}
+                />
+                <div className="h-6 w-11 rounded-full bg-gray-200 transition-colors peer-checked:bg-brand-blurple peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-blurple/50 dark:bg-gray-700"></div>
+                <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-5"></div>
+              </div>
             </label>
-            <div className="flex flex-row items-center justify-start">
-              <SearchIcon className="z-10 -mr-7 ml-3 size-4 text-[var(--docsearch-muted-color)]" />
-              <input
-                id="error-search"
-                type="search"
-                placeholder="Search error codes..."
-                aria-describedby="error-search-description"
-                className={classNames("DocSearch", "DocSearch-Button", Styles.searchbar)}
-                onChange={(e) => setSearch(e.target.value.toLowerCase())}
-              />
-            </div>
           </div>
         </div>
 
