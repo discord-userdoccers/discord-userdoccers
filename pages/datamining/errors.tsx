@@ -60,36 +60,40 @@ export default function Errors() {
 
         <SubmitErrorDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} codes={codes ?? []} />
 
-        <div className="sticky top-0 z-10 mb-8 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white/80 p-4 backdrop-blur-md dark:border-gray-800 dark:bg-[#0b0c0f]/80 md:flex-row md:items-center md:justify-between">
+        <div className={Styles.controls}>
           <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <SearchIcon className={Styles.controlsIcon} />
             <input
+              className={Styles.searchbar}
               type="search"
+              name="search"
               placeholder="Search error codes..."
-              className="w-full rounded-lg border border-gray-200 bg-transparent py-2 pl-9 pr-4 text-sm outline-none transition-colors focus:border-gray-200 dark:border-gray-700 dark:focus:border-gray-700"
               onChange={(e) => setSearch(e.target.value.toLowerCase())}
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className="rounded-lg bg-brand-blurple px-4 py-2 text-sm text-white transition-colors hover:bg-brand-blurple/90"
-            >
+            <button onClick={() => setIsDialogOpen(true)} className={Styles.submitButton}>
               Submit Error
             </button>
 
-            <label className="flex cursor-pointer select-none items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter Unknown</span>
+            <label className={Styles.filterLabel}>
+              <span>Filter Unknown</span>
               <div className="relative">
                 <input
                   type="checkbox"
+                  name="filterUnknown"
                   className="peer sr-only"
                   checked={filterByUnknown}
                   onChange={(e) => setFilterByUnknown(e.target.checked)}
                 />
-                <div className="h-6 w-11 rounded-full bg-gray-200 transition-colors peer-checked:bg-brand-blurple peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-blurple/50 dark:bg-gray-700"></div>
-                <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-5"></div>
+                <div
+                  className={
+                    Styles.filterToggle1 +
+                    " peer-checked:bg-brand-blurple peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-blurple/50"
+                  }
+                ></div>
+                <div className={Styles.filterToggle2 + " peer-checked:translate-x-5"}></div>
               </div>
             </label>
           </div>
