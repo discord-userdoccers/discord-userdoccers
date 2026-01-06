@@ -431,6 +431,16 @@ A user's active avatar decoration.
 | 2     | KEYBOARD_MODIFIER_KEY | Keyboard modifier key |
 | 3     | GAMEPAD_BUTTON        | Gamepad button        |
 
+### RPC Activity Participant Object
+
+###### RPC Activity Participant Object
+
+This structure is a superset of the [RPC user](#rpc-user-object) object with the following fields.
+
+| Field     | Type   | Description                                                 |
+| --------- | ------ | ----------------------------------------------------------- |
+| nickname? | string | The guild-specific nickname of the member (1-32 characters) |
+
 ## RPC Commands
 
 Commands are the means in which an app can interface with the client.
@@ -459,11 +469,11 @@ Commands are the means in which an app can interface with the client.
 | [GET_VOICE_SETTINGS](#get-voice-settings)                                                         | Used to retrieve the client's voice settings                                                    | `rpc`, or `rpc.voice.read`                                                          |                                    |
 | [SET_VOICE_SETTINGS](#set-voice-settings)                                                         | Used to set the client's voice settings                                                         | `rpc`, or `rpc.voice.write`                                                         |                                    |
 | [SET_VOICE_SETTINGS_2](#set-voice-settings-2)                                                     | Same as `SET_VOICE_SETTINGS`, but without authentication                                        |                                                                                     | HTTP, or IPC                       |
-| [SET_ACTIVITY](#set-activity)                                                                     | Used to update a user's Rich Presence                                                           | Either `rpc` or `rpc.activities.write` are required unless using HTTP/IPC transport |                                    |
-| SEND_ACTIVITY_JOIN_INVITE                                                                         | Used to consent to a Rich Presence Ask to Join request                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| CLOSE_ACTIVITY_JOIN_REQUEST                                                                       | Used to reject a Rich Presence Ask to Join request                                              | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| ACTIVITY_INVITE_USER                                                                              | Used to send an invite to another user for an activity                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| ACCEPT_ACTIVITY_INVITE                                                                            | Used to accept an activity invite                                                               | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [SET_ACTIVITY](#set-activity)                                                                     | Used to update a user's Rich Presence                                                           | Either `rpc` or `rpc.activities.write` are required unless using HTTP/IPC transport | IPC, WebSocket, or `post_message`  |
+| [SEND_ACTIVITY_JOIN_INVITE](#send-activity-join-invite)                                           | Used to send an invite to another user to an activity                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [CLOSE_ACTIVITY_JOIN_REQUEST](#close-activity-join-request)                                       | Used to reject a Rich Presence Ask to Join request                                              | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [ACTIVITY_INVITE_USER](#activity-invite-user)                                                     | Used to send an invite to another user for an activity                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [ACCEPT_ACTIVITY_INVITE](#accept-activity-invite)                                                 | Used to accept an activity invite                                                               | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
 | OPEN_INVITE_DIALOG                                                                                | Opens the invite modal                                                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
 | OPEN_SHARE_MOMENT_DIALOG ^1^                                                                      | Used for activities, allowing sharing an image from the activity                                |                                                                                     |                                    |
 | SHARE_INTERACTION ^2^                                                                             | (Unknown)                                                                                       |                                                                                     |                                    |
@@ -798,55 +808,166 @@ Used to set the client's voice settings. Responds with null.
 | type           | string | The [type of voice settings mode](#rpc-voice-settings-mode-type) |
 | shortcut       | string | The shortcut key combos for PTT                                  |
 
+#### Set Activity
+
+Used to update a user's Rich Presence. Responds with an [activity](/resources/presence#activity-object) object.
+
+###### Set Activity Arguments Structure
+
+| Field    | Type                                            | Description                                                          |
+| -------- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| pid? ^1^ | integer                                         | The ID of the OS process that is sending the presence update request |
+| activity | ?[rpc activity](#rpc-activity-structure) object | The activity to set                                                  |
+
+^1^ Only required if the current transport is IPC.
+
+###### RPC Activity Structure
+
+| Field                | Type                                                                            | Description                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| name                 | string                                                                          | The name of the activity (1-128 characters)                                                                      |
+| state?               | ?string                                                                         | The user's current party status (2-128 characters)                                                             |
+| state_url?           | ?string                                                                         | URL that is opened when clicking on the state text (max 256 characters)                                          |
+| details?             | ?string                                                                         | What the user is currently doing (2-128 characters)                                                            |
+| details_url?         | ?string                                                                         | URL that is opened when clicking on the details text (max 256 characters)                                        |
+| timestamps?          | [activity timestamps](/resources/presence#activity-timestamps-structure) object | Unix timestamps (in milliseconds) for start and/or end of the game                                               |
+| assets?              | [activity assets](/resources/presence#activity-assets-structure) object         | Images for the presence and their hover texts                                                                    |
+| party?               | [rpc activity party](#rpc-activity-party-structure) object                      | Information for the current party of the user                                                                    |
+| secrets?             | [activity secrets](/resources/presence#activity-secrets-structure) object       | Secrets for rich presence joining and spectating                                                                 |
+| buttons?             | array[[rpc activity button](#rpc-activity-button) object]                       | Custom buttons shown in rich presence (1-2)                                                                      |
+| instance?            | boolean                                                                         | Whether the activity is an instanced game session (a match that will end)                                        |
+| supported_platforms? | array[string]                                                                   | The [platforms](/resources/presence#activity-platform-type) the activity is supported on (max 10)                |
+| type                 | integer                                                                         | The [activity type](/resources/presence#activity-type) (except `STREAMING`, `CUSTOM` and `HANG`)                 |
+| status_display_type? | ?integer                                                                        | [Which field is displayed](/resources/presence#status-display-type) in the user's status text in the member list |
+
+^1^ For retrieving rich presence metadata, see [Get Activity Metadata](#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](#get-activity-secret).
+
+###### RPC Activity Party Structure
+
+| Field    | Type                    | Description                                                                  |
+| -------- | ----------------------- | ---------------------------------------------------------------------------- |
+| id?      | string                  | The ID of the party (min 2, max 128 characters)                              |
+| size?    | array[integer, integer] | The party's current and maximum size (current_size, max_size)                |
+| privacy? | integer                 | The [privacy of activity party](#activity-party-privacy) (default `PRIVATE`) |
+
+###### Activity Party Privacy
+
+| Value | Name    | Description          |
+| ----- | ------- | -------------------- |
+| 0     | PRIVATE | The party is private |
+| 1     | PUBLIC  | The party is public  |
+
+###### RPC Activity Button Structure
+
+| Field | Type   | Description                                                              |
+| ----- | ------ | ------------------------------------------------------------------------ |
+| label | string | The label of the custom button (1-32 characters)                         |
+| url   | string | URL that is opened when clicking on the button label (1-512 characters)  |
+
+#### Send Activity Join Invite
+
+Used to send an invite to another user for an activity. Responds with null.
+
+###### Send Activity Join Invite Arguments Structure
+
+| Field   | Type      | Description                                                  |
+| ------- | --------- | ------------------------------------------------------------ |
+| user_id | snowflake | The ID of the user to send the activity invite to            |
+| pid     | integer   | The ID of the OS process that is sending the activity invite |
+
+#### Close Activity Join Request
+
+Used to reject a Rich Presence Ask to Join request. Responds with null.
+
+| Field   | Type      | Description                                   |
+| ------- | --------- | --------------------------------------------- |
+| user_id | snowflake | The ID of the user to reject the request from |
+
+#### Activity Invite User
+
+Used to send an invite to another user for an activity. Responds with null.
+
+###### Send Activity Join Invite Arguments Structure
+
+| Field    | Type      | Description                                                                                       |
+| -------- | --------- | ------------------------------------------------------------------------------------------------- |
+| user_id  | snowflake | The ID of the user to send the activity invite to                                                 |
+| type     | integer   | The [type of activity request](/resources/presence#activity-action-type) (only `JOIN` is allowed) |
+| content? | string    | The message contents (max 1024 characters)                                                        |
+| pid      | integer   | The ID of the OS process that is sending the activity invite                                      |
+
+#### Accept Activity Invite
+
+Used to accept an activity invite. Responds with null.
+
+| Field           | Type      | Description                                                                                       |
+| --------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| type            | integer   | The [type of activity request](/resources/presence#activity-action-type) (only `JOIN` is allowed) |
+| user_id         | snowflake | The ID of the user to accept the activity invite from                                             |
+| session_id      | string    | The ID of the Gateway session of the activity invite                                              |
+| channel_id      | snowflake | The ID of the channel the activity invite message was sent in                                     |
+| message_id      | snowflake | The ID of the message                                                                             |
+| application_id? | snowflake | The ID of the application                                                                         |
+
+#### Get Activity Instance Connected Participants
+
+Used to retrieve users connected to a specific activity session.
+
+###### Get Activity Instance Connected Participants Response Structure
+
+| Field        | Type                                                                       | Description                                                |
+| ------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| participants | array[[rpc activity participant](#rpc-activity-participant-object) object] | The users currently participating in the activity instance |
+
 ## RPC Events
 
 Events are payloads sent over the socket to a client that correspond to events in Discord.
 
-| Name                                       | Description                                                                                                      | Scopes                                                                                         | Transports   |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------ |
-| [READY](#ready)                            | Non-subscription event sent immediately after connecting, contains server information                            |                                                                                                |              |
-| [ERROR](#error)                            | Non-subscription event sent when there is an error, including command responses                                  |                                                                                                |              |
-| CURRENT_USER_UPDATE                        | Sent when current user updates                                                                                   | `identify` is required unless using HTTP/IPC transport                                         |              |
-| CURRENT_GUILD_MEMBER_UPDATE                | Sent when current user bound to a guild updates                                                                  | `identify`, and `guilds.members.read` are both required unless using HTTP/IPC transport        |              |
-| GUILD_STATUS                               | Sent when a subscribed guild's state changes                                                                     | `rpc`                                                                                          |              |
-| GUILD_CREATE                               | Sent when a guild is created/joined on the client                                                                | `rpc`                                                                                          |              |
-| CHANNEL_CREATE                             | Sent when a channel is created/joined on the client                                                              | `rpc`                                                                                          |              |
-| RELATIONSHIP_UPDATE                        | Sent when a user's relationship updates                                                                          | `relationships.read`                                                                           |              |
-| VOICE_CHANNEL_SELECT                       | Sent when the client joins a voice channel                                                                       | `rpc`                                                                                          |              |
-| VOICE_STATE_CREATE                         | Sent when a user joins a subscribed voice channel                                                                | `rpc` or `rpc.voice.read`                                                                      |              |
-| VOICE_STATE_DELETE                         | Sent when a user parts a subscribed voice channel                                                                | `rpc` or `rpc.voice.read`                                                                      |              |
-| VOICE_STATE_UPDATE                         | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)                        | `rpc` or `rpc.voice.read`                                                                      |              |
-| VOICE_SETTINGS_UPDATE                      | Sent when the client's voice settings update                                                                     | `rpc` or `rpc.voice.read`                                                                      |              |
-| VOICE_SETTINGS_UPDATE_2                    | Same as `VOICE_SETTINGS_UPDATE`, but without authentication                                                      |                                                                                                | HTTP, or IPC |
-| VOICE_CONNECTION_STATUS                    | Sent when the client's voice connection status changes                                                           | `rpc` or `rpc.voice.read`                                                                      |              |
-| SPEAKING_START                             | Sent when a user in a subscribed voice channel speaks                                                            | `rpc` or `rpc.voice.read` are required unless using HTTP/IPC transport                         |              |
-| SPEAKING_STOP                              | Sent when a user in a subscribed voice channel stops speaking                                                    | `rpc` or `rpc.voice.read` are required unless using HTTP/IPC transport                         |              |
-| GAME_JOIN **(deprecated)**                 | Sent when the user clicks a Rich Presence join invite in chat to join a game                                     | `rpc` is required unless using HTTP/IPC transport                                              |              |
-| GAME_SPECTATE **(deprecated)**             | Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game                             | `rpc` is required unless using HTTP/IPC transport                                              |              |
-| ACTIVITY_JOIN ^1^                          | Sent when the user clicks a Rich Presence join invite in chat to join an activity                                |                                                                                                |              |
-| ACTIVITY_JOIN_REQUEST                      | Sent when the user receives a Rich Presence Ask to Join request                                                  | `rpc` is required unless using HTTP/IPC transport                                              |              |
-| ACTIVITY_SPECTATE ^1^                      | Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game                             |                                                                                                |              |
-| ACTIVITY_INVITE                            | Sent when the user receives a Rich Presence Join request                                                         | `rpc` is required unless using HTTP/IPC transport                                              |              |
-| ACTIVITY_PIP_MODE_UPDATE                   | Sent when PiP (Picture-in-Picture) mode changes                                                                  |                                                                                                |              |
-| ACTIVITY_LAYOUT_MODE_UPDATE                | Sent when a user changes the layout mode in the Discord client                                                   |                                                                                                |              |
-| THERMAL_STATE_UPDATE ^2^                   | Sent when thermal state of mobile device is updated                                                              |                                                                                                |              |
-| ORIENTATION_UPDATE ^2^                     | For mobile devices, indicates a change in orientation of the screen                                              |                                                                                                |              |
-| ACTIVITY_INSTANCE_PARTICIPANTS_UPDATE ^2^  | Sent when the number of instance participants changes                                                            |                                                                                                |              |
-| NOTIFICATION_CREATE                        | Sent when the client receives a notification (mention or new message in eligible channels)                       | `rpc` and `rpc.notifications.read` are reqiured                                                |              |
-| MESSAGE_CREATE                             | Sent when a message is created in a subscribed text channel                                                      | `rpc` is required, `messages.read` is required unless the guild belongs to current application |              |
-| MESSAGE_UPDATE                             | Sent when a message is updated in a subscribed text channel                                                      | `rpc` is required, `messages.read` is required unless the guild belongs to current application |              |
-| MESSAGE_DELETE                             | Sent when a message is deleted in a subscribed text channel                                                      | `rpc` is required, `messages.read` is required unless the guild belongs to current application |              |
-| OVERLAY                                    | (Unknown)                                                                                                        |                                                                                                | WebSocket    |
-| OVERLAY_UPDATE                             | (Unknown)                                                                                                        |                                                                                                | HTTP, or IPC |
-| ENTITLEMENT_CREATE ^1^                     | Sent when an entitlement is created when a user purchases or is otherwise granted one of your application's SKUs |                                                                                                |              |
-| ENTITLEMENT_DELETE ^1^                     | Sent when an [entitlement is deleted](/topics/gateway-events#entitlement-delete)                                 |                                                                                                |              |
-| VOICE_CHANNEL_EFFECT_SEND                  | (Unknown)                                                                                                        |                                                                                                |              |
-| VOICE_CHANNEL_EFFECT_RECENT_EMOJI          | (Unknown)                                                                                                        |                                                                                                |              |
-| VOICE_CHANNEL_EFFECT_TOGGLE_ANIMATION_TYPE | (Unknown)                                                                                                        |                                                                                                |              |
-| SCREENSHARE_STATE_UPDATE                   | (Unknown)                                                                                                        | `rpc.screenshare.read`                                                                         | HTTP, or IPC |
-| VIDEO_STATE_UPDATE                         | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)                        | `rpc.voice.read`                                                                               | HTTP, or IPC |
-| AUTHORIZE_REQUEST                          | Sent when an activity wants to authorize within the Discord client                                               |                                                                                                |              |
-| QUEST_ENROLLMENT_STATUS_UPDATE             | Sent when a user's quest enrollment status changes                                                               | `identify`                                                                                     |              |
+| Name                                                                                 | Description                                                                                                      | Scopes                                                                                         | Transports   |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------ |
+| [READY](#ready)                                                                      | Non-subscription event sent immediately after connecting, contains server information                            |                                                                                                |              |
+| [ERROR](#error)                                                                      | Non-subscription event sent when there is an error, including command responses                                  |                                                                                                |              |
+| [CURRENT_USER_UPDATE](#current-user-update)                                          | Sent when current user updates                                                                                   | `identify` is required unless using HTTP/IPC transport                                         |              |
+| [CURRENT_GUILD_MEMBER_UPDATE](#current-guild-member-update)                          | Sent when current user bound to a guild updates                                                                  | `identify`, and `guilds.members.read` are both required unless using HTTP/IPC transport        |              |
+| GUILD_STATUS                                                                         | Sent when a subscribed guild's state changes                                                                     | `rpc`                                                                                          |              |
+| GUILD_CREATE                                                                         | Sent when a guild is created/joined on the client                                                                | `rpc`                                                                                          |              |
+| CHANNEL_CREATE                                                                       | Sent when a channel is created/joined on the client                                                              | `rpc`                                                                                          |              |
+| RELATIONSHIP_UPDATE                                                                  | Sent when a user's relationship updates                                                                          | `relationships.read`                                                                           |              |
+| VOICE_CHANNEL_SELECT                                                                 | Sent when the client joins a voice channel                                                                       | `rpc`                                                                                          |              |
+| VOICE_STATE_CREATE                                                                   | Sent when a user joins a subscribed voice channel                                                                | `rpc` or `rpc.voice.read`                                                                      |              |
+| VOICE_STATE_DELETE                                                                   | Sent when a user parts a subscribed voice channel                                                                | `rpc` or `rpc.voice.read`                                                                      |              |
+| VOICE_STATE_UPDATE                                                                   | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)                        | `rpc` or `rpc.voice.read`                                                                      |              |
+| VOICE_SETTINGS_UPDATE                                                                | Sent when the client's voice settings update                                                                     | `rpc` or `rpc.voice.read`                                                                      |              |
+| VOICE_SETTINGS_UPDATE_2                                                              | Same as `VOICE_SETTINGS_UPDATE`, but without authentication                                                      |                                                                                                | HTTP, or IPC |
+| VOICE_CONNECTION_STATUS                                                              | Sent when the client's voice connection status changes                                                           | `rpc` or `rpc.voice.read`                                                                      |              |
+| SPEAKING_START                                                                       | Sent when a user in a subscribed voice channel speaks                                                            | `rpc` or `rpc.voice.read` are required unless using HTTP/IPC transport                         |              |
+| SPEAKING_STOP                                                                        | Sent when a user in a subscribed voice channel stops speaking                                                    | `rpc` or `rpc.voice.read` are required unless using HTTP/IPC transport                         |              |
+| GAME_JOIN **(deprecated)**                                                           | Sent when the user clicks a Rich Presence join invite in chat to join a game                                     | `rpc` is required unless using HTTP/IPC transport                                              |              |
+| GAME_SPECTATE **(deprecated)**                                                       | Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game                             | `rpc` is required unless using HTTP/IPC transport                                              |              |
+| ACTIVITY_JOIN ^1^                                                                    | Sent when the user clicks a Rich Presence join invite in chat to join an activity                                |                                                                                                |              |
+| ACTIVITY_JOIN_REQUEST                                                                | Sent when the user receives a Rich Presence Ask to Join request                                                  | `rpc` is required unless using HTTP/IPC transport                                              |              |
+| ACTIVITY_SPECTATE ^1^                                                                | Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game                             |                                                                                                |              |
+| ACTIVITY_INVITE                                                                      | Sent when the user receives a Rich Presence Join request                                                         | `rpc` is required unless using HTTP/IPC transport                                              |              |
+| ACTIVITY_PIP_MODE_UPDATE                                                             | Sent when PiP (Picture-in-Picture) mode changes                                                                  |                                                                                                |              |
+| ACTIVITY_LAYOUT_MODE_UPDATE                                                          | Sent when a user changes the layout mode in the Discord client                                                   |                                                                                                |              |
+| THERMAL_STATE_UPDATE ^2^                                                             | Sent when thermal state of mobile device is updated                                                              |                                                                                                |              |
+| ORIENTATION_UPDATE ^2^                                                               | For mobile devices, indicates a change in orientation of the screen                                              |                                                                                                |              |
+| [ACTIVITY_INSTANCE_PARTICIPANTS_UPDATE](#activity-instance-participants-update) ^2^  | Sent when the number of instance participants changes                                                            |                                                                                                |              |
+| NOTIFICATION_CREATE                                                                  | Sent when the client receives a notification (mention or new message in eligible channels)                       | `rpc` and `rpc.notifications.read` are reqiured                                                |              |
+| MESSAGE_CREATE                                                                       | Sent when a message is created in a subscribed text channel                                                      | `rpc` is required, `messages.read` is required unless the guild belongs to current application |              |
+| MESSAGE_UPDATE                                                                       | Sent when a message is updated in a subscribed text channel                                                      | `rpc` is required, `messages.read` is required unless the guild belongs to current application |              |
+| MESSAGE_DELETE                                                                       | Sent when a message is deleted in a subscribed text channel                                                      | `rpc` is required, `messages.read` is required unless the guild belongs to current application |              |
+| OVERLAY                                                                              | (Unknown)                                                                                                        |                                                                                                | WebSocket    |
+| OVERLAY_UPDATE                                                                       | (Unknown)                                                                                                        |                                                                                                | HTTP, or IPC |
+| ENTITLEMENT_CREATE ^1^                                                               | Sent when an entitlement is created when a user purchases or is otherwise granted one of your application's SKUs |                                                                                                |              |
+| ENTITLEMENT_DELETE ^1^                                                               | Sent when an [entitlement is deleted](/topics/gateway-events#entitlement-delete)                                 |                                                                                                |              |
+| VOICE_CHANNEL_EFFECT_SEND                                                            | (Unknown)                                                                                                        |                                                                                                |              |
+| VOICE_CHANNEL_EFFECT_RECENT_EMOJI                                                    | (Unknown)                                                                                                        |                                                                                                |              |
+| VOICE_CHANNEL_EFFECT_TOGGLE_ANIMATION_TYPE                                           | (Unknown)                                                                                                        |                                                                                                |              |
+| SCREENSHARE_STATE_UPDATE                                                             | (Unknown)                                                                                                        | `rpc.screenshare.read`                                                                         | HTTP, or IPC |
+| VIDEO_STATE_UPDATE                                                                   | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)                        | `rpc.voice.read`                                                                               | HTTP, or IPC |
+| AUTHORIZE_REQUEST                                                                    | Sent when an activity wants to authorize within the Discord client                                               |                                                                                                |              |
+| QUEST_ENROLLMENT_STATUS_UPDATE                                                       | Sent when a user's quest enrollment status changes                                                               | `identify`                                                                                     |              |
 
 ^1^ Requires either authentication, or HTTP/IPC transport.
 
@@ -866,6 +987,14 @@ Sent when the client has completed the initial handshake with the RPC server.
 
 ^1^ Only present if the transport is HTTP/IPC.
 
+###### Client Environment Config Structure
+
+| Field        | Type   | Description                                   |
+| ------------ | ------ | --------------------------------------------- |
+| cdn_host     | string | The CDN domain                                |
+| api_endpoint | string | The base API URL without scheme               |
+| environment  | string | The type of environment (always `production`) |
+
 #### Error
 
 Sent in response to outgoing command or event.
@@ -876,6 +1005,30 @@ Sent in response to outgoing command or event.
 | ------- | ------- | ------------------------- |
 | code    | integer | The [error code](#errors) |
 | message | string  | The error message         |
+
+#### Current User Update
+
+Sent when properties about the current user change. Inner payload is a [RPC user](#rpc-user-object) object.
+
+#### Current Guild Member Update
+
+Sent when properties about the guild member change. Inner payload is a [RPC guild member](#rpc-guild-member-object) object.
+
+###### Current Guild Member Update Subscription Arguments Structure
+
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
+
+#### Activity Instance Participants Update
+
+Sent when someone joins/leaves embedded activity instance.
+
+###### Activity Instance Participants Update Structure
+
+| Field        | Type                                                                       | Description                                                |
+| ------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| participants | array[[rpc activity participant](#rpc-activity-participant-object) object] | The users currently participating in the activity instance |
 
 ## Errors
 
