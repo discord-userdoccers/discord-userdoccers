@@ -431,6 +431,38 @@ A user's active avatar decoration.
 | 2     | KEYBOARD_MODIFIER_KEY | Keyboard modifier key |
 | 3     | GAMEPAD_BUTTON        | Gamepad button        |
 
+### RPC Guild Template Object
+
+###### RPC Guild Template Structure
+
+| Field                     | Type                                                  | Description                                              |
+| ------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| code                      | string                                                | The code of the template (unique ID)                     |
+| state                     | string                                                | The [state of guild template](#rpc-guild-template-state) |
+| name                      | string                                                | The name of the template (1-100 characters)              |
+| description               | string                                                | The description for the template (max 120 characters)    |
+| creatorId                 | snowflake                                             | The ID of the user who created the template              |
+| creator                   | partial [user](/resources/user#user-object) object    | The user who created the template                        |
+| createdAt                 | ISO8601 timestamp                                     | When this template was created                           |
+| updatedAt                 | ISO8601 timestamp                                     | When this template was last synced to the source guild   |
+| sourceGuildId             | snowflake                                             | The ID of the guild this template is based on            |
+| serializedSourceGuild ^1^ | partial [guild](/resources/guild#guild-object) object | The guild snapshot this template contains                |
+| usageCount                | integer                                               | Number of times this template has been used              |
+| isDirty                   | ?boolean                                              | Whether the template has unsynced changes                |
+
+^1^ This partial guild object is special in that it and the objects within always contain applicable optional fields (even if they're not applicable).
+This leads to unexpected behavior, such as `available_tags` being serialized for voice channels.
+Additionally, the main guild object is missing the `id` field, and all other `id` fields are not real snowflakes.
+
+###### RPC Guild Template State
+
+| Value     | Description                          |
+| RESOLVING | The guild template is being resolved |
+| RESOLVED  | The guild template is resolved       |
+| EXPIRED   | The guild template is expired        |
+| ACCEPTED  | The guild template is accepted       |
+| ACCEPTING | The guild template is being accepted |
+
 ### RPC Activity Participant Object
 
 ###### RPC Activity Participant Object
@@ -474,18 +506,18 @@ Commands are the means in which an app can interface with the client.
 | [CLOSE_ACTIVITY_JOIN_REQUEST](#close-activity-join-request)                                       | Used to reject a Rich Presence Ask to Join request                                              | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
 | [ACTIVITY_INVITE_USER](#activity-invite-user)                                                     | Used to send an invite to another user for an activity                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
 | [ACCEPT_ACTIVITY_INVITE](#accept-activity-invite)                                                 | Used to accept an activity invite                                                               | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| OPEN_INVITE_DIALOG                                                                                | Opens the invite modal                                                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| OPEN_SHARE_MOMENT_DIALOG ^1^                                                                      | Used for activities, allowing sharing an image from the activity                                |                                                                                     |                                    |
+| [OPEN_INVITE_DIALOG](#open-invite-dialog)                                                         | Opens the invite modal                                                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [OPEN_SHARE_MOMENT_DIALOG](#open-share-moment-dialog) ^1^                                         | Used for activities, allowing sharing an image from the activity                                |                                                                                     |                                    |
 | SHARE_INTERACTION ^2^                                                                             | (Unknown)                                                                                       |                                                                                     |                                    |
 | INITIATE_IMAGE_UPLOAD                                                                             | Used by an activity to get a user-provided image from their PC, opens file dialog               | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
 | SHARE_LINK ^1^                                                                                    | Opens the share message modal, where a user can pick a channel to send a predefined message to  |                                                                                     | `post_message`                     |
 | DEEP_LINK                                                                                         | Navigates to certain route in the Discord client                                                |                                                                                     | HTTP, IPC, or WebSocket            |
-| CONNECTIONS_CALLBACK                                                                              | Used to send the next part of connection flow to the client, part of connections flow v2        |                                                                                     | WebSocket                          |
-| BILLING_POPUP_BRIDGE_CALLBACK                                                                     | Callback for payment methods like PaySafeCard, Klarna, Przelewy24, etc                          |                                                                                     | WebSocket                          |
-| BRAINTREE_POPUP_BRIDGE_CALLBACK                                                                   | Callback for payment via Braintree                                                              |                                                                                     | WebSocket                          |
-| GIFT_CODE_BROWSER                                                                                 | Opens a given gift code link in the client                                                      |                                                                                     | WebSocket                          |
-| GUILD_TEMPLATE_BROWSER                                                                            | Opens a given template link in the client                                                       |                                                                                     | WebSocket                          |
-| OPEN_MESSAGE                                                                                      | Used to open a specific message or DM in the client                                             |                                                                                     | HTTP, or IPC                       |
+| [CONNECTIONS_CALLBACK](#connections-callback)                                                     | Used to send the next part of connection flow to the client, part of connections flow v2        |                                                                                     | WebSocket                          |
+| [BILLING_POPUP_BRIDGE_CALLBACK](#billing-popup-bridge-callback)                                   | Callback for payment methods like PaySafeCard, Klarna, Przelewy24, etc                          |                                                                                     | WebSocket                          |
+| [BRAINTREE_POPUP_BRIDGE_CALLBACK](#braintree-popup-bridge-callback) **(deprecated)**              | Callback for payment via Braintree                                                              |                                                                                     | WebSocket                          |
+| [GIFT_CODE_BROWSER](#gift-code-browser)                                                           | Opens a given gift code link in the client                                                      |                                                                                     | WebSocket                          |
+| [GUILD_TEMPLATE_BROWSER](#guild-template-browser)                                                 | Opens a given template link in the client                                                       |                                                                                     | WebSocket                          |
+| [OPEN_MESSAGE](#open-message)                                                                     | Used to open a specific message or DM in the client                                             |                                                                                     | HTTP, or IPC                       |
 | OVERLAY                                                                                           | (Unknown)                                                                                       |                                                                                     | WebSocket                          |
 | BROWSER_HANDOFF                                                                                   | (Unknown)                                                                                       |                                                                                     | WebSocket                          |
 | SET_CERTIFIED_DEVICES                                                                             | Used to send info about certified hardware devices                                              | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
@@ -499,10 +531,10 @@ Commands are the means in which an app can interface with the client.
 | GET_APPLICATION_TICKET                                                                            | Returns an application ticket                                                                   |                                                                                     | HTTP, or IPC                       |
 | START_PURCHASE ^1^                                                                                | Launches the purchase flow for a specific SKU, per the specified SKU ID                         |                                                                                     | IPC, or `post_message`             |
 | START_PREMIUM_PURCHASE ^1^                                                                        | Initiates a premium subscription purchase                                                       |                                                                                     | IPC, or `post_message`             |
-| GET_SKUS                                                                                          | Returns a list of your application's SKUs                                                       |                                                                                     | IPC, or `post_message`             |
-| GET_ENTITLEMENTS                                                                                  | Returns a list of entitlements for the current user                                             |                                                                                     | IPC, or `post_message`             |
-| GET_SKUS_EMBEDDED                                                                                 | Retrieves a list of purchasable SKUs in an embedded context                                     |                                                                                     | IPC, or `post_message`             |
-| GET_ENTITLEMENTS_EMBEDDED                                                                         | Retrieves owned entitlements in an embedded context                                             |                                                                                     | IPC, or `post_message`             |
+| [GET_SKUS](#get-skus)                                                                             | Returns a list of your application's SKUs                                                       |                                                                                     | IPC, or `post_message`             |
+| [GET_ENTITLEMENTS](#get-entitlements)                                                             | Returns a list of entitlements for the current user                                             |                                                                                     | IPC, or `post_message`             |
+| [GET_SKUS_EMBEDDED](#get-skus-embedded)                                                           | Retrieves a list of purchasable SKUs in an embedded context                                     |                                                                                     | IPC, or `post_message`             |
+| [GET_ENTITLEMENTS_EMBEDDED](#get-entitlements-embedded)                                           | Retrieves owned entitlements in an embedded context                                             |                                                                                     | IPC, or `post_message`             |
 | GET_NETWORKING_CONFIG                                                                             | (Unknown)                                                                                       |                                                                                     | HTTP, or IPC                       |
 | NETWORKING_SYSTEM_METRICS                                                                         | (Unknown)                                                                                       |                                                                                     | HTTP, or IPC                       |
 | NETWORKING_PEER_METRICS                                                                           | (Unknown)                                                                                       |                                                                                     | HTTP, or IPC                       |
@@ -538,7 +570,7 @@ Commands are the means in which an app can interface with the client.
 
 Used to authorize the current client with your app.
 
-###### Authorize Args Structure
+###### Authorize Arguments Structure
 
 | Field                   | Type          | Description                                                                                                                                                                                                  |
 | ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -575,7 +607,7 @@ Used to authorize the current client with your app.
 
 Used to authenticate an existing client with your app.
 
-###### Authenticate Args Structure
+###### Authenticate Arguments Structure
 
 | Field        | Type   | Description      |
 | ------------ | ------ | ---------------- |
@@ -593,7 +625,7 @@ This structure is a superset of the [Get Current Authorization Information](/top
 
 Used to retrieve guild information from the client. Responds with a [partial RPC guild](#partial-rpc-guild-object) object.
 
-###### Get Guild Args Structure
+###### Get Guild Arguments Structure
 
 | Field    | Type      | Description                         |
 | -------- | --------- | ----------------------------------- |
@@ -608,7 +640,7 @@ Used to retrieve a list of guilds from the client. Responds with a list of [part
 
 Used to retrieve channel information from the client. Responds with a [RPC channel](#rpc-channel-object) object.
 
-###### Get Channel Args Structure
+###### Get Channel Arguments Structure
 
 | Field      | Type      | Description           |
 | ---------- | --------- | --------------------- |
@@ -618,7 +650,7 @@ Used to retrieve channel information from the client. Responds with a [RPC chann
 
 Used to retrieve a list of channels for a guild from the client.
 
-###### Get Channels Args Structure
+###### Get Channels Arguments Structure
 
 | Field    | Type      | Description         |
 | -------- | --------- | ------------------- |
@@ -644,7 +676,7 @@ Used to retrieve the permission settings for the currently connected voice chann
 
 Used to create an invite link for a given channel. Responds with a [invite](/resources/invite#invite-object) object (with [invite metadata](/resources/invite#invite-metadata-object)).
 
-###### Create Channel Invite Args Structure
+###### Create Channel Invite Arguments Structure
 
 | Field      | Type      | Description                                |
 | ---------- | --------- | ------------------------------------------ |
@@ -688,7 +720,7 @@ Used to unsubscribe from an RPC event. Accepts event subscription arguments. The
 
 Used to change voice settings of users in voice channels.
 
-###### Set User Voice Settings Args Structure
+###### Set User Voice Settings Arguments Structure
 
 | Field   | Type                      | Description                               |
 | ------- | ------------------------- | ----------------------------------------- |
@@ -710,7 +742,7 @@ Used to change voice settings of users in voice channels.
 
 Used to change voice settings of users in voice channels. Responds with null.
 
-###### Set User Voice Settings Args Structure
+###### Set User Voice Settings Arguments Structure
 
 | Field   | Type                      | Description                               |
 | ------- | ------------------------- | ----------------------------------------- |
@@ -722,7 +754,7 @@ Used to change voice settings of users in voice channels. Responds with null.
 
 Used to enable or disable push-to-talk functionality. Responds with null.
 
-###### Push To Talk Args Structure
+###### Push To Talk Arguments Structure
 
 | Field  | Type    | Description                                         |
 | ------ | ------- | --------------------------------------------------- |
@@ -732,7 +764,7 @@ Used to enable or disable push-to-talk functionality. Responds with null.
 
 Used to join or leave a voice channel, group DM, or DM. Responds with a [RPC channel](#rpc-channel-object) object or null.
 
-###### Select Voice Channel Args Structure
+###### Select Voice Channel Arguments Structure
 
 | Field      | Type       | Description                                                    |
 | ---------- | ---------- | -------------------------------------------------------------- |
@@ -749,7 +781,7 @@ Used to get the current voice channel the client is in. Responds with a [RPC cha
 
 Used to join or leave a text channel, group DM, or DM. Responds with a [RPC channel](#rpc-channel-object) object or null.
 
-###### Select Text Channel Args Structure
+###### Select Text Channel Arguments Structure
 
 | Field      | Type       | Description                                                                    |
 | ---------- | ---------- | ------------------------------------------------------------------------------ |
@@ -764,7 +796,7 @@ Used to retrieve the client's voice settings. Responds with a [RPC voice setting
 
 Used to set the client's voice settings. Responds with a [RPC voice settings](#rpc-voice-settings-object) object.
 
-#### Set Voice Settings Arguments Structure
+###### Set Voice Settings Arguments Structure
 
 | Field                   | Type                                                                 | Description                          |
 | ----------------------- | -------------------------------------------------------------------- | ------------------------------------ |
@@ -793,7 +825,7 @@ Used to set the client's voice settings. Responds with a [RPC voice settings](#r
 
 Used to set the client's voice settings. Responds with null.
 
-#### Set Voice Settings 2 Arguments Structure
+###### Set Voice Settings 2 Arguments Structure
 
 | Field       | Type                                                           | Description                          |
 | ----------- | -------------------------------------------------------------- | ------------------------------------ |
@@ -879,6 +911,8 @@ Used to send an invite to another user for an activity. Responds with null.
 
 Used to reject a Rich Presence Ask to Join request. Responds with null.
 
+###### Close Activity Join Request Arguments Structure
+
 | Field   | Type      | Description                                   |
 | ------- | --------- | --------------------------------------------- |
 | user_id | snowflake | The ID of the user to reject the request from |
@@ -900,6 +934,8 @@ Used to send an invite to another user for an activity. Responds with null.
 
 Used to accept an activity invite. Responds with null.
 
+###### Accept Activity Invite Arguments Structure
+
 | Field           | Type      | Description                                                                                       |
 | --------------- | --------- | ------------------------------------------------------------------------------------------------- |
 | type            | integer   | The [type of activity request](/resources/presence#activity-action-type) (only `JOIN` is allowed) |
@@ -908,6 +944,143 @@ Used to accept an activity invite. Responds with null.
 | channel_id      | snowflake | The ID of the channel the activity invite message was sent in                                     |
 | message_id      | snowflake | The ID of the message                                                                             |
 | application_id? | snowflake | The ID of the application                                                                         |
+
+#### Connections Callback
+
+Used to send the next part of connection flow to the client. Responds with null.
+
+###### Connections Callback Arguments Structure
+
+| Field          | Type   | Description                                                             |
+| -------------- | ------ | ----------------------------------------------------------------------- |
+| providerType   | string | The [type of connection](/resources/connected-accounts#connection-type) |
+| code           | string | The authorization code for the connection                               |
+| openid_params? | object | Additional parameters for OpenID Connect                                |
+| iss?           | string | The issuer                                                              |
+| state          | string | The state used to authorize the connection                              |
+
+#### Billing Popup Bridge Callback
+
+Used as callback for payment methods like PaySafeCard, Klarna, Przelewy24, and other payment providers.
+
+###### Billing Popup Bridge Callback Arguments Structure
+
+| Field               | Type                | Description                                                          |
+| ------------------- | ------------------- | -------------------------------------------------------------------- |
+| state               | string              | The unique identifier for the request flow                           |
+| path                | string              | The redirect API path                                                |
+| query?              | map[string, string] | Redirect query parameters                                            |
+| payment_source_type | integer             | The type of [payment source](/resources/billing#payment-source-type) |
+
+###### Billing Popup Bridge Callback Response Structure
+
+| Field   | Type                | Description                                   |
+| ------- | ------------------- | --------------------------------------------- |
+| ok      | boolean             | Whether the HTTP response is successful       |
+| headers | map[string, string] | The headers of the HTTP response              |
+| body    | ?any                | The body of the HTTP response, parsed as JSON |
+| text    | string              | The body of the HTTP response, in text format |
+| status  | integer             | The status of the HTTP response               |
+
+#### Braintree Popup Bridge Callback
+
+Same as [Billing Popup Bridge Callback](#braintree-popup-bridge-callback), but `payment_source_type` is always [`PAYPAL`](/resources/billing#payment-source-type).
+
+This command is deprecated in favor of above one.
+
+###### Braintree Popup Bridge Callback Arguments Structure
+
+| Field               | Type                | Description                                |
+| ------------------- | ------------------- | ------------------------------------------ |
+| state               | string              | The unique identifier for the request flow |
+| path                | string              | The redirect API path                      |
+| query?              | map[string, string] | Redirect query parameters                  |
+
+###### Braintree Popup Bridge Callback Response Structure
+
+| Field   | Type                | Description                                   |
+| ------- | ------------------- | --------------------------------------------- |
+| ok      | boolean             | Whether the HTTP response is successful       |
+| headers | map[string, string] | The headers of the HTTP response              |
+| body    | object              | The body of the HTTP response, parsed as JSON |
+| text    | string              | The body of the HTTP response, in text format |
+| status  | integer             | The status of the HTTP response               |
+
+#### Gift Code Browser
+
+Used to open a given gift code link in the client.
+
+###### Gift Code Browser Arguments Structure
+
+| Field | Type   | Description           |
+| ----- | ------ | --------------------- |
+| code  | string | The gift code to open |
+
+###### Gift Code Browser Response Structure
+
+| Field    | Type                                                          | Description   |
+| -------- | ------------------------------------------------------------- | ------------- |
+| giftCode | [gift code](/resources/entitlement#entitlement-object) object | The gift code |
+
+#### Guild Template Browser
+
+Used to open a given template link in the client.
+
+###### Guild Template Browser Arguments Structure
+
+| Field | Type   | Description              |
+| ----- | ------ | ------------------------ |
+| code  | string | The code of the template |
+
+###### Guild Template Browser Response Structure
+
+| Field             | Type                                                    | Description              |
+| ----------------- | ------------------------------------------------------- | ------------------------ |
+| guildTemplate ^1^ | [rpc guild template](#rpc-guild-template-object) object | The guild template       |
+| code              | string                                                  | The code of the template |
+
+^1^ The state always will be [`RESOLVED`](#rpc-guild-template-state).
+
+#### Open Message
+
+Used to open a specific message or DM in the client. Responds with null.
+
+###### Open Message Arguments Structure
+
+| Field      | Type       | Description                                                                        |
+| ---------- | ---------- | ---------------------------------------------------------------------------------- |
+| guild_id?  | ?snowflake | The ID of the guild                                                                |
+| channel_id | snowflake  | The ID of the channel                                                              |
+| message_id | snowflake  | The ID of the message                                                              |
+| pid        | integer    | The ID of the OS process opening the message (used to open message within overlay) |
+
+#### Get SKUs
+
+Used to retrieve a list of your application's SKUs. Responds with a list of [SKU](/resources/store#sku-object) objects.
+
+#### Get Entitlements
+
+Used to retrieve a list of entitlements for the current user. Responds with a list of [entitlement](/resources/entitlement#entitlement-object) objects.
+
+#### Get SKUs Embedded
+
+Used to retrieve a list of your application's SKUs in an embedded context.
+
+###### Get SKUs Embedded Response Structure
+
+| Field | Type                                             | Description                 |
+| ----- | ------------------------------------------------ | --------------------------- |
+| skus  | array[[SKU](/resources/store#sku-object) object] | The SKUs of the application |
+
+#### Get Entitlements Embedded
+
+Used to retrieve a list of entitlements for the current user in an embedded context.
+
+###### Get Entitlements Embedded Response Structure
+
+| Field        | Type                                                                   | Description                           |
+| ------------ | ---------------------------------------------------------------------- | ------------------------------------- |
+| entitlements | array[[entitlement](/resources/entitlement#entitlement-object) object] | The entitlements for the current user |
 
 #### Get Activity Instance Connected Participants
 
