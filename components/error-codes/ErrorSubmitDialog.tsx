@@ -22,7 +22,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
     () => (props.codes ? Object.fromEntries(props.codes.flatMap((x) => Object.entries(x.codes))) : {}),
     [props.codes],
   );
-  const selectedGroup = useMemo(() => getErrorGroup(errorCode, props.codes), [errorCode, props.codes]);
+  const selectedGroup = useMemo(() => getErrorGroup(errorCode, props.codes), [errorCode]);
   return (
     <Transition appear unmount show={props.isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-10" onClose={props.onClose}>
@@ -102,15 +102,6 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                       className={Styles.dialogInput}
                       list="error-codes-list"
                     />
-                    {props.isOpen && (
-                      <datalist id="error-codes-list">
-                        {Object.entries(codesFlat).map(([code, message]) => (
-                          <option key={code} value={code}>
-                            {message}
-                          </option>
-                        ))}
-                      </datalist>
-                    )}
                   </div>
 
                   <div className="hidden" aria-hidden hidden>

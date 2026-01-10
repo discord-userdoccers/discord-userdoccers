@@ -91,7 +91,7 @@ export default function ErrorCodeGroup({
           <caption className="sr-only">Error codes for {name}</caption>
           <TableHead>
             <TableRow>
-              <TableHeader>Code</TableHeader>
+              <TableHeader style={{ width: "150px" }}>Code</TableHeader>
               <TableHeader>Message</TableHeader>
             </TableRow>
           </TableHead>
@@ -114,7 +114,7 @@ const ErrorCode = ({ code, message, isUnknown }: { code: string; message: string
 
   return (
     <TableRow key={code} ref={ref}>
-      <TableData>{code}</TableData>
+      <TableData className="max-w-xs p-2 px-3 font-mono">{code}</TableData>
       <TableData>
         {isUnknown ? (
           <>

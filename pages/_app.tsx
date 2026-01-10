@@ -1,3 +1,11 @@
+import "../stylesheets/tailwind.css";
+import "../stylesheets/styles.css";
+import "../stylesheets/scrollbar.css";
+import "../stylesheets/whitney/whitney.css";
+import "../stylesheets/prism.css";
+import "../stylesheets/youtube.css";
+import "../stylesheets/snowflake-deconstruction.css";
+
 import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
 import type { AppProps } from "next/app";
@@ -9,13 +17,6 @@ import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
 import MenuContext from "../contexts/MenuContext";
 import "@docsearch/css";
-import "../stylesheets/tailwind.css";
-import "../stylesheets/styles.css";
-import "../stylesheets/scrollbar.css";
-import "../stylesheets/whitney/whitney.css";
-import "../stylesheets/prism.css";
-import "../stylesheets/youtube.css";
-import "../stylesheets/snowflake-deconstruction.css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
 import OnThisPage from "../components/OnThisPage";
 
