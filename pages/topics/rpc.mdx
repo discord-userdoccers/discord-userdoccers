@@ -132,7 +132,9 @@ const sendPacket = (opcode, data) => {
 
 ### Authorization and Authentication
 
-After connecting to the IPC socket, you should immediately send a handshake packet to the client. The client will respond with a `FRAME` packet containing the `READY` event. This event will contain the user's information and the client's version. Upon successful reception of this event, you can send an `AUTHORIZE` command to obtain an [OAuth2 code, which can then be exchanged for an access token](/topics/oauth2#access-token-exchange-example). Once authenticated, you can call RPC commands on behalf of the user!
+After connecting to the IPC socket, you should immediately send a handshake packet to the client. The client will respond with a `FRAME` packet containing the `READY` event. This event will contain the user's information and the client's version.
+Upon successful reception of this event, you can send an `AUTHORIZE` command to obtain an [OAuth2 code, which can then be exchanged for an access token](/topics/oauth2#example-access-token-exchange).
+Once authenticated, you can call RPC commands on behalf of the user!
 
 ###### Handshake Structure
 
@@ -457,11 +459,38 @@ Additionally, the main guild object is missing the `id` field, and all other `id
 ###### RPC Guild Template State
 
 | Value     | Description                          |
+| --------- | ------------------------------------ |
 | RESOLVING | The guild template is being resolved |
 | RESOLVED  | The guild template is resolved       |
 | EXPIRED   | The guild template is expired        |
 | ACCEPTED  | The guild template is accepted       |
 | ACCEPTING | The guild template is being accepted |
+
+### Certified Device Object
+
+###### Certified Device Structure
+
+| Field                       | Type                                                                 | Description                                              |
+| --------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------- |
+| type                        | string                                                               | The [type of certified device](#certified-device-type)   |
+| id                          | string                                                               | The ID of the certified device                           |
+| vendor                      | [certified device vendor](#certified-device-vendor-structure) object | The vendor of the certified device                       |
+| model                       | [certified device model](#certified-device-model-structure) object   | The model of the certified device                        |
+| related?                    | array[string]                                                        | The IDs of other devices related to this device (min 1)  |
+| echo_cancellation? ^1^      | boolean                                                              | Whether the device's native echo cancellation is enabled |
+| noise_suppression? ^1^      | boolean                                                              | Whether the device's native noise suppression is enabled |
+| automatic_gain_control? ^1^ | boolean                                                              | Whether the device's automatic gain control is enabled   |
+| hardware_mute? ^1^          | boolean                                                              | Whether the device is muted hardware-wise                |
+
+^1^ Only applicable if the type is [`audioinput`](#certified-device-type).
+
+###### Certified Device Type
+
+| Value       | Description |
+| ----------- | ----------- |
+| audioinput  | Microphone  |
+| audiooutput | Speaker     |
+| videoinput  | Camera      |
 
 ### RPC Activity Participant Object
 
@@ -485,88 +514,88 @@ This structure is a superset of the [RPC user](#rpc-user-object) object with the
 
 Commands are the means in which an app can interface with the client.
 
-| Name                                                                                              | Description                                                                                     | Scopes                                                                              | Transports                         |
-| ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------- |
-| DISPATCH                                                                                          | Event dispatch                                                                                  |                                                                                     |                                    |
-| [AUTHORIZE](#authorize)                                                                           | Used to authorize a new client with your app                                                    |                                                                                     |                                    |
-| [AUTHENTICATE](#authenticate)                                                                     | Used to authenticate an existing client with your app                                           |                                                                                     |                                    |
-| [GET_GUILD](#get-guild)                                                                           | Used to retrieve guild information from the client                                              | `rpc`                                                                               |                                    |
-| [GET_GUILDS](#get-guilds)                                                                         | Used to retrieve a list of guilds from the client                                               | `rpc`                                                                               |                                    |
-| [GET_CHANNEL](#get-channel)                                                                       | Used to retrieve channel information from the client                                            | Any of `rpc`, `guilds`, or `guilds.channel.read`                                    |                                    |
-| [GET_CHANNELS](#get-channels)                                                                     | Used to retrieve a list of channels for a guild from the client                                 | `rpc`                                                                               |                                    |
-| [GET_CHANNEL_PERMISSIONS](#get-channel-permissions)                                               | Used to retrieve the permission settings for the currently connected voice channel              | `guilds.members.read`, or `guilds.channels.read`                                    |                                    |
-| [CREATE_CHANNEL_INVITE](#create-channel-invite)                                                   | Used to create an invite link for a given channel                                               | `rpc`                                                                               |                                    |
-| [GET_RELATIONSHIPS](#get-relationships)                                                           | Used to retrieve the friend list and relationship statuses                                      | `relationships.read`                                                                |                                    |
-| [GET_USER](#get-user)                                                                             | Used to retrieve information about a specific user                                              |                                                                                     | HTTP, WebSocket, or `post_message` |
-| [SUBSCRIBE](#subscribe)                                                                           | Used to subscribe to an RPC event                                                               |                                                                                     |                                    |
-| [UNSUBSCRIBE](#unsubscribe)                                                                       | Used to unsubscribe from an RPC event                                                           |                                                                                     |                                    |
-| [SET_USER_VOICE_SETTINGS](#set-user-voice-settings)                                               | Used to change voice settings of users in voice channels                                        | `rpc`, or `rpc.voice.write`                                                         |                                    |
-| [SET_USER_VOICE_SETTINGS_2](#set-user-voice-settings-2)                                           | Same as `SET_USER_VOICE_SETTINGS`, but without authentication                                   |                                                                                     | HTTP, or IPC                       |
-| [PUSH_TO_TALK](#push-to-talk)                                                                     | Used to enable or disable push-to-talk functionality                                            | `rpc`, and `rpc.voice.write`                                                        |                                    |
-| [SELECT_VOICE_CHANNEL](#select-voice-channel)                                                     | Used to join or leave a voice channel, group DM, or DM                                          | `rpc`                                                                               |                                    |
-| [GET_SELECTED_VOICE_CHANNEL](#get-selected-voice-channel)                                         | Used to get the current voice channel the client is in                                          | `rpc`, or `rpc.voice.read`                                                          |                                    |
-| [SELECT_TEXT_CHANNEL](#select-text-channel)                                                       | Used to join or leave a text channel, group DM, or DM                                           | `rpc`                                                                               |                                    |
-| [GET_VOICE_SETTINGS](#get-voice-settings)                                                         | Used to retrieve the client's voice settings                                                    | `rpc`, or `rpc.voice.read`                                                          |                                    |
-| [SET_VOICE_SETTINGS](#set-voice-settings)                                                         | Used to set the client's voice settings                                                         | `rpc`, or `rpc.voice.write`                                                         |                                    |
-| [SET_VOICE_SETTINGS_2](#set-voice-settings-2)                                                     | Same as `SET_VOICE_SETTINGS`, but without authentication                                        |                                                                                     | HTTP, or IPC                       |
-| [SET_ACTIVITY](#set-activity)                                                                     | Used to update a user's Rich Presence                                                           | Either `rpc` or `rpc.activities.write` are required unless using HTTP/IPC transport | IPC, WebSocket, or `post_message`  |
-| [SEND_ACTIVITY_JOIN_INVITE](#send-activity-join-invite)                                           | Used to send an invite to another user to an activity                                           | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [CLOSE_ACTIVITY_JOIN_REQUEST](#close-activity-join-request)                                       | Used to reject a Rich Presence Ask to Join request                                              | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [ACTIVITY_INVITE_USER](#activity-invite-user)                                                     | Used to send an invite to another user for an activity                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [ACCEPT_ACTIVITY_INVITE](#accept-activity-invite)                                                 | Used to accept an activity invite                                                               | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [OPEN_INVITE_DIALOG](#open-invite-dialog)                                                         | Opens the invite modal                                                                          | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [OPEN_SHARE_MOMENT_DIALOG](#open-share-moment-dialog) ^1^                                         | Used for activities, allowing sharing an image from the activity                                |                                                                                     |                                    |
-| SHARE_INTERACTION ^2^                                                                             | (Unknown)                                                                                       |                                                                                     |                                    |
-| INITIATE_IMAGE_UPLOAD                                                                             | Used by an activity to get a user-provided image from their PC, opens file dialog               | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| SHARE_LINK ^1^                                                                                    | Opens the share message modal, where a user can pick a channel to send a predefined message to  |                                                                                     | `post_message`                     |
-| DEEP_LINK                                                                                         | Navigates to certain route in the Discord client                                                |                                                                                     | HTTP, IPC, or WebSocket            |
-| [CONNECTIONS_CALLBACK](#connections-callback)                                                     | Used to send the next part of connection flow to the client, part of connections flow v2        |                                                                                     | WebSocket                          |
-| [BILLING_POPUP_BRIDGE_CALLBACK](#billing-popup-bridge-callback)                                   | Callback for payment methods like PaySafeCard, Klarna, Przelewy24, etc                          |                                                                                     | WebSocket                          |
-| [BRAINTREE_POPUP_BRIDGE_CALLBACK](#braintree-popup-bridge-callback) **(deprecated)**              | Callback for payment via Braintree                                                              |                                                                                     | WebSocket                          |
-| [GIFT_CODE_BROWSER](#gift-code-browser)                                                           | Opens a given gift code link in the client                                                      |                                                                                     | WebSocket                          |
-| [GUILD_TEMPLATE_BROWSER](#guild-template-browser)                                                 | Opens a given template link in the client                                                       |                                                                                     | WebSocket                          |
-| [OPEN_MESSAGE](#open-message)                                                                     | Used to open a specific message or DM in the client                                             |                                                                                     | HTTP, or IPC                       |
-| OVERLAY                                                                                           | (Unknown)                                                                                       |                                                                                     | WebSocket                          |
-| [BROWSER_HANDOFF](#browser-handoff)                                                               | Used to end browser handoff                                                                     |                                                                                     | WebSocket                          |
-| [SET_CERTIFIED_DEVICES](#set-certified-devices)                                                   | Used to send info about certified hardware devices                                              | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [GET_IMAGE](#get-image)                                                                           | Used to fetch a user's profile picture                                                          |                                                                                     | HTTP, or IPC                       |
-| [SET_OVERLAY_LOCKED](#set-overlay-locked)                                                         | Used to set whether the overlay input is locked                                                 |                                                                                     | HTTP, or IPC                       |
-| OPEN_OVERLAY_ACTIVITY_INVITE                                                                      | (Unknown)                                                                                       |                                                                                     | HTTP, or IPC                       |
-| OPEN_OVERLAY_GUILD_INVITE                                                                         | Opens the invite modal in the locally running client for a provided code                        |                                                                                     | HTTP, or IPC                       |
-| OPEN_OVERLAY_VOICE_SETTINGS                                                                       | Opens a unique voice settings window for the application in the client                          |                                                                                     | HTTP, or IPC                       |
-| [VALIDATE_APPLICATION](#validate-application)                                                     | Validates the application                                                                       |                                                                                     | HTTP, or IPC                       |
-| [GET_ENTITLEMENT_TICKET](#get-entitlement-ticket)                                                 | Returns an entitlement ticket                                                                   |                                                                                     | HTTP, or IPC                       |
-| [GET_APPLICATION_TICKET](#get-application-ticket)                                                 | Returns an application ticket                                                                   |                                                                                     | HTTP, or IPC                       |
-| [START_PURCHASE](#start-purchase) ^1^                                                             | Launches the purchase flow for a specific SKU                                                   |                                                                                     | IPC, or `post_message`             |
-| [START_PREMIUM_PURCHASE](#start-premium-purchase) ^1^                                             | Initiates a premium subscription purchase                                                       |                                                                                     | IPC, or `post_message`             |
-| [GET_SKUS](#get-skus)                                                                             | Returns a list of your application's SKUs                                                       |                                                                                     | IPC, or `post_message`             |
-| [GET_ENTITLEMENTS](#get-entitlements)                                                             | Returns a list of entitlements for the current user                                             |                                                                                     | IPC, or `post_message`             |
-| [GET_SKUS_EMBEDDED](#get-skus-embedded)                                                           | Retrieves a list of purchasable SKUs in an embedded context                                     |                                                                                     | IPC, or `post_message`             |
-| [GET_ENTITLEMENTS_EMBEDDED](#get-entitlements-embedded)                                           | Retrieves owned entitlements in an embedded context                                             |                                                                                     | IPC, or `post_message`             |
-| [GET_NETWORKING_CONFIG](#get-networking-config)                                                   | Used by GameSDK to retrieve proxy address and networking token                                  |                                                                                     | HTTP, or IPC                       |
-| [NETWORKING_SYSTEM_METRICS](#networking-system-metrics)                                           | Used by GameSDK to send networking system metrics                                               |                                                                                     | HTTP, or IPC                       |
-| [NETWORKING_PEER_METRICS](#networking-peer-metrics)                                               | Used by GameSDK to send networking peer metrics                                                 |                                                                                     | HTTP, or IPC                       |
-| [NETWORKING_CREATE_TOKEN](#networking-create-token)                                               | Used by GameSDK to retrieve a networking token                                                  |                                                                                     | HTTP, or IPC                       |
-| [USER_SETTINGS_GET_LOCALE](#user-settings-get-locale)                                             | Retrieves the client’s locale, i.e. `en-US`                                                     |                                                                                     | HTTP, or IPC                       |
-| SEND_GENERIC_EVENT **(deprecated)**                                                               | Sends an analytics event to Discord                                                             |                                                                                     |                                    |
-| [SEND_ANALYTICS_EVENT](#send-analytics-events)                                                    | Sends an analytics event to Discord via embedded activity                                       |                                                                                     | `post_message`                     |
-| [OPEN_EXTERNAL_LINK](#open-external-link) ^3^                                                     | Prompts to open a given URL in the default web browser from the client                          |                                                                                     | `post_message`                     |
-| [CAPTURE_LOG](#capture-log) ^1^                                                                   | Used to capture your logs into the Discord client logs                                          |                                                                                     | `post_message`                     |
-| [ENCOURAGE_HW_ACCELERATION](#encourage-hw-acceleration)                                           | Presents a modal dialog to allow enabling of hardware acceleration                              |                                                                                     | `post_message`                     |
-| [SET_ORIENTATION_LOCK_STATE](#set-orientation-lock-state)                                         | Set options for orientation and picture-in-picture (PiP) modes                                  |                                                                                     |                                    |
-| [GET_PLATFORM_BEHAVIORS](#get-platform-behaviors)                                                 | Retrieves platform-specific behaviors                                                           |                                                                                     |                                    |
-| [GET_SOUNDBOARD_SOUNDS](#get-soundboard-sounds)                                                   | Retrieves available soundboard sounds                                                           | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
-| [PLAY_SOUNDBOARD_SOUND](#play-soundboard-sound)                                                   | Plays a soundboard sound                                                                        | `rpc`, and `rpc.voice.write`                                                        |                                    |
-| [TOGGLE_VIDEO](#toggle-video)                                                                     | Enables or disables video in a call                                                             | `rpc`, and `rpc.video.write`                                                        |                                    |
-| [TOGGLE_SCREENSHARE](#toggle-screenshare)                                                         | Enables or disables screensharing                                                               | `rpc`, and `rpc.screenshare.write`                                                  |                                    |
-| [GET_ACTIVITY_INSTANCE_CONNECTED_PARTICIPANTS](#get-activity-instance-connected-participants) ^1^ | Retrieves users connected to a specific activity session                                        |                                                                                     | `post_message`                     |
-| [GET_PROVIDER_ACCESS_TOKEN](#get-provider-access-token) ^1^                                       | Used for the Amazon Music activity to authorize the connection and retrieve the access token    |                                                                                     | `post_message`                     |
-| [MAYBE_GET_PROVIDER_ACCESS_TOKEN](#maybe-get-provider-access-token) ^1^                           | Used for the Amazon Music activity to attempt to get the access token from existing connection  |                                                                                     | `post_message`                     |
-| [NAVIGATE_TO_CONNECTIONS](#navigate-to-connections) ^1^                                           | Used for Amazon Music, opens the connections page in settings                                   |                                                                                     | `post_message`                     |
-| [INVITE_USER_EMBEDDED](#invite-user-embedded)                                                     | Invites a user to running embedded activity                                                     | `relationships.read`                                                                |                                    |
-| [INVITE_BROWSER](#invite-browser)                                                                 | Used to open an invite modal for a guild invite in the client                                   |                                                                                     | WebSocket                          |
-| [GET_QUEST_ENROLLMENT_STATUS](#get-quest-enrollment-status)                                       | Returns enrollment status for a quest                                                           | `identify`                                                                          | `post_message`                     |
-| [QUEST_START_TIMER](#quest-start-timer)                                                           | Used to start timer for a quest                                                                 | `identify`                                                                          | `post_message`                     |
+| Name                                                                                              | Description                                                                                                  | Scopes                                                                              | Transports                         |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ---------------------------------- |
+| DISPATCH                                                                                          | Event dispatch                                                                                               |                                                                                     |                                    |
+| [AUTHORIZE](#authorize)                                                                           | Used to authorize a new client with your app                                                                 |                                                                                     |                                    |
+| [AUTHENTICATE](#authenticate)                                                                     | Used to authenticate an existing client with your app                                                        |                                                                                     |                                    |
+| [GET_GUILD](#get-guild)                                                                           | Used to retrieve guild information from the client                                                           | `rpc`                                                                               |                                    |
+| [GET_GUILDS](#get-guilds)                                                                         | Used to retrieve a list of guilds from the client                                                            | `rpc`                                                                               |                                    |
+| [GET_CHANNEL](#get-channel)                                                                       | Used to retrieve channel information from the client                                                         | Any of `rpc`, `guilds`, or `guilds.channel.read`                                    |                                    |
+| [GET_CHANNELS](#get-channels)                                                                     | Used to retrieve a list of channels for a guild from the client                                              | `rpc`                                                                               |                                    |
+| [GET_CHANNEL_PERMISSIONS](#get-channel-permissions)                                               | Used to retrieve the permission settings for the currently connected voice channel                           | `guilds.members.read`, or `guilds.channels.read`                                    |                                    |
+| [CREATE_CHANNEL_INVITE](#create-channel-invite)                                                   | Used to create an invite link for a given channel                                                            | `rpc`                                                                               |                                    |
+| [GET_RELATIONSHIPS](#get-relationships)                                                           | Used to retrieve the friend list and relationship statuses                                                   | `relationships.read`                                                                |                                    |
+| [GET_USER](#get-user)                                                                             | Used to retrieve information about a specific user                                                           |                                                                                     | HTTP, WebSocket, or `post_message` |
+| [SUBSCRIBE](#subscribe)                                                                           | Used to subscribe to an RPC event                                                                            |                                                                                     |                                    |
+| [UNSUBSCRIBE](#unsubscribe)                                                                       | Used to unsubscribe from an RPC event                                                                        |                                                                                     |                                    |
+| [SET_USER_VOICE_SETTINGS](#set-user-voice-settings)                                               | Used to change voice settings of users in voice channels                                                     | `rpc`, or `rpc.voice.write`                                                         |                                    |
+| [SET_USER_VOICE_SETTINGS_2](#set-user-voice-settings-2)                                           | Same as `SET_USER_VOICE_SETTINGS`, but without authentication                                                |                                                                                     | HTTP, or IPC                       |
+| [PUSH_TO_TALK](#push-to-talk)                                                                     | Used to enable or disable push-to-talk functionality                                                         | `rpc`, and `rpc.voice.write`                                                        |                                    |
+| [SELECT_VOICE_CHANNEL](#select-voice-channel)                                                     | Used to join or leave a voice channel, group DM, or DM                                                       | `rpc`                                                                               |                                    |
+| [GET_SELECTED_VOICE_CHANNEL](#get-selected-voice-channel)                                         | Used to get the current voice channel the client is in                                                       | `rpc`, or `rpc.voice.read`                                                          |                                    |
+| [SELECT_TEXT_CHANNEL](#select-text-channel)                                                       | Used to join or leave a text channel, group DM, or DM                                                        | `rpc`                                                                               |                                    |
+| [GET_VOICE_SETTINGS](#get-voice-settings)                                                         | Used to retrieve the client's voice settings                                                                 | `rpc`, or `rpc.voice.read`                                                          |                                    |
+| [SET_VOICE_SETTINGS](#set-voice-settings)                                                         | Used to set the client's voice settings                                                                      | `rpc`, or `rpc.voice.write`                                                         |                                    |
+| [SET_VOICE_SETTINGS_2](#set-voice-settings-2)                                                     | Same as `SET_VOICE_SETTINGS`, but without authentication                                                     |                                                                                     | HTTP, or IPC                       |
+| [SET_ACTIVITY](#set-activity)                                                                     | Used to update a user's Rich Presence                                                                        | Either `rpc` or `rpc.activities.write` are required unless using HTTP/IPC transport | IPC, WebSocket, or `post_message`  |
+| [SEND_ACTIVITY_JOIN_INVITE](#send-activity-join-invite)                                           | Used to send an invite to another user to an activity                                                        | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [CLOSE_ACTIVITY_JOIN_REQUEST](#close-activity-join-request)                                       | Used to reject a Rich Presence Ask to Join request                                                           | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [ACTIVITY_INVITE_USER](#activity-invite-user)                                                     | Used to send an invite to another user for an activity                                                       | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [ACCEPT_ACTIVITY_INVITE](#accept-activity-invite)                                                 | Used to accept an activity invite                                                                            | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [OPEN_INVITE_DIALOG](#open-invite-dialog)                                                         | Opens the invite modal                                                                                       | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [OPEN_SHARE_MOMENT_DIALOG](#open-share-moment-dialog) ^1^                                         | Used to share an image from an embedded activity in recent DMs or channels                                   |                                                                                     |                                    |
+| [SHARE_INTERACTION](#share-interaction) ^2^                                                       | Used by embedded activities to present a modal to user asking where pre-defined slash command should be ran  |                                                                                     |                                    |
+| [INITIATE_IMAGE_UPLOAD](#initiate-image-upload)                                                   | Used by embedded activities to open file dialog and retrieve user-provided image                             | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [SHARE_LINK](#share-link) ^1^                                                                     | Used to open the share message modal, where a user can pick a channel to send a developer-defined message to |                                                                                     | `post_message`                     |
+| [DEEP_LINK](#deep-link)                                                                           | Navigates to certain route in the Discord client                                                             |                                                                                     | HTTP, IPC, or WebSocket            |
+| [CONNECTIONS_CALLBACK](#connections-callback)                                                     | Used to send the next part of connection flow to the client, part of connections flow v2                     |                                                                                     | WebSocket                          |
+| [BILLING_POPUP_BRIDGE_CALLBACK](#billing-popup-bridge-callback)                                   | Callback for payment methods like PaySafeCard, Klarna, Przelewy24, etc                                       |                                                                                     | WebSocket                          |
+| [BRAINTREE_POPUP_BRIDGE_CALLBACK](#braintree-popup-bridge-callback) **(deprecated)**              | Callback for payment via Braintree                                                                           |                                                                                     | WebSocket                          |
+| [GIFT_CODE_BROWSER](#gift-code-browser)                                                           | Opens a given gift code link in the client                                                                   |                                                                                     | WebSocket                          |
+| [GUILD_TEMPLATE_BROWSER](#guild-template-browser)                                                 | Opens a given template link in the client                                                                    |                                                                                     | WebSocket                          |
+| [OPEN_MESSAGE](#open-message)                                                                     | Used to open a specific message or DM in the client                                                          |                                                                                     | HTTP, or IPC                       |
+| OVERLAY                                                                                           | (Unknown)                                                                                                    |                                                                                     | WebSocket                          |
+| [BROWSER_HANDOFF](#browser-handoff)                                                               | Used to end browser handoff                                                                                  |                                                                                     | WebSocket                          |
+| [SET_CERTIFIED_DEVICES](#set-certified-devices)                                                   | Used to send info about certified hardware devices                                                           | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [GET_IMAGE](#get-image)                                                                           | Used to fetch a user's profile picture                                                                       |                                                                                     | HTTP, or IPC                       |
+| [SET_OVERLAY_LOCKED](#set-overlay-locked)                                                         | Used to set whether the overlay input is locked                                                              |                                                                                     | HTTP, or IPC                       |
+| [OPEN_OVERLAY_ACTIVITY_INVITE](#open-overlay-activity-invite)                                     | Used to open the activity invite modal in the process' overlay                                               |                                                                                     | HTTP, or IPC                       |
+| [OPEN_OVERLAY_GUILD_INVITE](#open-overlay-guild-invite)                                           | Used to open an invite modal in the process' overlay                                                         |                                                                                     | HTTP, or IPC                       |
+| [OPEN_OVERLAY_VOICE_SETTINGS](#open-overlay-voice-settings)                                       | Used to open a voice settings modal in the process' overlay                                                  |                                                                                     | HTTP, or IPC                       |
+| [VALIDATE_APPLICATION](#validate-application)                                                     | Validates the application                                                                                    |                                                                                     | HTTP, or IPC                       |
+| [GET_ENTITLEMENT_TICKET](#get-entitlement-ticket)                                                 | Returns an entitlement ticket                                                                                |                                                                                     | HTTP, or IPC                       |
+| [GET_APPLICATION_TICKET](#get-application-ticket)                                                 | Returns an application ticket                                                                                |                                                                                     | HTTP, or IPC                       |
+| [START_PURCHASE](#start-purchase) ^1^                                                             | Launches the purchase flow for a specific SKU                                                                |                                                                                     | IPC, or `post_message`             |
+| [START_PREMIUM_PURCHASE](#start-premium-purchase) ^1^                                             | Initiates a premium subscription purchase                                                                    |                                                                                     | IPC, or `post_message`             |
+| [GET_SKUS](#get-skus)                                                                             | Returns a list of your application's SKUs                                                                    |                                                                                     | IPC, or `post_message`             |
+| [GET_ENTITLEMENTS](#get-entitlements)                                                             | Returns a list of entitlements for the current user                                                          |                                                                                     | IPC, or `post_message`             |
+| [GET_SKUS_EMBEDDED](#get-skus-embedded)                                                           | Retrieves a list of purchasable SKUs in an embedded context                                                  |                                                                                     | IPC, or `post_message`             |
+| [GET_ENTITLEMENTS_EMBEDDED](#get-entitlements-embedded)                                           | Retrieves owned entitlements in an embedded context                                                          |                                                                                     | IPC, or `post_message`             |
+| [GET_NETWORKING_CONFIG](#get-networking-config)                                                   | Used by GameSDK to retrieve proxy address and networking token                                               |                                                                                     | HTTP, or IPC                       |
+| [NETWORKING_SYSTEM_METRICS](#networking-system-metrics)                                           | Used by GameSDK to send networking system metrics                                                            |                                                                                     | HTTP, or IPC                       |
+| [NETWORKING_PEER_METRICS](#networking-peer-metrics)                                               | Used by GameSDK to send networking peer metrics                                                              |                                                                                     | HTTP, or IPC                       |
+| [NETWORKING_CREATE_TOKEN](#networking-create-token)                                               | Used by GameSDK to retrieve a networking token                                                               |                                                                                     | HTTP, or IPC                       |
+| [USER_SETTINGS_GET_LOCALE](#user-settings-get-locale)                                             | Retrieves the client’s locale, i.e. `en-US`                                                                  |                                                                                     | HTTP, or IPC                       |
+| SEND_GENERIC_EVENT **(deprecated)**                                                               | Sends an analytics event to Discord                                                                          |                                                                                     |                                    |
+| [SEND_ANALYTICS_EVENT](#send-analytics-event)                                                     | Sends an analytics event to Discord via embedded activity                                                    |                                                                                     | `post_message`                     |
+| [OPEN_EXTERNAL_LINK](#open-external-link) ^3^                                                     | Prompts to open a given URL in the default web browser from the client                                       |                                                                                     | `post_message`                     |
+| [CAPTURE_LOG](#capture-log) ^1^                                                                   | Used to capture your logs into the Discord client logs                                                       |                                                                                     | `post_message`                     |
+| [ENCOURAGE_HW_ACCELERATION](#encourage-hw-acceleration)                                           | Presents a modal dialog to allow enabling of hardware acceleration                                           |                                                                                     | `post_message`                     |
+| [SET_ORIENTATION_LOCK_STATE](#set-orientation-lock-state)                                         | Set options for orientation and picture-in-picture (PiP) modes                                               |                                                                                     |                                    |
+| [GET_PLATFORM_BEHAVIORS](#get-platform-behaviors)                                                 | Retrieves platform-specific behaviors                                                                        |                                                                                     |                                    |
+| [GET_SOUNDBOARD_SOUNDS](#get-soundboard-sounds)                                                   | Retrieves available soundboard sounds                                                                        | `rpc` is required unless using HTTP/IPC transport                                   |                                    |
+| [PLAY_SOUNDBOARD_SOUND](#play-soundboard-sound)                                                   | Plays a soundboard sound                                                                                     | `rpc`, and `rpc.voice.write`                                                        |                                    |
+| [TOGGLE_VIDEO](#toggle-video)                                                                     | Enables or disables video in a call                                                                          | `rpc`, and `rpc.video.write`                                                        |                                    |
+| [TOGGLE_SCREENSHARE](#toggle-screenshare)                                                         | Enables or disables screensharing                                                                            | `rpc`, and `rpc.screenshare.write`                                                  |                                    |
+| [GET_ACTIVITY_INSTANCE_CONNECTED_PARTICIPANTS](#get-activity-instance-connected-participants) ^1^ | Retrieves users connected to a specific activity session                                                     |                                                                                     | `post_message`                     |
+| [GET_PROVIDER_ACCESS_TOKEN](#get-provider-access-token) ^1^                                       | Used for the Amazon Music activity to authorize the connection and retrieve the access token                 |                                                                                     | `post_message`                     |
+| [MAYBE_GET_PROVIDER_ACCESS_TOKEN](#maybe-get-provider-access-token) ^1^                           | Used for the Amazon Music activity to attempt to get the access token from existing connection               |                                                                                     | `post_message`                     |
+| [NAVIGATE_TO_CONNECTIONS](#navigate-to-connections) ^1^                                           | Used for Amazon Music, opens the connections page in settings                                                |                                                                                     | `post_message`                     |
+| [INVITE_USER_EMBEDDED](#invite-user-embedded)                                                     | Invites a user to running embedded activity                                                                  | `relationships.read`                                                                |                                    |
+| [INVITE_BROWSER](#invite-browser)                                                                 | Used to open an invite modal for a guild invite in the client                                                |                                                                                     | WebSocket                          |
+| [GET_QUEST_ENROLLMENT_STATUS](#get-quest-enrollment-status)                                       | Returns enrollment status for a quest                                                                        | `identify`                                                                          | `post_message`                     |
+| [QUEST_START_TIMER](#quest-start-timer)                                                           | Used to start timer for a quest                                                                              | `identify`                                                                          | `post_message`                     |
 
 ^1^ Requires authentication.
 
@@ -588,18 +617,18 @@ Used to authorize the current client with your app.
 | scopes?                 | array[string] | A list of scopes to request; may be omitted if the application has a populated [`integration_types_config`](/resources/application#application-object)                                                       |
 | scope? **(deprecated)** | string        | A space-delimited list of scopes to request; may be omitted if the application has a populated [`integration_types_config`](/resources/application#application-object)                                       |
 | code_challenge?         | string        | A code challenge for the [PKCE extension](/topics/oauth2#pkce) to the authorization code grant; must be used with `code_challenge_method`                                                                    |
-| code_challenge_method?  | string        | The method used to generate the code challenge (must be `S256`); only applicable for the [PKCE extension](#pkce) to the authorization code grant                                                             |
+| code_challenge_method?  | string        | The method used to generate the code challenge (must be `S256`); only applicable for the [PKCE extension](/topics/oauth2#pkce) to the authorization code grant                                               |
 | state?                  | string        | A unique string to bind the user's request to their authenticated state                                                                                                                                      |
 | nonce?                  | string        | A unique string to bind the user's request to their authenticated state; only applicable for authorization code grants with the `openid` scope                                                               |
 | permissions? ^1^        | string        | The [permissions](/topics/permissions) you're requesting; only applicable when `scope` contains `bot`                                                                                                        |
 | guild_id?               | snowflake     | The ID of a guild to pre-fill the dropdown picker with; only applicable when `scope` contains `bot`, `applications.commands`, or `webhook.incoming` and `integration_type` is `GUILD_INSTALL`                |
 | channel_id?             | snowflake     | The ID of a channel to pre-fill the dropdown picker with; only applicable when `scope` contains `webhook.incoming`                                                                                           |
-| prompt?                 | string        | The [prompt behavior](#prompt-behavior) to use for the authorization flow (default `consent`)                                                                                                                |
+| prompt?                 | string        | The [prompt behavior](/topics/oauth2#prompt-behavior) to use for the authorization flow (default `consent`)                                                                                                                |
 | disable_guild_select?   | boolean       | Disallows the user from changing the guild dropdown; only applicable when `scope` contains `bot` or `applications.commands`, or `webhook.incoming` and `integration_type` is `GUILD_INSTALL` (default false) |
 | integration_type?       | integer       | The [installation context](/resources/application#application-integration-type) for the authorization; only applicable when `scope` contains `applications.commands` (default `GUILD_INSTALL`)               |
 | pid?                    | integer       | The ID of the process to show OAuth2 flow overlay in                                                                                                                                                         |
 
-^1^ Required unless the basic [bot authorization flow](#bot-authorization-flow) is used.
+^1^ Required unless the basic [bot authorization flow](/topics/oauth2#bot-authorization-flow) is used.
 
 ^2^ If a `response_type` is specified and no `redirect_uri` is specified, the user will be redirected to the first registered redirect URI for the application.
 
@@ -874,13 +903,13 @@ Used to update a user's Rich Presence. Responds with an [activity](/resources/pr
 | assets?              | [activity assets](/resources/presence#activity-assets-structure) object         | Images for the presence and their hover texts                                                                    |
 | party?               | [rpc activity party](#rpc-activity-party-structure) object                      | Information for the current party of the user                                                                    |
 | secrets?             | [activity secrets](/resources/presence#activity-secrets-structure) object       | Secrets for rich presence joining and spectating                                                                 |
-| buttons?             | array[[rpc activity button](#rpc-activity-button) object]                       | Custom buttons shown in rich presence (1-2)                                                                      |
+| buttons?             | array[[rpc activity button](#rpc-activity-button-structure) object]             | Custom buttons shown in rich presence (1-2)                                                                      |
 | instance?            | boolean                                                                         | Whether the activity is an instanced game session (a match that will end)                                        |
 | supported_platforms? | array[string]                                                                   | The [platforms](/resources/presence#activity-platform-type) the activity is supported on (max 10)                |
 | type                 | integer                                                                         | The [activity type](/resources/presence#activity-type) (except `STREAMING`, `CUSTOM` and `HANG`)                 |
 | status_display_type? | ?integer                                                                        | [Which field is displayed](/resources/presence#status-display-type) in the user's status text in the member list |
 
-^1^ For retrieving rich presence metadata, see [Get Activity Metadata](#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](#get-activity-secret).
+^1^ For retrieving rich presence metadata, see [Get Activity Metadata](/resources/presence#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](/resources/presence#get-activity-secret).
 
 ###### RPC Activity Party Structure
 
@@ -952,6 +981,183 @@ Used to accept an activity invite. Responds with null.
 | channel_id      | snowflake | The ID of the channel the activity invite message was sent in                                     |
 | message_id      | snowflake | The ID of the message                                                                             |
 | application_id? | snowflake | The ID of the application                                                                         |
+
+#### Open Invite Dialog
+
+Used to present a modal to invite other users to the running embedded activity. Responds with null.
+
+#### Open Share Moment Dialog
+
+Used to share an image from an embedded activity in recent DMs or channels. Responds with null.
+
+###### Open Share Moment Dialog Arguments Structure
+
+| Field    | Type   | Description                                          |
+| -------- | ------ | ---------------------------------------------------- |
+| mediaUrl | string | The Discord CDN URL of the image to share (max 1024) |
+
+#### Share Interaction
+
+Used by embedded activities to present a modal to user asking where pre-defined slash command should be ran.
+
+The `content`, `preview_image`, and `components` fields are used within modal as command response preview.
+
+<Alert type="warn">
+
+This command is meant to be used by the "12 Bullets to Midnight" integration only. Because of this, it is locked to the relevant application IDs (`1276239071764680926`, and `1257458870390099989` for internal application).
+
+</Alert>
+
+###### Share Interaction Arguments Structure
+
+| Field                   | Type                                                                                       | Description                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| command                 | string                                                                                     | The name of the application command                                                       |
+| options?                | array[[interaction option](#interaction-option-structure) object]                          | The pre-defined options for the slash command                                             |
+| content?                | string                                                                                     | The modal preview's content (max 2000)                                                    |
+| require_launch_channel? | boolean                                                                                    | Whether to require that the current user should be participating in the embedded activity |
+| preview_image?          | [interaction response preview image](#interaction-response-preview-image-structure) object | The modal preview's image                                                                 |
+| components? ^1^         | array[[action row](/resources/components#action-row) object]                               | The modal preview's components                                                            |
+| pid?                    | integer                                                                                    | The ID of the OS process to open Discord overlay in                                       |
+
+^1^ Only action rows are permitted. Only buttons are permitted inside action rows. The buttons can have only `type`, `style`, `label`, and `custom_id`. [`PREMIUM`](/resources/components#button-style) buttons are not permitted. The components can't have `id` field set.
+
+###### Interaction Option Structure
+
+| Field | Type   | Description             |
+| ----- | ------ | ----------------------- |
+| name  | string | The name of the option  |
+| value | string | The value of the option |
+
+###### Interaction Response Preview Image Structure
+
+| Field  | Type    | Description             |
+| ------ | ------- | ----------------------- |
+| height | integer | The height of the image |
+| url    | string  | The URL of the image    |
+| width  | integer | The width of the image  |
+
+###### Share Interaction Response Structure
+
+| Field   | Type    | Description                                              |
+| ------- | ------- | -------------------------------------------------------- |
+| success | boolean | Whether the slash command was successfully ran somewhere |
+
+#### Initiate Image Upload
+
+Used by embedded activities to open file dialog and retrieve user-provided image.
+
+###### Initiate Image Upload Response Structure
+
+| Field     | Type   | Description                                    |
+| --------- | ------ | ---------------------------------------------- |
+| image_url | string | The Discord CDN URL of the user-provided image |
+
+#### Share Link
+
+Used to open the share message modal, where a user can pick a channel to send a developer-defined message to.
+
+###### Share Link Arguments Structure
+
+| Field      | Type   | Description                                                   |
+| ---------- | ------ | ------------------------------------------------------------- |
+| custom_id? | string | Developer-defined identifier for the link (max 64 characters) |
+| message    | string | The message's content (max 1000 characters)                   |
+| link_id?   | string | The ID of the link (max 64 characters)                        |
+
+###### Share Link Response Structure
+
+| Field          | Type    | Description                              |
+| -------------- | ------- | ---------------------------------------- |
+| success        | boolean | Whether the link was successfully shared |
+| didCopyLink    | boolean | Whether the user did copy link           |
+| didSendMessage | boolean | Whether the user sent messages           |
+
+#### Deep Link
+
+Used to navigate to certain route in the Discord client.
+
+###### Deep Link Arguments Structure
+
+| Field  | Type                                                   | Description                              |
+| ------ | ------------------------------------------------------ | ---------------------------------------- |
+| type   | string                                                 | The [type of deep link](#deep-link-type) |
+| params | [deep link params](#deep-link-params-structure) object | The deep link parameters                 |
+
+###### Deep Link Type
+
+| Value                  | Description               |
+| ---------------------- | ------------------------- |
+| USER_SETTINGS          | User settings             |
+| CHANGELOG              | Changelog entry           |
+| LIBRARY                | Game library              |
+| STORE_HOME             | Premium subscription home |
+| STORE_LISTING          | Store listing             |
+| CHANNEL                | Channel                   |
+| GAME_SHOP              | Game shop                 |
+| PICK_GUILD_SETTINGS    | Guild settings            |
+| QUEST_HOME             | Quest home                |
+| DISCOVERY_GAME_RESULTS | Game discovery results    |
+| OAUTH2                 | OAuth2                    |
+| FEATURES               | Any path                  |
+| SHOP                   | Shop                      |
+| ACTIVITIES             | Embedded activities       |
+| QUEST_PREVIEW_TOOL     | Quest preview tool        |
+| ONE_TIME_LOGIN         | One time login            |
+
+###### Deep Link Params Structure
+
+| Field          | Type       | Description                                              | Applicable for                                                                                                                                                                                                      |
+| -------------- | ---------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| section?       | string     | The section                                              | `USER_SETTINGS`, `PICK_GUILD_SETTINGS`                                                                                                                                                                              |
+| subsection?    | string     | The subsection                                           | `USER_SETTINGS`, `PICK_GUILD_SETTINGS`                                                                                                                                                                              |
+| search?        | string     | The search query                                         | `USER_SETTINGS`, `PICK_GUILD_SETTINGS`, `CHANNEL`, `OAUTH2`, `SHOP`                                                                                                                                                 |
+| fingerprint?   | ?string    | The fingerprint                                          | `USER_SETTINGS`, `CHANGELOG`, `LIBRARY`, `STORE_HOME`, `STORE_LISTING`, `CHANNEL`, `GAME_SHOP`, `PICK_GUILD_SETTINGS`, `QUEST_HOME`, `DISCOVERY_GAME_RESULTS`, `ACTIVITIES`, `QUEST_PREVIEW_TOOL`, `ONE_TIME_LOGIN` |
+| date?          | string     | The changelog entry date                                 | `CHANGELOG`                                                                                                                                                                                                         |
+| query?         | string     | The query                                                | `CHANGELOG`                                                                                                                                                                                                         |
+| skuId?         | snowflake  | The ID of the SKU                                        | `STORE_LISTING`, `GAME_SHOP`                                                                                                                                                                                        |
+| slug?          | string     | The slug of the SKU                                      | `STORE_LISTING`, `GAME_SHOP`                                                                                                                                                                                        |
+| guildId? ^1^   | snowflake  | The ID of the channel guild                              | `CHANNEL`, `GAME_SHOP`                                                                                                                                                                                              |
+| channelId?     | snowflake  | The ID of the channel the message was sent in            | `CHANNEL`                                                                                                                                                                                                           |
+| messageId?     | snowflake  | The ID of the message to navigate to                     | `CHANNEL`                                                                                                                                                                                                           |
+| pageIndex?     | integer    | The page index                                           | `GAME_SHOP`                                                                                                                                                                                                         |
+| sort?          | string     | The [field to sort quests by](#quest-home-sort-type)     | `QUEST_HOME`                                                                                                                                                                                                        |
+| filter?        | string     | The [types](#quest-home-filter-type) to filter quests by | `QUEST_HOME`                                                                                                                                                                                                        |
+| tab?           | string     | The [quest home tab](#quest-home-tab) (default `all`)    | `QUEST_HOME`                                                                                                                                                                                                        |
+| questId?       | snowflake  | The ID of the quest                                      | `QUEST_HOME`, `QUEST_PREVIEW_TOOL`                                                                                                                                                                                  |
+| gameId?        | snowflake  | The ID of the game application                           | `DISCOVERY_GAME_RESULTS`                                                                                                                                                                                            |
+| token?         | string     | The authentication token                                 | `ONE_TIME_LOGIN`                                                                                                                                                                                                    |
+| path?          | string     | The path to navigate to                                  | `FEATURES`                                                                                                                                                                                                          |
+| attemptId?     | string     | The ID of the attempt                                    | `ACTIVITIES`                                                                                                                                                                                                        |
+| applicationId? | snowflake  | The ID of the embedded activity application              | `ACTIVITIES`                                                                                                                                                                                                        |
+| url?           | string     | The embedded activity URL                                | `ACTIVITIES`                                                                                                                                                                                                        |
+
+^1^ A special value of `@me` is used to indicate private channel.
+
+###### Quest Home Sort Type
+
+| suggested         | Sort by interest              |
+| ----------------- | ----------------------------- |
+| most_recent       | Sort by quest creation date   |
+| expiring_soon     | Sort by quest expiration date |
+| recently_enrolled | Sort by quest enrollment date |
+
+###### Quest Home Filter Type
+
+| Value                   | Description                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reward_virtual_currency | Quest must have reward of type [`VIRTUAL_CURRENCY`](/resources/quests#quest-reward-type)                                                                            |
+| reward_collectible      | Quest must have reward of type [`COLLECTIBLE`](/resources/quests#quest-reward-type)                                                                                 |
+| reward_in_game          | Quest must have reward of type [`REWARD_CODE`, or `IN_GAME`](/resources/quests#quest-reward-type)                                                                   |
+| task_play               | Quest must have [`PLAY_ON_DESKTOP`, `PLAY_ON_DESKTOP_V2`, `PLAY_ON_XBOX`, `PLAY_ON_PLAYSTATION`, or `PLAY_ACTIVITY`](/resources/quests#quest-task-event-name) tasks |
+| task_video              | Quest must have [`WATCH_VIDEO`, or `WATCH_VIDEO_ON_MOBILE`](/resources/quests#quest-task-event-name) tasks                                                          |
+
+###### Quest Home Tab
+
+| Value   | Description    |
+| ------- | -------------- |
+| all     | All quests     |
+| claimed | Claimed quests |
 
 #### Connections Callback
 
@@ -1068,11 +1274,20 @@ Used to end browser handoff. Responds with null.
 
 ###### Browser Handoff Arguments Structure
 
-| Field        | Type   | Description                                                                                |
-| handoffToken | string | The handoff token received from the [Create Handoff Token](#create-handoff-token) endpoint |
-| fingerprint  | string | The current [fingerprint](/topics/experiments#fingerprints)                                |
+| Field        | Type   | Description                                                                                               |
+| ------------ | ------ | --------------------------------------------------------------------------------------------------------- |
+| handoffToken | string | The handoff token received from the [Create Handoff Token](/authentication#create-handoff-token) endpoint |
+| fingerprint  | string | The current [fingerprint](/topics/experiments#fingerprints)                                               |
 
-{/* TODO: SET_CERTIFIED_DEVICES */}
+#### Set Certified Devices
+
+Used to send info about certified hardware devices. Responds with null.
+
+###### Set Certified Devices Arguments Structure
+
+| Field   | Type                                                       | Description           |
+| ------- | ---------------------------------------------------------- | --------------------- |
+| devices | array[[certified device](#certified-device-object) object] | The certified devices |
 
 #### Get Image
 
@@ -1087,11 +1302,18 @@ Used to fetch a user's profile picture.
 | format | string    | The format to retrieve image in (only `png`, `webp` and `jpg` are allowed)                                                 |
 | size   | integer   | The size of the image to return (if omitted, a default size is used); the size can be any power of two between 16 and 1024 |
 
+###### Image Type
+
+| Value | Description                |
+| ----- | -------------------------- |
+| user  | The image is user's avatar |
+
 ###### Get Image Response Structure
 
 | Field    | Type   | Description                                                         |
 | -------- | ------ | ------------------------------------------------------------------- |
 | data_url | string | The [image data URI](https://en.wikipedia.org/wiki/Data_URI_scheme) |
+
 
 #### Set Overlay Locked
 
@@ -1103,6 +1325,38 @@ Used to set whether the overlay input is locked. Responds with null.
 | ------ | ------- | ------------------------------------------------------------- |
 | locked | boolean | Whether the overlay input should be locked                    |
 | pid    | integer | The ID of the OS process where the Discord overlay is running |
+
+#### Open Overlay Activity Invite
+
+Used to open the activity invite modal in the process' overlay. The activity set via [`SET_ACTIVITY`](#set-activity) command must have party and join secret. Responds with null.
+
+###### Open Overlay Activity Invite Arguments Structure
+
+| Field | Type    | Description                                                                                       |
+| ----- | ------- | ------------------------------------------------------------------------------------------------- |
+| type  | integer | The [type of activity request](/resources/presence#activity-action-type) (only `JOIN` is allowed) |
+| pid   | integer | The ID of the OS process where the Discord overlay is running                                     |
+
+#### Open Overlay Guild Invite
+
+Used to open the invite modal in the process' overlay.
+
+###### Open Overlay Guild Invite Arguments Structure
+
+| Field | Type    | Description                                                    |
+| ----- | ------- | -------------------------------------------------------------- |
+| code  | string  | The invite code                                                |
+| pid   | integer | The ID of the OS process to open the voice settings overlay in |
+
+#### Open Overlay Voice Settings
+
+Used to open a voice settings modal in the process' overlay.
+
+###### Open Overlay Voice Settings Arguments Structure
+
+| Field | Type    | Description                                                    |
+| ----- | ------- | -------------------------------------------------------------- |
+| pid   | integer | The ID of the OS process to open the voice settings overlay in |
 
 #### Validate Application
 
@@ -1122,6 +1376,61 @@ Used to retrieve the entitlement ticket for the current application.
 
 Used to retrieve the application ticket for the current application.
 
+The ticket usually can be validated client-side with following pseudocode:
+
+```py
+import base64
+import json
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
+
+# Your public key can be found on your application in the Developer Portal
+PUBLIC_KEY = 'APPLICATION_PUBLIC_KEY'
+SKU_ID = '12345678912345678912'
+
+def validate_application_ticket(ticket: str, *, public_key: str) -> Optional[dict]:
+    verify_key = VerifyKey(public_key)
+    parts = ticket.split('.')
+
+    if len(parts) < 3:
+        # Not enough parts
+        return None
+
+    if parts[0] != '2':
+        # Invalid ticket version
+        return None
+    
+    try:
+        signature = bytes.fromhex(parts[1])
+    except ValueError:
+        # Invalid ticket signature
+        return None
+
+    encoded_data = parts[2]
+    try:
+        verify_key.verify(encoded_data, signature)
+    except BadSignatureError:
+        # The ticket is tampered with
+        return None
+
+    data = json.loads(base64.decode(encoded_data))
+    return data
+
+ticket = ''
+validated = validate_application_ticket(ticket)
+
+if validated is None:
+    print('The ticket is invalid')
+else:
+    entitlements = validated['entitlements']
+    has_entitlement = any(entitlement['sku_id'] == SKU_ID for entitlement in entitlements)
+
+    if has_entitlements:
+        print('The ticket is valid and the player has entitlement')
+    else:
+        print('The ticket is valid, but the player does not have entitlement')
+```
+
 ###### Get Application Ticket Response Structure
 
 | Field  | Type   | Description |
@@ -1130,7 +1439,7 @@ Used to retrieve the application ticket for the current application.
 
 #### Start Purchase
 
-Used to launch the purchase flow for a specific SKU. Responds with a list of purchased [entitlement](/resources/entitlement#entitlement=object) objects.
+Used to launch the purchase flow for a specific SKU. Responds with a list of purchased [entitlement](/resources/entitlement#entitlement-object) objects.
 
 ###### Start Purchase Arguments Structure
 
@@ -1335,7 +1644,7 @@ If the user does not have connection for the provider, the Discord client will o
 
 <Alert type="warn">
 
-This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066` and `1234546995360694434` for internal application).
+This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066`, and `1234546995360694434` for internal application).
 
 </Alert>
 
@@ -1358,7 +1667,7 @@ Used for the Amazon Music activity to attempt to get the access token from exist
 
 <Alert type="warn">
 
-This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066` and `1234546995360694434` for internal application).
+This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066`, and `1234546995360694434` for internal application).
 
 </Alert>
 
@@ -1380,7 +1689,7 @@ Used for Amazon Music, opens the connections page in settings. Accepts an empty 
 
 <Alert type="warn">
 
-This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066` and `1234546995360694434` for internal application).
+This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066`, and `1234546995360694434` for internal application).
 
 </Alert>
 
