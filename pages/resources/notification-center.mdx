@@ -1,0 +1,133 @@
+# Notification Center
+
+Notification center is a feature that aggregates important notifications for users in one place. It includes various types of notifications such as friend requests, mentions, and activity updates.
+
+### Notification Center Item Object
+
+###### Notification Center Item Structure
+
+| Field                    | Type                                                                     | Description                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| id                       | snowflake                                                                | The ID of the notification center item                                                                           |
+| bundle_id                | string                                                                   | An ID that can be used to group related notification center items together                                       |
+| type                     | string                                                                   | The [type of notification center item](#notification-center-item-type)                                           |
+| item_enum                | ?integer                                                                 | The [sub-type](#notification-center-item-enum) of the notification center item (only for `lifecycle_item` items) |
+| body                     | string                                                                   | The body text of the notification center item                                                                    |
+| acked                    | boolean                                                                  | Whether the notification center item is acknowledged                                                             |
+| deeplink                 | string                                                                   | The URL used for deep linking                                                                                    |
+| icon_url ^1^             | ?string                                                                  | The URL of the icon to display                                                                                   |
+| icon_name ^1^            | ?string                                                                  | The internal name of the icon to display                                                                         |
+| other_user               | ?partial [user](/resources/user#user-object) object                      | The other user associated with the item                                                                          |
+| message                  | ?[message](/resources/message#message-object) object                     | The message associated with the item                                                                             |
+| completed                | boolean                                                                  | Whether the item is completed                                                                                    |
+| guild_id                 | ?snowflake                                                               | The ID of the guild associated with the item                                                                     |
+| message_id               | ?snowflake                                                               | The ID of the message associated with the item                                                                   |
+| message_channel_id       | ?snowflake                                                               | The ID of the channel of the message associated with the item                                                    |
+| guild_scheduled_event_id | ?snowflake                                                               | The ID of the scheduled event associated with the item                                                           |
+| disable_action           | boolean                                                                  | Whether the item is non-actionable                                                                               |
+| callout                  | ?string                                                                  | Additional information about the item (e.g. poll question)                                                       |
+| application              | ?partial [application](/resources/application#application-object) object | The application associated with the item                                                                         |
+| emoji_id ^2^             | ?snowflake                                                               | The ID of the custom emoji associated with the item                                                              |
+| emoji_name ^2^           | ?string                                                                  | The unicode character of the emoji associated with the item                                                      |
+| message_content          | ?string                                                                  | Contents of the message associated with the item                                                                 |
+| message_embed_count      | ?integer                                                                 | Number of the embeds that the associated message has                                                             |
+| message_attachment_count | ?integer                                                                 | Number of the attachments that the associated message has                                                        |
+| message_sticker_count    | ?integer                                                                 | Number of the stickers that the associated message has                                                           |
+| is_voice_message         | boolean                                                                  | Whether the associated message is a voice message                                                                |
+
+^1^ Only either `icon_url` or `icon_name` may be present.
+
+^2^ At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+###### Notification Center Item Type
+
+| Value                         | Description                                           |
+| ----------------------------- | ----------------------------------------------------- |
+| go_live_push                  | Friend started a stream                               |
+| friend_request_accepted       | Outgoing friend request was accepted                  |
+| friend_request_pending        | A friend request is pending                           |
+| friend_suggestion_created     | A friend suggestion was created                       |
+| friend_request_reminder       | Reminder about pending friend requests                |
+| dm_friend_nudge               | Reminder to message friends                           |
+| recent_mention                | Recent mention                                        |
+| reply_mention                 | Mention through a reply ping                          |
+| scheduled_guild_event_started | A guild scheduled event started                       |
+| system_demo                   | Demo notification                                     |
+| missed_messages               | Missed messages from frequently read channel          |
+| top_messages **(deprecated)** | Top messages from a frequently read guild's home feed |
+| lifecycle_item                | New user tutorial item                                |
+| trending_content              | Unknown                                               |
+| ~~poll_ended~~                | ~~Poll ended~~                                        |
+| game_friend_request_accepted  | Outgoing game friend request was accepted             |
+| reaction_sent                 | Reaction was added on the user's message              |
+
+###### Notification Center Item Enum
+
+| Value | Name           | Description    |
+| ----- | -------------- | -------------- |
+| 0     | UPDATE_PROFILE | Update profile |
+| 1     | FIND_FRIENDS   | Find friends   |
+| 2     | ADD_FRIEND     | Add friend     |
+| 3     | FIRST_MESSAGE  | First message  |
+
+<RouteHeader method="GET" url="/users/@me/notification-center/items">
+  Get Notification Center Items
+</RouteHeader>
+
+Returns the user's notification center items. Items are ordered by most recent first.
+
+###### Query String Params
+
+| Field            | Type      | Description                                                           |
+| ---------------- | --------- | --------------------------------------------------------------------- |
+| after?           | snowflake | Get notification center items after this notification center item ID  |
+| with_mentions?   | boolean   | Whether to include recent mention notifications (default false)       |
+| roles_filter?    | boolean   | Whether to include role mentions (default true)                       |
+| everyone_filter? | boolean   | Whether to include @everyone and @here mentions (default true)        |
+| limit?           | integer   | Max number of notification center items to return (1-100, default 25) |
+
+###### Response Body
+
+| Field    | Type                                                                       | Description                                                                                                    |
+| -------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| limit    | integer                                                                    | The requested limit                                                                                            |
+| items    | array[[notification center item](#notification-center-item-object) object] | The notification center items                                                                                  |
+| cursor   | ?snowflake                                                                 | The cursor for pagination                                                                                      |
+| has_more | boolean                                                                    | Whether there are potentially additional notification center items that could be returned on a subsequent call |
+
+<RouteHeader method="DELETE" url="/users/@me/notification-center/items/{notification_center_item.id}">
+  Delete Notification Center Item
+</RouteHeader>
+
+Deletes a notification center item. Returns a 204 empty response on success. Fires a [Notification Center Item Delete](/topics/gateway-events#notification-center-item-delete) Gateway event.
+
+###### JSON Params
+
+| Field      | Type   | Description                                                                               |
+| ---------- | ------ | ----------------------------------------------------------------------------------------- |
+| item_type? | string | The [type of notification center item](#notification-center-item-deletion-type) to delete |
+
+###### Notification Center Item Deletion Type
+
+| Value   | Description                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------- |
+| mention | The item is a mention (`type` of [`reply_mention` or `recent_mention`](#notification-center-item-type)) |
+| regular | The item is a regular item                                                                              |
+
+<RouteHeader method="POST" url="/users/@me/notification-center/items/{notification_center_item.id}/ack">
+  Acknowledge Notification Center Item
+</RouteHeader>
+
+Acknowledges a notification center item. Returns a 204 empty response on success. Fires a [Notification Center Items Ack](/topics/gateway-events#notification-center-items-ack) Gateway event.
+
+<RouteHeader method="POST" url="/users/@me/notification-center/items/bulk-ack">
+  Bulk Acknowledge Notification Center Items
+</RouteHeader>
+
+Acknowledges multiple notification center items in bulk. Returns a 204 empty response on success. Fires multiple [Notification Center Items Ack](/topics/gateway-events#notification-center-items-ack) Gateway events.
+
+###### Query String Parameters
+
+| Field    | Type             | Description                                             |
+| -------- | ---------------- | ------------------------------------------------------- |
+| item_ids | array[snowflake] | The IDs of the notification center items to acknowledge |

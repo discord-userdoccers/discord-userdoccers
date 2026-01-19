@@ -171,6 +171,18 @@ In this case, `mention_count` should also be updated to the amount of mentions u
 
 Acknowledges the currently pinned messages in a channel. Returns a 204 empty response on success. Fires a [Channel Pins Ack](/topics/gateway-events#channel-pins-ack) Gateway event.
 
+<RouteHeader method="POST" url="/guilds/{guild.id}/ack" deprecated>
+  Acknowledge Guild
+</RouteHeader>
+
+Updates all read states in a guild to acknowledge all features and messages. Fires multiple [Message Ack](/topics/gateway-events#message-ack) and [Guild Feature Ack](/topics/gateway-events#guild-feature-ack) Gateway events.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Bulk Update Read States](#bulk-update-read-states).
+
+</Alert>
+
 <RouteHeader method="POST" url="/guilds/{guild.id}/ack/{read_state.type}/{entity.id}">
   Acknowledge Guild Feature
 </RouteHeader>
@@ -206,6 +218,30 @@ Updates a non-channel feature's read state for the current user. Fires a [User N
 | Field | Type    | Description                      |
 | ----- | ------- | -------------------------------- |
 | token | ?string | The new [ack token](#ack-tokens) |
+
+<RouteHeader method="POST" url="/read-states/ack-bulk">
+  Bulk Update Read States
+</RouteHeader>
+
+Updates multiple read states for the current user. Returns a 204 empty response on success. Fires multiple [Message Ack](/topics/gateway-events#message-ack), [Guild Feature Ack](/topics/gateway-events#guild-feature-ack), and [User Non Channel Ack](/topics/gateway-events#user-non-channel-ack) Gateway events.
+
+###### JSON Params
+
+| Field       | Type                                                            | Description                      |
+| ----------- | --------------------------------------------------------------- | -------------------------------- |
+| read_states | array[[read state update](#read-state-update-structure) object] | The read state updates to update |
+
+###### Read State Update Structure
+
+| Field              | Type      | Description                                                                          |
+| ------------------ | --------- | ------------------------------------------------------------------------------------ |
+| read_state_type?   | integer   | The [type of read state](#read-state-type) (default `CHANNEL`)                       |
+| channel_id         | snowflake | The ID of the resource the read state is for                                         |
+| message_id ^1^ ^2^ | snowflake | The ID of the entity to set the read state to (message, guild scheduled event, etc.) |
+
+^1^ Unlike standalone ack endpoints, the message ID must be greater than `0` or the read state update will be ignored.
+
+^2^ As bulk updates do not accept a `manual` fields, it is not recommended to set channel read states to a message ID lower than the current acknowledged one using this endpoint, as it will lead to undefined behavior.
 
 <RouteHeader method="DELETE" url="/channels/{read_state.id}/messages/ack">
   Delete Read State
