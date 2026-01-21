@@ -129,15 +129,15 @@ All options have names, and an option can either be a parameter, in which case `
 
 ###### Modal Submit Component Data Structure
 
-| Field      | Type                                                                                | Description                                                       | Component Type                                                                                                     |
-| ---------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| id ^1^     | integer                                                                             | The ID of the component                                           | All                                                                                                                |
-| type       | integer                                                                             | The [type](/resources/components#component-type) of the component | All                                                                                                                |
-| custom_id  | string                                                                              | The developer-defined identifier for the component                | `STRING_SELECT`, `USER_SELECT`, `ROLE_SELECT`, `MENTIONABLE_SELECT`, `CHANNEL_SELECT`, `TEXT_INPUT`, `FILE_UPLOAD` |
-| value      | string                                                                              | The value that the user inputted                                  | `TEXT_INPUT`                                                                                                       |
-| values     | array[snowflake] \| array[string]                                                   | The values that the user selected or uploaded                     | `STRING_SELECT`, `USER_SELECT`, `ROLE_SELECT`, `MENTIONABLE_SELECT`, `CHANNEL_SELECT`, `FILE_UPLOAD`               |
-| component  | [modal submit component data](#modal-submit-component-data-structure) object        | Inner component                                                   | `LABEL`                                                                                                            |
-| components | array[[modal submit component data](#modal-submit-component-data-structure) object] | Inner components                                                  | `ACTION_ROW`                                                                                                       |
+| Field      | Type                                                                                | Description                                                       | Component Type                                                                                                         |
+| ---------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| id ^1^     | integer                                                                             | The ID of the component                                           | All                                                                                                                    |
+| type       | integer                                                                             | The [type](/resources/components#component-type) of the component | All                                                                                                                    |
+| custom_id  | string                                                                              | The developer-defined identifier for the component                | `STRING_SELECT`, `USER_SELECT`, `ROLE_SELECT`, `MENTIONABLE_SELECT`, `CHANNEL_SELECT`, `TEXT_INPUT`, `FILE_UPLOAD`     |
+| value      | string \| boolean                                                                   | The value that the user inputted                                  | `TEXT_INPUT`, `RADIO_GROUP`, `CHECKBOX`                                                                                |
+| values     | array[snowflake] \| array[string]                                                   | The values that the user selected or uploaded                     | `STRING_SELECT`, `USER_SELECT`, `ROLE_SELECT`, `MENTIONABLE_SELECT`, `CHANNEL_SELECT`, `FILE_UPLOAD`, `CHECKBOX_GROUP` |
+| component  | [modal submit component data](#modal-submit-component-data-structure) object        | Inner component                                                   | `LABEL`                                                                                                                |
+| components | array[[modal submit component data](#modal-submit-component-data-structure) object] | Inner components                                                  | `ACTION_ROW`                                                                                                           |
 
 ^1^ `id` does not need to be provided when [creating an interaction](#create-interaction).
 
@@ -430,8 +430,52 @@ Currently, interactions are sent with a user agent of `Discord-Interactions/1.0 
   Create Interaction Response
 </RouteHeader>
 
-Create a response to an interaction from the Gateway. Accepts an [interaction response](#interaction-response-object) object.
+Create a response to an interaction from the Gateway. Accepts an [interaction response](#interaction-response-object) object. Returns a 204 empty response or an object below depending on `with_response` parameter.
 This endpoint also supports file attachments similar to the webhook endpoints. Refer to [Uploading Files](/reference#uploading-files) for details on uploading files and `multipart/form-data` requests.
+
+###### Query String Params
+
+| Field          | Type    | Description                                                                |
+| -------------- | ------- | -------------------------------------------------------------------------- |
+| with_response? | boolean | Whether to include interaction callback result as response (default false) |
+
+###### Response Body
+
+| Field       | Type                                                                             | Description                                               |
+| ----------- | -------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| interaction | [interaction callback](#interaction-callback-structure) object                   | The interaction associated with the interaction response  |
+| resource?   | [interaction callback resource](#interaction-callback-resource-structure) object | The resource that was created by the interaction response |
+
+###### Interaction Callback Structure
+
+| Field                       | Type      | Description                                                                           |
+| --------------------------- | --------- | ------------------------------------------------------------------------------------- |
+| id                          | snowflake | The ID of the interaction                                                             |
+| type                        | integer   | The [type](#interaction-type) of interaction                                          |
+| response_message_id?        | snowflake | The ID of the message that was created by the interaction                             |
+| response_message_loading?   | boolean   | Whether the response message has [`LOADING`](/resources/message#message-flags) flag   |
+| response_message_ephemeral? | boolean   | Whether the response message has [`EPHEMERAL`](/resources/message#message-flags) flag |
+| activity_instance_id?       | string    | The ID of the launched activity instance                                              |
+| channel_id?                 | snowflake | The ID of the channel it was sent from                                                |
+| guild_id?                   | snowflake | The ID of the guild the interaction was created in                                    |
+
+###### Interaction Callback Resource Structure
+
+| Field                  | Type                                                                                                                 | Description                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| type                   | integer                                                                                                              | The [type](#interaction-callback-type) of interaction callback |
+| activity_instance? ^1^ | [interaction callback activity instance resource](#interaction-callback-activity-instance-resource-structure) object | The activity launched by the interaction callback              |
+| message? ^2^           | [message](/resources/message#message-object) object                                                                  | The message created by the interaction callback                |
+
+^1^ Only applicable if `type` is [`LAUNCH_ACTIVITY`](#interaction-callback-type).
+
+^2^ Only applicable if `type` is [`CHANNEL_MESSAGE_WITH_SOURCE`, or `UPDATE_MESSAGE`](#interaction-callback-type).
+
+###### Interaction Callback Activity Instance Resource Structure
+
+| Field | Type   | Description                              |
+| ----- | ------ | ---------------------------------------- |
+| id    | string | The ID of the launched activity instance |
 
 <RouteHeader method="GET" url="/webhooks/{application.id}/{interaction.token}/messages/@original" unauthenticated>
   Get Original Interaction Response
