@@ -176,7 +176,7 @@ If the Gateway accepts the public key, it will respond with an [Opcode Nonce Pro
 }
 ```
 
-You should then send an [Opcode Nonce Proof](<#nonce-proof-structure-(send)>) payload containing a base64URL-encoded representation of the decrypted nonce's SHA-256 digest.
+You should then send an [Opcode Nonce Proof](<#nonce-proof-structure-(send)>) payload containing the base64URL-encoded decrypted nonce.
 
 An example in Python pseudocode would be:
 
@@ -185,16 +185,14 @@ nonce = private_key.decrypt(
     base64.b64decode(encrypted_nonce),
     padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
 )
-nonce_proof = base64.urlsafe_b64encode(
-    hashes.Hash(hashes.SHA256()).update(nonce).finalize()
-).decode("utf-8").rstrip("=")
+nonce_proof = base64.urlsafe_b64encode(nonce).decode("utf-8").rstrip("=")
 ```
 
 ###### Nonce Proof Structure (Send)
 
-| Field | Type   | Description                                                 |
-| ----- | ------ | ----------------------------------------------------------- |
-| nonce | string | The base64URL-encoded SHA-256 digest of the decrypted nonce |
+| Field | Type   | Description                           |
+| ----- | ------ | ------------------------------------- |
+| nonce | string | The base64URL-encoded decrypted nonce |
 
 ###### Example Nonce Proof (Send)
 
@@ -272,6 +270,16 @@ The client should immediately terminate the connection and reconnect.
 
 Once the mobile client [creates a remote auth session](/remote-authentication/mobile#create-remote-auth-session) (scans the QR code), the Gateway will send an [Opcode Pending Ticket](#pending-ticket-structure) payload, which contains the information of the user that is attempting to authenticate.
 
+This payload must be decrypted using your private key. An example in Python pseudocode would be:
+
+```py
+user_payload_bytes = private_key.decrypt(
+    base64.b64decode(encrypted_user_payload),
+    padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
+)
+user_id, discriminator, avatar, username = user_payload_bytes.decode("utf-8").split(":")
+```
+
 ###### Pending Ticket Structure
 
 | Field                  | Type   | Description                                                                                       |
@@ -337,6 +345,16 @@ If the mobile client [cancels remote auth](/remote-authentication/mobile#cancel-
 </RouteHeader>
 
 Exchanges a remote auth ticket for an [authentication token](/reference#authentication).
+
+The token must be decrypted using the client's private key. An example in Python pseudocode would be:
+
+```py
+encrypted_token_bytes = base64.b64decode(encrypted_token)
+token = private_key.decrypt(
+    encrypted_token_bytes,
+    padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None),
+).decode("utf-8")
+```
 
 ###### JSON Params
 
