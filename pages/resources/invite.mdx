@@ -35,6 +35,7 @@ A code that when used, adds a user to a guild or group DM channel, or creates a 
 | target_type?                    | integer                                                                                       | The [type of target](#invite-target-type) for this guild invite                                                      |
 | target_user?                    | partial [user](/resources/user#user-object) object                                            | The user whose stream to display for this voice channel stream invite                                                |
 | target_application?             | partial [application](/resources/application#application-object) object                       | The embedded application to open for this voice channel embedded application invite                                  |
+| roles?                          | array[[role](/resources/guild#role-object) object]                                            | The roles to grant to the invitee upon acceptance                                                                    |
 | approximate_member_count? ^1^   | integer                                                                                       | Approximate count of total members in the guild or group DM                                                          |
 | approximate_presence_count? ^1^ | integer                                                                                       | Approximate count of non-offline members in the guild                                                                |
 | expires_at                      | ?ISO8601 timestamp                                                                            | The expiry date of the invite, if it expires                                                                         |
@@ -289,6 +290,64 @@ Bots and users who have been blocked by the inviter cannot retrieve friend invit
 | with_permissions?         | boolean   | Whether the invite should contain permission-related fields (default false)                                               |
 | guild_scheduled_event_id? | snowflake | The guild scheduled event to include with the invite                                                                      |
 
+<RouteHeader method="GET" url="/invites/{invite.code}/friend-members" supportsBot>
+  Get Invite Friend Members
+</RouteHeader>
+
+Returns the user IDs of friends in the target guild. Always returns an empty array for group DMs and friend invites.
+
+###### Response Body
+
+| Field             | Type             | Description                             |
+| ----------------- | ---------------- | --------------------------------------- |
+| friend_member_ids | array[snowflake] | User IDs of friends in the target guild |
+
+<RouteHeader method="GET" url="/invites/{invite.code}/target-users" supportsBot>
+  Get Invite Target Users
+</RouteHeader>
+
+Returns the IDs of the users allowed to see and accept the given invite. Invite must have a target users file associated with it. Requires the `MANAGE_GUILD` permission. Returns the CSV file contents as uploaded.
+
+<RouteHeader method="PUT" url="/invites/{invite.code}/target-users" supportsBot>
+  Update Invite Target Users
+</RouteHeader>
+
+Replaces the target users file associated with the given invite. Processing is done asynchronously. Invite must have been created with a target users file. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success.
+
+###### Form Params
+
+| Field                 | Type          | Description                                                           |
+| --------------------- | ------------- | --------------------------------------------------------------------- |
+| target_users_file ^1^ | file contents | A CSV file with a single column of user IDs to restrict the invite to |
+
+^1^ See [Uploading Files](/reference#uploading-files) for details.
+
+<RouteHeader method="GET" url="/invites/{invite.code}/target-users/job-status" supportsBot>
+  Get Invite Target Users Job Status
+</RouteHeader>
+
+Returns the status of the target users file processing job for the given invite. Invite must have a target users file associated with it. Requires the `MANAGE_GUILD` permission.
+
+###### Response Body
+
+| Field           | Type               | Description                                                                          |
+| --------------- | ------------------ | ------------------------------------------------------------------------------------ |
+| status          | integer            | The [status](#invite-target-users-job-status) of the job processing the target users |
+| total_users     | integer            | The total number of user IDs in the target users file                                |
+| processed_users | integer            | The number of user IDs processed so far                                              |
+| created_at      | ?ISO8601 timestamp | When the job was created                                                             |
+| completed_at    | ?ISO8601 timestamp | When the job was completed                                                           |
+| error_message   | ?string            | An error message, if the job failed                                                  |
+
+###### Invite Target Users Job Status
+
+| Value | Name        | Description                          |
+| ----- | ----------- | ------------------------------------ |
+| 0     | UNSPECIFIED | Job status is unspecified            |
+| 1     | PROCESSING  | Job is currently being processed     |
+| 2     | COMPLETED   | Job has been completed               |
+| 3     | FAILED      | Job has failed (see `error_message`) |
+
 <RouteHeader method="POST" url="/invites/{invite.code}" supportsOAuth2="guilds.join">
   Accept Invite
 </RouteHeader>
@@ -332,18 +391,6 @@ Users who have been blocked by the inviter cannot accept friend invites.
 
 Deletes an invite. Requires the `MANAGE_CHANNELS` permission on the channel this invite belongs to, or `MANAGE_GUILD` to remove any invite across the guild, if the invite is to a guild. Returns an [invite](#invite-object) object on success. May fire an [Invite Delete](/topics/gateway-events#invite-delete) Gateway event.
 
-<RouteHeader method="GET" url="/invites/{invite.code}/friend-members" supportsBot>
-  Get Invite Friend Members
-</RouteHeader>
-
-Returns the user IDs of friends in the target guild. Always returns an empty array for group DMs and friend invites.
-
-###### Response Body
-
-| Field             | Type             | Description                             |
-| ----------------- | ---------------- | --------------------------------------- |
-| friend_member_ids | array[snowflake] | User IDs of friends in the target guild |
-
 <RouteHeader method="GET" url="/guilds/{guild.id}/invites" supportsBot>
   Get Guild Invites
 </RouteHeader>
@@ -376,20 +423,26 @@ In the case of a guild with the instant invite operation disabled by Discord, th
 
 ###### JSON/Form Params
 
-| Field                  | Type      | Description                                                                                                                                                    |
-| ---------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| flags? ^1^             | integer   | The [invite's flags](#invite-flags) (only `IS_GUEST_INVITE` and `IS_APPLICATION_BYPASS` can be set)                                                            |
-| max_age? ^2^           | integer   | Number of seconds before expiry, or 0 for never (0-5184000, default 86400)                                                                                     |
-| max_uses?              | integer   | Max number of uses or 0 for unlimited (0-100, default 0)                                                                                                       |
-| temporary?             | boolean   | Whether this invite only grants temporary membership (default false)                                                                                           |
-| unique?                | boolean   | Whether to try to reuse a similar invite (useful for creating many unique one time use invites, default false)                                                 |
-| target_type?           | integer   | The [type of target](#invite-target-type) for this voice channel invite                                                                                        |
-| target_user_id?        | snowflake | The ID of the user whose stream to display for this invite, required if `target_type` is `STREAM`; the user must be streaming in the channel                   |
-| target_application_id? | snowflake | The ID of the embedded application to open for this invite, required if `target_type` is `EMBEDDED_APPLICATION`; the application must have the `EMBEDDED` flag |
+| Field                  | Type             | Description                                                                                                                                                   |
+| ---------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| flags? ^1^             | integer          | The [invite's flags](#invite-flags) (only `IS_GUEST_INVITE` and `IS_APPLICATION_BYPASS` can be set)                                                           |
+| max_age? ^2^           | integer          | Number of seconds before expiry, or 0 for never (0-5184000, default 86400)                                                                                    |
+| max_uses?              | integer          | Max number of uses or 0 for unlimited (0-100, default 0)                                                                                                      |
+| temporary?             | boolean          | Whether the invite only grants temporary membership (default false)                                                                                           |
+| unique?                | boolean          | Whether to try to reuse a similar invite (useful for creating many unique one time use invites, default false)                                                |
+| target_type?           | integer          | The [type of target](#invite-target-type) for the invite                                                                                                      |
+| target_user_id?        | snowflake        | The ID of the user whose stream to display for the invite, required if `target_type` is `STREAM`; the user must be streaming in the channel                   |
+| target_application_id? | snowflake        | The ID of the embedded application to open for the invite, required if `target_type` is `EMBEDDED_APPLICATION`; the application must have the `EMBEDDED` flag |
+| target_users_file? ^3^ | file contents    | A CSV file with a single column of user IDs to restrict the invite to                                                                                         |
+| role_ids? ^4^          | array[snowflake] | The IDs of the roles to grant to the invitee upon acceptance                                                                                                  |
 
 ^1^ Creating an invite with the `APPLICATION_BYPASS` flag requires the `KICK_MEMBERS` permission.
 
 ^2^ For group DMs, `max_age` is the only supported parameter, and it accepts a value from 1 to 604800 (7 days).
+
+^3^ Requires the `MANAGE_GUILD` permission. Processing is done asynchronously. See [Uploading Files](/reference#uploading-files) for details.
+
+^4^ Requires the `MANAGE_ROLES` permission. Cannot grant roles that are equal to or higher than the creator's highest role.
 
 <RouteHeader method="GET" url="/users/@me/invites">
   Get User Invites
