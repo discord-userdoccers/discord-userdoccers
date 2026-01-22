@@ -905,6 +905,7 @@ These events directly correspond with a specific action or state change that has
 | [Ready Supplemental](#ready-supplemental)                                                   | Supplemental information for the initial state, not critical to beginning use of the platform  |
 | [Resumed](#resumed)                                                                         | Acknowledges a successful [Resume](#resume)                                                    |
 | [Remote Command](<#remote-command-(receive)>)                                               | Received a message from another Gateway session                                                |
+| [Activity Invite Create](#activity-invite-create)                                           | Activity invite was created                                                                    |
 | [Auth Session Change](#auth-session-change)                                                 | Current session's associated auth session ID changed                                           |
 | [Authenticator Create](#authenticator-create)                                               | WebAuthn authenticator was created                                                             |
 | [Authenticator Update](#authenticator-update)                                               | WebAuthn authenticator was updated                                                             |
@@ -922,6 +923,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Create](#channel-create)                                                           | Channel was created                                                                            |
 | [Channel Update](#channel-update)                                                           | Channel was updated                                                                            |
 | [Channel Delete](#channel-delete)                                                           | Channel was deleted                                                                            |
+| [Channel Update Partial](#channel-update-partial)                                           | Channel was partially updated                                                                  |
 | [Channel Statuses](#channel-statuses)                                                       | Response to [Request Channel Statuses](#request-channel-statuses)                              |
 | [Channel Info](#channel-info)                                                               | Response to [Request Channel Info](#request-channel-info)                                      |
 | [Channel Member Count Update](#channel-member-count-update)                                 | Response to [Request Channel Member Count](#request-channel-member-count)                      |
@@ -1068,6 +1070,8 @@ These events directly correspond with a specific action or state change that has
 | [User Update](#user-update)                                                                 | Current user changed                                                                           |
 | [User Application Update](#user-application-update)                                         | User installed an application or an application was updated                                    |
 | [User Application Remove](#user-application-remove)                                         | User uninstalled an application                                                                |
+| [User Application Identity Update](#user-application-identity-update)                       | Application identity is updated for the current user                                           |
+| [User Application Identity Remove](#user-application-identity-remove)                       | Application identity is removed for the current user                                           |
 | [User Connections Update](#user-connections-update)                                         | User connection was created, updated, or deleted                                               |
 | [User Guild Settings Update](#user-guild-settings-update)                                   | User guild settings were updated                                                               |
 | [User Merge Operation Completed](#user-merge-operation-completed)                           | User has been merged with a provisional account                                                |
@@ -1147,6 +1151,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | feature_flags? ^11^                    | [gateway feature flags](#gateway-feature-flags-structure) object                                                           | Social layer SDK feature flags                                                                                                                                                                                                                                         |
 | lobbies? ^11^ ^12^                     | array[[lobby](/resources/lobby#lobby-object) object]                                                                       | The lobbies the connected user is in                                                                                                                                                                                                                                   |
 | user_application_profiles? ^11^        | map[snowflake, array[[user application profile](#user-application-profile-structure) object]]                              | A mapping of user IDs to provisional user accounts application profiles encountered across all objects in the event                                                                                                                                                    |
+| connection_request_data? ^11^          | [console connection request data](#console-connection-request-data-structure) object                                       | Pending connection request data                                                                                                                                                                                                                                        |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -1200,11 +1205,12 @@ A generic object used to represent versioned data. Depends on specific capabilit
 
 ###### Gateway Application Structure
 
-| Field     | Type      | Description                                                         |
-| --------- | --------- | ------------------------------------------------------------------- |
-| id        | snowflake | The ID of the application                                           |
-| flags     | integer   | The [application's flags](/resources/application#application-flags) |
-| name? ^1^ | string    | The name of the application                                         |
+| Field          | Type      | Description                                                         |
+| -------------- | --------- | ------------------------------------------------------------------- |
+| id             | snowflake | The ID of the application                                           |
+| flags          | integer   | The [application's flags](/resources/application#application-flags) |
+| name? ^1^      | string    | The name of the application                                         |
+| parent_id? ^1^ | snowflake | The ID of the parent application                                    |
 
 ^1^ Only available in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
 
@@ -1217,12 +1223,14 @@ A generic object used to represent versioned data. Depends on specific capabilit
 
 ###### User Application Profile Structure
 
-| Field       | Type                                                                                           | Description                                         |
-| ----------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| username    | ?string                                                                                        | The external username of the provisional account    |
-| metadata    | ?string                                                                                        | Custom metadata                                     |
-| external_id | [user application profile external ID](#user-application-profile-external-id-structure) object | The external ID of the provisional account          |
-| avatar_hash | ?string                                                                                        | The user's [avatar hash](/reference#cdn-formatting) |
+| Field         | Type                                                                                             | Description                                          |
+| ------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| username      | ?string                                                                                          | The external username of the provisional account     |
+| metadata      | ?string                                                                                          | Custom metadata                                      |
+| data?         | ?[user application profile data](/resources/user#user-application-profile-data-structure) object | The user application data                            |
+| data_trusted? | ?boolean                                                                                         | Whether the data is trusted (set by application bot) |
+| external_id   | [user application profile external ID](#user-application-profile-external-id-structure) object   | The external ID of the provisional account           |
+| avatar_hash   | ?string                                                                                          | The user's [avatar hash](/reference#cdn-formatting)  |
 
 ###### User Application Profile External ID Structure
 
@@ -1250,6 +1258,12 @@ A generic object used to represent versioned data. Depends on specific capabilit
   "avatar_hash": null
 }
 ```
+
+###### Console Connection Request Data Structure
+
+| Field                 | Type                                                                                                    | Description                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| analytics_properties? | [connect request properties](/resources/connected-accounts#connect-request-properties-structure) object | The properties used for analytics |
 
 ###### Session Type
 
@@ -1320,6 +1334,26 @@ Sent when a client has sent a [resume payload](#resume) to the Gateway (for resu
 #### Remote Command (Receive)
 
 Sent when a message is received from another Gateway session. The inner payload is the [sent message](<#remote-command-(send)>).
+
+#### Activity Invite Create
+
+Sent when the current user receives an activity invite but the session doesn't have the `dm_channels.messages.read` scope.
+
+<Alert type="warn">
+
+This event is only received in OAuth2 contexts.
+
+</Alert>
+
+###### Activity Invite Create Structure
+
+| Field        | Type                                                                                    | Description                                                          |
+| ------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| message_id?  | snowflake                                                                               | The ID of the message                                                |
+| channel_id?  | snowflake                                                                               | The ID of the channel                                                |
+| author?      | partial [user](/resources/user#user-object) object                                      | The user that is inviting the current user to rich presence activity |
+| application? | [integration application](/resources/integration#integration-application-object) object | The application of the message's rich presence activity              |
+| activity?    | [message activity](/resources/message#message-activity-object) object                   | The rich presence activity the author is inviting current user to    |
 
 ### Authentication
 
@@ -1510,6 +1544,16 @@ Sent when a channel relevant to the current user is deleted. The inner payload i
 <Alert type="warn">
 
 For private channels, the received channel object will be partial.
+
+</Alert>
+
+#### Channel Update Partial
+
+Sent instead of [Channel Unread Update](#channel-unread-update) in OAuth2 contexts. Inner payload is a [channel unread](#channel-unread-structure) object.
+
+<Alert type="warn">
+
+This event is only received in OAuth2 contexts.
 
 </Alert>
 
@@ -2571,13 +2615,14 @@ Unlike persistent messages, ephemeral messages are sent directly to the user and
 
 ###### Message Object Extra Fields
 
-| Field           | Type                                                                | Description                                                                                                                                             |
-| --------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| channel_type    | integer                                                             | The [type of channel](/resources/channel#channel-type) this message was sent in                                                                         |
-| guild_id? ^1^   | snowflake                                                           | The ID of the guild the message was sent in                                                                                                             |
-| member? ^1^ ^2^ | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author, without the [`user`](/resources/user#user-object) key                                                      |
-| mentions ^1^    | array[partial [user](/resources/user#user-object) object]           | Users specifically mentioned in the message, with an extra optional [`member`](/resources/guild#guild-member-object) key representing guild member data |
-| metadata?       | object                                                              | Custom metadata for the message (max 25 keys, 1024 characters per key and value)                                                                        |
+| Field                | Type                                                                | Description                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| channel_type         | integer                                                             | The [type of channel](/resources/channel#channel-type) this message was sent in                                                                         |
+| guild_id? ^1^        | snowflake                                                           | The ID of the guild the message was sent in                                                                                                             |
+| member? ^1^ ^2^      | partial [guild member](/resources/guild#guild-member-object) object | Guild member data for this message's author, without the [`user`](/resources/user#user-object) key                                                      |
+| mentions ^1^         | array[partial [user](/resources/user#user-object) object]           | Users specifically mentioned in the message, with an extra optional [`member`](/resources/guild#guild-member-object) key representing guild member data |
+| metadata?            | map[string, string]                                                 | Custom metadata for the message (max 25 keys, 1024 characters per key and value)                                                                        |
+| moderation_metadata? | map[string, string]                                                 | Custom moderation metadata for the message (max 25 keys, 1024 characters per key and value)                                                             |
 
 ^1^ Ephemeral messages will not include these fields.
 
@@ -3414,6 +3459,21 @@ Sent when the current user deauthorizes an integrated application.
 
 | Field          | Type      | Description               |
 | -------------- | --------- | ------------------------- |
+| application_id | snowflake | The ID of the application |
+
+#### User Application Identity Update
+
+Sent when application identity is updated for the current user. The inner payload is an [user application profile](#user-application-profile-structure) object.
+
+#### User Application Identity Remove
+
+Sent when application identity is removed for the current user.
+
+###### User Application Identity Remove Structure
+
+| Field          | Type      | Description               |
+| -------------- | --------- | ------------------------- |
+| user_id        | snowflake | The ID of the user        |
 | application_id | snowflake | The ID of the application |
 
 #### User Connections Update

@@ -719,6 +719,48 @@ Retrieves a device code and user code for the [device code grant](#device-code-g
 | expires_in                | integer | The duration (in seconds) after which the device code expires                          |
 | interval                  | integer | The interval (in seconds) at which to poll the token endpoint for authorization status |
 
+<RouteHeader method="POST" url="/oauth2/device/verify">
+  Get OAuth2 Device Flow
+</RouteHeader>
+
+Returns information about the OAuth2 device code grant flow.
+
+###### JSON Params
+
+| Field     | Type   | Description     |
+| --------- | ------ | --------------- |
+| user_code | string | The device code |
+
+###### Response Body
+
+| Field             | Type          | Description                                                        |
+| ----------------- | ------------- | ------------------------------------------------------------------ |
+| scopes            | array[string] | The scopes the user is authorizing the application for             |
+| client_id         | snowflake     | The ID of the application                                          |
+| two_way_link_code | ?string       | The code to use for two-way linking                                |
+| type              | string        | The [status of the OAuth2 device flow](#oauth2-device-flow-status) |
+
+###### OAuth2 Device Flow Status
+
+| Value   | Description                                                  |
+| ------- | ------------------------------------------------------------ |
+| pending | The device flow is pending                                   |
+| granted | The device flow is completed and an access token was granted |
+| denied  | The device flow is completed but no access token was granted |
+
+<RouteHeader method="POST" url="/oauth2/device/finish">
+  Finish OAuth2 Device Flow
+</RouteHeader>
+
+Finishes the OAuth2 device code grant flow. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field     | Type   | Description                                                                                    |
+| --------- | ------ | ---------------------------------------------------------------------------------------------- |
+| user_code | string | The device code                                                                                |
+| result    | string | The [result of the flow](#oauth2-device-flow-status) (only `granted` and `denied` are allowed) |
+
 <RouteHeader method="POST" url="/oauth2/token" unauthenticated>
   Get OAuth2 Token
 </RouteHeader>
@@ -822,6 +864,9 @@ This indicates that the provisional account has been merged with a user account,
   not expose any username, and thus the game will need to configure the display name manually.
 - For [Unity Services ID Tokens](https://services.docs.unity.com/docs/client-auth/),
   the display name of the user's Unity Player Account is used as the provisional account's display name.
+- For [Apple ID Tokens](https://developer.apple.com/documentation/signinwithapplerestapi),
+  the name of the user's Apple ID account is used as the provisional account's display name.
+- For PlayStation Network ID Tokens, the name of the user's PlayStation Network account is used as the provisional account's display name.
 
 To change the display name of a provisional account, use the [Modify Current User Account](/resources/user#modify-current-user-account) endpoint.
 
@@ -848,6 +893,21 @@ To change the display name of a provisional account, use the [Modify Current Use
 | STEAM_SESSION_TICKET              | A Steam authentication ticket for web generated with `discord` set as the `identity`                |
 | UNITY_SERVICES_ID_TOKEN           | ID token for Unity Auth Services                                                                    |
 | DISCORD_BOT_ISSUED_ACCESS_TOKEN   | An access token for a user authenticated [via a bot token](#get-provisional-account-token-with-bot) |
+| APPLE_ID_TOKEN                    | ID token for Apple ID                                                                               |
+| PLAYSTATION_NETWORK_ID_TOKEN      | ID token for PlayStation Network                                                                    |
+
+<RouteHeader method="POST" url="/partner-sdk/child-token">
+  Exchange Provisional Account Child Token
+</RouteHeader>
+
+Exchanges a parent application token for a child application token. Returns an [OAuth2 access token](#oauth2-access-token-object) object on success.
+
+###### JSON Params
+
+| Field                | Type      | Description                                         |
+| -------------------- | --------- | --------------------------------------------------- |
+| child_application_id | snowflake | The ID of the child application                     |
+| parent_access_token  | string    | The parent application token (max 10240 characters) |
 
 <RouteHeader method="POST" url="/partner-sdk/token/bot">
   Get Provisional Account Token with Bot

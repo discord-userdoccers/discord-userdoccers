@@ -151,6 +151,7 @@ Further complicating things, some optional fields may be omitted if their value 
 | storefront_available                         | boolean                                                                                                                   | Whether the application has public subscriptions or products available for purchase                                                                                             |
 | max_participants? ^5^                        | integer                                                                                                                   | The maximum possible participants in the application's embedded activity (-1 for no limit)                                                                                      |
 | embedded_activity_config? ^5^                | [embedded activity config](#embedded-activity-config-object) object                                                       | The configuration for the application's embedded activity                                                                                                                       |
+| parent_id?                                   | snowflake                                                                                                                 | The ID of the parent application                                                                                                                                                |
 
 ^1^ The `primary_sku_id` and `slug` fields can be combined to form a URL to the application's primary store page like so: `https://discord.com/store/skus/{primary_sku_id}/{slug}`.
 
@@ -1019,13 +1020,15 @@ Each metadata type offers a comparison operation that allows guilds to configure
 
 ###### Application Identity Provider Type
 
-| Value                | Description                                                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------------------------- |
-| OIDC                 | OpenID Connect                                                                                                |
-| EPIC_ONLINE_SERVICES | [Epic Online Services](https://dev.epicgames.com/docs/epic-online-services/eos-overview)-based authentication |
-| STEAM                | Steam-based authentication                                                                                    |
-| UNITY                | [Unity](https://docs.unity.com/ugs/manual/authentication/manual/unity-player-accounts)-based authentication   |
-| DISCORD_BOT ^1^      | Authentication via a Discord bot                                                                              |
+| Value                | Description                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OIDC                 | OpenID Connect                                                                                                                                          |
+| EPIC_ONLINE_SERVICES | [Epic Online Services](https://dev.epicgames.com/docs/epic-online-services/eos-overview)-based authentication                                           |
+| STEAM                | Steam-based authentication                                                                                                                              |
+| UNITY                | [Unity](https://docs.unity.com/ugs/manual/authentication/manual/unity-player-accounts)-based authentication                                             |
+| DISCORD_BOT ^1^      | Authentication via a Discord bot                                                                                                                        |
+| APPLE                | [Apple ID](https://developer.apple.com/documentation/devicemanagement/implementing-the-oauth2-authentication-user-enrollment-flow)-based authentication |
+| PLAYSTATION_NETWORK  | PlayStation Network-based authentication                                                                                                                |
 
 ^1^ This provider type is not external and therefore cannot be created or modified.
 
@@ -2280,3 +2283,61 @@ Returns a reason for why an application cannot be deleted.
 | ---------- | -------- | ----------------------------------------------------------------------------------- |
 | deletable? | ?boolean | Whether the application is deletable (default false)                                |
 | reason?    | ?integer | The [reason](#application-undeletable-reason) why the application cannot be deleted |
+
+<RouteHeader method="POST" url="/application-identities" supportsOAuth2>
+  Get Bulk Application Identities
+</RouteHeader>
+
+Returns a list of partial [application identity](#partial-application-identity-structure) objects connected to the authorized application.
+
+<Alert type="warn">
+
+This endpoint is only usable with an OAuth2 access token.
+
+</Alert>
+
+###### JSON Params
+
+| Field        | Type             | Description                                            |
+| ------------ | ---------------- | ------------------------------------------------------ |
+| user_ids ^1^ | array[snowflake] | The IDs of the users to retrieve identities for (1-100) |
+
+^1^ Invalid IDs are ignored.
+
+###### Partial Application Identity Structure
+
+| Field            | Type      | Description                                          |
+| ---------------- | --------- | ---------------------------------------------------- |
+| user_id          | snowflake | The ID of the user                                   |
+| external_user_id | string    | The ID of the user on the external identity provider |
+
+<RouteHeader method="GET" url="/applications/{application.id}/users/{user.id}/identities/{external_user_id}/profile" supportsBot>
+  Get User Application Profile
+</RouteHeader>
+
+Returns an [user application profile](/topics/gateway-events#user-application-profile-structure) object for the given application, user, and external user IDs.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+<RouteHeader method="PATCH" url="/applications/{application.id}/users/{user.id}/identities/{external_user_id}/profile" supportsBot>
+  Modify User Application Profile
+</RouteHeader>
+
+Modifies the user's application profile. Returns an [user application profile](/topics/gateway-events#user-application-profile-structure) object on success.
+
+<Alert type="warn">
+
+This endpoint is not usable by user accounts.
+
+</Alert>
+
+###### JSON Params
+
+| Field     | Type   | Description                                                                                       |
+| --------- | ------ | ------------------------------------------------------------------------------------------------- |
+| username? | string | The username (max 1024)                                                                           |
+| metadata? | object | Custom metadata for the user application profile (max 25 keys, 1024 characters per key and value) |
