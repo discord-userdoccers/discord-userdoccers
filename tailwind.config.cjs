@@ -1,11 +1,12 @@
 const colors = require("tailwindcss/colors");
+const plugin = require("tailwindcss/plugin");
 
 /**
  * @type {import('tailwindcss/tailwind-config').TailwindConfig}
  */
 module.exports = {
   content: ["./pages/**/*.{js,ts,md,jsx,tsx,mdx}", "./components/**/*.{js,ts,md,jsx,tsx,mdx}"],
-  darkMode: ["class", "[data-theme='dark']"],
+  darkMode: ["class", ':is([data-theme="dark"], [data-theme="amoled"])'],
   theme: {
     extend: {
       padding: {
@@ -21,30 +22,30 @@ module.exports = {
 
         "text-light": "#2e3338",
         "text-dark": "#dcddde",
-        "background-dark": "#36373e",
+        "background-dark": "var(--background-dark)",
 
         "icons-light": "#343331",
         "icons-dark": "#dedddc",
 
-        "sidebar-secondary-dark": "#323339",
+        "sidebar-secondary-dark": "var(--sidebar-secondary-dark)",
         "sidebar-tertiary-light": "#f2f3f5",
-        "sidebar-tertiary-dark": "#36373e",
+        "sidebar-tertiary-dark": "var(--sidebar-tertiary-dark)",
 
-        "table-head-background-dark": "#27272a",
-        "table-row-background-secondary-dark": "#232428",
+        "table-head-background-dark": "var(--table-head-background-dark)",
+        "table-row-background-secondary-dark": "var(--table-row-background-secondary-dark)",
 
         "theme-light-sidebar": "#f2f3f5",
         "theme-light-sidebar-text": "#6a7480",
         "theme-light-sidebar-hover": "#D4D7DC",
         "theme-light-sidebar-hover-text": "#060607",
 
-        "theme-dark-sidebar": "#36373e",
+        "theme-dark-sidebar": "var(--theme-dark-sidebar)",
         "theme-dark-sidebar-text": "#b9bbbe",
-        "theme-dark-sidebar-hover": "#393C43",
+        "theme-dark-sidebar-hover": "var(--theme-dark-sidebar-hover)",
         "trueGray": colors.zinc,
 
         "theme-light-collapsible": "#e6e7e8",
-        "theme-dark-collapsible": "#27292d",
+        "theme-dark-collapsible": "var(--theme-dark-collapsible)",
       },
 
       fontFamily: {
@@ -62,5 +63,11 @@ module.exports = {
       },
     },
   },
-  plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")],
+  plugins: [
+    require("@tailwindcss/typography"),
+    require("@tailwindcss/forms"),
+    plugin(function ({ addVariant }) {
+      addVariant("amoled", 'html.amoled &');
+    }),
+  ],
 };

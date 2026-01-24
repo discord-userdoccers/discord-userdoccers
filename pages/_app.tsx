@@ -19,6 +19,7 @@ import MenuContext from "../contexts/MenuContext";
 import "@docsearch/css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
 import OnThisPage from "../components/OnThisPage";
+import { ThemeWatcher } from "../components/ThemeWatcher";
 
 const TITLE_REGEX = /<h1 .*?><a .*?>([^<]+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
 
@@ -63,8 +64,18 @@ export default function App({
 
   return (
     <>
-      <ThemeProvider defaultTheme="system" attribute="data-theme">
+      <ThemeProvider
+        defaultTheme="system"
+        attribute="data-theme"
+        themes={["light", "dark", "amoled"]}
+        value={{
+          light: "light",
+          dark: "dark",
+          amoled: "dark",
+        }}
+      >
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
+          <ThemeWatcher />
           <OpenGraph description={meta?.description} section={meta?.title} />
           <div className="flex min-h-[100dvh] overflow-hidden bg-white dark:bg-background-dark">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />

@@ -71,17 +71,23 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   return (
     <div className="opacity-transition relative flex flex-row-reverse items-center gap-1 opacity-0 duration-300 group-hover:opacity-100">
       {showCopyIcon && (
-        <TickIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
+        <TickIcon
+          className="my-auto h-5 w-5 cursor-pointer select-none text-black dark:text-white"
+          onClick={() => tryCopyCodeToClipboard()}
+        />
       )}
       {!showCopyIcon && (
-        <CopyIcon className="my-auto h-5 w-5 cursor-pointer select-none" onClick={() => tryCopyCodeToClipboard()} />
+        <CopyIcon
+          className="my-auto h-5 w-5 cursor-pointer select-none text-black dark:text-white"
+          onClick={() => tryCopyCodeToClipboard()}
+        />
       )}
 
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           className={cn(
-            "flex cursor-pointer select-none gap-1 rounded-md bg-white py-1 pl-2 pr-1.5 font-mono text-xs text-text-light dark:bg-black dark:text-text-dark",
+            "flex cursor-pointer select-none gap-1 rounded-md bg-white py-1 pl-2 pr-1.5 font-mono text-xs text-text-light amoled:border amoled:border-gray-800 dark:bg-black dark:text-text-dark",
             "flex items-center gap-1",
           )}
           onClick={() => setIsOpen(!isDropdownOpen)}
@@ -105,7 +111,7 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "block w-full cursor-pointer select-none px-4 py-2 text-left font-mono text-xs",
+                      "block w-full cursor-pointer select-none px-4 py-2 text-left font-mono text-xs text-text-light dark:text-text-dark",
                       "flex items-center gap-2",
                       "bg-white dark:bg-theme-dark-sidebar",
                       "hover:bg-theme-light-sidebar-hover dark:hover:bg-theme-dark-sidebar-hover",
@@ -157,7 +163,7 @@ export function TableHeader(props: React.JSX.IntrinsicElements["th"]) {
 export function TableRow(props: React.JSX.IntrinsicElements["tr"]) {
   return (
     <tr
-      className="bg-gray-100 text-text-light even:bg-gray-50 dark:bg-trueGray-800 dark:text-text-dark dark:even:bg-trueGray-900"
+      className="bg-gray-100 text-text-light even:bg-gray-50 amoled:!bg-[#111] amoled:even:!bg-black dark:bg-trueGray-800 dark:text-text-dark dark:even:bg-trueGray-900"
       {...props}
     />
   );

@@ -184,7 +184,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
         <div className="copy-button-wrapper group absolute right-0 top-0 h-12 w-12">
           <div className="copy-button absolute right-2 top-2 hidden rounded-md p-3 transition group-hover:block">
             <CopyButton text={children}>
-              <CopyIcon className="w-5" />
+              <CopyIcon className="w-5 text-black amoled:text-white dark:text-white" />
             </CopyButton>
           </div>
         </div>

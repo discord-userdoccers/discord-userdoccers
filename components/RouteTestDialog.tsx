@@ -1109,7 +1109,7 @@ export default function RouteTestDialog({
                       )}
                     </div>
 
-                    <div className="flex justify-end gap-2 border-t border-gray-200 bg-white p-6 pt-4 dark:border-gray-700 dark:bg-[#2f3136]">
+                    <div className="flex justify-end gap-2 border-t border-gray-200 bg-white p-6 pt-4 amoled:bg-black dark:border-gray-700 dark:bg-[#2f3136]">
                       {isSettingsOpen ? (
                         <button
                           className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2"

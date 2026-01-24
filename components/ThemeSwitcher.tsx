@@ -77,6 +77,18 @@ export default function ThemeSwitcher() {
                 </button>
               )}
             </Menu.Item>
+            <Menu.Item>
+              {({ active }) => (
+                <button className={getMenuItemClasses(active)} onClick={() => setTheme("amoled")}>
+                  {theme === "amoled" ? (
+                    <Check className="mr-2 h-5 w-5" aria-hidden="true" />
+                  ) : (
+                    <Moon className="mr-2 h-5 w-5" aria-hidden="true" />
+                  )}
+                  AMOLED Theme
+                </button>
+              )}
+            </Menu.Item>
           </div>
         </Menu.Items>
       </Transition>
