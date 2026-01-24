@@ -16,6 +16,8 @@ import Paragraph from "./mdx/Paragraph";
 import StrikeThrough from "./mdx/StrikeThrough";
 import Strong from "./mdx/Strong";
 import { Table, TableData, TableHead, TableHeader, TableRow } from "./mdx/Table";
+import { Tab, Tabs } from "./mdx/Tabs";
+import { Changelog, ChangelogEntry } from "./mdx/Changelog";
 import RouteHeader from "./RouteHeader";
 
 const COMPONENTS = {
@@ -48,6 +50,10 @@ const COMPONENTS = {
   Alert,
   RouteHeader,
   Collapsible,
+  Tabs,
+  Tab,
+  Changelog,
+  ChangelogEntry,
 
   // icons
   ...MDX_ICONS,

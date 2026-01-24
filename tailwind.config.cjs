@@ -61,6 +61,18 @@ module.exports = {
           "100%": { opacity: 1 },
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            "code::before": {
+              content: '""',
+            },
+            "code::after": {
+              content: '""',
+            },
+          },
+        },
+      },
     },
   },
   plugins: [
