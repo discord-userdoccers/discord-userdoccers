@@ -11,6 +11,12 @@ export default function Document() {
         ) : null}
 
         <link rel="preconnect" href={ALGOLIA_HOST} crossOrigin="anonymous" />
+        {/* HACK: Fix docsearch in amoled theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("theme")==="amoled"){document.documentElement.classList.add("amoled","dark")}}catch(e){}`,
+          }}
+        />
       </Head>
       <body className="bg-white dark:bg-background-dark">
         <Main />
