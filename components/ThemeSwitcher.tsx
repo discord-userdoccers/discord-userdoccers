@@ -7,6 +7,7 @@ import { GearIcon as Gear } from "./mdx/icons/GearIcon";
 import { LightbulbIcon as Lightbulb } from "./mdx/icons/LightbulbIcon";
 import { ThemeDarkIcon as Moon } from "./mdx/icons/ThemeDarkIcon";
 import { ThemeLightIcon as Sun } from "./mdx/icons/ThemeLightIcon";
+import { ThemeMidnightIcon as Midnight } from "./mdx/icons/ThemeMidnightIcon";
 
 export default function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
@@ -83,9 +84,9 @@ export default function ThemeSwitcher() {
                   {theme === "amoled" ? (
                     <Check className="mr-2 h-5 w-5" aria-hidden="true" />
                   ) : (
-                    <Moon className="mr-2 h-5 w-5" aria-hidden="true" />
+                    <Midnight className="mr-2 h-5 w-5" aria-hidden="true" />
                   )}
-                  AMOLED Theme
+                  Midnight Theme
                 </button>
               )}
             </Menu.Item>

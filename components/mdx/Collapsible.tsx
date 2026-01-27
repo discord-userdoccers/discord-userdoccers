@@ -68,14 +68,14 @@ export default function Collapsible({
         }}
       >
         <div className="flex flex-col gap-1">
-          <h3 className="flex items-center gap-1.5 text-xl">
+          <h3 className="flex items-center gap-1.5 text-xl text-text-light dark:text-text-dark">
             {icon && <div className="collapsible-icon">{icon}</div>}
             {title}
           </h3>
           <p className="text-base leading-6 text-text-light dark:text-text-dark">{description}</p>
         </div>
         <Chevron
-          className="mr-2 size-5 opacity-70 transition-transform duration-200 group-hover:opacity-100"
+          className="mr-2 size-5 opacity-70 transition-transform duration-200 *:text-text-light group-hover:opacity-100 dark:*:text-text-dark"
           style={{
             transform: isOpen ? "rotate(-180deg)" : "none",
           }}
