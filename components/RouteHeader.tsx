@@ -1,5 +1,5 @@
 import classNames from "@lib/classnames";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import IconBadge from "./IconBadge";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
@@ -9,6 +9,14 @@ import { LockUnlockedIcon } from "./mdx/icons/LockUnlockedIcon";
 import { TopicsIcon } from "./mdx/icons/TopicsIcon";
 import { KeyIcon } from "./mdx/icons/KeyIcon";
 import RouteTestDialog from "./RouteTestDialog";
+
+export function getRawText(node: React.ReactNode): string {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return node.toString();
+  if (Array.isArray(node)) return node.map(getRawText).join("");
+  if (React.isValidElement(node)) return getRawText((node.props as { children?: React.ReactNode }).children);
+  return "";
+}
 
 export type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -33,7 +41,7 @@ export function MethodBadge({ method }: MethodBadgeProps) {
   return <code className={classes}>{method}</code>;
 }
 
-interface RouteHeaderProps {
+export interface RouteHeaderProps {
   method: RESTMethod;
   url: string;
   children: React.ReactNode;
@@ -44,6 +52,8 @@ interface RouteHeaderProps {
   deprecated?: boolean;
   supportsBot?: boolean;
 }
+
+RouteHeader.displayName = "RouteHeader";
 
 export default function RouteHeader({
   method,
