@@ -43,12 +43,15 @@ A code that when used, adds a user to a guild or group DM channel, or creates a 
 | new_member? ^2^                 | boolean                                                                                       | Whether the user is a new member of the guild                                                                        |
 | show_verification_form? ^2^     | boolean                                                                                       | Whether the user should be shown the guild's [member verification](/resources/guild#member-verification-object) form |
 | is_nickname_changeable? ^3^     | boolean                                                                                       | Whether the @everyone role has the `CHANGE_NICKNAME` permission in the guild this invite is for                      |
+| target_users_job_status? ^4^    | [invite target users job](#invite-target-users-job-object) object                             | The status of the target users file processing job for the given invite                                              |
 
 ^1^ Only included when fetched from the [Get Invite](#get-invite) endpoint with `with_counts` set to `true`. Also included when fetched from the [Accept Invite](#accept-invite) endpoint on [non-previewable guilds](/resources/guild#guild-previewing).
 
 ^2^ Only included when fetched from the [Accept Invite](#accept-invite) endpoint. Note that `new_member` is erroneously set to `true` for non-guild invites and is missing when accepting an invite to a [non-previewable guild](/resources/guild#guild-previewing).
 
 ^3^ Only included when fetched from the [Get Invite](#get-invite) endpoint with `with_permissions` set to `true`.
+
+^4^ Only included when fetched from the [Get Guild Invites](#get-guild-invites) endpoint.
 
 ###### Invite Type
 
@@ -268,6 +271,30 @@ The guild an invite is for.
 | nsfw **(deprecated)**       | boolean       | Whether the guild is considered NSFW (`EXPLICIT` or `AGE_RESTRICTED`)                |
 | nsfw_level                  | integer       | The guild's [NSFW level](/resources/guild#nsfw-level)                                |
 
+### Invite Target Users Job Object
+
+The status of the target users file processing job for an invite.
+
+###### Invite Target Users Job Structure
+
+| Field           | Type               | Description                                                                          |
+| --------------- | ------------------ | ------------------------------------------------------------------------------------ |
+| status          | integer            | The [status](#invite-target-users-job-status) of the job processing the target users |
+| total_users     | integer            | The total number of user IDs in the target users file                                |
+| processed_users | integer            | The number of user IDs processed so far                                              |
+| created_at      | ?ISO8601 timestamp | When the job was created                                                             |
+| completed_at    | ?ISO8601 timestamp | When the job was completed                                                           |
+| error_message   | ?string            | An error message, if the job failed                                                  |
+
+###### Invite Target Users Job Status
+
+| Value | Name        | Description                          |
+| ----- | ----------- | ------------------------------------ |
+| 0     | UNSPECIFIED | Job status is unspecified            |
+| 1     | PROCESSING  | Job is currently being processed     |
+| 2     | COMPLETED   | Job has been completed               |
+| 3     | FAILED      | Job has failed (see `error_message`) |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/invites/{invite.code}" unauthenticated>
@@ -306,7 +333,7 @@ Returns the user IDs of friends in the target guild. Always returns an empty arr
   Get Invite Target Users
 </RouteHeader>
 
-Returns the IDs of the users allowed to see and accept the given invite. Invite must have a target users file associated with it. Requires the `MANAGE_GUILD` permission if the requestor is not the inviter. Returns the CSV file contents as uploaded.
+Returns the IDs of the users allowed to see and accept the given invite. Invite must have a target users file associated with it. Requires the `MANAGE_GUILD` or `VIEW_AUDIT_LOG` permission if the requestor is not the inviter. Returns the CSV file contents as uploaded.
 
 <RouteHeader method="PUT" url="/invites/{invite.code}/target-users" supportsBot>
   Update Invite Target Users
@@ -326,27 +353,7 @@ Replaces the target users file associated with the given invite. Processing is d
   Get Invite Target Users Job Status
 </RouteHeader>
 
-Returns the status of the target users file processing job for the given invite. Invite must have a target users file associated with it. Requires the `MANAGE_GUILD` permission if the requestor is not the inviter.
-
-###### Response Body
-
-| Field           | Type               | Description                                                                          |
-| --------------- | ------------------ | ------------------------------------------------------------------------------------ |
-| status          | integer            | The [status](#invite-target-users-job-status) of the job processing the target users |
-| total_users     | integer            | The total number of user IDs in the target users file                                |
-| processed_users | integer            | The number of user IDs processed so far                                              |
-| created_at      | ?ISO8601 timestamp | When the job was created                                                             |
-| completed_at    | ?ISO8601 timestamp | When the job was completed                                                           |
-| error_message   | ?string            | An error message, if the job failed                                                  |
-
-###### Invite Target Users Job Status
-
-| Value | Name        | Description                          |
-| ----- | ----------- | ------------------------------------ |
-| 0     | UNSPECIFIED | Job status is unspecified            |
-| 1     | PROCESSING  | Job is currently being processed     |
-| 2     | COMPLETED   | Job has been completed               |
-| 3     | FAILED      | Job has failed (see `error_message`) |
+Returns an [invite target users job](#invite-target-users-job-object) object for the given invite. Invite must have a target users file associated with it. Requires the `MANAGE_GUILD` or `VIEW_AUDIT_LOG` permission if the requestor is not the inviter.
 
 <RouteHeader method="POST" url="/invites/{invite.code}" supportsOAuth2="guilds.join">
   Accept Invite
