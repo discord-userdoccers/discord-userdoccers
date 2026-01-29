@@ -1334,20 +1334,26 @@ The [onboarding](https://support.discord.com/hc/en-us/articles/11074987197975-Co
 
 <Alert type="info">
 
-Onboarding enforces constraints when enabled. These constraints are that there must be at least 7 default channels and at least 5 of them must allow sending messages to the default (@everyone) role. The `mode` field modifies what is considered when enforcing these constraints.
+Onboarding enforces constraints when enabled. These constraints are that at least one default channel must allow sending messages to the default (@everyone) role. The `mode` field modifies what is considered when enforcing these constraints.
 
 </Alert>
 
 ###### Onboarding Structure
 
-| Field               | Type                                                            | Description                                                        |
-| ------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ |
-| guild_id            | snowflake                                                       | The ID of the guild this onboarding is part of                     |
-| prompts             | array[[onboarding prompt](#onboarding-prompt-structure) object] | The prompts shown during onboarding and in community customization |
-| default_channel_ids | array[snowflake]                                                | The channel IDs that members get opted into automatically          |
-| enabled             | boolean                                                         | Whether onboarding is enabled in the guild                         |
-| below_requirements  | boolean                                                         | Whether the guild is below the requirements for onboarding         |
-| mode                | integer                                                         | The current [criteria mode](#onboarding-mode) for onboarding       |
+| Field                          | Type                                                                    | Description                                                                                                        |
+| ------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| guild_id                       | snowflake                                                               | The ID of the guild this onboarding is part of                                                                     |
+| prompts                        | array[[onboarding prompt](#onboarding-prompt-structure) object]         | The prompts shown during onboarding and in community customization                                                 |
+| default_channel_ids            | array[snowflake]                                                        | The channel IDs that members get opted into automatically                                                          |
+| enabled                        | boolean                                                                 | Whether onboarding is enabled in the guild                                                                         |
+| below_requirements             | boolean                                                                 | Whether the guild is below the requirements for onboarding                                                         |
+| mode                           | integer                                                                 | The current [criteria mode](#onboarding-mode) for onboarding                                                       |
+| connections?                   | array[[onboarding connection](#onboarding-connection-structure) object] | Connection recommendations shown during onboarding                                                                 |
+| responses? ^1^                 | array[snowflake]                                                        | The onboarding prompt option IDs the current user has chosen                                                       |
+| onboarding_prompts_seen? ^1^   | map[snowflake, integer]                                                 | A mapping of prompt IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt               |
+| onboarding_responses_seen? ^1^ | map[snowflake, integer]                                                 | A mapping of prompt option IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt option |
+
+^1^ Only included when fetched from the [Get Guild Onboarding](#get-guild-onboarding) endpoint.
 
 ###### Onboarding Mode
 
@@ -1387,6 +1393,26 @@ Defines the criteria used to satisfy onboarding constraints that are required fo
 | ----- | --------------- | --------------------------------------------- |
 | 0     | MULTIPLE_CHOICE | Prompt offers multiple options to select from |
 | 1     | DROPDOWN        | Prompt offers a dropdown menu to select from  |
+
+###### Onboarding Connection Structure
+
+| Field              | Type       | Description                                                              |
+| ------------------ | ---------- | ------------------------------------------------------------------------ |
+| connection_type    | integer    | The [type of onboarding connection](#onboarding-connection-type)         |
+| application_id ^1^ | ?snowflake | The ID of the application                                                |
+| provider_id ^2^    | ?string    | The [connection provider](/resources/connected-accounts#connection-type) |
+| description        | string     | The connection description                                               |
+
+^1^ Only applicable if `connection_type` is `APPLICATION`.
+
+^2^ Only applicable if `connection_type` is `PROVIDER_CONNECTED_ACCOUNT`.
+
+###### Onboarding Connection Type
+
+| Value | Name                       | Description                            |
+| ----- | -------------------------- | -------------------------------------- |
+| 0     | APPLICATION                | Application role connection suggestion |
+| 1     | PROVIDER_CONNECTED_ACCOUNT | Connected account suggestion           |
 
 ###### Example Onboarding
 
@@ -1443,6 +1469,19 @@ Defines the criteria used to satisfy onboarding constraints that are required fo
   "below_requirements": false
 }
 ```
+
+### Onboarding Responses Object
+
+###### Onboarding Responses Structure
+
+| Field                     | Type                    | Description                                                                                                        |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| guild_id                  | snowflake               | The ID of the guild the onboarding responses are for                                                               |
+| user_id                   | snowflake               | The ID of the user that did onboarding                                                                             |
+| onboarding_responses      | array[snowflake]        | The onboarding prompt option IDs the current user has chosen                                                       |
+| onboarding_prompts_seen   | map[snowflake, integer] | A mapping of prompt IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt               |
+| onboarding_responses_seen | map[snowflake, integer] | A mapping of prompt option IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt option |
+
 
 ### New Member Welcome Object
 
@@ -2875,7 +2914,7 @@ Modifies the onboarding configuration of the guild. Returns the updated [onboard
 
 <Alert type="info">
 
-Onboarding enforces constraints when enabled. These constraints are that there must be at least 7 default channels and at least 5 of them must allow sending messages to the default (@everyone) role. The `mode` field modifies what is considered when enforcing these constraints.
+Onboarding enforces constraints when enabled. These constraints are that at least one default channel must allow sending messages to the default (@everyone) role. The `mode` field modifies what is considered when enforcing these constraints.
 
 </Alert>
 
@@ -2887,6 +2926,47 @@ Onboarding enforces constraints when enabled. These constraints are that there m
 | default_channel_ids? | array[snowflake]                                                | The channel IDs that members get opted into automatically          |
 | enabled?             | boolean                                                         | Whether onboarding is enabled in the guild                         |
 | mode?                | integer                                                         | The current [criteria mode](#onboarding-mode) for onboarding       |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/onboarding/allowed-applications">
+  Get Guild Onboarding Allowed Applications
+</RouteHeader>
+
+Returns the applications that are allowed to be used as onboarding connections.
+
+###### Response Body
+
+| Field           | Type             | Description                 |
+| --------------- | ---------------- | --------------------------- |
+| application_ids | array[snowflake] | The allowed application IDs |
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/onboarding-responses">
+  Create Guild Onboarding Responses
+</RouteHeader>
+
+Creates the initial onboarding response for the current user in the guild. If responses are not empty, returns an [onboarding responses](#onboarding-responses-object) object on success. Otherwise, returns a 204 empty response. May fire a [Guild Member Update](/topics/gateway-events#guild-member-update) Gateway event.
+
+###### JSON Params
+
+| Field                      | Type                    | Description                                                                                                        |
+| -------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| onboarding_responses?      | array[snowflake]        | The onboarding prompt option IDs the current user chose (max 750)                                                  |
+| onboarding_prompts_seen?   | map[snowflake, integer] | A mapping of prompt IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt               |
+| onboarding_responses_seen? | map[snowflake, integer] | A mapping of prompt option IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt option |
+
+
+<RouteHeader method="PUT" url="/guilds/{guild.id}/onboarding-responses">
+  Update Guild Onboarding Responses
+</RouteHeader>
+
+Updates the onboarding response for the current user in the guild. If responses are not empty, returns an [onboarding responses](#onboarding-responses-object) object on success. Otherwise, returns a 204 empty response. May fire a [Guild Member Update](/topics/gateway-events#guild-member-update) Gateway event.
+
+###### JSON Params
+
+| Field                      | Type                    | Description                                                                                                        |
+| -------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| onboarding_responses?      | array[snowflake]        | The onboarding prompt option IDs the current user chose (max 750)                                                  |
+| onboarding_prompts_seen?   | map[snowflake, integer] | A mapping of prompt IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt               |
+| onboarding_responses_seen? | map[snowflake, integer] | A mapping of prompt option IDs to Unix timestamps (in milliseconds) of when the current user saw the prompt option |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/new-member-welcome" supportsBot>
   Get Guild New Member Welcome
