@@ -1,11 +1,15 @@
 ---
-sublinks: [fingerprints, rollouts, user-experiments, guild-experiments, endpoints]
+sublinks: [fingerprints, installations, rollouts, user-experiments, guild-experiments, apex-experiments, endpoints]
 ---
 
 # Experiments
 
 Experiments are a form of A/B testing used by Discord in the client- and server-side of their applications to serve
 different experiences or behaviours to different users randomly and/or based on location, client version, etc.
+
+Currently, Discord uses two different systems for experiments: the legacy system, which encapsulates user and guild experiments,
+and the new Apex system, which is more flexible but provides clients with less data. Both systems are still in use,
+but most new experiments are created in the Apex system, so the legacy system will eventually be deprecated.
 
 At their core, rollouts are simply YAML inputted into the Discord admin panel; however, not all of the data
 is required by clients. Therefore, the actual experiments clients see are minified and complex to decipher.
@@ -27,12 +31,24 @@ When registering a new account, the fingerprint is passed, and (if valid) is use
 to preserve experiments across to the registered user. Therefore, a user account's creation time theoretically represents the first
 time they visited Discord's marketing website.
 
+## Installations
+
+The new Apex experiment system introduces the concept of installations, which are a unique identifier for a specific installation of a Discord client.
+This allows experiments to be targeted not just by user or guild, but by specific app installations, enabling more granular testing and rollouts.
+
+Installations use an ID system very similar to fingerprints. The biggest difference is that they persist even after authentication. If a client already has
+an installation ID, it should be sent in the `X-Installation-ID` header in all requests to the API, and provided in the `installation_id` field when
+[identifying](/topics/gateway#identifying) with the Gateway. If an installation ID is invalid or not provided, a new one will be provided in the `installation` field of
+the response body of the [Get Apex Experiment Assignments](#get-apex-experiment-assignments) endpoint, or the `apex_experiments` field in the [Ready event](/topics/gateway-events#ready).
+
 ## Rollouts
 
-Experiment rollouts are defined in _populations_ based on the user or guild's [rollout position](#rollout-positions)
+Legacy experiment rollouts are defined in _populations_ based on the user or guild's [rollout position](#rollout-positions)
 and can have _filters_ to narrow each population's availability.
 
 ###### Example Rollout
+
+Note that this example is editorial and does not exactly represent how experiments are represented internally.
 
 ```md
 2023-02_stage_boosting (1816004721)
@@ -69,8 +85,8 @@ Position Ranges
 
 ### Treatments
 
-`Control` and `None` are represented in the API as the integer values `0` and `-1`, respectively. Just as a warning, there are some instances of experiments having specific unnecessary treatments
-labelled as `Control` indexed as `1`.
+`Control` and `None` are represented in rollouts as the integer values `0` and `-1`, respectively. Note that there are some instances of experiments having specific unnecessary treatments
+labelled as `Control` with different treatment values.
 
 ### Rollout Positions
 
@@ -309,7 +325,8 @@ This object is represented as an array of the following fields:
 
 This object defines the filters required to be eligible for the ranges. All provided filters must be satisfied for the resource to be eligible for the given bucket.
 
-The filters are an object represented as an array of arrays. The first item in the nested array is a 32-bit unsigned Murmur3 hashed representation of the key, and the second item is the value, with the value being another array-represented object. All structures below are represented in this way.
+The filters are an object represented as an array of arrays. The first item in the nested array is a 32-bit unsigned Murmur3 hashed representation of the key,
+and the second item is the value, with the value being another array-represented object. All structures below are represented in this way.
 
 <Alert type="info">
 
@@ -429,26 +446,73 @@ An override represents a manual setting by Discord employees to grant a guild ea
 }
 ```
 
-### Apex Experiments Object
+## Apex Experiments
+
+Apex experiments are a new type of experiment that is far more flexible and allows for more complex targeting and assignment logic.
+While they are far more powerful, they also provide a lot less data to clients and allow for more opaque experimentation, preventing feature disclosure.
+
+Notably, Apex experiments use the concept of variants instead of buckets, and are assigned to specific units
+(i.e. users, guilds, etc.) instead of being calculated on the client side based on filters and rollout positions.
+
+### Eligibility
+
+Apex experiments use flags to determine evaluation precedence, especially for `GUILD` unit type experiments which
+evaluate both a guild-level and user-level assignment. Clients should determine final variant using the following priority:
+
+1. **User Override:** If a user assignment is present and has the `IS_OVERRIDE` flag, it should be used as the assigned variant for all guilds
+2. **Guild Override:** If a guild assignment is present and has the `IS_OVERRIDE` flag, it should be used as the assigned variant for the guild
+3. **Eligibility Gate:** If a guild assignment is present, if and only if a user assignment is present with the `USE_AS_ELIGIBILITY` flag, should the guild assignment be used as the assigned variant for the guild
+
+If none of the above are satisfied, the guild does not have an assigned variant for the experiment.
+Additionally, if the _final_ evaluated assignment ever possesses the `USE_AS_ELIGIBILITY` flag,
+it should be discarded and the resource should be considered ineligible for the experiment,
+as this flag is only meant to be used as an eligibility gate and should not be used as an actual assignment.
 
 ###### Apex Experiments Structure
 
-| Field       | Type                                                                                                       | Description                                                                                      |
-| ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| assignments | map[integer, map[snowflake, [apex experiment assignments](#apex-experiment-assignments-structure) object]] | A mapping of [unit type](#apex-experiment-unit-type) to mapping of unit IDs to their assignments |
+| Field             | Type                                                                                                       | Description                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| assignments       | map[integer, map[snowflake, [apex experiment assignments](#apex-experiment-assignments-structure) object]] | A mapping of [unit type](#apex-experiment-unit-type) to unit IDs to their assignments |
+| installation? ^1^ | string                                                                                                     | A generated fingerprint of the current date and time                                  |
 
-###### Apex Experiment Assignments Structure
-
-| Field         | Type                                                     | Description                                  |
-| ------------- | -------------------------------------------------------- | -------------------------------------------- |
-| evaluation_id | ?string                                                  | The ID of the evaluation                     |
-| assignments   | array[[apex experiment](#apex-experiment-object) object] | The assignments for the apex experiment unit |
+^1^ This field is omitted if a valid installation ID is provided in request headers or when identifying with the Gateway. See the [installations](#installations) section for more information.
 
 ###### Apex Experiment Unit Type
 
-| Value | Name | Description               |
-| ----- | ---- | ------------------------- |
-| 1     | USER | Experiment is for an user |
+| Value | Name         | Description                          |
+| ----- | ------------ | ------------------------------------ |
+| 1     | USER         | Experiment is for a user             |
+| 2     | INSTALLATION | Experiment is for an installation    |
+| 3     | GUILD        | Experiment is for a guild            |
+| 4     | CUSTOM       | Experiment is for a custom unit type |
+
+###### Apex Experiment Assignments Structure
+
+| Field         | Type                                                                              | Description                                  |
+| ------------- | --------------------------------------------------------------------------------- | -------------------------------------------- |
+| evaluation_id | string                                                                            | The ID of the evaluation                     |
+| assignments   | array[[apex experiment assignment](#apex-experiment-assignment-structure) object] | The assignments for the apex experiment unit |
+
+###### Apex Experiment Assignment Structure
+
+This object is represented as an array of the following fields:
+
+| Field               | Type     | Description                                              |
+| ------------------- | -------- | -------------------------------------------------------- |
+| hashed_name         | integer  | 32-bit unsigned Murmur3 hash of the experiment's name    |
+| variant_id          | integer  | The assigned experiment variant for the target           |
+| flags               | ?integer | The [experiment's flags](#apex-experiment-flags)         |
+| revision            | integer  | Current version of the rollout                           |
+| tracked_variant_id? | integer  | The variant that is currently being tracked in analytics |
+
+###### Apex Experiment Flags
+
+| Value  | Name                      | Description                                                             |
+| ------ | ------------------------- | ----------------------------------------------------------------------- |
+| 1 << 0 | IS_OVERRIDE               | Experiment assignment is an override                                    |
+| 1 << 1 | EXPOSURE_TRACKING_ENABLED | Experiment has exposure tracking enabled                                |
+| 1 << 2 | DEPENDENT_EXPERIMENT      | Experiment is dependent on another experiment                           |
+| 1 << 3 | USE_AS_ELIGIBILITY        | Experiment assignment acts as an eligibility gate for guild experiments |
 
 ###### Example Apex Experiments
 
@@ -482,39 +546,13 @@ An override represents a manual setting by Discord employees to grant a guild ea
 }
 ```
 
-### Apex Experiment Object
-
-Similarly to [user experiments](#user-experiments), this object is represented as an array of the following fields:
-
-| Field       | Type     | Description                                           |
-| ----------- | -------- | ----------------------------------------------------- |
-| hashed_name | integer  | 32-bit unsigned Murmur3 hash of the experiment's name |
-| variant_id  | integer  | The ID of the assigned experiment variant for target  |
-| flags       | ?integer | The [experiment's flags](#apex-experiment-flags)      |
-| revision    | integer  | Current version of the rollout                        |
-
-###### Apex Experiment Flags
-
-| Value  | Name        | Description               |
-| ------ | ----------- | ------------------------- |
-| 1 << 0 | IS_OVERRIDE | Experiment is an override |
-
-###### Apex Experiment Surface
-
-| Value | Name             | Description                                                       |
-| ----- | ---------------- | ----------------------------------------------------------------- |
-| 1     | API              | Return apex experiments that alter API functionality              |
-| 2     | APP              | Return apex experiments that alter client functionality           |
-| 3     | DEVELOPER_PORTAL | Return apex experiments that alter developer portal functionality |
-| 4     | ADMIN_PANEL      | Return apex experiments that alter admin panel functionality      |
-
 ## Endpoints
 
-<RouteHeader method="GET" url="/experiments" supportsBot>
+<RouteHeader method="GET" url="/experiments" unauthenticated>
   Get Experiment Assignments
 </RouteHeader>
 
-Returns the [user experiment assignments](#user-experiments) and optionally [guild experiment rollouts](#guild-experiments) for the user or fingerprint.
+Returns the [user experiment assignments](#user-experiments) and optionally [guild experiment rollouts](#guild-experiments) for the requesting user or fingerprint.
 
 <Alert type="info">
 
@@ -551,7 +589,7 @@ A fingerprint will only be generated and returned if no authorization or fingerp
 | assignments        | array[[experiment assignment](#user-experiments) object] | The experiment assignments for this user or fingerprint               |
 | guild_experiments? | array[[guild experiment](#guild-experiments) object]     | Guild experiment rollouts for the client to assign                    |
 
-<RouteHeader method="POST" url="/auth/fingerprint" deprecated>
+<RouteHeader method="POST" url="/auth/fingerprint" unauthenticated deprecated>
   Create Fingerprint
 </RouteHeader>
 
@@ -569,17 +607,27 @@ Fingerprint generation has a rate limit of 3 valid fingerprints per 2 minutes pe
 | ----------- | ------ | ------------------------------------------------------ |
 | fingerprint | string | The generated fingerprint of the current date and time |
 
-<RouteHeader method="GET" url="/apex/experiments" supportsBot>
+<RouteHeader method="GET" url="/apex/experiments" unauthenticated>
   Get Apex Experiment Assignments
 </RouteHeader>
 
-Returns an [apex experiments](#apex-experiments-object) object for the given surface.
+Returns an [apex experiments](#apex-experiments) object for the requesting user and installation.
 
 ###### Query String Parameters
 
-| Field   | Type    | Description                                                                                                 |
-| ------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| surface | integer | The [surface](#apex-experiment-surface) to return apex experiments for (only `DEVELOPER_PORTAL` is allowed) |
+| Field   | Type    | Description                                                                                                           |
+| ------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| surface | integer | The [surface](#apex-experiment-surface) to return apex experiments for (only `APP` and `DEVELOPER_PORTAL` is allowed) |
+
+###### Apex Experiment Surface
+
+| Value | Name             | Description                                                       |
+| ----- | ---------------- | ----------------------------------------------------------------- |
+| 1     | API              | Return apex experiments that alter API functionality              |
+| 2     | APP              | Return apex experiments that alter client functionality           |
+| 3     | DEVELOPER_PORTAL | Return apex experiments that alter developer portal functionality |
+| 4     | ADMIN_PANEL      | Return apex experiments that alter admin panel functionality      |
+| 5     | ADS_BUDGET_AB    | Return apex experiments that alter ads manager functionality      |
 
 <RouteHeader method="GET" url="/apex/experiments/metadata" supportsBot>
   Get Metadata for Apex Experiments
@@ -626,8 +674,9 @@ This endpoint is only usable by Discord employees.
 
 ###### Apex Experiment Variant Type
 
-| Value | Name   | Description                              |
-| ----- | ------ | ---------------------------------------- |
-| 1     | ACTIVE | The variant is active                    |
-| 2     | UNUSED | The variant is currently unused          |
-| 3     | BURNED | The variant failed and is being reverted |
+| Value | Name      | Description                              |
+| ----- | --------- | ---------------------------------------- |
+| 1     | ACTIVE    | The variant is active                    |
+| 2     | UNUSED    | The variant is currently unused          |
+| 3     | BURNED    | The variant failed and is being reverted |
+| 4     | PRESERVED | The variant is preserved                 |
