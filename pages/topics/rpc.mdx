@@ -271,6 +271,55 @@ A user's active avatar decoration.
 }
 ```
 
+### RPC Internal User Object
+
+###### RPC Internal User Structure
+
+| Field                   | Type                                                                            | Description                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| id                      | snowflake                                                                       | The ID of the user                                                                                              |
+| username ^1^            | string                                                                          | The user's username, may be unique across the platform (2-32 characters)                                        |
+| discriminator ^1^       | string                                                                          | The user's stringified 4-digit Discord tag                                                                      |
+| globalName? ^1^         | ?string                                                                         | The user's display name (1-32 characters)                                                                       |
+| global_name? ^1^        | ?string                                                                         | The user's display name (1-32 characters)                                                                       |
+| avatar                  | ?string                                                                         | The user's [avatar hash](/reference#cdn-formatting)                                                             |
+| avatar_decoration_data? | ?[avatar decoration data](/resources/user#avatar-decoration-data-object) object | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
+| avatar_decorationData?  | ?[RPC avatar decoration data](#rpc-avatar-decoration-data-object) object        | The user's [avatar decoration](https://support.discord.com/hc/en-us/articles/13410113109911-Avatar-Decorations) |
+| displayNameStyles?      | ?[RPC display name style](#rpc-display-name-style-structure) object             | The user's display name style                                                                                   |
+| display_name_styles?    | ?[display name style](/resources/user#display-name-style-structure) object      | The user's display name style                                                                                   |
+| primaryGuild?           | ?[RPC primary guild](#rpc-primary-guild-structure) object                       | The primary guild of the user                                                                                   |
+| primary_guild?          | ?[primary guild](/resources/user#primary-guild-structure) object                | The primary guild of the user                                                                                   |
+| bot?                    | boolean                                                                         | Whether the user is a bot account                                                                               |
+| system?                 | boolean                                                                         | Whether the user is an official Discord System user (part of the urgent message system)                         |
+| publicFlags?            | integer                                                                         | The public [flags](/resources/user#user-flags) on a user's account                                              |
+| public_flags?           | integer                                                                         | The public [flags](/resources/user#user-flags) on a user's account                                              |
+| premiumType?            | integer                                                                         | The [type of premium (Nitro) subscription](/resources/user#premium-type) on a user's account                    |
+| premium_type?           | integer                                                                         | The [type of premium (Nitro) subscription](/resources/user#premium-type) on a user's account                    |
+| flags                   | integer                                                                         | The [flags](/resources/user#user-flags) on a user's account                                                     |
+
+^1^ See the [section on Discord's new username system](/resources/user#unique-usernames) for more information.
+
+###### RPC Primary Guild Structure
+
+| Field               | Type       | Description                                           |
+| ------------------- | ---------- | ----------------------------------------------------- |
+| identityEnabled ^1^ | ?boolean   | Whether the user is displaying their guild tag        |
+| identityGuildId ^2^ | ?snowflake | The ID of the guild                                   |
+| tag ^1^             | ?string    | The user's guild tag (max 4 characters)               |
+| badge ^1^           | ?string    | The [guild tag badge hash](/reference#cdn-formatting) |
+
+^1^ This field is `null` when a user has not reaffirmed their identity after a tag change.
+
+^2^ Only populated for users with `identityEnabled` not set to `false`.
+
+###### RPC Display Name Style Structure
+
+| Field    | Type           | Description                                                                                    |
+| -------- | -------------- | ---------------------------------------------------------------------------------------------- |
+| fontId   | integer        | The [font](/resources/user#display-name-font) to use                                           |
+| effectId | integer        | The [effect](/resources/user#display-name-effect) to use                                       |
+| colors   | array[integer] | The colors to use encoded as an array of integers representing hexadecimal color codes (max 2) |
+
 ### Partial RPC Guild Object
 
 ###### Partial RPC Guild Structure
@@ -355,7 +404,7 @@ A user's active avatar decoration.
 | edited_timestamp | ?ISO8601 timestamp                                               | When this message was last edited                            |
 | timestamp        | ISO8601 timestamp                                                | When this message was sent                                   |
 | tts              | boolean                                                          | Whether this message will be read out by TTS                 |
-| mentions         | array[{/* todo: document this insane obj */} object]             | Users specifically mentioned in this message                 |
+| mentions         | array[[RPC internal user](#rpc-internal-user-object) object]     | Users specifically mentioned in this message                 |
 | mention_everyone | boolean                                                          | Whether this message mentions everyone                       |
 | mention_roles    | array[snowflake]                                                 | Roles specifically mentioned in this message                 |
 | embeds           | array[[RPC embed](#rpc-embed-structure) object]                  | Content embedded in the message                              |
@@ -716,8 +765,9 @@ Commands are the means in which an app can interface with the client.
 | [GET_PROVIDER_ACCESS_TOKEN](#get-provider-access-token) ^1^                                       | Used for the Amazon Music activity to authorize the connection and retrieve the access token                 |                                                                                     | `post_message`                     |
 | [MAYBE_GET_PROVIDER_ACCESS_TOKEN](#maybe-get-provider-access-token) ^1^                           | Used for the Amazon Music activity to attempt to get the access token from existing connection               |                                                                                     | `post_message`                     |
 | [NAVIGATE_TO_CONNECTIONS](#navigate-to-connections) ^1^                                           | Used for Amazon Music, opens the connections page in settings                                                |                                                                                     | `post_message`                     |
-| [INVITE_USER_EMBEDDED](#invite-user-embedded)                                                     | Invites a user to running embedded activity                                                                  | `relationships.read`                                                                |                                    |
+| [INVITE_USER_EMBEDDED](#invite-user-embedded)                                                     | Invites a user to the current embedded activity                                                              | `relationships.read`                                                                |                                    |
 | [INVITE_BROWSER](#invite-browser)                                                                 | Used to open an invite modal for a guild invite in the client                                                |                                                                                     | WebSocket                          |
+| [REQUEST_PROXY_TICKET_REFRESH](#request-proxy-ticket-refresh) ^1^                                 | Used to refresh proxy tickets                                                                                |                                                                                     |                                    |
 | [GET_QUEST_ENROLLMENT_STATUS](#get-quest-enrollment-status)                                       | Returns enrollment status for a quest                                                                        | `identify`                                                                          | `post_message`                     |
 | [QUEST_START_TIMER](#quest-start-timer)                                                           | Used to start timer for a quest                                                                              | `identify`                                                                          | `post_message`                     |
 
@@ -1108,11 +1158,13 @@ Used to accept an activity invite. Responds with null.
 
 #### Open Invite Dialog
 
-Used to present a modal to invite other users to the running embedded activity. Responds with null.
+Used to present a modal to invite other users to the current embedded activity. Responds with null.
 
 #### Open Share Moment Dialog
 
 Used to share an image from an embedded activity in recent DMs or channels. Responds with null.
+
+The application must have [`EMBEDDED`](/resources/application#application-flags) flag set.
 
 ###### Open Share Moment Dialog Arguments Structure
 
@@ -1180,6 +1232,8 @@ Used by embedded activities to open file dialog and retrieve user-provided image
 #### Share Link
 
 Used to open the share message modal, where a user can pick a channel to send a developer-defined message to.
+
+The application must have [`EMBEDDED`](/resources/application#application-flags) flag set.
 
 ###### Share Link Arguments Structure
 
@@ -1819,7 +1873,7 @@ This command is meant to be used by the Amazon Music integration only. Because o
 
 #### Invite User Embedded
 
-Used to invite a user to running embedded activity set via [`SET_ACTIVITY`](#set-activity) command.
+Used to invite a user to the current embedded activity set via [`SET_ACTIVITY`](#set-activity) command.
 
 ###### Invite User Embedded Arguments Structure
 
@@ -1844,6 +1898,18 @@ Used to open an invite modal for a guild invite in the client.
 | ------ | ------------------------------------------------ | --------------- |
 | invite | [invite](/resources/invite#invite-object) object | The invite      |
 | code   | string                                           | The invite code |
+
+#### Request Proxy Ticket Refresh
+
+Used to refresh proxy tickets for the current embedded activity.
+
+The application must have [`EMBEDDED`](/resources/application#application-flags) flag set.
+
+#### Request Proxy Ticket Response Structure
+
+| Field  | Type   | Description |
+| ------ | ------ | ----------- |
+| ticket | string | The ticket  |
 
 #### Get Quest Enrollment Status
 
