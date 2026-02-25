@@ -1,4 +1,5 @@
 ---
+title: Voice
 max-sublink-level: 2
 ---
 
@@ -20,7 +21,7 @@ User accounts can only be connected to one voice channel per session. However, b
 
 ## Voice Gateway
 
-To ensure that you have the most up-to-date information, please use [version 8](#gateway-versions). Otherwise, the events and commands documented here may not reflect what you receive over the socket. Video is only fully supported on Gateway v5 and above.
+To ensure that you have the most up-to-date information, please use [version 9](#gateway-versions). Otherwise, the events and commands documented here may not reflect what you receive over the socket. Video is only fully supported on Gateway v5 and above.
 
 ###### Gateway Versions
 
@@ -125,21 +126,22 @@ so some libraries may require manually prepending it with `wss://` before connec
 
 <Alert type="danger">
 
-All payloads sent to the voice WebSocket must be text frames. Binary frames are not supported.
+All JSON payloads sent to the Gateway must be text frames. Binary frames are not supported.
 
 </Alert>
 
 ###### Identify Structure
 
-| Field          | Type                                      | Description                                                               |
-| -------------- | ----------------------------------------- | ------------------------------------------------------------------------- |
-| server_id      | snowflake                                 | The ID of the guild, private channel, stream, or lobby being connected to |
-| channel_id ^1^ | snowflake                                 | The ID of the channel being connected to                                  |
-| user_id        | snowflake                                 | The ID of the current user                                                |
-| session_id     | string                                    | The session ID of the current session                                     |
-| token          | string                                    | The voice token for the current session                                   |
-| video?         | boolean                                   | Whether this connection supports video (default false)                    |
-| streams?       | array[[stream](#stream-structure) object] | [Simulcast](#simulcasting) streams to send                                |
+| Field                      | Type                                      | Description                                                               |
+| -------------------------- | ----------------------------------------- | ------------------------------------------------------------------------- |
+| server_id                  | snowflake                                 | The ID of the guild, private channel, stream, or lobby being connected to |
+| channel_id ^1^             | snowflake                                 | The ID of the channel being connected to                                  |
+| user_id                    | snowflake                                 | The ID of the current user                                                |
+| session_id                 | string                                    | The session ID of the current session                                     |
+| token                      | string                                    | The voice token for the current session                                   |
+| video?                     | boolean                                   | Whether this connection supports video (default false)                    |
+| streams?                   | array[[stream](#stream-structure) object] | [Simulcast](#simulcasting) streams to send                                |
+| max_dave_protocol_version? | integer                                   | The maximum DAVE protocol version supported by the client (default 0)     |
 
 ^1^ Only required for Gateway v9 and above.
 
@@ -197,23 +199,24 @@ All payloads sent to the voice WebSocket must be text frames. Binary frames are 
     "streams": [
       { "type": "video", "rid": "100", "quality": 100 },
       { "type": "video", "rid": "50", "quality": 50 }
-    ]
+    ],
+    "max_dave_protocol_version": 1
   }
 }
 ```
 
-The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of the SSRC, connection IP/port, supported encryption modes, and experiments the voice server supports:
+The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of the SSRC, connection IP/port, supported transport encryption modes, and experiments the voice server supports:
 
 ###### Ready Structure
 
-| Field       | Type                                      | Description                                          |
-| ----------- | ----------------------------------------- | ---------------------------------------------------- |
-| ssrc        | integer                                   | The SSRC of the user's voice connection              |
-| ip          | string                                    | The IP address of the voice server                   |
-| port        | integer                                   | The port of the voice server                         |
-| modes       | array[string]                             | Supported [voice encryption modes](#encryption-mode) |
-| experiments | array[string]                             | Available voice experiments                          |
-| streams     | array[[stream](#stream-structure) object] | Populated simulcast streams                          |
+| Field       | Type                                      | Description                                                        |
+| ----------- | ----------------------------------------- | ------------------------------------------------------------------ |
+| ssrc        | integer                                   | The SSRC of the user's voice connection                            |
+| ip          | string                                    | The IP address of the voice server                                 |
+| port        | integer                                   | The port of the voice server                                       |
+| modes       | array[string]                             | Supported [transport encryption modes](#transport-encryption-mode) |
+| experiments | array[string]                             | Available voice experiments                                        |
+| streams     | array[[stream](#stream-structure) object] | Populated simulcast streams                                        |
 
 ###### Example Ready
 
@@ -281,11 +284,11 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 
 ###### Protocol Data Structure
 
-| Field       | Type    | Description                                    |
-| ----------- | ------- | ---------------------------------------------- |
-| address ^1^ | string  | The discovered IP address of the client        |
-| port ^1^    | integer | The discovered UDP port of the client          |
-| mode        | string  | The [encryption mode](#encryption-mode) to use |
+| Field       | Type    | Description                                                        |
+| ----------- | ------- | ------------------------------------------------------------------ |
+| address ^1^ | string  | The discovered IP address of the client                            |
+| port ^1^    | integer | The discovered UDP port of the client                              |
+| mode        | string  | The [transport encryption mode](#transport-encryption-mode) to use |
 
 ^1^ These fields are only used to receive RTC data. If you only wish to send frames and do not care about receiving, you can randomize these values.
 
@@ -364,7 +367,7 @@ If no clients with specified video codecs are connected, the server defaults to 
 }
 ```
 
-###### Encryption Mode
+###### Transport Encryption Mode
 
 The RTP size variants determine the unencrypted size of the RTP header in [the same way as SRTP](https://tools.ietf.org/html/rfc3711#section-3.1), which considers CSRCs and (optionally) the extension preamble to be part of the unencrypted header.
 The deprecated variants use a fixed size unencrypted header for RTP.
@@ -386,15 +389,16 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
 
 ###### Session Description Structure
 
-| Field              | Type           | Description                                                              |
-| ------------------ | -------------- | ------------------------------------------------------------------------ |
-| audio_codec        | string         | The audio codec to use                                                   |
-| video_codec        | string         | The video codec to use                                                   |
-| media_session_id   | string         | The media session ID, used for analytics                                 |
-| mode?              | string         | The [encryption mode](#encryption-mode) to use, not applicable to WebRTC |
-| secret_key?        | array[integer] | The 32 byte secret key used for encryption, not applicable to WebRTC     |
-| sdp?               | string         | The WebRTC session description protocol                                  |
-| keyframe_interval? | integer        | The keyframe interval in milliseconds                                    |
+| Field                 | Type           | Description                                                                                  |
+| --------------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| audio_codec           | string         | The audio codec to use                                                                       |
+| video_codec           | string         | The video codec to use                                                                       |
+| media_session_id      | string         | The media session ID, used for analytics                                                     |
+| mode?                 | string         | The [transport encryption mode](#transport-encryption-mode) to use, not applicable to WebRTC |
+| secret_key?           | array[integer] | The 32 byte secret key used for encryption, not applicable to WebRTC                         |
+| sdp?                  | string         | The WebRTC session description protocol                                                      |
+| keyframe_interval?    | integer        | The keyframe interval in milliseconds                                                        |
+| dave_protocol_version | integer        | The DAVE protocol version to use, where 0 indicates no DAVE support                          |
 
 ###### Example Session Description
 
@@ -406,7 +410,8 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
     "media_session_id": "89f1d62f166b948746f7646713d39dbb",
     "mode": "aead_aes256_gcm_rtpsize",
     "secret_key": [ ... ],
-    "video_codec": "H264"
+    "video_codec": "H264",
+    "dave_protocol_version": 1
   }
 }
 ```
@@ -434,6 +439,225 @@ This may also be sent to update the current `media_session_id` or `keyframe_inte
 | video_codec?       | string  | The new video codec to use                   |
 | media_session_id?  | string  | The new media session ID, used for analytics |
 | keyframe_interval? | integer | The keyframe interval in milliseconds        |
+
+## End-to-End Encryption
+
+Since September 2024, Discord is migrating voice and video in private channels, voice channels, and streams to use end-to-end encryption (E2EE) through the DAVE protocol.
+When any DAVE protocol is enabled for a call, the full contents of media frames sent and received by call participants are end-to-end encrypted.
+
+<Alert type="warn">
+
+To support long-term privacy goals, Discord will **only support E2EE calls starting on March 1st, 2026** for all audio and video conversations in direct messages, group channels, voice channels, and streams.
+Clients that do not support the DAVE protocol by then will be disconnected from voice with [close code `4017`](/gateway/opcodes-and-close-codes#voice-close-event-codes).
+
+Stage channels will not be affected by this change and will continue to operate without E2EE.
+
+</Alert>
+
+This section is a high-level overview of how to support Discord's audio & video end-to-end encryption (DAVE) protocol, centered around the Gateway opcodes necessary for the protocol.
+The most thorough documentation on the DAVE protocol is found in the [protocol whitepaper](https://daveprotocol.com). You may additionally be able to leverage or refer to Discord's open-source library [libdave](https://github.com/discord/libdave) to assist your implementation.
+The exact format of the DAVE protocol opcodes is detailed in the [opcodes section of the protocol whitepaper](https://daveprotocol.com/#voice-gateway-opcodes).
+
+When a call is E2EE, all members of the call exchange keys via a [Messaging Layer Security](https://www.rfc-editor.org/rfc/rfc9420.html) (MLS) group. This group is used to derive per-sender ratcheted media keys (known only to the participants of the group) to encrypt/decrypt media frames sent in the call.
+
+### Binary Websocket Messages
+
+To reduce overhead, some of the new DAVE protocol opcodes are sent as binary instead of JSON text. See the format column in [voice opcodes](/gateway/opcodes-and-close-codes#voice) to identify them. Binary websocket messages have the following format:
+
+| Field        | Type                          | Description                   | Size           |
+| ------------ | ----------------------------- | ----------------------------- | -------------- |
+| Sequence ^1^ | Unsigned short (big endian)   | Sequence number               | 2 bytes        |
+| Opcode       | Unsigned integer (big endian) | Unsigned integer opcode value | 1 bytes        |
+| Payload      | Binary data                   | Format defined by opcode      | Variable bytes |
+
+^1^ Sequence numbers are only sent from the server to the client, and all server-sent binary opcodes require the sequence number. See [Buffered Resume](#buffered-resume) for further details on how sequence numbers are used when present.
+
+### Indicating DAVE Protocol Support
+
+Include the highest DAVE protocol version you support in [Opcode 0 Identify](#identify-structure) as `max_dave_protocol_version`. Sending version 0, or omitting the `max_dave_protocol_version` field, indicates no DAVE protocol support.
+
+The voice Gateway specifies the initial protocol version in [Opcode 4 Session Description](#session-description-structure) under `dave_protocol_version`. This may be any non-discontinued protocol version equal to or less than your supported protocol version.
+
+<Alert type="warn">
+
+Clients must retain backwards-compatibility of any non-discontinued DAVE protocol versions. The Gateway selects
+the lowest shared protocol version for the call.
+
+</Alert>
+
+### Protocol Transitions
+
+The voice server negotiates protocol version and MLS group transitions to ensure the continuity of media being sent for the call. This can occur when the call is upgrading/downgrading to/from E2EE (in the initial transition phase), changing protocol versions, or when the MLS group is changing.
+
+Some opcodes include a transition ID. After preparing local state necessary to perform the transition, send [Opcode 23 DAVE Protocol Transition Ready](/gateway/opcodes-and-close-codes#voice) to indicate to the Gateway that you are ready to execute the transition.
+When all participants are ready or when a timeout has been reached, the Gateway dispatches [Opcode 22 DAVE Protocol Execute Transition](/gateway/opcodes-and-close-codes#voice) to confirm execution of the transition.
+The transition execution is what indicates to media senders that they can begin sending media with the new protocol context (e.g. without E2EE after a downgrade, with a new protocol version after a protocol version change, or using a new key ratchet after a group participant change).
+
+#### Downgrade
+
+Downgrades to protocol version 0 are announced via [Opcode 21 DAVE Protocol Prepare Transition](/gateway/opcodes-and-close-codes#voice). This can occur during the transition phase when a client that does not support the protocol joins the call.
+When this transition is executed, senders should stop sending media using the protocol format.
+
+#### Version Change & Upgrade
+
+Protocol version transitions (including upgrades from protocol version 0) are announced via [Opcode 24 DAVE Protocol Prepare Epoch](/gateway/opcodes-and-close-codes#voice). In addition to the `transition_id`, this opcode includes the `epoch` for the upcoming MLS epoch.
+
+Receiving [Opcode 24 DAVE Protocol Prepare Epoch](/gateway/opcodes-and-close-codes#voice) with `epoch = 1` indicates that a new MLS group is being created. Participants must:
+
+- Prepare a local MLS group with the parameters appropriate for the DAVE protocol version
+- Generate and send [Opcode 26 MLS Key Package](/gateway/opcodes-and-close-codes#voice) to deliver a new MLS key package to the Gateway
+
+When the `epoch` is greater than 1, the protocol version of the existing MLS group is changing.
+
+When the transition is executed, senders must start sending media using the new protocol context (e.g. formatted for the new protocol version or using a new key ratchet).
+
+#### MLS Group Changes
+
+When the participants of the MLS group must change, existing participants receive an [Opcode 29 MLS Announce Commit Transition](/gateway/opcodes-and-close-codes#voice),
+whereas new members being added to the group receive [Opcode 30 MLS Welcome](/gateway/opcodes-and-close-codes#voice). Both opcodes include the transition ID and binary MLS Commit or MLS Welcome message.
+
+To prepare for the protocol transition, existing group members must apply the commit to progress their local MLS group to the correct next state. [Opcode 23 DAVE Protocol Transition Ready](/gateway/opcodes-and-close-codes#voice) is sent when the MLS commit has been processed.
+
+Welcomed members send [Opcode 23 DAVE Protocol Transition Ready](/gateway/opcodes-and-close-codes#voice) after successfully joining the group received in the MLS Welcome message.
+
+### External Sender
+
+The voice server must be an external sender of the MLS group, so that it can send external MLS proposals to add and remove call participants when appropriate (i.e. proposing the addition of new members when they connect and the removal of previous members when they disconnect).
+
+DAVE protocol participants only process proposals which arrive from the external sender, and not from any other group members. The external sender only sends Add or Remove proposals.
+
+The Gateway uses [Opcode 25 MLS External Sender Package](/gateway/opcodes-and-close-codes#voice) to provide the external sender public key and credential to MLS group participants.
+This message may be sent immediately on Gateway connect or at a later time when the call is upgrading to use the DAVE protocol.
+
+Group creators must include the external sender they receive from the Gateway in their MLS group extensions when creating the group. Welcomed group members ensure that the expected external sender extension is present in the group they are about to join.
+
+### Joining the MLS Group
+
+Except for the initial creation of the first group for the call, joining the MLS group always occurs after receiving [Opcode 30 MLS Welcome](/gateway/opcodes-and-close-codes#voice).
+
+#### Key Packages
+
+To be proposed to be added to the MLS group, pending members must send an MLS key package via [Opcode 26 MLS Key Package](/gateway/opcodes-and-close-codes#voice).
+Key packages are only used one time, and a new key package must be generated each time pending member is waiting to be added or re-added to the group.
+
+##### Identity Public Key
+
+MLS participants use an asymmetric keypair for MLS message signatures and authentication. The public key of this keypair is included in the key package and MLS tree.
+It is known to other participants in the call and is leveraged for out-of-band identity verification.
+
+You can choose to generate a new ephemeral keypair for every protocol call or use the same persistent keypair at all times.
+Keys can be uploaded and verified using [Upload Voice Public Key](/resources/voice#upload-voice-public-key) and [Verify Voice Public Key](/resources/voice#verify-voice-public-key) respectively.
+
+#### Initial Group
+
+When there is not yet an MLS group (e.g. a transport-only encrypted call is upgrading or two members have just joined a new call), all pending group members create a local group using the MLS parameters defined by the DAVE protocol version and
+including the voice server external sender received via [Opcode 25 MLS External Sender Package](/gateway/opcodes-and-close-codes#voice). Every pending member of the group has the chance to produce the initial commit that creates the MLS group with `epoch = 1`.
+
+Pending group members receive add proposals for every other pending group member from the Gateway. If an additional pending member joins while there is not yet an MLS group, they receive all in-flight proposal messages.
+
+Proposal and commit handling follows the same process whether or not there is an established group. See [Proposals and Commits](#proposals-and-commits).
+
+#### Welcome
+
+Pending group members receive a welcome message from another group member which adds them to the MLS group. This is dispatched from the Gateway via [Opcode 30 MLS Welcome](/gateway/opcodes-and-close-codes#voice).
+
+#### Invalid Group
+
+If the group received in an [Opcode 30 MLS Welcome](/gateway/opcodes-and-close-codes#voice) or [Opcode 29 MLS Announce Commit Transition](/gateway/opcodes-and-close-codes#voice) is unprocessable,
+the member receiving the unprocessable message sends [Opcode 31 MLS Invalid Commit Welcome](/gateway/opcodes-and-close-codes#voice) to the Gateway.
+Additionally, the local group state is reset and a new key package is generated and sent to the Gateway via [Opcode 26 MLS Key Package](/gateway/opcodes-and-close-codes#voice).
+
+This causes the Gateway to propose the removal and re-addition of the requesting member.
+
+### Proposals and Commits
+
+The Gateway dispatches proposals which must be appended or revoked via [Opcode 27 MLS Proposals](/gateway/opcodes-and-close-codes#voice). All members of the established or pending MLS group must append or revoke the proposals they receive,
+and then produce an MLS commit message and optionally an MLS welcome message (when committing add proposals which add new members) which they send to the Gateway via [Opcode 28 MLS Commit Welcome](/gateway/opcodes-and-close-codes#voice).
+
+In each epoch, the Gateway dispatches the "winning" commit via [Opcode 29 MLS Announce Commit Transition](/gateway/opcodes-and-close-codes#voice) and optionally the associated welcome messages via [Opcode 30 MLS Welcome](/gateway/opcodes-and-close-codes#voice).
+The Gateway broadcasts the first valid commit and welcome(s) it sees in the given epoch, and drops any commits later received for the out-of-date epoch. All dispatched unrevoked proposals in the epoch must be included in the commit for it to be valid.
+All members added in the epoch must be welcomed for the welcome to be valid.
+
+### Payload Format
+
+Some fields in the protocol frame payload use [ULEB128 encoding](https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128). This is a variable-length code compression to represent arbitrarily large unsigned integers in a small number of bytes.
+
+| Field                  | Type                          | Description                                                  | Size           |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------ | -------------- |
+| Media Frame            | Binary data                   | Interleaved unencrypted and encrypted media frame            | Variable bytes |
+| Authentication Tag     | Binary data                   | Truncated AES128-GCM AEAD Authentication Tag                 | 8 bytes        |
+| Nonce                  | ULEB128                       | Truncated synchronization nonce                              | Variable bytes |
+| Unencrypted Ranges     | ULEB128                       | Unencrypted range offset and length pairs                    | Variable bytes |
+| Supplemental Data Size | Unsigned integer (big endian) | Byte size of supplemental data                               | 1 byte         |
+| Magic Marker           | Binary data                   | `0xFAFA` marker to assist with protocol frame identification | 2 bytes        |
+
+###### Media Frame
+
+The encrypted frame transformer is codec-aware and processes incoming encoded frames from WebRTC to determine which ranges must be left unencrypted so that they can pass through the WebRTC packetizer and depacketizer.
+
+All of the (potentially discontiguous) encrypted ranges are joined together, in their order in the original frame, to be encrypted as one block of plaintext, using the AES128-GCM AEAD encryption described below.
+
+All of the (potentially discontiguous) unencrypted ranges from the frame are joined together and included as additional data to be authenticated by the AEAD ciphersuite. This ensures the SFU is unable to include or replace content in user media frames.
+
+In the resulting interleaved protocol media frame, the unencrypted ranges remain unmodified in their original location from the incoming frame. Encrypted ranges are replaced by their associated ciphertext range.
+The encrypting frame transformer may mutate the encoded frame it receives to ensure it can pass through the packetizer and depacketizer in an expected and reproducible manner.
+
+###### Authentication Tag
+
+The authentication tag is an 8-byte truncated version of the authentication tag resulting from the AEAD encryption.
+
+###### Nonce
+
+The ULEB128 nonce is a variable length representation of the nonce used for encryption/decryption.
+
+###### Unencrypted Ranges
+
+The unencrypted ranges identify which portions of the interleaved protocol media frame are plaintext and which are ciphertext.
+Each included range is represented as a byte offset and byte size pair, with both encoded using ULEB128. Unencrypted ranges are ordered by their ascending byte offset.
+The encrypting frame transformer is codec-aware, and processes each incoming encoded frame to determine the unencrypted ranges for the frame.
+The decrypted frame transformer deserializes the unencrypted ranges from the protocol supplemental data, and reconstructs the merged additional data and ciphertext necessary for decryption.
+
+###### Supplemental Data Size
+
+The supplemental data size is the sum of bytes required for:
+
+- 8-byte authentication tag
+- Variable length ULEB128 nonce
+- Variable length ULEB128 unencrypted ranges
+- 1 byte supplemental data size
+- 2 byte magic marker
+
+###### Magic Marker
+
+The magic marker is a constant 2-byte value `0xFAFA`. This is used by media receivers to detect protocol frames as well as by the SFU to avoid sending protocol frames to non-protocol-supporting receivers during transition periods.
+
+### Payload Encryption
+
+Media frames are encrypted for E2EE using AES128-GCM. Depending on the protocol, some bytes may be left unencrypted to allow for packetization and depacketization of frames. For more detail, see the [codec handling section of the protocol whitepaper](https://daveprotocol.com/#codec-handling).
+
+#### Sender Key Derivation
+
+Each media sender has a ratcheted per-sender key. There is a new per-sender ratchet created in each MLS group epoch. The initial secret for each sender's ratchet is an exported 16-byte secret from the MLS group.
+Keys are retrieved from the ratchet via a generation counter derived from the most-significant byte of the 4-byte nonce.
+
+For very long lived epochs, the nonce wrap-around must be handled so the generation does not also wrap back around to 0.
+
+See the [sender key derivation section of the protocol whitepaper](https://daveprotocol.com/#sender-key-derivation) for the detailed process.
+
+###### Authentication Tag
+
+The authentication tag resulting from the AES128-GCM encryption is truncated to 8 bytes. Some implementations may provide the desired tag length as a parameter whereas some may always return the full 12-byte tag from which the 4 least significant bytes should be removed.
+
+###### Nonce
+
+The nonce passed to the AES128-GCM encryption and decryption functions is a full 12-byte nonce, but the protocol only uses at most 4-bytes.
+The 12-byte nonce can be expanded from a 4-byte truncated nonce by setting the 8 most significant bytes of the nonce to zero, with the 4 least significant bytes carrying the value of the truncated nonce.
+
+The generation used for the sender's key ratchet is retrieved from the most-significant byte of the 4-byte nonce (i.e. the 4th least significant byte of the full 12-byte nonce).
+
+###### AEAD Additional Data
+
+The additional data passed to the AEAD encryption and decryption functions is the concatenation of all unencrypted ranges from the frame. This ensures that the SFU cannot modify any unencrypted content in the frame without being detected by receivers.
 
 ## Heartbeating
 
@@ -512,17 +736,20 @@ Once we've fully discovered our external IP and UDP port, we can then tell the v
 
 Generally routers on the Internet mask or obfuscate UDP ports through a process called NAT. Most users who implement voice will want to utilize IP discovery to find their external IP and port which will then be used for receiving voice communications. To retrieve your external IP and port, send the following UDP packet to your voice port (all numeric are big endian):
 
-| Field   | Type                          | Description                                                    | Size     |
-| ------- | ----------------------------- | -------------------------------------------------------------- | -------- |
-| Type    | Unsigned short (big endian)   | Values 0x1 and 0x2 indicate request and response, respectively | 2 bytes  |
-| Length  | Unsigned short (big endian)   | Message length excluding Type and Length fields (value `70`)   | 2 bytes  |
-| SSRC    | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                       | 4 bytes  |
-| Address | Null-terminated string        | The external IP address of the user                            | 64 bytes |
-| Port    | Unsigned short (big endian)   | The external port number of the user                           | 2 bytes  |
+| Field   | Type                          | Description                                                        | Size     |
+| ------- | ----------------------------- | ------------------------------------------------------------------ | -------- |
+| Type    | Unsigned short (big endian)   | Values `0x1` and `0x2` indicate request and response, respectively | 2 bytes  |
+| Length  | Unsigned short (big endian)   | Message length excluding Type and Length fields (value `70`)       | 2 bytes  |
+| SSRC    | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                           | 4 bytes  |
+| Address | Null-terminated string        | The external IP address of the user                                | 64 bytes |
+| Port    | Unsigned short (big endian)   | The external port number of the user                               | 2 bytes  |
 
 ### Sending and Receiving Voice
 
-Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz. Video data should be encoded or decoded using the RFCs relevant to the [codec being used](#session-description-structure). Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data or video data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz.
+Video data should be encoded or decoded using the RFCs relevant to the [codec being used](#session-description-structure). Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data or video data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+
+Transport encryption between the client and the selective forwarding unit (SFU) is still used even in E2EE calls.
 
 When receiving data, the user who sent the packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any frames are received, so the user ID should always be available.
 
