@@ -6,10 +6,6 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_REACT_DEVTOOLS_ADDRESS ? (
-          <script src={process.env.NEXT_PUBLIC_REACT_DEVTOOLS_ADDRESS} />
-        ) : null}
-
         <link rel="preconnect" href={ALGOLIA_HOST} crossOrigin="anonymous" />
         {/* HACK: Fix docsearch in amoled theme */}
         <script

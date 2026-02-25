@@ -22,6 +22,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
     () => (props.codes ? Object.fromEntries(props.codes.flatMap((x) => Object.entries(x.codes))) : {}),
     [props.codes],
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const selectedGroup = useMemo(() => getErrorGroup(errorCode, props.codes), [errorCode]);
   return (
     <Transition appear unmount show={props.isOpen} as={Fragment}>

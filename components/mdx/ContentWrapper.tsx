@@ -41,6 +41,7 @@ function FilteredContent({ children }: { children: React.ReactNode }) {
     }
 
     if (isH2(child)) {
+      // eslint-disable-next-line react-hooks/immutability
       isEndpointVisible = true;
       return child;
     }
