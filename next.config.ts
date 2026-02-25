@@ -28,6 +28,16 @@ const config: NextConfig = {
       },
       // old pages
       {
+        source: "/topics/gateway",
+        destination: "/gateway/using-gateway",
+        permanent: true,
+      },
+      {
+        source: "/topics/gateway-events",
+        destination: "/gateway/gateway-events",
+        permanent: true,
+      },
+      {
         source: "/topics/opcodes-and-status-codes",
         destination: "/gateway/opcodes-and-close-codes",
         permanent: true,
