@@ -2,7 +2,6 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import path from "path";
 import * as github from "@actions/core";
 import chalk from "chalk";
-import { JSDOM } from "jsdom";
 
 const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE! : process.cwd();
 
@@ -38,6 +37,49 @@ function importDirectory(directory: string, extension: string, subdirectories = 
     // Directory likely does not exist, we should be able to safely discard this error
     return null;
   }
+}
+
+/**
+ * Normalizes heading text to an anchor ID, mirroring the getNormalisedText function
+ * used by the Heading component (components/mdx/Heading.tsx).
+ */
+function normalizeAnchor(text: string): string {
+  return text.trim().toLowerCase().replaceAll(" ", "-");
+}
+
+/**
+ * Extracts all anchor IDs from an MDX file by parsing markdown headings and
+ * RouteHeader JSX components. These are the only two sources of element IDs in
+ * the rendered pages (via the Heading and RouteHeader React components).
+ */
+function extractAnchors(raw: string): string[] {
+  const anchors: string[] = [];
+
+  // Extract anchors from <RouteHeader> components..
+  // Handles both single-line and multi-line opening tags; text content is always
+  // on its own line between the closing > of the opening tag and </RouteHeader>
+  const routeHeaderRegex = /<RouteHeader[\s\S]*?>\r?\n[ \t]*(.*?)[ \t]*\r?\n[ \t]*<\/RouteHeader>/g;
+  for (const match of raw.matchAll(routeHeaderRegex)) {
+    const text = match[1].trim();
+    if (text) anchors.push(normalizeAnchor(text));
+  }
+
+  // Extract anchors from markdown headings (h1–h6), skipping fenced code blocks
+  let inCodeBlock = false;
+  for (const line of raw.split("\n")) {
+    if (line.startsWith("```")) {
+      inCodeBlock = !inCodeBlock;
+      if (line.length > 3 && line.endsWith("```")) inCodeBlock = !inCodeBlock;
+    }
+    if (inCodeBlock) continue;
+
+    const match = line.match(/^#{1,6}\s+(.+)/);
+    if (!match) continue;
+
+    anchors.push(normalizeAnchor(match[1]));
+  }
+
+  return anchors;
 }
 
 function scanFile(
@@ -87,42 +129,20 @@ function scanFile(
   });
 }
 
-const htmlFiles = importDirectory(path.join(cwd, ".next/server/pages"), ".html");
-
-if (!htmlFiles) {
-  console.error("No links found, ensure that build has been run!");
-  process.exit(1);
-}
-
-const validLinks = new Map<string, string[]>();
-
-let extLength = ".html".length;
-
-for (const [name, raw] of htmlFiles) {
-  const keyName = name.slice(0, -extLength);
-  if (!validLinks.has(keyName)) {
-    validLinks.set(keyName, []);
-  }
-  const validAnchors = validLinks.get(keyName)!;
-  const fragment = JSDOM.fragment(raw);
-  const main = fragment.querySelector("main");
-  if (!main) continue;
-  const allIds = main.querySelectorAll("*[id]");
-  for (const node of allIds.values()) {
-    validAnchors.push(node.id);
-  }
-}
-
-const results = new Map<string, github.AnnotationProperties[]>();
-
 const mdxFiles = importDirectory(path.join(cwd, "pages"), ".mdx");
 
 if (!mdxFiles) {
-  console.error("No mdx files found!");
+  console.error("No MDX files found!");
   process.exit(1);
 }
 
-extLength = ".mdx".length;
+const extLength = ".mdx".length;
+const validLinks = new Map<string, string[]>();
+for (const [name, raw] of mdxFiles) {
+  validLinks.set(name.slice(0, -extLength), extractAnchors(raw));
+}
+
+const results = new Map<string, github.AnnotationProperties[]>();
 
 for (const [name, raw] of mdxFiles) {
   const fileName = `pages${name}`;
