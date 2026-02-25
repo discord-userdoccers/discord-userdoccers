@@ -98,11 +98,11 @@ When connecting to the URL, it's a good idea to explicitly pass the API version 
 
 ###### Query String Params
 
-| Field     | Type    | Description                                                                                     |
-| --------- | ------- | ----------------------------------------------------------------------------------------------- |
-| v         | integer | [API Version](/reference#api-versioning) to use                                                 |
-| encoding  | string  | The [encoding](#encoding-and-compression) of received gateway packets (`json` or `etf`)         |
-| compress? | string  | The optional [transport compression](#transport-compression) of gateway packets (`zlib-stream`) |
+| Field     | Type    | Description                                                                                                      |
+| --------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| v         | integer | [API Version](/reference#api-versioning) to use                                                                  |
+| encoding  | string  | The [encoding](#encoding-and-compression) of received gateway packets (`json` or `etf`)                          |
+| compress? | string  | The optional [transport compression](#transport-compression) of gateway packets (`zlib-stream` or `zstd-stream`) |
 
 #### Hello Event
 
@@ -539,6 +539,16 @@ Clients can send 120 [Gateway events](/topics/gateway-events) per [connection](#
 
 Clients also have a limit for [concurrent](#session-start-limit-object) [identify](#identifying) requests allowed per 5 seconds. If you hit this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session).
 
+#### Sub Rate Limits
+
+Some Opcodes have their own specific rate limits. These are currently as follows:
+
+| Opcode                                                                         | Rate Limit                                     |
+| ------------------------------------------------------------------------------ | ---------------------------------------------- |
+| [Opcode 8 Request Guild Members](/topics/gateway-events#request-guild-members) | 1 request per guild per session per 30 seconds |
+
+If a client exceeds an Opcode-specific rate limit, the Gateway will respond with a [Rate Limited](/topics/gateway-events#rate-limited) event.
+
 ## Encoding and Compression
 
 When [establishing a connection](#connecting) to the Gateway, clients can use the `encoding` parameter to choose whether to communicate with Discord using a plain-text JSON or binary [ETF](https://erlang.org/doc/apps/erts/erl_ext_dist.html) encoding. You can pick whichever encoding type you're more comfortable with, but both have their own quirks. If you aren't sure which encoding to use, JSON is generally recommended.
@@ -573,13 +583,15 @@ See [erlpack](https://github.com/discord/erlpack) for an ETF implementation exam
 
 ### Transport Compression
 
-Transport compression enables optional compression for all packets when Discord is sending events over the connection. The only currently-available transport compression option is `zlib-stream`.
+Transport compression enables optional compression for all packets when Discord is sending events over the connection. The only currently-available transport compression options are `zlib-stream` and `zstd-stream`.
 
-When transport compression is enabled, your client needs to process received data through a single Gateway connection using a shared zlib context. However, each Gateway connection should use its own unique zlib context.
+###### Zlib-Stream Compression
+
+When zlib transport compression is enabled, your client needs to process received data through a single Gateway connection using a shared zlib context. However, each Gateway connection should use its own unique zlib context.
 
 When processing transport-compressed data, you should push received data to a buffer until you receive the 4-byte `Z_SYNC_FLUSH` suffix (`00 00 ff ff`). After you receive the `Z_SYNC_FLUSH` suffix, you can then decompress the buffer.
 
-###### Transport Compression Example
+###### Zlib-Stream Compression Example
 
 ```py
 # Z_SYNC_FLUSH suffix
@@ -603,6 +615,17 @@ def on_websocket_message(msg):
     # here you can treat `msg` as either JSON or ETF encoded,
     # depending on your `encoding` param
 ```
+
+###### Zstd-Stream Compression
+
+When zstd transport compression is enabled, all data needs to be processed through a zstd decompression context that stays alive for the lifetime of the gateway connection.
+
+When processing data, each WebSocket message corresponds to a single Gateway message, but does not end a zstd frame. You will need to repeatedly call `ZSTD_decompressStream`
+until all data in the frame has been processed (`ZSTD_decompressStream` will not necessarily return 0, though).
+
+###### Zstd-Stream Compression Example
+
+Take a look at this [Erlang](https://github.com/silviucpp/ezstd/blob/f3f33b2f6b917f7e8aaa2b4d71338620537df81b/src/ezstd.erl#L151-L169) + [C++](https://github.com/silviucpp/ezstd/blob/f3f33b2f6b917f7e8aaa2b4d71338620537df81b/c_src/ezstd_nif.cc#L520-L568) implementation for inspiration.
 
 ## Tracking State
 
