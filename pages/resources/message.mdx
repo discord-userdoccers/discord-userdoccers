@@ -1449,7 +1449,7 @@ See [the unavailable resources section](/topics/rate-limits#unavailable-resource
 
 <Alert type="info">
 
-Due to speed optimizations, search may return slightly less results than the limit specified when messages have not been accessed for a long time.
+Due to speed optimizations, search may return slightly fewer results than the limit specified when messages have not been accessed for a long time.
 Clients should not rely on the length of the `messages` array to paginate results.
 
 Additionally, when messages are actively being created or deleted, the `total_results` field may not be accurate.
@@ -1481,9 +1481,9 @@ Additionally, when messages are actively being created or deleted, the `total_re
 | attachment_extension? | array[string]    | Filter messages by attachment extension (e.g. `txt`)                                             |
 | command_id? ^3^ ^4^   | snowflake        | Filter messages by application command ID                                                        |
 | command_name? ^3^ ^4^ | string           | Filter messages by application command name (max 32 characters)                                  |
-| sort_by? ^2^          | string           | The [sorting algorithm](#search-sort-type) to use                                                |
+| sort_by? ^2^          | string           | The [sorting algorithm](#search-sort-mode) to use                                                |
 | sort_order? ^2^       | string           | The direction to sort (`asc` or `desc`, default `desc`)                                          |
-| include_nsfw?         | boolean          | Whether to include results from NSFW channels (default false)                                    |
+| include_nsfw? ^5^     | boolean          | Whether to include results from NSFW channels (default false)                                    |
 
 ^1^ Not applicable when operating on a private channel.
 
@@ -1492,6 +1492,8 @@ Additionally, when messages are actively being created or deleted, the `total_re
 ^3^ Parameter is unstable and should not be relied on.
 
 ^4^ `command_id` and `command_name` must be provided together.
+
+^5^ Users that do not have [`nsfw_allowed`](/resources/user#user-object) set to `true` will not receive results from NSFW channels, regardless of this parameter.
 
 ###### Tokenized Content
 
@@ -1528,15 +1530,17 @@ All types can be negated by prefixing them with `-`, which means results will no
 
 These do not correspond 1:1 to actual [embed types](#embed-type) and encompass a wider range of actual types.
 
-| Value                | Description                                |
-| -------------------- | ------------------------------------------ |
-| image                | Return messages that have an image embed   |
-| video                | Return messages that have a video embed    |
-| gif **(deprecated)** | Return messages that have a gif embed      |
-| sound                | Return messages that have a sound embed    |
-| article              | Return messages that have an article embed |
+| Value   | Description                                |
+| ------- | ------------------------------------------ |
+| image   | Return messages that have an image embed   |
+| video   | Return messages that have a video embed    |
+| gif ^1^ | Return messages that have a gifv embed     |
+| sound   | Return messages that have a sound embed    |
+| article | Return messages that have an article embed |
 
-###### Search Sort Type
+^1^ Messages sent before February 24, 2026 may not be properly indexed under the `gif` embed type.
+
+###### Search Sort Mode
 
 | Value     | Description                                              |
 | --------- | -------------------------------------------------------- |
@@ -1637,7 +1641,7 @@ See [the unavailable resources section](/topics/rate-limits#unavailable-resource
 
 <Alert type="info">
 
-Due to speed optimizations, search may return slightly less results than the limit specified when messages have not been accessed for a long time.
+Due to speed optimizations, search may return slightly fewer results than the limit specified when messages have not been accessed for a long time.
 Clients should not rely on the length of the `messages` array to paginate results.
 
 Additionally, when messages are actively being created or deleted, the `total_results` field may not be accurate.
@@ -1650,10 +1654,12 @@ Additionally, when messages are actively being created or deleted, the `total_re
 | ----------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | tabs                    | map[string, [search tab](#search-tab-structure) object] | A map of [predefined tab names](#search-tab-type) to search queries                                  |
 | channel_ids? ^1^        | array[snowflake]                                        | Filter messages by these channels (max 500)                                                          |
-| include_nsfw?           | boolean                                                 | Whether to include results from NSFW channels (default false)                                        |
+| include_nsfw? ^2^       | boolean                                                 | Whether to include results from NSFW channels (default false)                                        |
 | track_exact_total_hits? | boolean                                                 | Whether to return accurate total result count information at the cost of performance (default false) |
 
 ^1^ Only applicable when operating on a guild.
+
+^2^ Users that do not have [`nsfw_allowed`](/resources/user#user-object) set to `true` will not receive results from NSFW channels, regardless of this parameter.
 
 ###### Search Tab Type
 
@@ -1692,10 +1698,10 @@ While the tab names themselves are enforced, what they are used for is not. Clie
 | attachment_extension? | array[string]                                     | Filter messages by attachment extension (e.g. `txt`)                                             |
 | command_id? ^3^ ^4^   | snowflake                                         | Filter messages by application command ID                                                        |
 | command_name? ^3^ ^4^ | string                                            | Filter messages by application command name (max 32 characters)                                  |
-| sort_by? ^2^          | string                                            | The [sorting algorithm](#search-sort-type) to use                                                |
+| sort_by? ^2^          | string                                            | The [sorting algorithm](#search-sort-mode) to use                                                |
 | sort_order? ^2^       | string                                            | The direction to sort (`asc` or `desc`, default `desc`)                                          |
 
-^1^ You may only paginate with either `offset` or `cursor`, not both. If `cursor` is provided, the [search cursor type](#search-cursor-type) should match the [sorting algorithm](#search-sort-type) used in `sort_by`.
+^1^ You may only paginate with either `offset` or `cursor`, not both. If `cursor` is provided, the [search cursor type](#search-cursor-type) should match the [sorting algorithm](#search-sort-mode) used in `sort_by`.
 
 ^2^ Sort order is not respected when sorting by relevance.
 
@@ -1771,6 +1777,12 @@ See [Search Guild Messages by Tab](#search-guild-messages-by-tab) for more infor
 Returns a list of messages without the `reactions` key that match a set of parallelized search queries across all user private channels.
 
 See [Search Guild Messages by Tab](#search-guild-messages-by-tab) for more information.
+
+<Alert type="warn">
+
+This endpoint will not return results authored by blocked users.
+
+</Alert>
 
 <RouteHeader method="GET" url="/channels/{channel.id}/messages/{message.id}" supportsBot>
   Get Message
