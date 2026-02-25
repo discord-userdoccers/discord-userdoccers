@@ -15,6 +15,7 @@ import Footer from "../components/Footer";
 import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
+import { SITEMAP } from "../components/navigation/NavigationList";
 import MenuContext from "../contexts/MenuContext";
 import "@docsearch/css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
@@ -22,6 +23,8 @@ import OnThisPage from "../components/OnThisPage";
 import { ThemeWatcher } from "../components/ThemeWatcher";
 
 const TITLE_REGEX = /<h1 .*?><a .*?>([^<]+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
+
+const isServer = typeof window === "undefined";
 
 export default function App({
   Component,
@@ -47,13 +50,26 @@ export default function App({
 
   const getText = () => {
     if (router.pathname !== "/404") {
-      const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
-      const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
-      const description = handleDesc(str);
+      if (Component.meta?.description) {
+        return {
+          title: Component.meta.title ?? DEFAULT_SECTION,
+          description: Component.meta.description,
+        };
+      }
 
+      if (isServer) {
+        const str = ReactDOMServer.renderToString(component);
+        return {
+          title: TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION,
+          description: handleDesc(str),
+        };
+      }
+
+      // We don't care about description on the client
+      const page = SITEMAP.flatMap((s) => s.pages).find((p) => p.link === router.pathname);
       return {
-        description,
-        title,
+        title: page?.name ?? DEFAULT_SECTION,
+        description: undefined,
       };
     }
     return null;
