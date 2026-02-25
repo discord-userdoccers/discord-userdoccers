@@ -58,24 +58,24 @@ export default function Collapsible({
 
   return (
     <details
-      className="mb-6 rounded-md bg-theme-light-collapsible dark:bg-theme-dark-collapsible"
+      className="bg-theme-light-collapsible dark:bg-theme-dark-collapsible mb-6 rounded-md"
       onToggle={() => setOpen((open) => !open)}
     >
       <summary
-        className="group flex w-full cursor-pointer items-center justify-between border-text-light border-opacity-10 px-6 py-5 text-left dark:border-opacity-100"
+        className="group border-text-light/10 dark:border-text-light flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left"
         style={{
           borderBottomWidth: isOpen ? "1px" : "0",
         }}
       >
         <div className="flex flex-col gap-1">
-          <h3 className="flex items-center gap-1.5 text-xl text-text-light dark:text-text-dark">
+          <h3 className="text-text-light dark:text-text-dark flex items-center gap-1.5 text-xl">
             {icon && <div className="collapsible-icon">{icon}</div>}
             {title}
           </h3>
-          <p className="text-base leading-6 text-text-light dark:text-text-dark">{description}</p>
+          <p className="text-text-light dark:text-text-dark text-base leading-6">{description}</p>
         </div>
         <Chevron
-          className="mr-2 size-5 opacity-70 transition-transform duration-200 *:text-text-light group-hover:opacity-100 dark:*:text-text-dark"
+          className="*:text-text-light dark:*:text-text-dark mr-2 size-5 opacity-70 transition-transform duration-200 group-hover:opacity-100"
           style={{
             transform: isOpen ? "rotate(-180deg)" : "none",
           }}

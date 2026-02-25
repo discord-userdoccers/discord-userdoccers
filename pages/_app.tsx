@@ -77,7 +77,7 @@ export default function App({
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
           <ThemeWatcher />
           <OpenGraph description={meta?.description} section={meta?.title} />
-          <div className="flex min-h-[100dvh] overflow-hidden bg-white dark:bg-background-dark">
+          <div className="dark:bg-background-dark flex min-h-dvh overflow-hidden bg-white">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
             {component}

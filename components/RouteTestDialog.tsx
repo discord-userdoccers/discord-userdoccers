@@ -325,7 +325,7 @@ function SettingsView({
             href="/reference#api-versions"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-brand-blurple hover:underline"
+            className="text-brand-blurple text-xs hover:underline"
           >
             Documentation
           </a>
@@ -355,9 +355,9 @@ function SettingsView({
             setUseCanary(e.target.checked);
             updateSettings({ useCanary: e.target.checked });
           }}
-          className="h-4 w-4 rounded border-gray-300 text-brand-blurple focus:ring-brand-blurple"
+          className="text-brand-blurple focus:ring-brand-blurple h-4 w-4 rounded-sm border-gray-300"
         />
-        <label htmlFor="useCanary" className={classNames(Styles.dialogLabel, "!mb-0")}>
+        <label htmlFor="useCanary" className={classNames(Styles.dialogLabel, "mb-0!")}>
           Use Canary
         </label>
       </div>
@@ -369,7 +369,7 @@ function SettingsView({
             href="/reference#locales"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-brand-blurple hover:underline"
+            className="text-brand-blurple text-xs hover:underline"
           >
             Documentation
           </a>
@@ -393,7 +393,7 @@ function SettingsView({
               href="/resources/audit-log#audit-reason"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-brand-blurple hover:underline"
+              className="text-brand-blurple text-xs hover:underline"
             >
               Documentation
             </a>
@@ -468,7 +468,7 @@ function RequestView({
     <>
       <div className="mb-4 flex items-center gap-2">
         <MethodBadge method={method} />
-        <code className="break-all text-base text-text-light dark:text-text-dark">
+        <code className="text-text-light dark:text-text-dark text-base break-all">
           {Object.entries(pathParams).reduce((acc, [key, value]) => {
             return value ? acc.replace(`{${key}}`, value) : acc;
           }, url)}
@@ -500,7 +500,7 @@ function RequestView({
           <input
             type="password"
             className={classNames(Styles.dialogInput, {
-              "!border-red-500 focus:!border-red-500 focus:!ring-red-500": tokenType == null && token.length > 0,
+              "border-red-500! focus:border-red-500! focus:ring-red-500!": tokenType == null && token.length > 0,
             })}
             placeholder="User or bearer token"
             value={token}
@@ -527,7 +527,7 @@ function RequestView({
                   activeRequestTab === "path"
                     ? "border-brand-blurple text-brand-blurple"
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                  "border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap",
                 )}
               >
                 Path Params
@@ -539,7 +539,7 @@ function RequestView({
                 activeRequestTab === "query"
                   ? "border-brand-blurple text-brand-blurple"
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                "border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap",
               )}
             >
               Query Params
@@ -551,7 +551,7 @@ function RequestView({
                   activeRequestTab === "body"
                     ? "border-brand-blurple text-brand-blurple"
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                  "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                  "border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap",
                 )}
               >
                 Body
@@ -563,7 +563,7 @@ function RequestView({
                 activeRequestTab === "headers"
                   ? "border-brand-blurple text-brand-blurple"
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                "border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap",
               )}
             >
               Headers
@@ -739,7 +739,7 @@ function RequestView({
                       activeTab === "body"
                         ? "border-brand-blurple text-brand-blurple"
                         : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                      "border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap",
                     )}
                   >
                     Response Body
@@ -750,7 +750,7 @@ function RequestView({
                       activeTab === "headers"
                         ? "border-brand-blurple text-brand-blurple"
                         : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300",
-                      "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium",
+                      "border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap",
                     )}
                   >
                     Headers
@@ -758,7 +758,7 @@ function RequestView({
                 </nav>
               </div>
 
-              <div className="mt-2 max-h-96 overflow-auto rounded text-xs">
+              <div className="mt-2 max-h-96 overflow-auto rounded-sm text-xs">
                 {activeTab === "body" ? (
                   <Code className="language-json" forceCopy>
                     {JSON.stringify(response.body, null, 2)}
@@ -783,7 +783,7 @@ function WarningView({ onClose, setHasAgreed }: { onClose: () => void; setHasAgr
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <WarningIcon className="h-16 w-16 text-red-500" />
-      <DialogTitle as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+      <DialogTitle as="h3" className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
         Warning
       </DialogTitle>
       <div className="mt-2">
@@ -794,7 +794,7 @@ function WarningView({ onClose, setHasAgreed }: { onClose: () => void; setHasAgr
             href="https://discord.com/terms"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand-link-light hover:underline dark:text-brand-link-dark"
+            className="text-brand-link-light dark:text-brand-link-dark hover:underline"
           >
             Terms of Service
           </a>{" "}
@@ -808,14 +808,14 @@ function WarningView({ onClose, setHasAgreed }: { onClose: () => void; setHasAgr
       <div className="mt-4 flex gap-4">
         <button
           type="button"
-          className="inline-flex justify-center rounded-md border border-transparent bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+          className="inline-flex justify-center rounded-md border border-transparent bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
           onClick={onClose}
         >
           Cancel
         </button>
         <button
           type="button"
-          className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+          className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           onClick={() => {
             updateSettings({ tosFollower: true });
             setHasAgreed(true);
@@ -1045,7 +1045,7 @@ export default function RouteTestDialog({
               <DialogPanel
                 className={classNames(
                   Styles.dialogPanel,
-                  !hasAgreed ? "max-w-md p-6" : "flex h-[72vh] !max-w-4xl flex-col !p-0",
+                  !hasAgreed ? "max-w-md p-6" : "flex h-[72vh] max-w-4xl! flex-col p-0!",
                 )}
               >
                 {!hasAgreed ? (
@@ -1057,7 +1057,7 @@ export default function RouteTestDialog({
                         as={H2}
                         useAnchor={false}
                         useCopy={false}
-                        className="!mb-0 text-text-light dark:text-text-dark"
+                        className="text-text-light dark:text-text-dark mb-0!"
                       >
                         {isSettingsOpen ? "Settings" : "Test Endpoint"}
                       </DialogTitle>
@@ -1109,10 +1109,10 @@ export default function RouteTestDialog({
                       )}
                     </div>
 
-                    <div className="flex justify-end gap-2 border-t border-gray-200 bg-white p-6 pt-4 amoled:bg-black dark:border-gray-700 dark:bg-[#2f3136]">
+                    <div className="amoled:bg-black flex justify-end gap-2 border-t border-gray-200 bg-white p-6 pt-4 dark:border-gray-700 dark:bg-[#2f3136]">
                       {isSettingsOpen ? (
                         <button
-                          className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2"
+                          className="bg-brand-blurple hover:bg-brand-blurple/90 focus-visible:ring-brand-blurple rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
                           onClick={() => setIsSettingsOpen(false)}
                         >
                           Done
@@ -1120,13 +1120,13 @@ export default function RouteTestDialog({
                       ) : (
                         <>
                           <button
-                            className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                            className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                             onClick={onClose}
                           >
                             Close
                           </button>
                           <button
-                            className="rounded-md bg-brand-blurple px-4 py-2 text-sm font-medium text-white hover:bg-brand-blurple/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blurple focus-visible:ring-offset-2 disabled:opacity-50"
+                            className="bg-brand-blurple hover:bg-brand-blurple/90 focus-visible:ring-brand-blurple rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50"
                             onClick={handleSend}
                             disabled={loading || Object.values(pathParams).some((val) => !val)}
                           >

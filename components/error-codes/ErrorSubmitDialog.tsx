@@ -57,7 +57,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                 <p className={classNames(Styles.dialogText, "-mt-3")}>
                   Thanks for your contribution! Fill out the form below to add your error code.
                 </p>
-                <p className={classNames(Styles.dialogText, "mb-5 mt-2")}>
+                <p className={classNames(Styles.dialogText, "mt-2 mb-5")}>
                   Please ensure that your client or API locale is set to <Strong>English (US)</Strong> before
                   submitting.
                 </p>
@@ -157,7 +157,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
 
                   <div className="flex w-full flex-col gap-2">
                     <button
-                      className="text-lg/80 md:text-md/80 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-open:bg-gray-700 inline-flex items-center justify-center gap-2 rounded-md bg-brand-blurple px-4 py-2 text-center text-white hover:bg-brand-blurple/90 disabled:opacity-50 md:px-5 md:py-2.5"
+                      className="bg-brand-blurple hover:bg-brand-blurple/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-center text-sm text-white focus:not-data-focus:outline-hidden disabled:opacity-50 data-focus:outline-white data-focus:outline-solid data-open:bg-gray-700 md:px-5 md:py-2.5"
                       type="submit"
                       aria-label="Finish your submission"
                       disabled={isSubmitting}

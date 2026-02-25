@@ -68,7 +68,7 @@ export default function ErrorCodesEmbed() {
               <div
                 className={
                   Styles.filterToggle1 +
-                  " peer-checked:bg-brand-blurple peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-blurple/50"
+                  " peer-checked:bg-brand-blurple peer-focus:ring-brand-blurple/50 peer-focus:ring-2 peer-focus:outline-hidden"
                 }
               ></div>
               <div className={Styles.filterToggle2 + " peer-checked:translate-x-5"}></div>

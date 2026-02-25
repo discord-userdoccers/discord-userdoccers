@@ -87,8 +87,8 @@ export default function OnThisPage() {
   if (subLinks.length === 0) return null;
 
   return (
-    <aside className="desktop-right-toc fixed top-6 z-20 hidden w-64 p-2 text-sm text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text">
-      <h3 className="mb-3 font-whitney-bold text-xs uppercase text-black dark:text-white">On this page</h3>
+    <aside className="desktop-right-toc text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text fixed top-6 z-20 hidden w-64 p-2 text-sm">
+      <h3 className="font-whitney-bold mb-3 text-xs text-black uppercase dark:text-white">On this page</h3>
       <nav className="space-y-1">
         {subLinks.map((s) => {
           const isSamePage = s.link.startsWith(`${router.pathname}#`);

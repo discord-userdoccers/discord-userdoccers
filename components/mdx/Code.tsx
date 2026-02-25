@@ -113,7 +113,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
         }) => (
           <pre
             className={classNames(
-              "relative m-0 inline-grid w-full grid-rows-max-content overflow-auto leading-normal",
+              "grid-rows-max-content relative m-0 inline-grid w-full overflow-auto leading-normal",
               blockClassName,
             )}
           >
@@ -148,7 +148,7 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                     <span
                       className={classNames("line_content px-4", {
                         "has-copy-button": hasCopy,
-                        "inline-table break-words": breakWords,
+                        "inline-table wrap-break-word": breakWords,
                       })}
                     >
                       {line.map((token, key) => {
@@ -181,10 +181,10 @@ export default function Code({ children, className, file, ...props }: CodeProps)
         )}
       </Highlight>
       {hasCopy && (
-        <div className="copy-button-wrapper group absolute right-0 top-0 h-12 w-12">
-          <div className="copy-button absolute right-2 top-2 hidden rounded-md p-3 transition group-hover:block">
+        <div className="copy-button-wrapper group absolute top-0 right-0 h-12 w-12">
+          <div className="copy-button absolute top-2 right-2 hidden rounded-md p-3 transition group-hover:block">
             <CopyButton text={children}>
-              <CopyIcon className="w-5 text-black amoled:text-white dark:text-white" />
+              <CopyIcon className="amoled:text-white w-5 text-black dark:text-white" />
             </CopyButton>
           </div>
         </div>
