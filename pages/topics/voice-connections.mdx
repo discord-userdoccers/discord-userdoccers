@@ -4,7 +4,7 @@ max-sublink-level: 2
 
 # Voice Connections
 
-Voice connections operate in a similar fashion to the [Gateway](/topics/gateway#connections) connection.
+Voice connections operate in a similar fashion to the [Gateway](/gateway/using-gateway#connections) connection.
 However, they use a different set of payloads and a separate UDP-based connection for RTC data transmission.
 Because UDP is generally used for both receiving and transmitting RTC data, your client _must_ be able to receive UDP packets, even through a firewall or NAT (see [UDP Hole Punching](https://en.wikipedia.org/wiki/UDP_hole_punching) for more information).
 The Discord voice servers implement functionality (see [IP Discovery](#ip-discovery)) for discovering the local machine's remote UDP IP/Port, which can assist in some network configurations.
@@ -77,13 +77,13 @@ The voice server does not provide a default version. You must explicitly pass a 
 
 ### Retrieving Voice Server Information
 
-The first step in connecting to a voice server (and in turn, a guild's voice channel or private channel) is formulating a request that can be sent to the [Gateway](/topics/gateway), which will return information about the voice server we will connect to. Because Discord's voice platform is widely distributed, users **should never** cache or save the results of this call. To inform the Gateway of our intent to establish voice connectivity, we first send an [Update Voice State](/topics/gateway-events#update-voice-state) payload.
+The first step in connecting to a voice server (and in turn, a guild's voice channel or private channel) is formulating a request that can be sent to the [Gateway](/gateway/using-gateway), which will return information about the voice server we will connect to. Because Discord's voice platform is widely distributed, users **should never** cache or save the results of this call. To inform the Gateway of our intent to establish voice connectivity, we first send an [Update Voice State](/gateway/gateway-events#update-voice-state) payload.
 
-If our request succeeded, the Gateway will respond with _two_ events—a [Voice State Update](/topics/gateway-events#voice-state-update) event and a [Voice Server Update](/topics/gateway-events#voice-server-update) event—meaning you must properly wait for both events before continuing. The first will contain a new key, `session_id`, and the second will provide voice server information we can use to establish a new voice connection.
+If our request succeeded, the Gateway will respond with _two_ events—a [Voice State Update](/gateway/gateway-events#voice-state-update) event and a [Voice Server Update](/gateway/gateway-events#voice-server-update) event—meaning you must properly wait for both events before continuing. The first will contain a new key, `session_id`, and the second will provide voice server information we can use to establish a new voice connection.
 
 With this information, we can move on to establishing a voice WebSocket connection.
 
-When changing channels within the same guild, it is possible to receive a [Voice Server Update](/topics/gateway-events#voice-server-update) with the same `endpoint` as the existing session. However, the `token` will be changed and you cannot re-use the previous session during a channel change, even if the endpoint remains the same.
+When changing channels within the same guild, it is possible to receive a [Voice Server Update](/gateway/gateway-events#voice-server-update) with the same `endpoint` as the existing session. However, the `token` will be changed and you cannot re-use the previous session during a channel change, even if the endpoint remains the same.
 
 <Alert type="info">
 
@@ -104,7 +104,7 @@ So, assuming the channel is not already oversaturated, you will be able to join 
 
 In the case of streams, a stage channel's max stream user limit is given by `max_stage_video_channel_users`.
 For voice channels, the limit is typically 50, but clients should attempt to join the channel regardless of the limit.
-If the limit is reached, the Gateway will respond with a [Stream Delete](/topics/gateway-events#stream-delete) event, containing a `reason` of `stream_full`.
+If the limit is reached, the Gateway will respond with a [Stream Delete](/gateway/gateway-events#stream-delete) event, containing a `reason` of `stream_full`.
 This signals that the client cannot join the stream.
 
 </Alert>
@@ -112,7 +112,7 @@ This signals that the client cannot join the stream.
 <Alert type="info">
 
 Private channel voice connections work exactly the same as guild voice channels, except that the channel's ID is used as the server ID below.
-If the client is the first to join a private channel, a call will be created for the channel and a [Call Create](/topics/gateway-events#call-create) Gateway event will be fired.
+If the client is the first to join a private channel, a call will be created for the channel and a [Call Create](/gateway/gateway-events#call-create) Gateway event will be fired.
 Once a call exists, clients can choose to [ring the channel recipients](/resources/channel#ring-channel-recipients).
 
 </Alert>
@@ -120,7 +120,7 @@ Once a call exists, clients can choose to [ring the channel recipients](/resourc
 ### Establishing a Voice WebSocket Connection
 
 Once we retrieve a `session_id`, `token`, and `endpoint` information, we can connect and handshake with the voice server over another secure WebSocket.
-Unlike the Gateway endpoint we receive in a [Get Gateway](/topics/gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/topics/gateway-events#voice-server-update) payload does not contain a URL protocol,
+Unlike the Gateway endpoint we receive in a [Get Gateway](/gateway/using-gateway#get-gateway) request, the endpoint received from our [Voice Server Update](/gateway/gateway-events#voice-server-update) payload does not contain a URL protocol,
 so some libraries may require manually prepending it with `wss://` before connecting. Once connected to the voice WebSocket endpoint, we can immediately send an [Opcode 0 Identify](#gateway-commands) payload:
 
 <Alert type="danger">
@@ -756,7 +756,7 @@ If successful, the voice server will respond with an [Opcode 9 Resumed](#gateway
 }
 ```
 
-If the resume is unsuccessful—for example, due to an invalid session—the WebSocket connection will close with the appropriate [close code](/topics/opcodes-and-status-codes#voice-close-event-codes). You should then follow the [Connecting](#connecting-to-voice) flow to reconnect.
+If the resume is unsuccessful—for example, due to an invalid session—the WebSocket connection will close with the appropriate [close code](/gateway/opcodes-and-close-codes#voice-close-event-codes). You should then follow the [Connecting](#connecting-to-voice) flow to reconnect.
 
 ### Buffered Resume
 
@@ -972,14 +972,14 @@ In response, the voice server will send an [Opcode 16 Voice Backend Version](#ga
 ## Streams
 
 Stream connections operate in a similar fashion to regular voice connections. In fact, on the protocol side, they are identical and use all of the payloads and processes described above.
-The main differences are within the [Gateway](/topics/gateway) protocol, as streams are started and joined differently to regular voice connections.
+The main differences are within the [Gateway](/gateway/using-gateway) protocol, as streams are started and joined differently to regular voice connections.
 
 ### Connecting to Streams
 
 To start or join a stream, the client must first be connected to the voice instance that the stream is hosted on.
-Then, send a [Create Stream](/topics/gateway-events#create-stream) or [Watch Stream](/topics/gateway-events#watch-stream) payload to the Gateway.
+Then, send a [Create Stream](/gateway/gateway-events#create-stream) or [Watch Stream](/gateway/gateway-events#watch-stream) payload to the Gateway.
 
-If our request succeeded, as with voice, you must wait for the Gateway to respond with _two_ events—a [Stream Create](/topics/gateway-events#stream-create) event and a [Stream Server Update](/topics/gateway-events#stream-server-update).
-You can then use the information provided in these events to establish a connection to the stream server as outlined in [Connecting to Voice](#connecting-to-voice). Note that the `server_id` used when identifying will be provided in the [Stream Create](/topics/gateway-events#stream-create) event.
+If our request succeeded, as with voice, you must wait for the Gateway to respond with _two_ events—a [Stream Create](/gateway/gateway-events#stream-create) event and a [Stream Server Update](/gateway/gateway-events#stream-server-update).
+You can then use the information provided in these events to establish a connection to the stream server as outlined in [Connecting to Voice](#connecting-to-voice). Note that the `server_id` used when identifying will be provided in the [Stream Create](/gateway/gateway-events#stream-create) event.
 
-Note that if joining a stream fails, the Gateway will instead respond with a [Stream Delete](/topics/gateway-events#stream-delete) event which will contain the reason for the failure.
+Note that if joining a stream fails, the Gateway will instead respond with a [Stream Delete](/gateway/gateway-events#stream-delete) event which will contain the reason for the failure.

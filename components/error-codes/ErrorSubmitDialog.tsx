@@ -2,7 +2,7 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import classNames from "../../lib/classnames";
-import { ErrorGroup } from "../../pages/datamining/errors";
+import { ErrorGroup } from "./ErrorCodesEmbed";
 import Styles from "../../stylesheets/modules/Errors.module.css";
 import { H2 } from "../mdx/Heading";
 import Strong from "../mdx/Strong";

@@ -1,4 +1,6 @@
 ---
+name: Using Gateway
+sort: 1
 max-sublink-level: 2
 ---
 
@@ -18,17 +20,17 @@ The documentation herein is only for the latest version of the API, unless other
 
 ## Gateway Events
 
-Gateway events are [payloads](/topics/gateway-events#gateway-payload-structure) sent over a [Gateway connection](#connections)—either from a client to Discord, or from Discord to a client. A client typically [_sends_ events](#sending-events) when connecting and managing its connection to the Gateway, and [_receives_ events](#receiving-events) when listening to actions taking place in a resource.
+Gateway events are [payloads](/gateway/gateway-events#gateway-payload-structure) sent over a [Gateway connection](#connections)—either from a client to Discord, or from Discord to a client. A client typically [_sends_ events](#sending-events) when connecting and managing its connection to the Gateway, and [_receives_ events](#receiving-events) when listening to actions taking place in a resource.
 
-All Gateway events are encapsulated in a [Gateway event payload](/topics/gateway-events#gateway-payload-structure).
+All Gateway events are encapsulated in a [Gateway event payload](/gateway/gateway-events#gateway-payload-structure).
 
-A full list of Gateway events and their details are in the [Gateway events documentation](/topics/gateway-events).
+A full list of Gateway events and their details are in the [Gateway events documentation](/gateway/gateway-events).
 
-Details about Gateway event payloads are in the [Gateway events documentation](/topics/gateway-events#gateway-payload-structure).
+Details about Gateway event payloads are in the [Gateway events documentation](/gateway/gateway-events#gateway-payload-structure).
 
 ### Sending Events
 
-When sending a Gateway event (like when [performing an initial handshake](/topics/gateway-events#identify) or [updating presence](/topics/gateway-events#update-presence)), your client must send an [event payload object](/topics/gateway-events#gateway-payload-structure) with a valid Opcode (`op`) and inner data object (`d`).
+When sending a Gateway event (like when [performing an initial handshake](/gateway/gateway-events#identify) or [updating presence](/gateway/gateway-events#update-presence)), your client must send an [event payload object](/gateway/gateway-events#gateway-payload-structure) with a valid Opcode (`op`) and inner data object (`d`).
 
 <Alert type="info">
 
@@ -39,27 +41,27 @@ Specific rate limits are applied when sending events, which you can read about i
 Event payloads sent over a Gateway connection:
 
 1. Must be serialized in [plain-text JSON or binary ETF](#encoding-and-compression).
-2. Must not exceed 15 KiB. If an event payload _does_ exceed this limit, the connection will be closed with a [`4002` close code](/topics/opcodes-and-status-codes#gateway-close-event-codes).
+2. Must not exceed 15 KiB. If an event payload _does_ exceed this limit, the connection will be closed with a [`4002` close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes).
 
-All events that you can send over the Gateway are in the [Gateway events documentation](/topics/gateway-events#send-events).
+All events that you can send over the Gateway are in the [Gateway events documentation](/gateway/gateway-events#send-events).
 
 ### Receiving Events
 
-Receiving a Gateway event from Discord (like when [a reaction is added to a message](/topics/gateway-events#message-reaction-add)) is much more common (and slightly more complex) than sending them.
+Receiving a Gateway event from Discord (like when [a reaction is added to a message](/gateway/gateway-events#message-reaction-add)) is much more common (and slightly more complex) than sending them.
 
 While some events are sent to your client regardless of intents, the receiving of most events is configurable by specifying intents when [identifying](#identifying). Intents are bitwise values that can be ORed (`|`) to indicate which events (or groups of events) you want Discord to send your client. Intents are most commonly used (and required for) bots, as user accounts usually want to receive all event groups, and avoid unnecessary events using other functionality. A list of intents and their corresponding events are listed in the [intents section](#gateway-intents).
 
 When receiving events, you can also configure _how_ events will be sent to your client, like the [encoding and compression](#encoding-and-compression), or whether [sharding should be enabled](#sharding).
 
-All events that you can receive over the Gateway are in the [Gateway events documentation](/topics/gateway-events#receive-events).
+All events that you can receive over the Gateway are in the [Gateway events documentation](/gateway/gateway-events#receive-events).
 
 #### Dispatch Events
 
-[Opcode 0 Dispatch](/topics/gateway-events#gateway-payload-structure) events are the most common type of event you will receive. Gateway events which represent actions taking place in a guild will be sent to your client as Dispatch events.
+[Opcode 0 Dispatch](/gateway/gateway-events#gateway-payload-structure) events are the most common type of event you will receive. Gateway events which represent actions taking place in a guild will be sent to your client as Dispatch events.
 
 When your client is parsing a Dispatch event:
 
-- The `t` field can be used to determine which [Gateway event](/topics/gateway-events#receive-events) the payload represents and the data you can expect in the `d` field.
+- The `t` field can be used to determine which [Gateway event](/gateway/gateway-events#receive-events) the payload represents and the data you can expect in the `d` field.
 - The `s` field represents the sequence number of the event, which is the relative order in which it occurred. You need to cache the most recent non-null `s` value for heartbeats, and to pass when [Resuming](#resuming) a connection.
 
 ## Connections
@@ -78,14 +80,14 @@ At a high-level, Gateway connections consist of the following cycle:
 
 ![Flowchart with an overview of Gateway connection lifecycle](/images/gateway-lifecycle.svg)
 
-1. Client establishes a connection with the Gateway after fetching and caching a WebSocket URL using the [Get Gateway](/topics/gateway#get-gateway) or [Get Gateway Bot](/topics/gateway#get-gateway-bot) endpoint.
+1. Client establishes a connection with the Gateway after fetching and caching a WebSocket URL using the [Get Gateway](/gateway/using-gateway#get-gateway) or [Get Gateway Bot](/gateway/using-gateway#get-gateway-bot) endpoint.
 2. Discord sends the client an [Opcode 10 Hello](#hello-event) event containing a heartbeat interval in milliseconds. **Read the section on [connecting](#connecting).**
 3. Client starts the heartbeat task: it sends an [Opcode 1 Heartbeat](#sending-heartbeats) event, then continue to send them every heartbeat interval until the connection is closed.
    - Discord will respond to each Heartbeat event with an [Opcode 11 Heartbeat ACK](#sending-heartbeats) event to confirm it was received. If the client doesn't receive a Heartbeat ACK before the next heartbeat interval, it should close the connection and reconnect.
    - Discord may send the client an [Opcode 1 Heartbeat](#sending-heartbeats) event, in which case it should respond with an [Opcode 1 Heartbeat](#sending-heartbeats) event immediately.
 4. Client sends an [Opcode 2 Identify](#identifying) event to perform the initial handshake with the Gateway. The client does not have to wait for the [Opcode 10 Hello](#hello-event) event before identifying.
 5. Discord sends the client a [Ready](#ready-event) event which indicates the handshake was successful and the connection is established. The Ready event contains a `resume_gateway_url` that the client should keep track of to determine the WebSocket URL it should use to resume. **Read the section on [the Ready event](#ready-event).**
-6. The connection may be dropped for a variety of reasons. Whether the client can [resume](#resuming) the connection or whether it must re-identify is determined by a variety of factors like the [OPcode](/topics/opcodes-and-status-codes#gateway-opcodes) and [close code](/topics/opcodes-and-status-codes#gateway-close-event-codes) that it receives. **Read the section on [disconnecting](#disconnecting).**
+6. The connection may be dropped for a variety of reasons. Whether the client can [resume](#resuming) the connection or whether it must re-identify is determined by a variety of factors like the [OPcode](/gateway/opcodes-and-close-codes#gateway-opcodes) and [close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes) that it receives. **Read the section on [disconnecting](#disconnecting).**
 7. If the client **can** resume/reconnect, it should open a new connection using `resume_gateway_url`, then send an [Opcode 6 Resume](#resuming) event. If it **cannot** resume/reconnect, it should open a new connection using the cached URL from step #1, then repeat the whole Gateway cycle. _Yipee!_
 
 ### Connecting
@@ -106,7 +108,7 @@ When connecting to the URL, it's a good idea to explicitly pass the API version 
 
 #### Hello Event
 
-Once connected, the client will receive an [Opcode 10 Hello](/topics/gateway-events#hello) event, with information on the connection's heartbeat interval (`heartbeat_interval`).
+Once connected, the client will receive an [Opcode 10 Hello](/gateway/gateway-events#hello) event, with information on the connection's heartbeat interval (`heartbeat_interval`).
 
 The heartbeat interval indicates the how often (in milliseconds) you must send a heartbeat in order to maintain the active connection. Heartbeating is detailed in the [sending heartbeats](#sending-heartbeats) section.
 
@@ -114,15 +116,15 @@ The heartbeat interval indicates the how often (in milliseconds) you must send a
 
 Heartbeats are pings used to let Discord know that your client is still actively using a Gateway connection. After connecting to the Gateway, your client should send heartbeats (as described below) in a background process until the Gateway connection is closed.
 
-To send a heartbeat, either [Opcode 1 Heartbeat](/topics/gateway-events#heartbeat) or [Opcode 40 QoS Heartbeat](/topics/gateway-events#qos-heartbeat) must be used. Both are functionally the same in regards to the Gateway lifecycle, but the QoS Heartbeat also tracks [Quality of Service (QoS)](https://en.wikipedia.org/wiki/Quality_of_service) statistics. The QoS Heartbeat is recommended for all clients, but is not required.
+To send a heartbeat, either [Opcode 1 Heartbeat](/gateway/gateway-events#heartbeat) or [Opcode 40 QoS Heartbeat](/gateway/gateway-events#qos-heartbeat) must be used. Both are functionally the same in regards to the Gateway lifecycle, but the QoS Heartbeat also tracks [Quality of Service (QoS)](https://en.wikipedia.org/wiki/Quality_of_service) statistics. The QoS Heartbeat is recommended for all clients, but is not required.
 
 #### Heartbeat Interval
 
 Upon receiving [Opcode 10 Hello](#hello-event), your client should immediately send its first heartbeat event (with optional jitter). From that point until the connection is closed, your client must continually send Discord a heartbeat every `heartbeat_interval` milliseconds. If your client fails to send a heartbeat event in time, your connection will be closed and you will be forced to [resume](#resuming).
 
-When sending a heartbeat, your client will need to include the last sequence number your client received. The sequence number is sent in every Dispatch [event payload](/topics/gateway-events#gateway-payload-structure) (in the `s` field). If you haven't received any events yet, you should pass `null`.
+When sending a heartbeat, your client will need to include the last sequence number your client received. The sequence number is sent in every Dispatch [event payload](/gateway/gateway-events#gateway-payload-structure) (in the `s` field). If you haven't received any events yet, you should pass `null`.
 
-Additionally, every 30 minutes and on Gateway connect, an [Opcode 41 Update Time Spent Session ID](/topics/gateway-events#update-time-spent-session-id) event should be sent. This is recommended, but not required.
+Additionally, every 30 minutes and on Gateway connect, an [Opcode 41 Update Time Spent Session ID](/gateway/gateway-events#update-time-spent-session-id) event should be sent. This is recommended, but not required.
 
 <Alert type="info">
 
@@ -132,31 +134,31 @@ The first heartbeat may be offset by a value between 0 and `heartbeat_interval` 
 
 You _can_ send heartbeats before the `heartbeat_interval` elapses, but you should avoid doing so unless necessary. There is already tolerance in the `heartbeat_interval` that will cover network latency, so you don't need to account for it in your implementation.
 
-When you send a heartbeat, the Gateway will respond with an [Opcode 11 Heartbeat ACK](/topics/gateway-events#heartbeat-ack), which is an acknowledgement that the heartbeat was received.
+When you send a heartbeat, the Gateway will respond with an [Opcode 11 Heartbeat ACK](/gateway/gateway-events#heartbeat-ack), which is an acknowledgement that the heartbeat was received.
 
 If a client does not receive a heartbeat ACK between its attempts at sending heartbeats, this may be due to a failed or "zombied" connection. The client should immediately terminate the connection with any close code besides `1000` or `1001`, then reconnect and attempt to [resume](#resuming).
 
 <Alert type="info">
 
 In the event of a service outage where you stay connected to the Gateway, you should continue to heartbeat and receive ACKs. The Gateway will eventually respond and issue a session once it's able to.
-When recovering from an outage, the Gateway may respond with an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) when attempting to resume or identify. This is to limit the surge of clients attempting to reconnect at the same time after the outage.
-If this happens, you should maintain the Gateway connection and attempt to [identify](#identifying) again. The Gateway will eventually respond with a [Ready](/topics/gateway-events#ready) event once it's able to process your request.
+When recovering from an outage, the Gateway may respond with an [Opcode 9 Invalid Session](/gateway/gateway-events#invalid-session) when attempting to resume or identify. This is to limit the surge of clients attempting to reconnect at the same time after the outage.
+If this happens, you should maintain the Gateway connection and attempt to [identify](#identifying) again. The Gateway will eventually respond with a [Ready](/gateway/gateway-events#ready) event once it's able to process your request.
 
 </Alert>
 
 #### Heartbeat Requests
 
-In addition to the Heartbeat interval, the Gateway may request additional heartbeats from your client by sending an [Opcode 1 Heartbeat](/topics/gateway-events#heartbeat) event. Upon receiving the event, your client should immediately heartbeat without waiting the remainder of the current interval.
+In addition to the Heartbeat interval, the Gateway may request additional heartbeats from your client by sending an [Opcode 1 Heartbeat](/gateway/gateway-events#heartbeat) event. Upon receiving the event, your client should immediately heartbeat without waiting the remainder of the current interval.
 
-Just like normal, the Gateway will respond with an [Opcode 11 Heartbeat ACK](/topics/gateway-events#heartbeat-ack) event.
+Just like normal, the Gateway will respond with an [Opcode 11 Heartbeat ACK](/gateway/gateway-events#heartbeat-ack) event.
 
 ### Identifying
 
-After the connection is open and you are heartbeating, your client should send an [Opcode 2 Identify](/topics/gateway-events#identify). This event is the initial handshake with the Gateway that's required before your client can begin sending or receiving most Gateway events.
+After the connection is open and you are heartbeating, your client should send an [Opcode 2 Identify](/gateway/gateway-events#identify). This event is the initial handshake with the Gateway that's required before your client can begin sending or receiving most Gateway events.
 
-Users are limited by maximum concurrency (in the [session start limit object](#session-start-limit-object)) when identifying. If your client exceeds this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) event.
+Users are limited by maximum concurrency (in the [session start limit object](#session-start-limit-object)) when identifying. If your client exceeds this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/gateway/gateway-events#invalid-session) event.
 
-After your client sends a valid identify payload, the Gateway will respond with a [Ready](#ready-event) event which indicates a successfully-connected state with the Gateway. The Ready event is sent as a standard [Opcode 0 Dispatch](/topics/gateway-events#gateway-payload-structure).
+After your client sends a valid identify payload, the Gateway will respond with a [Ready](#ready-event) event which indicates a successfully-connected state with the Gateway. The Ready event is sent as a standard [Opcode 0 Dispatch](/gateway/gateway-events#gateway-payload-structure).
 
 <Alert type="warn">
 
@@ -167,14 +169,14 @@ Upon hitting this limit, all active sessions for the bot will be terminated, the
 
 #### Ready Event
 
-As mentioned above, the [Ready](/topics/gateway-events#ready) event is sent to your client after a successful identification. The Ready event includes state, like the guilds you are in, that you need to start interacting with the rest of the platform.
+As mentioned above, the [Ready](/gateway/gateway-events#ready) event is sent to your client after a successful identification. The Ready event includes state, like the guilds you are in, that you need to start interacting with the rest of the platform.
 
 The Ready event also includes fields that you'll need to cache in order to eventually [resume](#resuming) your connection after disconnects. Two fields in particular are important to call out:
 
 - `resume_gateway_url` is a WebSocket URL that you should use to resume after a disconnect. The `resume_gateway_url` should be used instead of the URL [used when connecting](#connecting).
 - `session_id` is the ID for the Gateway session for the connection. It's required to know which stream of events were associated with your connection.
 
-Full details about the Ready event are in the [Gateway events documentation](/topics/gateway-events#ready).
+Full details about the Ready event are in the [Gateway events documentation](/gateway/gateway-events#ready).
 
 ### Disconnecting
 
@@ -182,14 +184,14 @@ The Internet is a scary place. Gateway disconnects happen for a variety of reaso
 
 #### Handling a Disconnect
 
-Due to Discord's architecture, disconnects are a semi-regular event and should be expected and handled. When your client encounters a disconnect, it will typically be sent a [close code](/topics/opcodes-and-status-codes#gateway-close-event-codes) which can be used to determine whether you can reconnect and [resume](#resuming) the session, or whether you have to start over and [re-identify](#identifying).
+Due to Discord's architecture, disconnects are a semi-regular event and should be expected and handled. When your client encounters a disconnect, it will typically be sent a [close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes) which can be used to determine whether you can reconnect and [resume](#resuming) the session, or whether you have to start over and [re-identify](#identifying).
 
 After you determine whether or not you can reconnect, you must do one of the following:
 
 - If you determine that you _can_ reconnect and resume the previous session, then you should reconnect using the `resume_gateway_url` and `session_id` from the [Ready](#ready-event) event. Details about when and how to resume can be found in the [resuming](#resuming) section.
 - If you _cannot_ reconnect **or the reconnect fails**, you should open a new connection using the cached URL from the initial call to [Get Gateway](#get-gateway) or [Get Gateway Bot](#get-gateway-bot). In the case of a failed reconnect, you'll have to re-identify after opening a new connection.
 
-A full list of the close codes can be found in the [close codes](/topics/opcodes-and-status-codes#gateway-close-event-codes) documentation.
+A full list of the close codes can be found in the [close codes](/gateway/opcodes-and-close-codes#gateway-close-event-codes) documentation.
 
 #### Initiating a Disconnect
 
@@ -203,28 +205,28 @@ When your client is disconnected, Discord has a process for reconnecting and res
 
 There are a handful of scenarios when you should attempt to resume:
 
-1. You receive an [Opcode 7 Reconnect](/topics/gateway-events#reconnect) event
-2. You're disconnected with a [close code](/topics/opcodes-and-status-codes#gateway-close-event-codes) that indicates you can reconnect, or don't receive _any_ close code.
-3. You receives an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) event with the `d` field set to `true`. This is an unlikely scenario, but it is possible.
+1. You receive an [Opcode 7 Reconnect](/gateway/gateway-events#reconnect) event
+2. You're disconnected with a [close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes) that indicates you can reconnect, or don't receive _any_ close code.
+3. You receives an [Opcode 9 Invalid Session](/gateway/gateway-events#invalid-session) event with the `d` field set to `true`. This is an unlikely scenario, but it is possible.
 
 #### Preparing to Resume
 
-Before your client can send an [Opcode 6 Resume](/topics/gateway-events#resume) event, it will need three values: the `session_id` and the `resume_gateway_url` from the [Ready](#ready-event) event, and the sequence number (`s`) from the last [Opcode 0 Dispatch](/topics/gateway-events#gateway-payload-structure) event it received before the disconnect.
+Before your client can send an [Opcode 6 Resume](/gateway/gateway-events#resume) event, it will need three values: the `session_id` and the `resume_gateway_url` from the [Ready](#ready-event) event, and the sequence number (`s`) from the last [Opcode 0 Dispatch](/gateway/gateway-events#gateway-payload-structure) event it received before the disconnect.
 
 After the connection is closed, your client should open a new connection using `resume_gateway_url` rather than the URL used to initially connect. If you don't use the `resume_gateway_url` when reconnecting, you will experience disconnects at a higher rate than normal.
 
-Once the new connection is opened, your client should send an [Opcode 6 Resume](/topics/gateway-events#resume) event using the `session_id` and `seq` mentioned above.
+Once the new connection is opened, your client should send an [Opcode 6 Resume](/gateway/gateway-events#resume) event using the `session_id` and `seq` mentioned above.
 
 When resuming, you do not need to send an identify event after opening the connection.
 
-If successful, the Gateway will send the missed events in order, finishing with a [Resumed](/topics/gateway-events#resumed) event to signal event replay has finished and that all subsequent events will be new.
+If successful, the Gateway will send the missed events in order, finishing with a [Resumed](/gateway/gateway-events#resumed) event to signal event replay has finished and that all subsequent events will be new.
 
-If the client does not reconnect in time, the replay buffer will overfill and the session will be invalidated. In this case, the client will receive an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session) and should disconnect. After disconnect, the client should create a new connection with the cached URL from the [Get Gateway](#get-gateway) or the [Get Gateway Bot](#get-gateway-bot) endpoint, then [identify](#identifying).
+If the client does not reconnect in time, the replay buffer will overfill and the session will be invalidated. In this case, the client will receive an [Opcode 9 Invalid Session](/gateway/gateway-events#invalid-session) and should disconnect. After disconnect, the client should create a new connection with the cached URL from the [Get Gateway](#get-gateway) or the [Get Gateway Bot](#get-gateway-bot) endpoint, then [identify](#identifying).
 
 ## OAuth2 and the Gateway
 
 Bearer tokens with the `identify` and either the `gateway.connect` or `voice` [OAuth2 scopes](/topics/oauth2#oauth2-scopes) can be used to connect to the Gateway on behalf of a user. The token must be prefixed with `Bearer ` when [identifying](#identifying), as in HTTP requests.
-The available [Gateway intents](/topics/gateway#gateway-intents) and [events](/topics/gateway-events) will differ depending on the authorized scopes.
+The available [Gateway intents](/gateway/using-gateway#gateway-intents) and [events](/gateway/gateway-events) will differ depending on the authorized scopes.
 
 Note that supported commands and payload structures may differ from those outlined in this documentation. Objects may be more partial than expected or may not contain required fields. As this feature is not stable, these differences are often changing and not yet documented. Proceed with caution.
 
@@ -238,30 +240,30 @@ While capabilities are supported for bots, they are not very functional and not 
 
 The Discord Gateway provides a system for enabling and disabling custom feature flags on a per-connection basis. These flags, or capabilities, are passed in the `capabilities` parameter when [identifying](#identifying). Capabilities are a way for clients to opt into payload and functionality changes in a backwards-compatible way, or disable Gateway features they do not need. Capabilities are not at all related to [Gateway intents](#gateway-intents).
 
-The effects of specific capabilities are documented in the [Gateway events](/topics/gateway-events) section, under every event that is affected. However, the documentation generally assumes clients opt into all new feature capabilities.
+The effects of specific capabilities are documented in the [Gateway events](/gateway/gateway-events) section, under every event that is affected. However, the documentation generally assumes clients opt into all new feature capabilities.
 
 ### List of Capabilities
 
 Below is a list of all capabilities and a general description of their effects. For more information, see the documentation for the specific event or feature that is affected.
 
-| Value   | Name                                  | Description                                                                                                                                                                                                                                                                                                                                    |
-| ------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 << 0  | LAZY_USER_NOTES                       | Removes the `notes` field from the [Ready](/topics/gateway-events#ready) event                                                                                                                                                                                                                                                                 |
-| 1 << 1  | NO_AFFINE_USER_IDS                    | Prevents member/presence syncing and [Presence Update](/topics/gateway-events#presence-update) events for [implicit relationships](/resources/relationships#relationship-object)                                                                                                                                                               |
-| 1 << 2  | VERSIONED_READ_STATES                 | Enables versioned read states, changing the `read_state` field in the [Ready](/topics/gateway-events#ready) event to an object and allowing it to be cached when re-identifying                                                                                                                                                                |
-| 1 << 3  | VERSIONED_USER_GUILD_SETTINGS         | Enables versioned user guild settings, changing the `user_guild_settings` field in the [Ready](/topics/gateway-events#ready) event to an object and allowing it to be cached when re-identifying                                                                                                                                               |
-| 1 << 4  | DEDUPE_USER_OBJECTS                   | Dehydrates the [Ready](/topics/gateway-events#ready) payload, moving all user objects to the `users` field and replacing them in various places in the payload with `user_id` or `recipient_id`, and merging the `members` fields of all guilds into a single `merged_members` field                                                           |
-| 1 << 5  | PRIORITIZED_READY_PAYLOAD ^1^         | Separates the [Ready](/topics/gateway-events#ready) payload into two parts ([Ready](/topics/gateway-events#ready) and [Ready Supplemental](/topics/gateway-events#ready-supplemental)) allowing the client to receive the [Ready](/topics/gateway-events#ready) payload faster and then receive the rest of the payload later                  |
-| 1 << 6  | MULTIPLE_GUILD_EXPERIMENT_POPULATIONS | Changes the `populations` entry of [`guild_experiments`](/topics/experiments#guild-experiments) in the [Ready](/topics/gateway-events#ready) event to be an array of populations rather than a single population                                                                                                                               |
-| 1 << 7  | NON_CHANNEL_READ_STATES               | Includes read states tied to non-channel resources (e.g. guild scheduled events and notification center) in the `read_states` field of the [Ready](/topics/gateway-events#ready) event                                                                                                                                                         |
-| 1 << 8  | AUTH_TOKEN_REFRESH                    | Enables auth token refresh, allowing the client to optionally receive a new auth token in the `auth_token` field of the [Ready](/topics/gateway-events#ready) event                                                                                                                                                                            |
-| 1 << 9  | USER_SETTINGS_PROTO                   | Removes the `user_settings` field from the [Ready](/topics/gateway-events#ready) event and prevents [User Settings Update](/topics/gateway-events#user-settings-update) events; the `user_settings_proto` field and [User Settings Proto Update](/topics/gateway-events#user-settings-proto-update) event is used instead                      |
-| 1 << 10 | CLIENT_STATE_V2                       | Enables client state caching v2                                                                                                                                                                                                                                                                                                                |
-| 1 << 11 | PASSIVE_GUILD_UPDATE                  | Enables passive guild updates, allowing the client to receive [Passive Update V1](/topics/gateway-events#passive-update-v1) events instead of [Channel Unread Update](/topics/gateway-events#channel-unread-update) and [Voice State Update](/topics/gateway-events#voice-state-update) events for guilds it is not subscribed to              |
-| 1 << 12 | AUTO_CALL_CONNECT                     | Connects the client to all pre-existing calls upon connecting to the Gateway; this means clients will receive [Call Create](/topics/gateway-events#call-create) events for all calls created before the Gateway connection was established without needing to send a [Request Call Connect](/topics/gateway-events#request-call-connect) first |
-| 1 << 13 | DEBOUNCE_MESSAGE_REACTIONS            | Debounces message reaction events, preventing the client from receiving multiple [Message Reaction Add](/topics/gateway-events#message-reaction-add) events for the same message within a short period of time; clients will receive a single [Message Reaction Add Many](/topics/gateway-events#message-reaction-add-many) event instead      |
-| 1 << 14 | PASSIVE_GUILD_UPDATE_V2 ^2^           | Enables passive guild updates v2, allowing the client to receive [Passive Update V2](/topics/gateway-events#passive-update-v2) events instead of [Channel Unread Update](/topics/gateway-events#channel-unread-update) and [Voice State Update](/topics/gateway-events#voice-state-update) events for guilds it is not subscribed to           |
-| 1 << 16 | AUTO_LOBBY_CONNECT                    | Adds a `lobbies` field to the [Ready](/topics/gateway-events#ready) event containing pre-existing lobbies and stops streaming [Lobby Create](/topics/gateway-events#lobby-create) events upon connecting to the Gateway                                                                                                                        |
+| Value   | Name                                  | Description                                                                                                                                                                                                                                                                                                                                      |
+| ------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 << 0  | LAZY_USER_NOTES                       | Removes the `notes` field from the [Ready](/gateway/gateway-events#ready) event                                                                                                                                                                                                                                                                  |
+| 1 << 1  | NO_AFFINE_USER_IDS                    | Prevents member/presence syncing and [Presence Update](/gateway/gateway-events#presence-update) events for [implicit relationships](/resources/relationships#relationship-object)                                                                                                                                                                |
+| 1 << 2  | VERSIONED_READ_STATES                 | Enables versioned read states, changing the `read_state` field in the [Ready](/gateway/gateway-events#ready) event to an object and allowing it to be cached when re-identifying                                                                                                                                                                 |
+| 1 << 3  | VERSIONED_USER_GUILD_SETTINGS         | Enables versioned user guild settings, changing the `user_guild_settings` field in the [Ready](/gateway/gateway-events#ready) event to an object and allowing it to be cached when re-identifying                                                                                                                                                |
+| 1 << 4  | DEDUPE_USER_OBJECTS                   | Dehydrates the [Ready](/gateway/gateway-events#ready) payload, moving all user objects to the `users` field and replacing them in various places in the payload with `user_id` or `recipient_id`, and merging the `members` fields of all guilds into a single `merged_members` field                                                            |
+| 1 << 5  | PRIORITIZED_READY_PAYLOAD ^1^         | Separates the [Ready](/gateway/gateway-events#ready) payload into two parts ([Ready](/gateway/gateway-events#ready) and [Ready Supplemental](/gateway/gateway-events#ready-supplemental)) allowing the client to receive the [Ready](/gateway/gateway-events#ready) payload faster and then receive the rest of the payload later                |
+| 1 << 6  | MULTIPLE_GUILD_EXPERIMENT_POPULATIONS | Changes the `populations` entry of [`guild_experiments`](/topics/experiments#guild-experiments) in the [Ready](/gateway/gateway-events#ready) event to be an array of populations rather than a single population                                                                                                                                |
+| 1 << 7  | NON_CHANNEL_READ_STATES               | Includes read states tied to non-channel resources (e.g. guild scheduled events and notification center) in the `read_states` field of the [Ready](/gateway/gateway-events#ready) event                                                                                                                                                          |
+| 1 << 8  | AUTH_TOKEN_REFRESH                    | Enables auth token refresh, allowing the client to optionally receive a new auth token in the `auth_token` field of the [Ready](/gateway/gateway-events#ready) event                                                                                                                                                                             |
+| 1 << 9  | USER_SETTINGS_PROTO                   | Removes the `user_settings` field from the [Ready](/gateway/gateway-events#ready) event and prevents [User Settings Update](/gateway/gateway-events#user-settings-update) events; the `user_settings_proto` field and [User Settings Proto Update](/gateway/gateway-events#user-settings-proto-update) event is used instead                     |
+| 1 << 10 | CLIENT_STATE_V2                       | Enables client state caching v2                                                                                                                                                                                                                                                                                                                  |
+| 1 << 11 | PASSIVE_GUILD_UPDATE                  | Enables passive guild updates, allowing the client to receive [Passive Update V1](/gateway/gateway-events#passive-update-v1) events instead of [Channel Unread Update](/gateway/gateway-events#channel-unread-update) and [Voice State Update](/gateway/gateway-events#voice-state-update) events for guilds it is not subscribed to             |
+| 1 << 12 | AUTO_CALL_CONNECT                     | Connects the client to all pre-existing calls upon connecting to the Gateway; this means clients will receive [Call Create](/gateway/gateway-events#call-create) events for all calls created before the Gateway connection was established without needing to send a [Request Call Connect](/gateway/gateway-events#request-call-connect) first |
+| 1 << 13 | DEBOUNCE_MESSAGE_REACTIONS            | Debounces message reaction events, preventing the client from receiving multiple [Message Reaction Add](/gateway/gateway-events#message-reaction-add) events for the same message within a short period of time; clients will receive a single [Message Reaction Add Many](/gateway/gateway-events#message-reaction-add-many) event instead      |
+| 1 << 14 | PASSIVE_GUILD_UPDATE_V2 ^2^           | Enables passive guild updates v2, allowing the client to receive [Passive Update V2](/gateway/gateway-events#passive-update-v2) events instead of [Channel Unread Update](/gateway/gateway-events#channel-unread-update) and [Voice State Update](/gateway/gateway-events#voice-state-update) events for guilds it is not subscribed to          |
+| 1 << 16 | AUTO_LOBBY_CONNECT                    | Adds a `lobbies` field to the [Ready](/gateway/gateway-events#ready) event containing pre-existing lobbies and stops streaming [Lobby Create](/gateway/gateway-events#lobby-create) events upon connecting to the Gateway                                                                                                                        |
 
 ^1^ Requires `DEDUPE_USER_OBJECTS`. Without it, the capability will be ignored.
 
@@ -277,20 +279,20 @@ For bots, intents are optionally supported on the v6 API but required as of v8. 
 
 Maintaining a stateful application can be difficult when it comes to the amount of data you're expected to process over a Gateway connection, especially at scale. Gateway intents are a system to help you lower the computational burden.
 
-Intents are bitwise values passed in the `intents` parameter when [identifying](#identifying) which correlate to a set of related events. For example, the event sent when a guild is created ([Guild Create](/topics/gateway-events#guild-create)) and when a channel is updated ([Channel Update](/topics/gateway-events#channel-update)) both require the same `GUILDS (1 << 0)` intent (as listed in the table below). If you do not specify an intent when identifying, you will not receive _any_ of the Gateway events associated with that intent.
+Intents are bitwise values passed in the `intents` parameter when [identifying](#identifying) which correlate to a set of related events. For example, the event sent when a guild is created ([Guild Create](/gateway/gateway-events#guild-create)) and when a channel is updated ([Channel Update](/gateway/gateway-events#channel-update)) both require the same `GUILDS (1 << 0)` intent (as listed in the table below). If you do not specify an intent when identifying, you will not receive _any_ of the Gateway events associated with that intent.
 
 For bots, two types of intents exist:
 
 - **Standard intents** can be passed by default. You don't need any additional permissions or configurations.
 - **Privileged intents** must be enabled before they can be used. More information about privileged intents can be found [in their section below](#privileged-intents).
 
-Your Gateway connection will be closed if you pass invalid intents ([`4013` close code](/topics/opcodes-and-status-codes#gateway-close-event-codes)), or a privileged intent that hasn't been configured or approved for your bot ([`4014` close code](/topics/opcodes-and-status-codes#gateway-close-event-codes)). User accounts do not require approval and can use any intent, albeit with caveats of their own.
+Your Gateway connection will be closed if you pass invalid intents ([`4013` close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes)), or a privileged intent that hasn't been configured or approved for your bot ([`4014` close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes)). User accounts do not require approval and can use any intent, albeit with caveats of their own.
 
 ### List of Intents
 
 Below is a list of all intents and the Gateway events associated with them. Any events _not_ listed means it's not associated with an intent and will always be sent to your client.
 
-All events, including those that aren't associated with an intent, are in the [Gateway events](/topics/gateway-events) documentation.
+All events, including those that aren't associated with an intent, are in the [Gateway events](/gateway/gateway-events) documentation.
 
 ```
 GUILDS (1 << 0)
@@ -458,7 +460,7 @@ LOBBY_DELETE (1 << 28) ⁵
   - LOBBY_DELETE
 ```
 
-^1^ [Thread Members Update](/topics/gateway-events#thread-members-update) contains different data depending on which intents are used.
+^1^ [Thread Members Update](/gateway/gateway-events#thread-members-update) contains different data depending on which intents are used.
 
 ^2^ For bots, events under the `GUILD_PRESENCES` and `GUILD_MEMBERS` intents are turned **off by default on all API versions**. Bots using API v7 and below will receive events associated with the privileged intents they have _without_ passing those intents into the `intents` parameter when identifying. Bots using **API v8** and above must specify all intents when identifying (privileged or not). User accounts default to all intents being on.
 
@@ -466,19 +468,19 @@ LOBBY_DELETE (1 << 28) ⁵
 
 ^4^ This intent cannot be used by bots.
 
-^5^ This intent is only applicable in [OAuth2 contexts](/topics/gateway#oauth2-and-the-gateway).
+^5^ This intent is only applicable in [OAuth2 contexts](/gateway/using-gateway#oauth2-and-the-gateway).
 
 ### Caveats
 
 Any [events not defined in an intent](#gateway-events) are considered "passthrough" and will always be sent to you.
 
-[Guild Member Update](/topics/gateway-events#guild-member-update) is sent for current-user updates regardless of whether the `GUILD_MEMBERS` intent is set.
+[Guild Member Update](/gateway/gateway-events#guild-member-update) is sent for current-user updates regardless of whether the `GUILD_MEMBERS` intent is set.
 
-[Message Create](/topics/gateway-events#message-create), [Message Update](/topics/gateway-events#message-update), and [Message Delete](/topics/gateway-events#message-delete) are sent for messages in group DMs regardless of any intents.
+[Message Create](/gateway/gateway-events#message-create), [Message Update](/gateway/gateway-events#message-update), and [Message Delete](/gateway/gateway-events#message-delete) are sent for messages in group DMs regardless of any intents.
 
-[Guild Create](/topics/gateway-events#guild-create) and [Request Guild Members](/topics/gateway-events#request-guild-members) are uniquely affected by intents. See these sections for more information.
+[Guild Create](/gateway/gateway-events#guild-create) and [Request Guild Members](/gateway/gateway-events#request-guild-members) are uniquely affected by intents. See these sections for more information.
 
-[Thread Members Update](/topics/gateway-events#thread-members-update) by default only includes if the current user was added to or removed from a thread. To receive these updates for other users, request the `GUILD_MEMBERS` [Gateway intent](#gateway-intents).
+[Thread Members Update](/gateway/gateway-events#thread-members-update) by default only includes if the current user was added to or removed from a thread. To receive these updates for other users, request the `GUILD_MEMBERS` [Gateway intent](#gateway-intents).
 
 ### Privileged Intents
 
@@ -498,7 +500,7 @@ Applications that qualify for [verification](https://dis.gd/bot-verification) mu
 
 #### Gateway Restrictions
 
-Privileged intents affect which Gateway events bots are permitted to receive. For bots using **API v8** and above, all intents (privileged and not) must be specified in the `intents` parameter when identifying. Passing a privileged intent in the `intents` parameter without having it enabled will lead to the Gateway connection being closed with a ([`4014` close code](/topics/opcodes-and-status-codes#gateway-close-event-codes)).
+Privileged intents affect which Gateway events bots are permitted to receive. For bots using **API v8** and above, all intents (privileged and not) must be specified in the `intents` parameter when identifying. Passing a privileged intent in the `intents` parameter without having it enabled will lead to the Gateway connection being closed with a ([`4014` close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes)).
 
 <Alert type="info">
 
@@ -535,19 +537,19 @@ This section is about Gateway rate limits, not [HTTP API rate limits](/topics/ra
 
 </Alert>
 
-Clients can send 120 [Gateway events](/topics/gateway-events) per [connection](#connections) every 60 seconds, meaning an average of 2 commands per second. Clients that surpass the limit are immediately disconnected from the Gateway. Similar to other rate limits, repeat offenders will have their API access revoked.
+Clients can send 120 [Gateway events](/gateway/gateway-events) per [connection](#connections) every 60 seconds, meaning an average of 2 commands per second. Clients that surpass the limit are immediately disconnected from the Gateway. Similar to other rate limits, repeat offenders will have their API access revoked.
 
-Clients also have a limit for [concurrent](#session-start-limit-object) [identify](#identifying) requests allowed per 5 seconds. If you hit this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/topics/gateway-events#invalid-session).
+Clients also have a limit for [concurrent](#session-start-limit-object) [identify](#identifying) requests allowed per 5 seconds. If you hit this limit, the Gateway will respond with an [Opcode 9 Invalid Session](/gateway/gateway-events#invalid-session).
 
 #### Sub Rate Limits
 
 Some Opcodes have their own specific rate limits. These are currently as follows:
 
-| Opcode                                                                         | Rate Limit                                     |
-| ------------------------------------------------------------------------------ | ---------------------------------------------- |
-| [Opcode 8 Request Guild Members](/topics/gateway-events#request-guild-members) | 1 request per guild per session per 30 seconds |
+| Opcode                                                                          | Rate Limit                                     |
+| ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [Opcode 8 Request Guild Members](/gateway/gateway-events#request-guild-members) | 1 request per guild per session per 30 seconds |
 
-If a client exceeds an Opcode-specific rate limit, the Gateway will respond with a [Rate Limited](/topics/gateway-events#rate-limited) event.
+If a client exceeds an Opcode-specific rate limit, the Gateway will respond with a [Rate Limited](/gateway/gateway-events#rate-limited) event.
 
 ## Encoding and Compression
 
@@ -577,7 +579,7 @@ When using ETF (External Term Format) encoding, there are some specific behavior
 
 - Snowflake IDs are transmitted as 64-bit integers or strings.
 - Your client can't send compressed messages to the server.
-- When sending payloads, you must use string keys. Using atom keys will result in a [`4002` close code](/topics/opcodes-and-status-codes#gateway-close-event-codes).
+- When sending payloads, you must use string keys. Using atom keys will result in a [`4002` close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes).
 
 See [erlpack](https://github.com/discord/erlpack) for an ETF implementation example.
 
@@ -629,21 +631,21 @@ Take a look at this [Erlang](https://github.com/silviucpp/ezstd/blob/f3f33b2f6b9
 
 ## Tracking State
 
-Most of a client's state is provided during the initial [Ready](/topics/gateway-events#ready) event (and optionally the [Guild Create](/topics/gateway-events#guild-create) events that immediately follow).
+Most of a client's state is provided during the initial [Ready](/gateway/gateway-events#ready) event (and optionally the [Guild Create](/gateway/gateway-events#guild-create) events that immediately follow).
 
 As resources continue to be created, updated, and deleted, Gateway events are sent to notify the client of these changes and to provide associated data. To avoid excessive API calls, clients should cache as many relevant resource states as possible, and update them as new events are received.
 
 <Alert type="info">
 
-For larger bots, client state can grow to be quite large. It is recommended to only store objects in memory that are needed for a bot's operation. Many bots, for example, just respond to user input through chat commands. These bots may only need to keep guild information (like guild/channel roles and permissions) in memory, since [Message Create](/topics/gateway-events#message-create) and [Message Update](/topics/gateway-events#message-update) events have the full member object available.
+For larger bots, client state can grow to be quite large. It is recommended to only store objects in memory that are needed for a bot's operation. Many bots, for example, just respond to user input through chat commands. These bots may only need to keep guild information (like guild/channel roles and permissions) in memory, since [Message Create](/gateway/gateway-events#message-create) and [Message Update](/gateway/gateway-events#message-update) events have the full member object available.
 
 </Alert>
 
-An example of state tracking can be considered in the case of a bot that wants to track member status: when initially connecting to the Gateway, the bot will receive information about the online status of guild members (whether they're online, idle, on do-not-disturb, or offline). To keep the state updated, the bot will track and parse [Presence Update](/topics/gateway-events#presence-update) events as they're received, then update the cached member objects accordingly.
+An example of state tracking can be considered in the case of a bot that wants to track member status: when initially connecting to the Gateway, the bot will receive information about the online status of guild members (whether they're online, idle, on do-not-disturb, or offline). To keep the state updated, the bot will track and parse [Presence Update](/gateway/gateway-events#presence-update) events as they're received, then update the cached member objects accordingly.
 
 ## Guild Availability
 
-When connecting to the Gateway as a bot user, guilds that the bot is a part of will start out as unavailable. Don't fret! The Gateway will automatically attempt to reconnect on your behalf. As guilds become available to you, you will receive [Guild Create](/topics/gateway-events#guild-create) events. On the other hand, users start out with all possible guilds available to them.
+When connecting to the Gateway as a bot user, guilds that the bot is a part of will start out as unavailable. Don't fret! The Gateway will automatically attempt to reconnect on your behalf. As guilds become available to you, you will receive [Guild Create](/gateway/gateway-events#guild-create) events. On the other hand, users start out with all possible guilds available to them.
 
 ## Sharding
 
@@ -658,7 +660,7 @@ Additionally, they are limited to a maximum of 50 active Gateway sessions at a t
 
 </Alert>
 
-To enable sharding on a connection, the client should send the `shard` array in the [Identify](/topics/gateway-events#identify) payload. The first item in this array should be the zero-based integer value of the current shard, while the second represents the total number of shards. DMs will only be sent to shard 0.
+To enable sharding on a connection, the client should send the `shard` array in the [Identify](/gateway/gateway-events#identify) payload. The first item in this array should be the zero-based integer value of the current shard, while the second represents the total number of shards. DMs will only be sent to shard 0.
 
 <Alert type="info">
 
@@ -750,9 +752,9 @@ In this case, you must start the shard buckets **in "order"**. That means that y
 
 For bots in more than 150,000 guilds, there are some additional considerations you must take around sharding. Discord will migrate your bot to large bot sharding when it starts to get near the large bot sharding threshold. The bot owner(s) will receive a system DM and email confirming this move has completed as well as what shard number has been assigned.
 
-The number of shards you run must be a multiple of the shard number provided when reaching out to you. If you attempt to start your bot with an invalid number of shards, your Gateway connection will close with a [`4010` close code](/topics/opcodes-and-status-codes#gateway-close-event-codes).
+The number of shards you run must be a multiple of the shard number provided when reaching out to you. If you attempt to start your bot with an invalid number of shards, your Gateway connection will close with a [`4010` close code](/gateway/opcodes-and-close-codes#gateway-close-event-codes).
 
-The [Get Gateway Bot](/topics/gateway#get-gateway-bot) endpoint will always return the correct amount of shards, so if you're already using this endpoint to determine your number of shards, you shouldn't require any changes.
+The [Get Gateway Bot](/gateway/using-gateway#get-gateway-bot) endpoint will always return the correct amount of shards, so if you're already using this endpoint to determine your number of shards, you shouldn't require any changes.
 
 The session start limit for these bots will also be increased from 1000 to `max(2000, (guild_count / 1000) * 5)` per day. You also receive an increased `max_concurrency`, the number of [shards you can concurrently start](#session-start-limit-object).
 

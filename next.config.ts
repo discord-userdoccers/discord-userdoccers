@@ -18,12 +18,22 @@ const config: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // eslint-disable-next-line @typescript-eslint/require-await -- required for Next.js
   async redirects() {
     return [
       {
         source: "/",
         destination: "/intro",
+        permanent: true,
+      },
+      // old pages
+      {
+        source: "/topics/opcodes-and-status-codes",
+        destination: "/gateway/opcodes-and-close-codes",
+        permanent: true,
+      },
+      {
+        source: "/datamining/errors",
+        destination: "/topics/errors",
         permanent: true,
       },
       // for convenience

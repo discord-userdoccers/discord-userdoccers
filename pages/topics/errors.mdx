@@ -1,0 +1,83 @@
+import ErrorCodesEmbed from "../../components/error-codes/ErrorCodesEmbed";
+
+# Errors
+
+## HTTP
+
+The API will return semantically valid HTTP response codes based on the success of your request. The following table can be used as a reference for response codes it will return.
+
+###### HTTP Response Codes
+
+| Code                        | Meaning                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 200 (OK)                    | The request completed successfully.                                                                        |
+| 201 (CREATED)               | The entity was created successfully.                                                                       |
+| 202 (ACCEPTED)              | The request was accepted but the resource is not ready. A `retry_after` key should be present in the body. |
+| 204 (NO CONTENT)            | The request completed successfully but returned no content.                                                |
+| 304 (NOT MODIFIED)          | The entity was not modified (no action was taken).                                                         |
+| 400 (BAD REQUEST)           | The request was improperly formatted, or the server couldn't understand it.                                |
+| 401 (UNAUTHORIZED)          | The `Authorization` header was missing or invalid.                                                         |
+| 403 (FORBIDDEN)             | You do not have permission to perform the requested action.                                                |
+| 404 (NOT FOUND)             | The resource at the location specified doesn't exist.                                                      |
+| 405 (METHOD NOT ALLOWED)    | The HTTP method used is not valid for the location specified.                                              |
+| 409 (CONFLICT)              | The requested resource update could not be completed due to the current state of the target resource.      |
+| 410 (GONE)                  | The resource being accessed is no longer available.                                                        |
+| 413 (PAYLOAD TOO LARGE)     | The request entity was too large.                                                                          |
+| 415 (UNSUPPORTED MEDIA)     | The requested content type is not supported (CDN only).                                                    |
+| 422 (UNPROCESSABLE CONTENT) | The request was well-formed but failed validation (Rust services only).                                    |
+| 423 (LOCKED)                | The resource being accessed is transiently locked. Try again later.                                        |
+| 429 (TOO MANY REQUESTS)     | You are being rate limited, see [Rate Limits](/topics/rate-limits).                                        |
+| 501 (NOT IMPLEMENTED)       | The requested HTTP method is not supported.                                                                |
+| 502 (GATEWAY UNAVAILABLE)   | There was no gateway available to process your request. Wait a bit and retry.                              |
+| 503 (SERVICE UNAVAILABLE)   | The service required to process your request is unavailable. Wait a bit and retry.                         |
+| 504 (GATEWAY TIMEOUT)       | The gateway processing your request timed out. Wait a bit and retry.                                       |
+| 5xx (SERVER ERROR) ^1^      | The server had an error processing your request.                                                           |
+
+^1^ 502, 504, 507, 522, 523, 524 should be retried with a backoff. The number of failed requests can be specified with the `X-Failed-Requests` header. Whether you retry other 5xx errors is up to you.
+
+## JSON
+
+Along with the HTTP error code, the API can also return more detailed error codes through a `code` key in the JSON error response. The response will also contain a `message` key containing a more friendly error string. Some of these errors may include additional details in the form of [Error Messages](/reference#error-messages) provided by an `errors` object.
+
+<Alert type="info">
+
+A special `40333` JSON error code is returned if your request is blocked by Cloudflare. This may be due to a malformed request or improper user agent. The response resembles a normal error structure but is not thrown by the API itself:
+
+```json
+{
+  "message": "internal network error",
+  "code": 40333
+}
+```
+
+</Alert>
+
+<Alert type="warn">
+
+Receiving a 403 forbidden response with a `10008` JSON error code indicates that your request has been blocked by Discord's anti abuse systems, despite the error message being "Unknown Message":
+
+```json
+{
+  "message": "Unknown Message",
+  "code": 10008
+}
+```
+
+This can happen for a number of reasons, both relating to the request and the account itself. Note that this is not the _only_ error code that can be returned when a request is blocked. Sometimes, contextually valid error codes may be returned instead, even when they make no sense.
+
+</Alert>
+
+###### JSON Error Codes
+
+We maintain an unofficial updated list of JSON error codes seen in the wild, which is significantly more comprehensive than the official documentation. If you found an error which is incorrect or not listed, you can submit it here with reproduction steps, and we will add it to the list.
+
+<ErrorCodesEmbed />
+
+###### Example JSON Error Response
+
+```json
+{
+  "message": "Invalid authentication token",
+  "code": 50014
+}
+```
