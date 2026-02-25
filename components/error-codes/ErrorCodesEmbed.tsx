@@ -13,7 +13,7 @@ export interface ErrorGroup {
 }
 
 export default function ErrorCodesEmbed() {
-  const { data: codes, error } = useSWR<ErrorGroup[]>("/api/codes", (url: string) =>
+  const { data: codes, error } = useSWR<ErrorGroup[]>(process.env.ERROR_CODES_ENDPOINT, (url: string) =>
     fetch(url).then((res): Promise<ErrorGroup[]> => {
       if (res.ok) {
         return res.json();

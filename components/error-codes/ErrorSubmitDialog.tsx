@@ -67,7 +67,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     e.preventDefault();
 
                     setIsSubmitting(true);
-                    fetch("/api/codes", {
+                    fetch(process.env.ERROR_CODES_ENDPOINT!, {
                       method: "PUT",
                       body: new FormData(e.currentTarget),
                     }).then((res) => {

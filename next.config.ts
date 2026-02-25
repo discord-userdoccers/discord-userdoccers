@@ -11,6 +11,7 @@ const config: NextConfig = {
   env: {
     BASE_DOMAIN:
       process.env.CF_PAGES_URL ?? (process.env.NODE_ENV === "production" ? "docs.discord.food" : "localhost:3000"),
+    ERROR_CODES_ENDPOINT: process.env.ERROR_CODES_ENDPOINT ?? "https://docs.discord.food/api/codes",
   },
   eslint: {
     ignoreDuringBuilds: true,
