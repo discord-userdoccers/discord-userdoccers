@@ -11,6 +11,7 @@ const config: NextConfig = {
   env: {
     BASE_DOMAIN:
       process.env.CF_PAGES_URL ?? (process.env.NODE_ENV === "production" ? "docs.discord.food" : "localhost:3000"),
+    ERROR_CODES_ENDPOINT: process.env.ERROR_CODES_ENDPOINT ?? "https://docs.discord.food/api/codes",
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -18,12 +19,32 @@ const config: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // eslint-disable-next-line @typescript-eslint/require-await -- required for Next.js
   async redirects() {
     return [
       {
         source: "/",
         destination: "/intro",
+        permanent: true,
+      },
+      // old pages
+      {
+        source: "/topics/gateway",
+        destination: "/gateway/using-gateway",
+        permanent: true,
+      },
+      {
+        source: "/topics/gateway-events",
+        destination: "/gateway/gateway-events",
+        permanent: true,
+      },
+      {
+        source: "/topics/opcodes-and-status-codes",
+        destination: "/gateway/opcodes-and-close-codes",
+        permanent: true,
+      },
+      {
+        source: "/datamining/errors",
+        destination: "/topics/errors",
         permanent: true,
       },
       // for convenience

@@ -11,22 +11,6 @@ import matter from "gray-matter";
  * 3. Extract markdown headings and create a navigation outline for use by <Navigation /> component
  */
 
-const SPECIAL_PAGES: Record<string, { content: string; data: any }> = {
-  "datamining/errors": {
-    content: "",
-    data: {
-      "name": "Error Codes",
-      "sort": 1,
-      "sort-name": "error-codes",
-      "show-sublinks": false,
-      // TODO: fetch it here and create sublinks
-      "sublinks": [],
-      "max-sublink-level": 3,
-      "icon": "Robot",
-    },
-  },
-};
-
 async function walk(path: string, filter: (file: string) => boolean): Promise<string[]> {
   let files: string[] = [];
 
@@ -50,9 +34,6 @@ const root = join(process.cwd(), "pages");
 const files = [...(await walk(root, (file) => file.endsWith(".mdx") && !basename(file).startsWith("_")))]
   .map((file) => file.slice(root.length + 1, -4).replaceAll(sep, "/"))
   .sort((a, b) => a.split("/").length - b.split("/").length);
-
-// NATIVE NEXTJS PAGES
-files.push(...Object.keys(SPECIAL_PAGES));
 
 // SITEMAP
 
@@ -101,8 +82,7 @@ for (const file of files) {
     section = "__ROOT__";
   }
 
-  const parsed =
-    file in SPECIAL_PAGES ? SPECIAL_PAGES[file] : await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
+  const parsed = await readFile(join(root, `${file}.mdx`), "utf-8").then(matter);
   const name =
     parsed.data.name ??
     parsed.content
@@ -185,11 +165,11 @@ for (const section in navigationLinks) {
 }
 
 const sectionSortTable: Record<string, number> = {
-  "datamining": 1,
-  "resources": 2,
-  "topics": 3,
-  "remote-authentication": 4,
-  "interactions": 5,
+  "resources": 1,
+  "topics": 2,
+  "gateway": 3,
+  "interactions": 4,
+  "remote-authentication": 5,
 };
 
 const navigationLinksArray = Object.entries(navigationLinks)

@@ -21,18 +21,18 @@ These same principles can be applied to determine what entity ID to use when ack
 ## Automations
 
 As with all stateful resources in Discord, clients are expected to manage read states locally and update them as necessary from Gateway events such as
-[Message Ack](/topics/gateway-events#message-ack), [Channel Pins Ack](/topics/gateway-events#channel-pins-ack), [Guild Feature Ack](/topics/gateway-events#guild-feature-ack), and [User Non Channel Ack](/topics/gateway-events#user-non-channel-ack).
+[Message Ack](/gateway/gateway-events#message-ack), [Channel Pins Ack](/gateway/gateway-events#channel-pins-ack), [Guild Feature Ack](/gateway/gateway-events#guild-feature-ack), and [User Non Channel Ack](/gateway/gateway-events#user-non-channel-ack).
 
 However, certain read state updates are done automatically by Discord without firing ack events. As a result, clients must make sure to keep their local read state store in sync by implementing the same logic.
 
 #### Channel Read State Automations
 
-- When a [Message Create](/topics/gateway-events#message-create) Gateway event is received, if the author is not [blocked or ignored](/resources/relationships):
+- When a [Message Create](/gateway/gateway-events#message-create) Gateway event is received, if the author is not [blocked or ignored](/resources/relationships):
   - If the message is in a private channel, the message type is not [`RECIPIENT_REMOVE`](/resources/message#message-type), and the private channel is not [muted](/resources/user-settings#user-guild-settings-object) or the message mentions the current user, the corresponding read state must be updated to increment `mention_count` by one. ^1^
   - If the message is in a guild channel and the message mentions the current user, the corresponding read state must be updated to increment `mention_count` by one. ^1^
   - If the message is not in a voice or stage channel, the channel is not [muted](/resources/user-settings#user-guild-settings-object), the channel's [notification level](/resources/user-settings#user-guild-settings-object) is set to `ALL_MESSAGES`, and the user has the [`MENTION_ON_ALL_MESSAGES` setting](/resources/user-settings#notification-settings-flags) enabled, the corresponding read state must be updated to increment `mention_count` by one. ^2^
-- When a [Message Create](/topics/gateway-events#message-create) Gateway event is received, if the message type is not [`POLL_RESULT`](/resources/message#message-type) and is authored by the current user, the corresponding read state must be updated to set `last_message_id` to the new message's ID, thereby resetting `mention_count` to zero.
-- When a [Thread Create](/topics/gateway-events#thread-create) Gateway event is received, if the thread's parent is a thread-only channel and the thread is created by the current user, the corresponding parent read state must be updated to set `last_message_id` to the new thread's ID, thereby resetting `mention_count` to zero.
+- When a [Message Create](/gateway/gateway-events#message-create) Gateway event is received, if the message type is not [`POLL_RESULT`](/resources/message#message-type) and is authored by the current user, the corresponding read state must be updated to set `last_message_id` to the new message's ID, thereby resetting `mention_count` to zero.
+- When a [Thread Create](/gateway/gateway-events#thread-create) Gateway event is received, if the thread's parent is a thread-only channel and the thread is created by the current user, the corresponding parent read state must be updated to set `last_message_id` to the new thread's ID, thereby resetting `mention_count` to zero.
 
 ^1^ When considering if a message mentions the current user, clients must take into account user mentions, role mentions, and everyone mentions. When considering role and everyone mentions, clients must check the channel's [notification settings](/resources/user-settings#user-guild-settings-object) to ensure those mentions are not suppressed.
 
@@ -40,8 +40,8 @@ However, certain read state updates are done automatically by Discord without fi
 
 #### Guild Read State Automations
 
-- When a [Guild Scheduled Event Create](/topics/gateway-events#guild-scheduled-event-create) Gateway event is received, if the guild's [notification settings](/resources/user-settings#user-guild-settings-object) does not have `mute_scheduled_events` set, the corresponding read state must be updated to increment `badge_count` by one.
-- When a [Guild Scheduled Event Create](/topics/gateway-events#guild-scheduled-event-create) Gateway event is received, if the event's `creator_id` matches the current user's ID, the corresponding read state must be updated to set `last_acked_id` to the new event's ID, thereby resetting `badge_count` to zero.
+- When a [Guild Scheduled Event Create](/gateway/gateway-events#guild-scheduled-event-create) Gateway event is received, if the guild's [notification settings](/resources/user-settings#user-guild-settings-object) does not have `mute_scheduled_events` set, the corresponding read state must be updated to increment `badge_count` by one.
+- When a [Guild Scheduled Event Create](/gateway/gateway-events#guild-scheduled-event-create) Gateway event is received, if the event's `creator_id` matches the current user's ID, the corresponding read state must be updated to set `last_acked_id` to the new event's ID, thereby resetting `badge_count` to zero.
 
 ## Management
 
@@ -89,7 +89,7 @@ Ack tokens are used to identify a specific client when interacting with read sta
 The client should initially set its ack token to `null` when making the first ack request. The server will respond with a new token in the `token` field of the response, which the client should store locally.
 When acknowledging a read state, the client should then send this token back to the server in the `token` field. The server will respond with an updated token, which the client should again store locally for future requests.
 
-The client should reset the ack token to `null` whenever it switches accounts or a [User Update](/topics/gateway-events#user-update) Gateway event is received.
+The client should reset the ack token to `null` whenever it switches accounts or a [User Update](/gateway/gateway-events#user-update) Gateway event is received.
 
 ### Read State Object
 
@@ -140,7 +140,7 @@ The client should reset the ack token to `null` whenever it switches accounts or
   Acknowledge Message
 </RouteHeader>
 
-Updates the channel's read state for the current user. Fires a [Message Ack](/topics/gateway-events#message-ack) Gateway event.
+Updates the channel's read state for the current user. Fires a [Message Ack](/gateway/gateway-events#message-ack) Gateway event.
 
 The message ID parameter does not need to be a valid message ID, but it must be a valid snowflake. If the message ID is being set to a message sent prior to the latest acknowledged one, `manual` should be `true` or the resulting read state update might be ignored by clients, resulting in undefined behavior.
 In this case, `mention_count` should also be updated to the amount of mentions unacknowledged as it is not automatically calculated by Discord.
@@ -169,13 +169,13 @@ In this case, `mention_count` should also be updated to the amount of mentions u
   Acknowledge Pinned Messages
 </RouteHeader>
 
-Acknowledges the currently pinned messages in a channel. Returns a 204 empty response on success. Fires a [Channel Pins Ack](/topics/gateway-events#channel-pins-ack) Gateway event.
+Acknowledges the currently pinned messages in a channel. Returns a 204 empty response on success. Fires a [Channel Pins Ack](/gateway/gateway-events#channel-pins-ack) Gateway event.
 
 <RouteHeader method="POST" url="/guilds/{guild.id}/ack" deprecated>
   Acknowledge Guild
 </RouteHeader>
 
-Updates all read states in a guild to acknowledge all features and messages. Fires multiple [Message Ack](/topics/gateway-events#message-ack) and [Guild Feature Ack](/topics/gateway-events#guild-feature-ack) Gateway events.
+Updates all read states in a guild to acknowledge all features and messages. Fires multiple [Message Ack](/gateway/gateway-events#message-ack) and [Guild Feature Ack](/gateway/gateway-events#guild-feature-ack) Gateway events.
 
 <Alert type="warn">
 
@@ -187,7 +187,7 @@ This endpoint is deprecated. It is replaced by [Bulk Update Read States](#bulk-u
   Acknowledge Guild Feature
 </RouteHeader>
 
-Updates a guild feature's read state for the current user. Fires a [Guild Feature Ack](/topics/gateway-events#guild-feature-ack) Gateway event.
+Updates a guild feature's read state for the current user. Fires a [Guild Feature Ack](/gateway/gateway-events#guild-feature-ack) Gateway event.
 
 ###### JSON Params
 
@@ -205,7 +205,7 @@ Updates a guild feature's read state for the current user. Fires a [Guild Featur
   Acknowledge User Feature
 </RouteHeader>
 
-Updates a non-channel feature's read state for the current user. Fires a [User Non Channel Ack](/topics/gateway-events#user-non-channel-ack) Gateway event.
+Updates a non-channel feature's read state for the current user. Fires a [User Non Channel Ack](/gateway/gateway-events#user-non-channel-ack) Gateway event.
 
 ###### JSON Params
 
@@ -223,7 +223,7 @@ Updates a non-channel feature's read state for the current user. Fires a [User N
   Bulk Update Read States
 </RouteHeader>
 
-Updates multiple read states for the current user. Returns a 204 empty response on success. Fires multiple [Message Ack](/topics/gateway-events#message-ack), [Guild Feature Ack](/topics/gateway-events#guild-feature-ack), and [User Non Channel Ack](/topics/gateway-events#user-non-channel-ack) Gateway events.
+Updates multiple read states for the current user. Returns a 204 empty response on success. Fires multiple [Message Ack](/gateway/gateway-events#message-ack), [Guild Feature Ack](/gateway/gateway-events#guild-feature-ack), and [User Non Channel Ack](/gateway/gateway-events#user-non-channel-ack) Gateway events.
 
 ###### JSON Params
 

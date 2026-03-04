@@ -8,17 +8,17 @@ interface ChangelogEntryProps {
 
 export const ChangelogEntry: React.FC<ChangelogEntryProps> = ({ date, version, children }) => {
   return (
-    <div className="relative ml-3 border-l-2 border-brand-blurple/30 pb-6 pl-8 last:pb-0">
-      <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-brand-blurple ring-4 ring-white dark:ring-background-dark"></div>
+    <div className="border-brand-blurple/30 relative ml-3 border-l-2 pb-6 pl-8 last:pb-0">
+      <div className="bg-brand-blurple dark:ring-background-dark absolute top-1 -left-[9px] h-4 w-4 rounded-full ring-4 ring-white"></div>
 
       <div className="mb-3 flex flex-col">
         <div className="flex items-center gap-3">
-          {version && <h3 className="m-0 text-xl font-bold text-text-light dark:text-text-dark">{version}</h3>}
+          {version && <h3 className="text-text-light dark:text-text-dark m-0 text-xl font-bold">{version}</h3>}
           <span className="text-sm text-gray-500 dark:text-gray-400">{date}</span>
         </div>
       </div>
 
-      <div className="prose max-w-none dark:prose-invert [&_li]:!mb-1 [&_li]:!mt-0">{children}</div>
+      <div className="prose dark:prose-invert max-w-none [&_li]:mt-0! [&_li]:mb-1!">{children}</div>
     </div>
   );
 };
