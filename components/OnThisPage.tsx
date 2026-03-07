@@ -16,6 +16,16 @@ function PinIcon({ className }: { className?: string }) {
 
 export default function OnThisPage() {
   const router = useRouter();
+  const tocLabel = "On this page";
+  const closeLabel = "Close";
+  const pinLabel = "Pin";
+  const unpinLabel = "Unpin";
+  const pinFlyoutLabel = `${pinLabel} ${tocLabel} flyout`;
+  const unpinFlyoutLabel = `${unpinLabel} ${tocLabel} flyout`;
+  const keepOpenTooltip = "Click to keep this open";
+  const autoCloseTooltip = "Click to unpin and auto-close on link click";
+  const openTocLabel = `Open ${tocLabel}`;
+  const closeTocLabel = `Close ${tocLabel}`;
 
   const subLinks = useMemo<SubLink[]>(() => {
     const pathname = router.pathname;
@@ -32,7 +42,7 @@ export default function OnThisPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [tocPinned, setTocPinned] = useState(false);
-  const pinTooltip = tocPinned ? "Click to unpin and auto-close on link click" : "Click to keep this open";
+  const pinTooltip = tocPinned ? autoCloseTooltip : keepOpenTooltip;
 
   // Update activeId on scroll using heading positions; listen to both container and window
   useEffect(() => {
@@ -143,19 +153,20 @@ export default function OnThisPage() {
   return (
     <>
       <aside className="desktop-right-toc text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text fixed top-6 z-20 hidden w-64 p-2 text-sm">
-        <h3 className="font-whitney-bold mb-3 text-xs text-black uppercase dark:text-white">On this page</h3>
+        <h3 className="font-whitney mb-3 text-xs text-black uppercase dark:text-white">{tocLabel}</h3>
         <nav className="space-y-1">{renderLinks()}</nav>
       </aside>
 
       <button
         type="button"
         onClick={() => setTocOpen(true)}
-        aria-label="Open On this page"
+        aria-label={openTocLabel}
+        title={openTocLabel}
         aria-expanded={tocOpen}
-        className="desktop-right-toc-fallback bg-brand-blurple fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg"
+        className="desktop-right-toc-fallback bg-brand-blurple fixed right-5 bottom-5 z-20 flex items-center gap-2 rounded-full px-4 py-2 text-sm text-white shadow-lg"
       >
         <ListIcon className="h-4 w-4" />
-        On this page
+        {tocLabel}
       </button>
 
       <div
@@ -173,12 +184,12 @@ export default function OnThisPage() {
         )}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-whitney-bold text-xs text-black uppercase dark:text-white">On this page</h3>
+          <h3 className="font-whitney-bold text-xs text-black uppercase dark:text-white">{tocLabel}</h3>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setTocPinned((value) => !value)}
-              aria-label={tocPinned ? "Unpin On this page flyout" : "Pin On this page flyout"}
+              aria-label={tocPinned ? unpinFlyoutLabel : pinFlyoutLabel}
               aria-pressed={tocPinned}
               title={pinTooltip}
               className={classNames(
@@ -190,8 +201,8 @@ export default function OnThisPage() {
             >
               <PinIcon className="h-4 w-4" />
             </button>
-            <button type="button" onClick={() => setTocOpen(false)} aria-label="Close On this page">
-              Close
+            <button type="button" onClick={() => setTocOpen(false)} aria-label={closeTocLabel}>
+              {closeLabel}
             </button>
           </div>
         </div>
