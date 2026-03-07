@@ -17,7 +17,7 @@ export default function Header() {
   );
 
   return (
-    <header className="dark:bg-theme-dark-sidebar sticky top-0 left-0 z-10 flex h-16 w-full items-center justify-between bg-white p-2 md:hidden md:p-4">
+    <header className="dark:bg-theme-dark-sidebar fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between bg-white p-2 md:hidden md:p-4">
       <Link href="/" onClick={onMenuClick}>
         <Bars
           onClick={setOpen}
