@@ -81,13 +81,13 @@ export default function ContentWrapper({ children }: ContentWrapperProps) {
   return (
     <EndpointProvider>
       <div
-        className="relative flex flex-1 scroll-pt-16 flex-col items-center overflow-y-auto focus:outline-hidden md:scroll-pt-0"
+        className="relative flex flex-1 scroll-pt-16 flex-col items-center overflow-y-auto focus:outline-hidden xl:scroll-pt-0"
         style={{ scrollbarGutter: "stable" }}
       >
         <Header />
-        <div className="h-16 md:hidden" />
+        <div className="h-16 xl:hidden" />
         <main className="desktop-content-left-pad desktop-content-max w-full p-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-10 lg:pb-10">
-          <article className="m-auto mt-0 md:mt-4">
+          <article className="m-auto mt-0 xl:mt-4">
             <FilteredContent>{children}</FilteredContent>
           </article>
         </main>

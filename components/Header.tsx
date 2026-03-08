@@ -17,11 +17,11 @@ export default function Header() {
   );
 
   return (
-    <header className="dark:bg-theme-dark-sidebar fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between bg-white p-2 md:hidden md:p-4">
+    <header className="dark:bg-theme-dark-sidebar fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between bg-white p-2 md:p-4 xl:hidden">
       <Link href="/" onClick={onMenuClick}>
         <Bars
           onClick={setOpen}
-          className="ml-1 h-7 cursor-pointer justify-self-start text-black md:hidden dark:text-white"
+          className="ml-1 h-7 cursor-pointer justify-self-start text-black xl:hidden dark:text-white"
         />
       </Link>
 

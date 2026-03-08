@@ -6,15 +6,8 @@ import { ListIcon } from "./mdx/icons/ListIcon";
 import { type NavigationData, SITEMAP, type SubLink } from "./navigation/NavigationList";
 
 const TOC_LABEL = "On this page";
-const CLOSE_LABEL = "Close";
-const PIN_LABEL = "Pin";
-const UNPIN_LABEL = "Unpin";
 const OPEN_TOC_LABEL = `Open ${TOC_LABEL}`;
 const CLOSE_TOC_LABEL = `Close ${TOC_LABEL}`;
-const PIN_FLYOUT_LABEL = `${PIN_LABEL} ${TOC_LABEL} flyout`;
-const UNPIN_FLYOUT_LABEL = `${UNPIN_LABEL} ${TOC_LABEL} flyout`;
-const KEEP_OPEN_TOOLTIP = "Click to keep this open";
-const AUTO_CLOSE_TOOLTIP = "Click to unpin and auto-close on link click";
 const MOBILE_QUERY = "(max-width: 767px)";
 const MOBILE_OFFSET = 100;
 const DESKTOP_OFFSET = 24;
@@ -28,11 +21,11 @@ const getActiveLinkClasses = (isActive: boolean) =>
       !isActive,
   });
 
-function PinIcon({ className }: { className?: string }) {
+function CloseIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m14 3 7 7-2 2-3-1-3 3 1 3-2 2-3-3-5 5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14 3 8 9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 6 6 18" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12" />
     </svg>
   );
 }
@@ -63,9 +56,6 @@ export default function OnThisPage() {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
-  const [tocPinned, setTocPinned] = useState(false);
-  const pinTooltip = tocPinned ? AUTO_CLOSE_TOOLTIP : KEEP_OPEN_TOOLTIP;
-  const pinAriaLabel = tocPinned ? UNPIN_FLYOUT_LABEL : PIN_FLYOUT_LABEL;
 
   // Update activeId on scroll using heading positions; listen to both container and window
   useEffect(() => {
@@ -128,13 +118,9 @@ export default function OnThisPage() {
     };
   }, [tocItems]);
 
-  useEffect(() => {
-    if (!tocPinned) setTocOpen(false);
-  }, [router.asPath, tocPinned]);
-
-  const closeFlyoutIfUnpinned = useCallback(() => {
-    if (!tocPinned) setTocOpen(false);
-  }, [tocPinned]);
+  const closeFlyout = useCallback(() => {
+    setTocOpen(false);
+  }, []);
 
   if (tocItems.length === 0) return null;
 
@@ -208,25 +194,19 @@ export default function OnThisPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setTocPinned((value) => !value)}
-              aria-label={pinAriaLabel}
-              aria-pressed={tocPinned}
-              title={pinTooltip}
+              onClick={() => setTocOpen(false)}
+              aria-label={CLOSE_TOC_LABEL}
+              title={CLOSE_TOC_LABEL}
               className={classNames(
                 "rounded-md p-1 transition-colors",
-                tocPinned
-                  ? "bg-theme-light-sidebar-hover text-theme-light-sidebar-hover-text dark:bg-theme-dark-sidebar-hover dark:text-white"
-                  : "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:text-theme-dark-sidebar-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white",
+                "text-theme-light-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:text-theme-dark-sidebar-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white",
               )}
             >
-              <PinIcon className="h-4 w-4" />
-            </button>
-            <button type="button" onClick={() => setTocOpen(false)} aria-label={CLOSE_TOC_LABEL}>
-              {CLOSE_LABEL}
+              <CloseIcon className="h-4 w-4" />
             </button>
           </div>
         </div>
-        <nav className="space-y-1 overflow-y-auto pb-4">{renderLinks("mobile-", closeFlyoutIfUnpinned)}</nav>
+        <nav className="space-y-1 overflow-y-auto pb-4">{renderLinks("mobile-", closeFlyout)}</nav>
       </aside>
     </>
   );
