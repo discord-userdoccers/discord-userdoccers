@@ -35,7 +35,7 @@ export default function App({
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
 
-  const fadeClasses = classNames("fixed z-30 inset-0 bg-black duration-300 md:opacity-0 md:pointer-events-none", {
+  const fadeClasses = classNames("fixed z-30 inset-0 bg-black duration-300 xl:opacity-0 xl:pointer-events-none", {
     "opacity-50": sidebarOpen,
     "opacity-0 pointer-events-none": !sidebarOpen,
   });
