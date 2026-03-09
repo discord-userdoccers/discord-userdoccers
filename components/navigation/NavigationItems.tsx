@@ -1,7 +1,6 @@
 import classNames from "@lib/classnames";
-import Link from "next/link";
-import { useRouter } from "next/router";
 import React, { createElement, Fragment } from "react";
+import { Link, useLocation } from "react-router-dom";
 import Searchbar from "../Searchbar";
 import { ICONS } from "./NavigationList";
 
@@ -32,12 +31,12 @@ interface NavigationLinkProps {
 }
 
 export function NavigationLink({ href, className, children, icon }: NavigationLinkProps) {
-  const router = useRouter();
+  const location = useLocation();
 
   const classes = classNames("flex items-center font-whitney rounded-md pl-3 gap-1", className, {
-    "bg-brand-blurple text-white": router.pathname === href,
+    "bg-brand-blurple text-white": location.pathname === href,
     "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
-      router.pathname !== href,
+      location.pathname !== href,
   });
 
   const linkClasses = classNames("group flex items-center pr-2 pl-0 py-1 w-full font-medium");
@@ -46,7 +45,7 @@ export function NavigationLink({ href, className, children, icon }: NavigationLi
     <Fragment>
       <span className={classes}>
         {icon != null && createElement(ICONS[icon], { className: "size-5 shrink-0" })}
-        <Link href={href} className={linkClasses}>
+        <Link to={href} className={linkClasses}>
           {children}
         </Link>
       </span>
