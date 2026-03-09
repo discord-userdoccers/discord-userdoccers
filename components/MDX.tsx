@@ -50,7 +50,6 @@ const COMPONENTS = {
   a: Anchor,
 
   // Custom components
-  // Image,
   Alert,
   RouteHeader,
   Collapsible,
