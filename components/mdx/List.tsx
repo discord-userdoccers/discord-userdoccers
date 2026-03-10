@@ -2,7 +2,7 @@ import classNames from "@lib/classnames";
 import React from "react";
 
 export function ListItem(props: React.JSX.IntrinsicElements["li"]) {
-  return <li className="mb-4 ml-4 mt-2" {...props} />;
+  return <li className="mt-2 mb-4 ml-4" {...props} />;
 }
 
 interface ListProps {

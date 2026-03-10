@@ -17,15 +17,15 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky left-0 top-0 z-10 flex h-16 w-full items-center justify-between bg-white p-2 dark:bg-theme-dark-sidebar md:hidden md:p-4">
+    <header className="dark:bg-theme-dark-sidebar fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between bg-white p-2 md:p-4 xl:hidden">
       <Link href="/" onClick={onMenuClick}>
         <Bars
           onClick={setOpen}
-          className="ml-1 h-7 cursor-pointer justify-self-start text-black dark:text-white md:hidden"
+          className="ml-1 h-7 cursor-pointer justify-self-start text-black xl:hidden dark:text-white"
         />
       </Link>
 
-      <Userdoccers className="ml-auto mr-auto h-8 text-black dark:text-white" />
+      <Userdoccers className="mr-auto ml-auto h-8 text-black dark:text-white" />
 
       <ThemeSwitcher />
     </header>

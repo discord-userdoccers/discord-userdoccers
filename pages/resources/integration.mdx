@@ -81,6 +81,7 @@ Integrations represent a connection between a service and a guild. This may incl
 | is_verified                            | boolean                                                                        | Whether the application is verified                                                                                                                                                  |
 | is_discoverable                        | boolean                                                                        | Whether the application is discoverable in the application directory                                                                                                                 |
 | is_monetized                           | boolean                                                                        | Whether the application has monetization enabled                                                                                                                                     |
+| parent_id?                             | snowflake                                                                      | The ID of the parent application                                                                                                                                                     |
 
 ^1^ Only present when fetched from the [Get Guild Integrations](#get-guild-integrations) endpoint with `include_role_connections_metadata` set to `true`.
 
@@ -168,7 +169,7 @@ This endpoint returns a maximum of 50 integrations. If a guild has more integrat
   Create Guild Integration
 </RouteHeader>
 
-Enables an integration for the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires [Guild Integrations Update](/topics/gateway-events#guild-integrations-update) and [Integration Create](/topics/gateway-events#integration-create) Gateway events.
+Enables an integration for the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires [Guild Integrations Update](/gateway/gateway-events#guild-integrations-update) and [Integration Create](/gateway/gateway-events#integration-create) Gateway events.
 
 ###### JSON Params
 
@@ -181,7 +182,7 @@ Enables an integration for the guild. Requires the `MANAGE_GUILD` permission. Re
   Sync Guild Integration
 </RouteHeader>
 
-Syncs an integration for the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires [Guild Integrations Update](/topics/gateway-events#guild-integrations-update) and [Integration Update](/topics/gateway-events#integration-update) Gateway events.
+Syncs an integration for the guild. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires [Guild Integrations Update](/gateway/gateway-events#guild-integrations-update) and [Integration Update](/gateway/gateway-events#integration-update) Gateway events.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/integrations/{integration.id}" supportsAuditReason>
   Modify Guild Integration
@@ -201,13 +202,13 @@ Modifies the behavior and settings of the integration in the guild. Requires the
   Delete Guild Integration
 </RouteHeader>
 
-Removes the given integration ID from the guild. Deletes any associated webhooks and kicks the associated bot (if there is one). Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires [Guild Integrations Update](/topics/gateway-events#guild-integrations-update), [Integration Delete](/topics/gateway-events#integration-delete), and optionally [Guild Member Remove](/topics/gateway-events#guild-member-remove) and [Webhooks Update](/topics/gateway-events#webhooks-update) Gateway events.
+Removes the given integration ID from the guild. Deletes any associated webhooks and kicks the associated bot (if there is one). Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success. Fires [Guild Integrations Update](/gateway/gateway-events#guild-integrations-update), [Integration Delete](/gateway/gateway-events#integration-delete), and optionally [Guild Member Remove](/gateway/gateway-events#guild-member-remove) and [Webhooks Update](/gateway/gateway-events#webhooks-update) Gateway events.
 
 <RouteHeader method="POST" url="/guilds/{guild.id}/migrate-command-scope">
   Migrate Guild Command Scope
 </RouteHeader>
 
-Migrates all Discord application integrations in the guild to the [`applications.commands` OAuth2 scope](/topics/oauth2#oauth2-scopes). Requires the `MANAGE_GUILD` permission. Fires a [Guild Integrations Update](/topics/gateway-events#guild-integrations-update) and multiple [Integration Update](/topics/gateway-events#integration-update) Gateway events.
+Migrates all Discord application integrations in the guild to the [`applications.commands` OAuth2 scope](/topics/oauth2#oauth2-scopes). Requires the `MANAGE_GUILD` permission. Fires a [Guild Integrations Update](/gateway/gateway-events#guild-integrations-update) and multiple [Integration Update](/gateway/gateway-events#integration-update) Gateway events.
 
 ###### Response Body
 
@@ -258,7 +259,7 @@ Removes the given integration ID from the channel. Returns a 204 empty response 
   Join Integration Guild
 </RouteHeader>
 
-Joins the user to the given integration ID's guild. Returns a 204 empty response on success. Fires a [Guild Create](/topics/gateway-events#guild-create) Gateway event.
+Joins the user to the given integration ID's guild. Returns a 204 empty response on success. Fires a [Guild Create](/gateway/gateway-events#guild-create) Gateway event.
 
 <Alert type="info">
 
@@ -312,10 +313,19 @@ Returns a list of the top trending search terms.
 
 | Field      | Type    | Description                                                    |
 | ---------- | ------- | -------------------------------------------------------------- |
+| provider?  | string  | The [GIF provider](#gif-provider) to use (default `tenor`)     |
 | limit? ^1^ | integer | The maximum number of search terms to return (1-50, default 5) |
 | locale?    | string  | The locale to use in search results (default `en-US`)          |
 
 ^1^ The limit is only a suggestion; the API may return fewer GIFs.
+
+###### GIF Provider
+
+| Value | Description |
+| ----- | ----------- |
+| tenor | Tenor       |
+| giphy | Giphy       |
+| klipy | Klipy       |
 
 <RouteHeader method="GET" url="/gifs/suggest" unauthenticated>
   Get Suggested GIF Search Terms
@@ -327,6 +337,7 @@ Returns a list of recommended search terms based on the provided query.
 
 | Field      | Type    | Description                                                     |
 | ---------- | ------- | --------------------------------------------------------------- |
+| provider?  | string  | The [GIF provider](#gif-provider) to use (default `tenor`)      |
 | q          | string  | The search query to use                                         |
 | limit? ^1^ | integer | The maximum number of search terms to return (1-50, default 20) |
 | locale?    | string  | The locale to use in search results (default `en-US`)           |
@@ -343,6 +354,7 @@ Returns a list of [GIF](#gif-structure) objects based on the provided query.
 
 | Field            | Type    | Description                                                 |
 | ---------------- | ------- | ----------------------------------------------------------- |
+| provider?        | string  | The [GIF provider](#gif-provider) to use (default `tenor`)  |
 | q                | string  | The search query to use                                     |
 | limit? ^1^       | integer | The maximum number of GIFs to return (20-500) (default 100) |
 | media_format ^2^ | string  | The [media format](#gif-media-format) to use                |
@@ -350,7 +362,7 @@ Returns a list of [GIF](#gif-structure) objects based on the provided query.
 
 ^1^ The limit is only a suggestion; the API may return fewer GIFs.
 
-^2^ Invalid values default to `gif`.
+^2^ Invalid values default to `mp4` for Klipy, `gif` otherwise.
 
 <RouteHeader method="GET" url="/gifs/trending" unauthenticated>
   Get Trending GIF Categories
@@ -360,10 +372,11 @@ Returns trending GIF categories and their associated preview GIFs.
 
 ###### Query String Parameters
 
-| Field        | Type   | Description                                           |
-| ------------ | ------ | ----------------------------------------------------- |
-| media_format | string | The [media format](#gif-media-format) to use          |
-| locale?      | string | The locale to use in search results (default `en-US`) |
+| Field        | Type   | Description                                                |
+| ------------ | ------ | ---------------------------------------------------------- |
+| provider?    | string | The [GIF provider](#gif-provider) to use (default `tenor`) |
+| media_format | string | The [media format](#gif-media-format) to use               |
+| locale?      | string | The locale to use in search results (default `en-US`)      |
 
 ###### Response Body
 
@@ -412,11 +425,12 @@ Returns a list of [GIF](#gif-structure) objects that are currently trending.
 
 ###### Query String Parameters
 
-| Field        | Type    | Description                                           |
-| ------------ | ------- | ----------------------------------------------------- |
-| limit? ^1^   | integer | The maximum number of GIFs to return (20-500)         |
-| media_format | string  | The [media format](#gif-media-format) to use          |
-| locale?      | string  | The locale to use in search results (default `en-US`) |
+| Field        | Type    | Description                                                |
+| ------------ | ------- | ---------------------------------------------------------- |
+| provider?    | string  | The [GIF provider](#gif-provider) to use (default `tenor`) |
+| limit? ^1^   | integer | The maximum number of GIFs to return (20-500)              |
+| media_format | string  | The [media format](#gif-media-format) to use               |
+| locale?      | string  | The locale to use in search results (default `en-US`)      |
 
 ^1^ The limit is only a suggestion; the API may return fewer GIFs.
 
@@ -428,7 +442,8 @@ Tracks the selection of a GIF by the user. Returns a 204 empty response on succe
 
 ###### JSON Params
 
-| Field | Type   | Description                           |
-| ----- | ------ | ------------------------------------- |
-| id    | string | The ID of the selected GIF            |
-| q     | string | The search query used to find the GIF |
+| Field     | Type   | Description                                              |
+| --------- | ------ | -------------------------------------------------------- |
+| id        | string | The ID of the selected GIF                               |
+| q         | string | The search query used to find the GIF                    |
+| provider? | string | The [GIF provider](#gif-provider) used (default `tenor`) |

@@ -15,12 +15,16 @@ import Footer from "../components/Footer";
 import MDX from "../components/MDX";
 import Menu from "../components/Menu";
 import OpenGraph, { DEFAULT_SECTION } from "../components/OpenGraph";
+import { SITEMAP } from "../components/navigation/NavigationList";
 import MenuContext from "../contexts/MenuContext";
 import "@docsearch/css";
 import { CodegenLanguageProvider } from "../lib/type-generator/store";
 import OnThisPage from "../components/OnThisPage";
+import { ThemeWatcher } from "../components/ThemeWatcher";
 
 const TITLE_REGEX = /<h1 .*?><a .*?>([^<]+)<\/a>.*?<\/h1>|<h1>(.*?)<\/h1>/;
+
+const isServer = typeof window === "undefined";
 
 export default function App({
   Component,
@@ -31,7 +35,7 @@ export default function App({
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
 
-  const fadeClasses = classNames("fixed z-30 inset-0 bg-black duration-300 md:opacity-0 md:pointer-events-none", {
+  const fadeClasses = classNames("fixed z-30 inset-0 bg-black duration-300 xl:opacity-0 xl:pointer-events-none", {
     "opacity-50": sidebarOpen,
     "opacity-0 pointer-events-none": !sidebarOpen,
   });
@@ -46,13 +50,26 @@ export default function App({
 
   const getText = () => {
     if (router.pathname !== "/404") {
-      const str = Component.meta?.description ?? ReactDOMServer.renderToString(component);
-      const title = Component.meta?.title ?? TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION;
-      const description = handleDesc(str);
+      if (Component.meta?.description) {
+        return {
+          title: Component.meta.title ?? DEFAULT_SECTION,
+          description: Component.meta.description,
+        };
+      }
 
+      if (isServer) {
+        const str = ReactDOMServer.renderToString(component);
+        return {
+          title: TITLE_REGEX.exec(str)?.[1] ?? DEFAULT_SECTION,
+          description: handleDesc(str),
+        };
+      }
+
+      // We don't care about description on the client
+      const page = SITEMAP.flatMap((s) => s.pages).find((p) => p.link === router.pathname);
       return {
-        description,
-        title,
+        title: page?.name ?? DEFAULT_SECTION,
+        description: undefined,
       };
     }
     return null;
@@ -63,10 +80,20 @@ export default function App({
 
   return (
     <>
-      <ThemeProvider defaultTheme="system" attribute="data-theme">
+      <ThemeProvider
+        defaultTheme="system"
+        attribute="data-theme"
+        themes={["light", "dark", "amoled"]}
+        value={{
+          light: "light",
+          dark: "dark",
+          amoled: "dark",
+        }}
+      >
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
+          <ThemeWatcher />
           <OpenGraph description={meta?.description} section={meta?.title} />
-          <div className="flex min-h-[100dvh] overflow-hidden bg-white dark:bg-background-dark">
+          <div className="dark:bg-background-dark flex min-h-dvh overflow-hidden bg-white">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
             {component}

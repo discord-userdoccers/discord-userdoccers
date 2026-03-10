@@ -55,13 +55,14 @@ These are all the OAuth2 scopes that Discord supports. Some scopes require appro
 | applications.commands.update ^2^         | Allows your app to update its own [commands](/interactions/application-commands/)                                                                 | Yes    |
 | applications.entitlements                | Allows [managing entitlements for the user's applications](/resources/entitlement)                                                                | Yes    |
 | applications.store.update                | Allows [managing store data (SKUs, store listings, achievements, etc.) for the user's applications](/resources/store)                             | Yes    |
+| application_identities.write             | Allows [managing application identities](/resources/application)                                                                                  | No     |
 | bot                                      | Adds the application's bot to a user-selected guild                                                                                               | Yes    |
 | connections                              | Allows [retrieving a user's connected accounts](/resources/connected-accounts#get-user-connections), both public and private                      | Yes    |
 | dm_channels.read                         | Allows [reading information about the user's DMs and group DMs](/resources/channel)                                                               | No     |
 | dm_channels.messages.read                | Allows reading messages from the user's DMs and group DMs                                                                                         | No     |
 | dm_channels.messages.write               | Allows [sending messages to the user's DMs](/resources/message#create-dm-message)                                                                 | No     |
 | email ^3^                                | Allows [retrieving a user's email address](/resources/user#get-current-user)                                                                      | Yes    |
-| gateway.connect ^3^                      | Allows [connecting to the gateway](/topics/gateway#oauth2-and-the-gateway) on behalf of the user                                                  | No     |
+| gateway.connect ^3^                      | Allows [connecting to the gateway](/gateway/using-gateway#oauth2-and-the-gateway) on behalf of the user                                           | No     |
 | gdm.join                                 | Allows [adding users to managed group DMs](/resources/channel#add-channel-recipient)                                                              | Yes    |
 | guilds                                   | Allows [retrieving the user's guilds](/resources/guild#get-user-guilds)                                                                           | Yes    |
 | guilds.channels.read                     | Allows [reading the channels in a user's guilds](/resources/channel)                                                                              | No     |
@@ -74,7 +75,7 @@ These are all the OAuth2 scopes that Discord supports. Some scopes require appro
 | payment_sources.country_code             | Allows retrieving the user's country code                                                                                                         | No     |
 | presences.read                           | Allows [retrieving user presence](/resources/presence)                                                                                            | No     |
 | presences.write                          | Allows [updating user presence](/resources/presence)                                                                                              | No     |
-| relationships.read                       | Allows [retrieving a user's relationships](/resources/relationships)                                                                              | No     |
+| relationships.read ^9^                   | Allows [retrieving a user's relationships](/resources/relationships)                                                                              | Yes    |
 | relationships.write                      | Allows [managing a user's relationships](/resources/relationships)                                                                                | No     |
 | role_connections.write ^4^               | Allows [updating a user's connection and application-specific metadata](/resources/application#application-role-connection-object)                | Yes    |
 | rpc ^5^ ^6^                              | When using RPC, allows controlling the local Discord client; also encompasses all of the below RPC scopes in the majority of scenarios            | No     |
@@ -92,11 +93,11 @@ These are all the OAuth2 scopes that Discord supports. Some scopes require appro
 
 ^1^ In a user install context, this scope also allows the application to send DMs to the user.
 
-^2^ This scope is only available through the [client credentials grant](#client-credentials-grant) flow.
+^2^ Only available through the [client credentials grant](#client-credentials-grant) flow.
 
 ^3^ Depends on the `identify` scope being authorized as well.
 
-^4^ This scope is only available through the [authorization code grant](#authorization-code-grant) flow and requires that the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags) is not set.
+^4^ Only available through the [authorization code grant](#authorization-code-grant) flow and requires that the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags) is not set.
 
 ^5^ Unless the application is approved for general RPC access, the `rpc` scope is allowed for the application owner and [whitelisted users](/resources/application#get-application-testers) only and requires that the [`EMBEDDED` application flag](/resources/application#application-flags) is not set.
 
@@ -104,16 +105,18 @@ These are all the OAuth2 scopes that Discord supports. Some scopes require appro
 
 ^7^ Also includes `gateway.connect` privileges.
 
-^8^ This scope is only available through the [authorization code grant](#authorization-code-grant) flow.
+^8^ Only available through the [authorization code grant](#authorization-code-grant) flow.
+
+^9^ Requires the [`SOCIAL_LAYER_INTEGRATION_LIMITED` or `SOCIAL_LAYER_INTEGRATION` application flag](/resources/application#application-flags).
 
 ###### Umbrella OAuth2 Scopes
 
 The following scopes are considered "umbrella" scopes, meaning that they are used to request access to multiple scopes at once. These are currently only used by the social layer integration.
 
-| Value                     | Description                                                                                                                                                                                   |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| sdk.social_layer_presence | Includes the scopes `activities.invites.write`, `activities.read`, `activities.write`, `gateway.connect`, `identify`, `relationships.read`, and `relationships.write`                         |
-| sdk.social_layer          | Includes everything in `sdk.social_layer_presence`, plus `dm_channels.read`, `dm_channels.messages.read`, `dm_channels.messages.write`, `guilds`, `guilds.channels.read`, and `lobbies.write` |
+| Value                     | Description                                                                                                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| sdk.social_layer_presence | Includes the scopes `activities.invites.write`, `activities.read`, `activities.write`, `application_identities.write`, `gateway.connect`, `identify`, `relationships.read`, and `relationships.write` |
+| sdk.social_layer          | Includes everything in `sdk.social_layer_presence`, plus `dm_channels.read`, `dm_channels.messages.read`, `dm_channels.messages.write`, `guilds`, `guilds.channels.read`, and `lobbies.write`         |
 
 ###### Authorization URL Structure
 
@@ -504,7 +507,7 @@ So, what are bot accounts?
 ### Bot vs User Accounts
 
 Discord's API provides a separate type of user account dedicated to automation, called a bot account. Bot accounts can be created through the [applications API](/resources/application) and do not have an email and password.
-Unlike the normal OAuth2 flow, bot accounts have full access to all API routes without using bearer tokens, and can connect to the [Real Time Gateway](/topics/gateway).
+Unlike the normal OAuth2 flow, bot accounts have full access to all API routes without using bearer tokens, and can connect to the [Real Time Gateway](/gateway/using-gateway).
 Automating normal user accounts (generally called "self-bots") outside of the OAuth2/bot API is forbidden, and can result in an account termination if found. Don't get found :)
 
 Bot accounts have a few differences in comparison to normal user accounts, namely:
@@ -719,6 +722,48 @@ Retrieves a device code and user code for the [device code grant](#device-code-g
 | expires_in                | integer | The duration (in seconds) after which the device code expires                          |
 | interval                  | integer | The interval (in seconds) at which to poll the token endpoint for authorization status |
 
+<RouteHeader method="POST" url="/oauth2/device/verify">
+  Get OAuth2 Device Flow
+</RouteHeader>
+
+Returns information about the OAuth2 device code grant flow.
+
+###### JSON Params
+
+| Field     | Type   | Description     |
+| --------- | ------ | --------------- |
+| user_code | string | The device code |
+
+###### Response Body
+
+| Field             | Type          | Description                                                        |
+| ----------------- | ------------- | ------------------------------------------------------------------ |
+| scopes            | array[string] | The scopes the user is authorizing the application for             |
+| client_id         | snowflake     | The ID of the application                                          |
+| two_way_link_code | ?string       | The code to use for two-way linking                                |
+| type              | string        | The [status of the OAuth2 device flow](#oauth2-device-flow-status) |
+
+###### OAuth2 Device Flow Status
+
+| Value   | Description                                                  |
+| ------- | ------------------------------------------------------------ |
+| pending | The device flow is pending                                   |
+| granted | The device flow is completed and an access token was granted |
+| denied  | The device flow is completed but no access token was granted |
+
+<RouteHeader method="POST" url="/oauth2/device/finish">
+  Finish OAuth2 Device Flow
+</RouteHeader>
+
+Finishes the OAuth2 device code grant flow. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field     | Type   | Description                                                                                    |
+| --------- | ------ | ---------------------------------------------------------------------------------------------- |
+| user_code | string | The device code                                                                                |
+| result    | string | The [result of the flow](#oauth2-device-flow-status) (only `granted` and `denied` are allowed) |
+
 <RouteHeader method="POST" url="/oauth2/token" unauthenticated>
   Get OAuth2 Token
 </RouteHeader>
@@ -745,7 +790,7 @@ Retrieves an OAuth2 access token for the given application credentials. Implemen
 
 ^2^ Required if the application does not have the [`PUBLIC_OAUTH2_CLIENT` application flag](/resources/application#application-flags), the `grant_type` is `client_credentials`, or the `grant_type` is `authorization_code` and `code_verifier` is not provided.
 
-^3^ Providing these fields will merge the associated provisional account with the user account that is being authenticated. See the [User Merge Operation Completed](/topics/gateway-events#user-merge-operation-completed) Gateway event for more information.
+^3^ Providing these fields will merge the associated provisional account with the user account that is being authenticated. See the [User Merge Operation Completed](/gateway/gateway-events#user-merge-operation-completed) Gateway event for more information.
 
 ###### OAuth2 Grant Type
 
@@ -822,6 +867,9 @@ This indicates that the provisional account has been merged with a user account,
   not expose any username, and thus the game will need to configure the display name manually.
 - For [Unity Services ID Tokens](https://services.docs.unity.com/docs/client-auth/),
   the display name of the user's Unity Player Account is used as the provisional account's display name.
+- For [Apple ID Tokens](https://developer.apple.com/documentation/signinwithapplerestapi),
+  the name of the user's Apple ID account is used as the provisional account's display name.
+- For PlayStation Network ID Tokens, the name of the user's PlayStation Network account is used as the provisional account's display name.
 
 To change the display name of a provisional account, use the [Modify Current User Account](/resources/user#modify-current-user-account) endpoint.
 
@@ -848,6 +896,21 @@ To change the display name of a provisional account, use the [Modify Current Use
 | STEAM_SESSION_TICKET              | A Steam authentication ticket for web generated with `discord` set as the `identity`                |
 | UNITY_SERVICES_ID_TOKEN           | ID token for Unity Auth Services                                                                    |
 | DISCORD_BOT_ISSUED_ACCESS_TOKEN   | An access token for a user authenticated [via a bot token](#get-provisional-account-token-with-bot) |
+| APPLE_ID_TOKEN                    | ID token for Apple ID                                                                               |
+| PLAYSTATION_NETWORK_ID_TOKEN      | ID token for PlayStation Network                                                                    |
+
+<RouteHeader method="POST" url="/partner-sdk/child-token">
+  Exchange Provisional Account Child Token
+</RouteHeader>
+
+Exchanges a parent application token for a child application token. Returns an [OAuth2 access token](#oauth2-access-token-object) object on success.
+
+###### JSON Params
+
+| Field                | Type      | Description                                         |
+| -------------------- | --------- | --------------------------------------------------- |
+| child_application_id | snowflake | The ID of the child application                     |
+| parent_access_token  | string    | The parent application token (max 10240 characters) |
 
 <RouteHeader method="POST" url="/partner-sdk/token/bot">
   Get Provisional Account Token with Bot
@@ -942,8 +1005,21 @@ This endpoint is not usable by user accounts.
 
 Returns a list of [OAuth2 authorization](#oauth2-authorization-object) objects.
 
+<Alert type="info">
+
+Only the most recent OAuth2 authorization per application is returned.
+If you need to retrieve all authorizations for an application, use the [Get Application OAuth2 Authorizations](#get-application-oauth2-authorizations) endpoint.
+
+</Alert>
+
+<RouteHeader method="GET" url="/oauth2/applications/{application.id}/tokens">
+  Get Application OAuth2 Authorizations
+</RouteHeader>
+
+Returns a list of [OAuth2 authorization](#oauth2-authorization-object) objects for the given application ID.
+
 <RouteHeader method="GET" url="/oauth2/authorize">
-  Get OAuth2 Authorization
+  Preview OAuth2 Authorization
 </RouteHeader>
 
 Returns information about a possible OAuth2 authorization.
@@ -1010,7 +1086,7 @@ If unauthenticated, this endpoint will redirect to the OAuth2 authorization page
   Create OAuth2 Authorization
 </RouteHeader>
 
-Authorizes the user for the given OAuth2 application. May fire a [Guild Integrations Update](/topics/gateway-events#guild-integrations-update), [Integration Create](/topics/gateway-events#integration-create), [User Application Update](/topics/gateway-events#user-application-update), and/or [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+Authorizes the user for the given OAuth2 application. May fire a [Guild Integrations Update](/gateway/gateway-events#guild-integrations-update), [Integration Create](/gateway/gateway-events#integration-create), [User Application Update](/gateway/gateway-events#user-application-update), and/or [User Connections Update](/gateway/gateway-events#user-connections-update) Gateway event.
 
 ###### Query Params
 
@@ -1075,4 +1151,4 @@ Returns an [OAuth2 authorization](#oauth2-authorization-object) for the given ID
   Delete OAuth2 Authorization
 </RouteHeader>
 
-Revokes the given authorization. Returns a 204 empty response on success. Fires multiple [OAuth2 Token Revoke](/topics/gateway-events#oauth2-token-revoke) and optionally a [User Application Remove](/topics/gateway-events#user-application-remove) and [User Connections Update](/topics/gateway-events#user-connections-update) Gateway event.
+Revokes the given authorization. Returns a 204 empty response on success. Fires multiple [OAuth2 Token Revoke](/gateway/gateway-events#oauth2-token-revoke) and optionally a [User Application Remove](/gateway/gateway-events#user-application-remove) and [User Connections Update](/gateway/gateway-events#user-connections-update) Gateway event.

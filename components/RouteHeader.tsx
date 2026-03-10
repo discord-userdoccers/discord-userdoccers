@@ -1,5 +1,5 @@
 import classNames from "@lib/classnames";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import IconBadge from "./IconBadge";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
@@ -10,6 +10,14 @@ import { TopicsIcon } from "./mdx/icons/TopicsIcon";
 import { KeyIcon } from "./mdx/icons/KeyIcon";
 import RouteTestDialog from "./RouteTestDialog";
 
+export function getRawText(node: React.ReactNode): string {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return node.toString();
+  if (Array.isArray(node)) return node.map(getRawText).join("");
+  if (React.isValidElement(node)) return getRawText((node.props as { children?: React.ReactNode }).children);
+  return "";
+}
+
 export type RESTMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 interface MethodBadgeProps {
@@ -19,21 +27,23 @@ interface MethodBadgeProps {
 export function MethodBadge({ method }: MethodBadgeProps) {
   const name = method.toUpperCase();
 
-  const classes = classNames(
-    "px-2 py-1 text-sm dark:bg-opacity-50 border-2 dark:border-opacity-50 rounded-xl uppercase",
-    {
-      "bg-blue-100 text-blue-700 dark:bg-blue-600 dark:text-white border-blue-500": name === "GET",
-      "bg-green-100 text-green-700 dark:bg-green-600 dark:text-white border-green-500": name === "POST",
-      "bg-yellow-100 text-yellow-700 dark:bg-yellow-700 dark:text-white border-yellow-500": name === "PATCH",
-      "bg-orange-100 text-orange-700 dark:bg-orange-700 dark:text-white border-orange-500": name === "PUT",
-      "bg-red-100 text-red-500 dark:bg-red-700 dark:text-white border-red-500": name === "DELETE",
-    },
-  );
+  const classes = classNames("px-2 py-1 text-sm border-2 rounded-xl uppercase", {
+    "bg-blue-100 text-blue-700 border-blue-500 dark:bg-blue-600/50 dark:text-white dark:border-blue-500/50":
+      name === "GET",
+    "bg-green-100 text-green-700 border-green-500 dark:bg-green-600/50 dark:text-white dark:border-green-500/50":
+      name === "POST",
+    "bg-yellow-100 text-yellow-700 border-yellow-500 dark:bg-yellow-700/50 dark:text-white dark:border-yellow-500/50":
+      name === "PATCH",
+    "bg-orange-100 text-orange-700 border-orange-500 dark:bg-orange-700/50 dark:text-white dark:border-orange-500/50":
+      name === "PUT",
+    "bg-red-100 text-red-500 border-red-500 dark:bg-red-700/50 dark:text-white dark:border-red-500/50":
+      name === "DELETE",
+  });
 
   return <code className={classes}>{method}</code>;
 }
 
-interface RouteHeaderProps {
+export interface RouteHeaderProps {
   method: RESTMethod;
   url: string;
   children: React.ReactNode;
@@ -44,6 +54,8 @@ interface RouteHeaderProps {
   deprecated?: boolean;
   supportsBot?: boolean;
 }
+
+RouteHeader.displayName = "RouteHeader";
 
 export default function RouteHeader({
   method,
@@ -64,7 +76,7 @@ export default function RouteHeader({
     <div className="group">
       <H3 className="mb-0" useAnchor={false} useCopy={false}>
         {/* NOTE: this margin is a hack cause the font sucks */}
-        <a className="mb-[1px]" href={`#${anchor}`}>
+        <a className="mb-px" href={`#${anchor}`}>
           {children}
         </a>
         <span className="ml-2 flex items-center gap-2">
@@ -104,10 +116,10 @@ export default function RouteHeader({
       </H3>
       <div ref={containerRef} className="mt-1 flex items-center">
         <MethodBadge method={method} />
-        <code className="break-all p-2 text-base text-text-light dark:text-text-dark">{url}</code>
+        <code className="text-text-light dark:text-text-dark p-2 text-base break-all">{url}</code>
         <button
           onClick={() => setIsTestDialogOpen(true)}
-          className="ml-auto rounded bg-brand-blurple px-3 py-1 text-xs text-white opacity-0 transition-opacity hover:bg-brand-blurple/80 focus:opacity-100 group-hover:opacity-100"
+          className="bg-brand-blurple hover:bg-brand-blurple/80 ml-auto rounded-sm px-3 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
         >
           Test
         </button>

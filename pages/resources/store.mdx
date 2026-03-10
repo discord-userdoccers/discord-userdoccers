@@ -70,6 +70,7 @@ All objects serialized in the SKU inherit this behavior.
 | deleted?                                  | boolean                                                                        | Whether the SKU has been soft-deleted                                                                               |
 | tenant_metadata?                          | [tenant metadata](#tenant-metadata-structure) object                           | Tenant metadata for the SKU                                                                                         |
 | powerup_metadata?                         | [guild powerup metadata](#guild-powerup-metadata-structure) object             | Guild powerup metadata for the SKU                                                                                  |
+| orbs_reward?                              | integer                                                                        | The amount of Orbs the SKU grants                                                                                   |
 
 ^1^ Only included for localized SKUs.
 
@@ -456,13 +457,14 @@ All objects serialized in the SKU inherit this behavior.
 
 ###### Social Layer Metadata Structure
 
-| Field                           | Type                                                                | Description                                      |
-| ------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------ |
-| carousel_items                  | array[[store carousel item](#store-carousel-item-structure) object] | The carousel items for the listing               |
-| label                           | string                                                              | The label for the listing                        |
-| expires_at                      | ?ISO8601 datetime                                                   | When the listing expires                         |
-| card_image_asset_id?            | snowflake                                                           | The store asset ID for the card image            |
-| card_background_image_asset_id? | snowflake                                                           | The store asset ID for the card background image |
+| Field                           | Type                                                                | Description                                         |
+| ------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------- |
+| carousel_items                  | array[[store carousel item](#store-carousel-item-structure) object] | The carousel items for the listing                  |
+| label                           | string                                                              | The label for the listing                           |
+| expires_at                      | ?ISO8601 datetime                                                   | When the listing expires                            |
+| card_image_asset_id?            | snowflake                                                           | The store asset ID for the card image               |
+| card_background_image_asset_id? | snowflake                                                           | The store asset ID for the card background image    |
+| price_tier?                     | integer                                                             | The [base price](#get-store-price-tiers) of the SKU |
 
 ###### Example SKU
 
@@ -571,14 +573,14 @@ All objects serialized in the listing inherit this behavior.
 
 ###### Store Carousel Item Structure
 
-| Field                 | Type      | Description                           |
-| --------------------- | --------- | ------------------------------------- |
-| youtube_video_id? ^1^ | string    | The YouTube video ID for the item     |
-| asset_id? ^1^         | snowflake | The store asset ID for the item       |
-| thumbnail_asset_id?   | snowflake | The store asset ID for the thumbnail  |
-| background_asset_id?  | snowflake | The store asset ID for the background |
-| label?                | string    | The label for the item                |
-| label_icon_asset_id?  | snowflake | The store asset ID for the label icon |
+| Field                 | Type       | Description                           |
+| --------------------- | ---------- | ------------------------------------- |
+| youtube_video_id? ^1^ | ?string    | The YouTube video ID for the item     |
+| asset_id? ^1^         | snowflake  | The store asset ID for the item       |
+| thumbnail_asset_id?   | snowflake  | The store asset ID for the thumbnail  |
+| background_asset_id?  | ?snowflake | The store asset ID for the background |
+| label?                | string     | The label for the item                |
+| label_icon_asset_id?  | snowflake  | The store asset ID for the label icon |
 
 ^1^ One of `youtube_video_id` or `asset_id` must be provided.
 
@@ -755,6 +757,238 @@ An End User License Agreement represents a legal agreement between the applicati
 | id      | snowflake | The ID of the EULA      |
 | name    | string    | The name of the EULA    |
 | content | string    | The content of the EULA |
+
+### Storefront Object
+
+A collection of store listings in a unified showcase.
+
+###### Storefront Structure
+
+| Field                      | Type                                                                    | Description                                    |
+| -------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------- |
+| application_id             | snowflake                                                               | The ID of the application                      |
+| application?               | partial [application](/resources/application#application-object) object | The application                                |
+| title                      | string                                                                  | The title of the storefront                    |
+| logo_asset_id?             | snowflake                                                               | The ID of the logo store asset                 |
+| light_theme_logo_asset_id? | snowflake                                                               | The ID of the logo store asset for light theme |
+| pages                      | array[[storefront page](#storefront-page-structure) object]             | The pages of the storefront                    |
+| store_listings             | array[[store listing](#store-listing-object) object]                    | The store listings                             |
+| assets                     | array[[store asset](#store-asset-object) object]                        | The store assets                               |
+
+###### Storefront Page Structure
+
+| Field        | Type                                                                        | Description                                |
+| ------------ | --------------------------------------------------------------------------- | ------------------------------------------ |
+| title?       | string                                                                      | The title of the page (max 256 characters) |
+| leaderboard? | [storefront leaderboard](#storefront-leaderboard-structure) object          | The leaderboard on the page                |
+| sku_ids      | array[snowflake]                                                            | The IDs of the SKUs on the page (max 100)  |
+| sections?    | array[[storefront page section](#storefront-page-section-structure) object] | The sections on the page (max 5)           |
+
+###### Storefront Leaderboard Structure
+
+| Field                      | Type      | Description                                             |
+| -------------------------- | --------- | ------------------------------------------------------- |
+| title?                     | string    | The title of the leaderboard (max 256 characters)       |
+| description?               | string    | The description of the leaderboard (max 512 characters) |
+| background_image_asset_id? | snowflake | The ID of the background image store asset              |
+
+###### Storefront Page Section Structure
+
+| Field   | Type             | Description                                        |
+| ------- | ---------------- | -------------------------------------------------- |
+| title?  | string           | The title of the page section (max 256 characters) |
+| sku_ids | array[snowflake] | The IDs of the SKUs on the page section (max 100)  |
+
+### Storefront Collection Object
+
+A collection of storefront products.
+
+###### Storefront Collection Structure
+
+| Field           | Type              | Description                                   |
+| --------------- | ----------------- | --------------------------------------------- |
+| id              | snowflake         | The ID of the storefront collection           |
+| application_id  | snowflake         | The ID of the application                     |
+| name            | string            | The name of the storefront collection         |
+| description     | string            | The description of the storefront collection  |
+| product_ids     | array[snowflake]  | The IDs of the products in the collection     |
+| created_at      | ISO8601 timestamp | When the storefront collection was created    |
+| updated_at      | ISO8601 timestamp | When the storefront collection was updated    |
+| tenant_metadata | object            | Tenant metadata for the storefront collection |
+
+### Storefront Product Object
+
+An abstraction around SKUs for modern marketplace items on Discord.
+
+###### Storefront Product Structure
+
+| Field           | Type                                                                 | Description                               |
+| --------------- | -------------------------------------------------------------------- | ----------------------------------------- |
+| id              | snowflake                                                            | The ID of the product                     |
+| application_id  | snowflake                                                            | The ID of the application                 |
+| sku_ids         | array[snowflake]                                                     | The ID of the plan SKUs                   |
+| name            | string                                                               | The name of the product                   |
+| options         | array[[product option](#product-option-structure) object]            | The plan options                          |
+| created_at      | ISO8601 timestamp                                                    | When the product was created              |
+| updated_at      | ISO8601 timestamp                                                    | When the product was updated              |
+| tenant_metadata | [product tenant metadata](#product-tenant-metadata-structure) object | Tenant metadata for the product           |
+| skus            | array[[product SKU](#product-sku-structure) object]                  | The plan SKUs associated with the product |
+
+###### Product Option Structure
+
+| Field         | Type          | Description                 |
+| ------------- | ------------- | --------------------------- |
+| name          | string        | The name of the option      |
+| option_values | array[string] | The possible option choices |
+
+###### Product Tenant Metadata Structure
+
+| Field               | Type                                                                                         | Description             |
+| ------------------- | -------------------------------------------------------------------------------------------- | ----------------------- |
+| guild_monetization? | [guild monetization product metadata](#guild-monetization-product-metadata-structure) object | Guild monetization data |
+
+###### Guild Monetization Product Metadata Structure
+
+| Field        | Type                                                                                           | Description                  |
+| ------------ | ---------------------------------------------------------------------------------------------- | ---------------------------- |
+| game_server? | [game server powerup product metadata](#game-server-powerup-product-metadata-structure) object | Game server powerup metadata |
+
+###### Game Server Powerup Product Metadata Structure
+
+| Field                             | Type                                                                      | Description                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| instructions                      | [game server instructions](#game-server-instructions-structure) structure | The instructions for joining the game server                                   |
+| deactivation_cooldown_period_days | integer                                                                   | Duration (in days) until the game server can be disabled                       |
+| game_application_id               | snowflake                                                                 | The ID of the game application                                                 |
+| provider                          | string                                                                    | The [type of game server provider](/resources/guild#game-server-provider-type) |
+| disabled                          | boolean                                                                   | Whether the game server product is disabled                                    |
+| early_access                      | boolean                                                                   | Whether the game server product is in early access                             |
+| can_market                        | boolean                                                                   | Whether the game server product can be marketed                                |
+
+###### Game Server Instructions Structure
+
+| Field | Type          | Description                     |
+| ----- | ------------- | ------------------------------- |
+| pc    | array[string] | The instructions for PC players |
+
+###### Product SKU Structure
+
+| Field              | Type                                                                         | Description                                              |
+| ------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| id                 | snowflake                                                                    | The ID of the SKU                                        |
+| type               | integer                                                                      | The [type of SKU](#sku-type)                             |
+| product_line       | integer                                                                      | The [product line](#sku-product-line) the SKU belongs to |
+| application_id     | snowflake                                                                    | The ID of the application the SKU belongs to             |
+| name               | string                                                                       | The name of the SKU                                      |
+| thumbnail_asset_id | ?snowflake                                                                   | The ID of the store asset for the SKU's thumbnail        |
+| slug               | string                                                                       | The URL slug of the SKU                                  |
+| premium            | boolean                                                                      | Whether the SKU is a premium user perk                   |
+| selected_options   | array[[product SKU option](#product-sku-option-structure) object]            | The selected options                                     |
+| product_id         | snowflake                                                                    | The ID of the storefront product the SKU is for          |
+| position           | integer                                                                      | The position of the SKU                                  |
+| tenant_metadata    | [product SKU tenant metadata](#product-sku-tenant-metadata-structure) object | Tenant metadata for the SKU                              |
+
+###### Product SKU Option Structure
+
+| Field        | Type   | Description             |
+| ------------ | ------ | ----------------------- |
+| option_name  | string | The name of the option  |
+| option_value | string | The value of the option |
+
+###### Product SKU Tenant Metadata Structure
+
+| Field          | Type                                                                          | Description                                                                              |
+| -------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| boost_price    | integer                                                                       | The number of boosts the powerup costs                                                   |
+| purchase_limit | integer                                                                       | The maximum number of entitlements a guild can have for the powerup                      |
+| category_type  | string                                                                        | The [type of guild powerup](#guild-powerup-category-type) (currently only `game_server`) |
+| plan_features  | array[[product SKU plan feature](#product-sku-plan-feature-structure) object] | The SKU plan features                                                                    |
+
+###### Product SKU Plan Feature Structure
+
+| Field       | Type   | Description                  |
+| ----------- | ------ | ---------------------------- |
+| title       | string | The plan feature title       |
+| description | string | The plan feature description |
+
+###### Example Product
+
+```json
+{
+  "id": "1458532555463589978",
+  "application_id": "1340102344645283891",
+  "sku_ids": ["1458532555463589979", "1460419709630677042", "1460419709630677043"],
+  "name": "Hytale",
+  "options": [
+    {
+      "name": "Memory",
+      "option_values": ["5", "8", "12"]
+    }
+  ],
+  "created_at": "2026-01-07T18:47:39.455084+00:00",
+  "updated_at": "2026-02-27T18:40:56.037576+00:00",
+  "tenant_metadata": {
+    "guild_monetization": {
+      "game_server": {
+        "instructions": {
+          "pc": [
+            "Open Hytale.",
+            "Click on **Servers**.",
+            "Click on **Add Server**.",
+            "Paste your server IP address, enter a server name and click **Add Server**.",
+            "Double click your server in the list to join."
+          ]
+        },
+        "deactivation_cooldown_period_days": 7,
+        "game_application_id": "1458530944955973852",
+        "provider": "shockbyte",
+        "disabled": false,
+        "early_access": true,
+        "can_market": true
+      }
+    }
+  },
+  "skus": [
+    {
+      "id": "1458532555463589979",
+      "type": 2,
+      "product_line": 13,
+      "application_id": "1340102344645283891",
+      "name": "Starter Plan",
+      "thumbnail_asset_id": null,
+      "slug": "starter-plan",
+      "premium": false,
+      "selected_options": [
+        {
+          "option_name": "Memory",
+          "option_value": "5"
+        }
+      ],
+      "product_id": "1458532555463589978",
+      "position": 0,
+      "tenant_metadata": {
+        "boost_price": 5,
+        "purchase_limit": 1,
+        "category_type": "game_server",
+        "plan_features": [
+          {
+            "title": "4+",
+            "description": "Players"
+          },
+          {
+            "title": "5GB",
+            "description": "RAM"
+          },
+          {
+            "title": "3",
+            "description": "vCPUs"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
 
 ## Endpoints
 
@@ -1062,7 +1296,7 @@ Returns an [invoice](/resources/payment#invoice-object) object representing a pu
   Create SKU Purchase
 </RouteHeader>
 
-Creates a new purchase for the given SKU ID. Fires an [Entitlement Create](/topics/gateway-events#entitlement-create) and [Payment Update](/topics/gateway-events#payment-update) Gateway event.
+Creates a new purchase for the given SKU ID. Fires an [Entitlement Create](/gateway/gateway-events#entitlement-create) and [Payment Update](/gateway/gateway-events#payment-update) Gateway event.
 
 ###### JSON Params
 
@@ -1180,6 +1414,48 @@ Returns a map of lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) 
 
 Returns a [EULA](#eula-object) object for the given ID.
 
+<RouteHeader method="GET" url="/applications/{application.id}/store-layout">
+  Get Application Store Layout
+</RouteHeader>
+
+Returns the store layout of the given application ID.
+
+###### Response Body
+
+| Field              | Type                                                         | Description                             |
+| ------------------ | ------------------------------------------------------------ | --------------------------------------- |
+| subscriptions      | array[[store listing](#store-listing-object) object]         | The listings the users can subscribe to |
+| otps               | array[[store listing](#store-listing-object) object]         | The listings the users can purchase     |
+| subscription_plans | array[[subscription plan](#subscription-plan-object) object] | The subscription plans                  |
+
+<RouteHeader method="POST" url="/applications/{application.id}/storefront/publish">
+  Modify Application Storefront Publish States
+</RouteHeader>
+
+Modifies the SKU publishing states for the given application and SKU IDs.
+
+###### JSON Params
+
+| Field         | Type             | Description                                                 |
+| ------------- | ---------------- | ----------------------------------------------------------- |
+| publish_state | integer          | The [publish state](#storefront-publish-state) for the SKUs |
+| sku_ids       | array[snowflake] | The IDs of the SKUs to modify publish state for (1-255)     |
+
+###### Storefront Publish State
+
+| Value | Name                 | Description                                 |
+| ----- | -------------------- | ------------------------------------------- |
+| 1     | UNPUBLISHED          | The SKUs are unpublished                    |
+| 2     | PUBLISHED_HIDDEN     | The SKUs are published but hidden in the UI |
+| 3     | PUBLISHED_STOREFRONT | The SKUs are published and shown in the UI  |
+
+###### Response Body
+
+| Field                 | Type                                                 | Description              |
+| --------------------- | ---------------------------------------------------- | ------------------------ |
+| store_layout_sku_ids? | array[snowflake]                                     | The store layout SKU IDs |
+| store_listings?       | array[[store listing](#store-listing-object) object] | The store listings       |
+
 <RouteHeader method="GET" url="/store/consumable/pricing/{sku.id}">
   Get Consumable SKU Pricing
 </RouteHeader>
@@ -1211,7 +1487,7 @@ Returns the active HD streaming potion entitlement for the user.
   Apply HD Streaming Consumable
 </RouteHeader>
 
-Applies an HD streaming potion to a voice channel. Returns a 204 empty response on success. Fires a [Channel Update](/topics/gateway-events#channel-update) Gateway event.
+Applies an HD streaming potion to a voice channel. Returns a 204 empty response on success. Fires a [Channel Update](/gateway/gateway-events#channel-update) Gateway event.
 
 ###### JSON Params
 
@@ -1236,7 +1512,7 @@ Returns the active confetti potion entitlement for the user.
   Apply Confetti Consumable
 </RouteHeader>
 
-Applies a confetti potion to a message. To use custom emoji, you must encode it in the format `name:id` with the emoji name and emoji ID. Returns a 204 empty response on success. Fires a [Message Update](/topics/gateway-events#message-update) Gateway event.
+Applies a confetti potion to a message. To use custom emoji, you must encode it in the format `name:id` with the emoji name and emoji ID. Returns a 204 empty response on success. Fires a [Message Update](/gateway/gateway-events#message-update) Gateway event.
 
 ###### JSON Params
 
@@ -1263,10 +1539,250 @@ Returns the current user's Orbs balance.
 </RouteHeader>
 
 Purchases a SKU using virtual currency. Returns a list of [entitlement](/resources/entitlement#entitlement-object) objects granted to the current user.
-Fires [Payment Update](/topics/gateway-events#payment-update), [Virtual Currency Balance Update](/topics/gateway-events#virtual-currency-balance-update), [Entitlement Create](/topics/gateway-events#entitlement-create), and [Entitlement Update](/topics/gateway-events#entitlement-update) Gateway events.
+Fires [Payment Update](/gateway/gateway-events#payment-update), [Virtual Currency Balance Update](/gateway/gateway-events#virtual-currency-balance-update), [Entitlement Create](/gateway/gateway-events#entitlement-create), and [Entitlement Update](/gateway/gateway-events#entitlement-update) Gateway events.
 
 ###### JSON Params
 
 | Field               | Type   | Description                                                           |
 | ------------------- | ------ | --------------------------------------------------------------------- |
 | checkout_session_id | string | A client-generated UUID used to identify the current checkout session |
+
+<RouteHeader method="GET" url="/applications/storefront/interactions/premium-button/{store_listing.id}">
+  Get Application Storefront for Premium Button
+</RouteHeader>
+
+Returns information about store listing, relevant SKUs, and subscription plans.
+
+###### Response Body
+
+| Field               | Type                                                         | Description            |
+| ------------------- | ------------------------------------------------------------ | ---------------------- |
+| skus?               | array[[SKU](#sku-object) object]                             | The relevant SKUs      |
+| store_listings      | array[[store listing](#store-listing-object) object]         | The store listings     |
+| subscription_plans? | array[[subscription plan](#subscription-plan-object) object] | The subscription plans |
+
+<RouteHeader method="GET" url="/storefront/collections/{collection.id}">
+  Get Storefront Collection
+</RouteHeader>
+
+Returns information about collection for the given collection ID.
+
+###### Query String Params
+
+| Field                               | Type      | Description                                                                             |
+| ----------------------------------- | --------- | --------------------------------------------------------------------------------------- |
+| country_code?                       | string    | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| guild_id?                           | snowflake | The guild ID to fetch the storefront collection for                                     |
+| include_unpublished_products? ^1^   | boolean   | Whether to include unpublished products (default false)                                 |
+| include_unpublished_collection? ^1^ | boolean   | Whether to return collection even if unpublished (default false)                        |
+
+^1^ Only usable by Discord employees.
+
+###### Response Body
+
+| Field      | Type                                                           | Description                    |
+| ---------- | -------------------------------------------------------------- | ------------------------------ |
+| collection | [storefront collection](#storefront-collection-object) object  | The collection                 |
+| products   | array[[storefront product](#storefront-product-object) object] | The products in the collection |
+
+<RouteHeader method="GET" url="/storefront/products/{product.id}">
+  Get Storefront Product
+</RouteHeader>
+
+Returns a [storefront product](#storefront-product-object) object for the given product ID.
+
+<RouteHeader method="GET" url="/storefront/products/sku/{sku.id}">
+  Get Storefront Product By SKU ID
+</RouteHeader>
+
+Returns an associated [storefront product](#storefront-product-object) object for the given SKU ID.
+
+<RouteHeader method="GET" url="/storefront/products/skus">
+  Get Storefront Products By SKU ID
+</RouteHeader>
+
+Returns associated [storefront product](#storefront-product-object) objects for the given SKU IDs.
+
+###### Query String Params
+
+| Field   | Type             | Description                                 |
+| ------- | ---------------- | ------------------------------------------- |
+| sku_ids | array[snowflake] | The SKU IDs to get the products for (1-100) |
+
+###### Response Body
+
+| Field    | Type                                                           | Description  |
+| -------- | -------------------------------------------------------------- | ------------ |
+| products | array[[storefront product](#storefront-product-object) object] | The products |
+
+<RouteHeader method="GET" url="/storefront/skus/prices">
+  Get Storefront SKU Prices
+</RouteHeader>
+
+Returns prices for the given storefront SKUs.
+
+###### Query String Params
+
+| Field   | Type             | Description                               |
+| ------- | ---------------- | ----------------------------------------- |
+| sku_ids | array[snowflake] | The SKU IDs to get the prices for (1-100) |
+
+###### Response Body
+
+| Field      | Type                                                                                 | Description                          |
+| ---------- | ------------------------------------------------------------------------------------ | ------------------------------------ |
+| sku_prices | map[snowflake, partial [subscription prices](#subscription-prices-structure) object] | A mapping of SKU IDs to their prices |
+
+<RouteHeader method="GET" url="/partner-sdk/guilds/{guild.id}/application-storefront">
+  Get Guild Application Storefront
+</RouteHeader>
+
+Returns a [storefront](#storefront-object) object for the application linked to the given guild ID.
+
+<RouteHeader method="GET" url="/partner-sdk/applications/{application.id}/skus/recommendations">
+  Get Application SKU Recommendations
+</RouteHeader>
+
+Returns recommended giftable SKUs for the specified users.
+
+###### Query String Parameters
+
+| Field                | Type             | Description                                                |
+| -------------------- | ---------------- | ---------------------------------------------------------- |
+| user_ids             | array[snowflake] | The IDs of the users to return recommendations for (1-100) |
+| max_recommendations? | integer          | Max number of recommendations to return (1-25, default ?)  |
+| include_wishlists?   | boolean          | Whether to include SKUs on the users' wishlists            |
+
+###### Response Body
+
+| Field            | Type                                                                                               | Description                               |
+| ---------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| skus             | array[[SKU](#sku-object) object]                                                                   | The SKUs                                  |
+| skus_to_user_ids | map[snowflake, [application SKU recommendation](#application-sku-recommendation-structure) object] | A mapping of SKU IDs to recommended users |
+| application      | partial [application](/resources/application#application-object) object                            | The application                           |
+
+###### Application SKU Recommendation Structure
+
+| Field   | Type      | Description                                                                                  |
+| ------- | --------- | -------------------------------------------------------------------------------------------- |
+| user_id | snowflake | The ID of the user                                                                           |
+| reason  | string    | The [reason why the SKU was recommended to the user](#application-sku-recommendation-reason) |
+
+###### Application SKU Recommendation Reason
+
+| Value          | Description                     |
+| -------------- | ------------------------------- |
+| WISHLIST       | User has the SKU wishlisted     |
+| RECOMMENDATION | SKU is recommended for the user |
+
+<RouteHeader method="GET" url="/partner-sdk/application/{application.id}/skus">
+  Get Social Layer SKUs
+</RouteHeader>
+
+Returns a list of [SKU](#sku-object) objects related to in-game items for the given application. Requires a partner application with access to the social layer SDK and monetization. User must be the owner of the application or member of the owning team.
+
+<RouteHeader method="POST" url="/partner-sdk/application/{application.id}/skus">
+  Create Social Layer SKU
+</RouteHeader>
+
+Creates a new SKU for in-game item. Returns the created [SKU](#sku-object) object on success. Requires a partner application with access to the social layer SDK and monetization. User must be the owner of the application or member of the owning team.
+
+###### JSON Params
+
+| Field      | Type    | Description                                         |
+| ---------- | ------- | --------------------------------------------------- |
+| name       | string  | The name of the SKU (max 256 characters)            |
+| price_tier | integer | The [base price](#get-store-price-tiers) of the SKU |
+
+<RouteHeader method="GET" url="/partner-sdk/applications/{application.id}/storefront">
+  Get Application Storefront
+</RouteHeader>
+
+Returns a [storefront](#storefront-object) object for the given application ID.
+
+<RouteHeader method="PUT" url="/partner-sdk/applications/{application.id}/storefront">
+  Modify Application Storefront
+</RouteHeader>
+
+Modifies the application's storefront. Returns the modified [storefront](#storefront-object) object on success. User must be the owner of the application or developer of the owning team.
+
+###### JSON Params
+
+| Field                      | Type                                                        | Description                                      |
+| -------------------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| title                      | string                                                      | The title of the storefront (max 256 characters) |
+| logo_asset_id?             | snowflake                                                   | The ID of the logo store asset                   |
+| light_theme_logo_asset_id? | snowflake                                                   | The ID of the logo store asset for light theme   |
+| pages                      | array[[storefront page](#storefront-page-structure) object] | The pages of the storefront (max 5)              |
+
+<RouteHeader method="DELETE" url="/partner-sdk/applications/{application.id}/storefront">
+  Delete Application Storefront
+</RouteHeader>
+
+Deletes the application's storefront. Returns a 204 empty response on success. User must be the owner of the application or developer of the owning team.
+
+<RouteHeader method="GET" url="/partner-sdk/guilds/{guild.id}/application-storefront/skus/{sku.id}">
+  Get Guild Application SKU Storefront
+</RouteHeader>
+
+Returns the storefront associated with the given SKU ID.
+
+###### Response Body
+
+| Field         | Type                                             | Description       |
+| ------------- | ------------------------------------------------ | ----------------- |
+| store_listing | [store listing](#store-listing-object) object    | The store listing |
+| assets        | array[[store asset](#store-asset-object) object] | The store assets  |
+
+<RouteHeader method="GET" url="/partner-sdk/guilds/{guild.id}/application-storefront/announcement">
+  Get Guild Application Storefront Announcement
+</RouteHeader>
+
+Returns the most recent announcement on the storefront for the application linked to the given guild ID.
+
+###### Response Body
+
+| Field                     | Type      | Description                                |
+| ------------------------- | --------- | ------------------------------------------ |
+| id                        | snowflake | The ID of the announcement                 |
+| application_id            | snowflake | The ID of the application                  |
+| application_name          | string    | The name of the application                |
+| asset_id                  | snowflake | The ID of the announcement store asset     |
+| background_image_asset_id | snowflake | The ID of the background image store asset |
+
+###### Example Response
+
+```json
+{
+  "id": "1461677124166483968",
+  "application_id": "1346069614634864772",
+  "application_name": "Marvel Rivals",
+  "asset_id": "1461676869303664640",
+  "background_image_asset_id": "1461676874102214730"
+}
+```
+
+<RouteHeader method="POST" url="/partner-sdk/guilds/{guild.id}/application-storefront/skus/{sku.id}/eligibility">
+  Check Social Layer SKU Purchase Eligibility
+</RouteHeader>
+
+Creates a [`SOCIAL_LAYER_SKU_PURCHASE_ELIGIBILITY`](/interactions/receiving-and-responding#interaction-type) interaction used to check whether the user is eligible to purchase a social layer SKU.
+
+###### Response Body
+
+| Field          | Type      | Description                       |
+| -------------- | --------- | --------------------------------- |
+| interaction_id | snowflake | The ID of the created interaction |
+
+<RouteHeader method="GET" url="/partner-sdk/storefront-config">
+  Get Social Layer Storefront Config
+</RouteHeader>
+
+Returns the promotion currently running for Social Layer integrated storefronts.
+
+###### Response Body
+
+| Field                  | Type               | Description                               |
+| ---------------------- | ------------------ | ----------------------------------------- |
+| promotional_sku_ids    | array[snowflake]   | The IDs of the promotional store listings |
+| promotion_end_datetime | ?ISO8601 timestamp | When the promotion ends                   |

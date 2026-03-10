@@ -2,6 +2,7 @@ import classNames from "@lib/classnames";
 import React, { isValidElement, ReactNode } from "react";
 import HyperlinkIcon from "../icons/Hyperlink";
 import TickIcon from "../icons/Tick";
+import EndpointFilter from "../EndpointFilter";
 
 export function getNormalisedText(node: ReactNode): string {
   if (typeof node === "string") {
@@ -92,8 +93,22 @@ export function H1({ className, ...props }: MDXHeadingProps<"h1">) {
 
 export function H2({ className, ...props }: MDXHeadingProps<"h2">) {
   const classes = classNames("mb-4 mt-6 text-2xl font-semibold leading-relaxed", className);
-  return <Heading as="h2" className={classes} {...props} />;
+  const element = <Heading as="h2" className={classes} {...props} />;
+
+  // Minimize diffs
+  if (getNormalisedText(props.children) === "endpoints") {
+    return (
+      <>
+        {element}
+        <EndpointFilter />
+      </>
+    );
+  }
+
+  return element;
 }
+
+H2.displayName = "H2";
 
 export function H3({ className, ...props }: MDXHeadingProps<"h3">) {
   const classes = classNames("mb-2 mt-6 text-xl font-medium leading-normal", className);
