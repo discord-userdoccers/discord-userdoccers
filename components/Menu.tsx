@@ -13,8 +13,8 @@ export default function Menu() {
 
   const classes = classNames(
     [
-      // Mobile overlay only; hidden on sm and up
-      "text-theme-light-text fixed -left-full pr-16 sm:pr-0 top-0 w-full h-dvh flex z-40 transition-duration-300 transform-gpu sm:hidden",
+      // Mobile/tablet overlay; hidden on xl and up
+      "text-theme-light-text fixed -left-full pr-16 sm:pr-0 top-0 w-full h-dvh flex z-40 transition-duration-300 transform-gpu xl:hidden",
     ],
     {
       "translate-x-full ": open,
@@ -42,7 +42,7 @@ export default function Menu() {
         <div className="dark:bg-sidebar-tertiary-dark flex w-full flex-col bg-white" ref={ref}>
           <div className="flex grow flex-col overflow-y-auto pt-5 pb-4">
             <div className="flex flex-1 flex-col items-start">
-              <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black md:hidden dark:text-white" />
+              <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black xl:hidden dark:text-white" />
               <Navigation />
             </div>
           </div>
@@ -51,7 +51,7 @@ export default function Menu() {
 
       {/* Desktop fixed sidebar */}
       <aside
-        className="desktop-left-nav text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text fixed top-0 z-20 hidden h-dvh w-80 text-sm sm:block"
+        className="desktop-left-nav text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text fixed top-0 z-20 hidden h-dvh w-80 text-sm xl:block"
         aria-hidden={false}
       >
         <div className="dark:bg-sidebar-tertiary-dark flex h-full w-80 flex-col bg-white">
