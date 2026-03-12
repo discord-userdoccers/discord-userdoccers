@@ -28,9 +28,9 @@ function App() {
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
 
-  const fadeClasses = classNames("fixed z-30 inset-0 bg-black duration-300 xl:opacity-0 xl:pointer-events-none", {
-    "opacity-50": sidebarOpen,
-    "opacity-0 pointer-events-none": !sidebarOpen,
+  const fadeClasses = classNames("sidebar-fade", {
+    "open": sidebarOpen,
+    "closed": !sidebarOpen,
   });
 
   const component = (
@@ -55,7 +55,7 @@ function App() {
       >
         <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
           <ThemeWatcher />
-          <div className="dark:bg-background-dark flex min-h-dvh overflow-hidden bg-white">
+          <div className="app-wrapper">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
             {component}
