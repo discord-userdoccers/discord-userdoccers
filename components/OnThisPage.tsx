@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { useRouter } from "next/router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import classNames from "@lib/classnames";
 import { ListIcon } from "./mdx/icons/ListIcon";
 import { type NavigationData, SITEMAP, type SubLink } from "./navigation/NavigationList";
@@ -31,10 +30,10 @@ function CloseIcon({ className }: { className?: string }) {
 }
 
 export default function OnThisPage() {
-  const router = useRouter();
+  const location = useLocation();
 
   const subLinks = useMemo<SubLink[]>(() => {
-    const pathname = router.pathname;
+    const pathname = location.pathname;
     for (const section of SITEMAP as NavigationData[]) {
       for (const page of section.pages) {
         if (page.link === pathname) {
@@ -43,15 +42,15 @@ export default function OnThisPage() {
       }
     }
     return [];
-  }, [router.pathname]);
+  }, [location.pathname]);
   const tocItems = useMemo(
     () =>
       subLinks.map((s) => ({
         ...s,
         targetId: getTargetId(s.link),
-        isSamePage: s.link.startsWith(`${router.pathname}#`),
+        isSamePage: s.link.startsWith(`${location.pathname}#`),
       })),
-    [subLinks, router.pathname],
+    [subLinks, location.pathname],
   );
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -144,13 +143,7 @@ export default function OnThisPage() {
       }
 
       return (
-        <Link
-          key={`${keyPrefix}${item.link}`}
-          href={item.link}
-          prefetch={false}
-          className={className}
-          onClick={onNavigate}
-        >
+        <Link key={`${keyPrefix}${item.link}`} to={item.link} className={className} onClick={onNavigate}>
           {item.name}
         </Link>
       );

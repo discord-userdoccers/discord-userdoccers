@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import type { FC } from "react";
 
 interface IconBadgeProps {
@@ -11,7 +11,7 @@ export default function IconBadge(props: IconBadgeProps) {
   const { href, tooltip } = props;
 
   return (
-    <Link href={href}>
+    <Link to={href}>
       <abbr title={tooltip} className="no-underline">
         <props.icon className="h-5 min-h-4 w-5 min-w-4" />
       </abbr>
