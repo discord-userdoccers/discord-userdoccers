@@ -29,8 +29,8 @@ function App() {
   const setClose = useCallback(() => setSidebarOpen(false), []);
 
   const fadeClasses = classNames("sidebar-fade", {
-    "open": sidebarOpen,
-    "closed": !sidebarOpen,
+    open: sidebarOpen,
+    closed: !sidebarOpen,
   });
 
   const component = (

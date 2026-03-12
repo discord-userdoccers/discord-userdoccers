@@ -67,7 +67,9 @@ export default defineConfig({
     onPageRendered: (route, html) => {
       // note: this could probably be moved to its own function instead of bloating vite.config.ts, unsure if it should be for now ~ darkerink
       const title = TITLE_REGEX.exec(html)?.[1]?.trim();
-      const finalTitle = title ? `${title} - Discord Userdoccers` : "Unofficial Discord API Documentation - Discord Userdoccers";
+      const finalTitle = title
+        ? `${title} - Discord Userdoccers`
+        : "Unofficial Discord API Documentation - Discord Userdoccers";
       const finalDesc = handleDesc(html) || "👽 ALIEN ALIEN ALIEN 👽";
 
       const isBase = route === "/" || route === "/intro";
@@ -79,7 +81,7 @@ export default defineConfig({
 
       let currentSection: { name: string | null; pages: { link: string; name: string }[]; section: string } | undefined;
       let currentPage: { link: string; name: string } | undefined;
-      
+
       try {
         const dataPath = path.resolve(__dirname, "./components/navigation/data.json");
         const data = JSON.parse(fs.readFileSync(dataPath, "utf8")) as {
@@ -87,11 +89,9 @@ export default defineConfig({
           pages: { link: string; name: string }[];
           section: string;
         }[];
-        
-        currentSection = data.find((s) => 
-          s.pages.some((p) => p.link === route || p.link + "/" === route)
-        );
-        
+
+        currentSection = data.find((s) => s.pages.some((p) => p.link === route || p.link + "/" === route));
+
         if (currentSection) {
           currentPage = currentSection.pages.find((p) => p.link === route || p.link + "/" === route);
         }
@@ -103,25 +103,25 @@ export default defineConfig({
         {
           "@context": "https://schema.org",
           "@type": "WebSite",
-          url: baseUrl,
-          name: siteName,
-          alternateName: ["Userdoccers"],
+          "url": baseUrl,
+          "name": siteName,
+          "alternateName": ["Userdoccers"],
         },
         !isBase && {
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
-          itemListElement: [
+          "itemListElement": [
             currentSection?.name && {
               "@type": "ListItem",
-              position: 1,
-              name: currentSection.name,
-              item: `${baseUrl}/${currentSection.section === "__ROOT__" ? "" : currentSection.section}`,
+              "position": 1,
+              "name": currentSection.name,
+              "item": `${baseUrl}/${currentSection.section === "__ROOT__" ? "" : currentSection.section}`,
             },
             {
               "@type": "ListItem",
-              position: currentSection?.name ? 2 : 1,
-              name: (currentPage?.name || title) || DEFAULT_SECTION,
-              item: url,
+              "position": currentSection?.name ? 2 : 1,
+              "name": currentPage?.name || title || DEFAULT_SECTION,
+              "item": url,
             },
           ].filter(Boolean),
         },
