@@ -16,6 +16,7 @@ const MAIN_CONTENT_REGEX = /<main[^>]*>([\s\S]*?)<\/main>/i;
 const ARTICLE_CONTENT_REGEX = /<article[^>]*>([\s\S]*?)<\/article>/i;
 const SCRIPT_REGEX = /<script[\s\S]*?<\/script>/gi;
 const STYLE_REGEX = /<style[\s\S]*?<\/style>/gi;
+const TABLIST_REGEX = /<div[^>]*role="tablist"[^>]*>[\s\S]*?<\/div>/gi;
 
 function handleDesc(str: string) {
   const content = ARTICLE_CONTENT_REGEX.exec(str)?.[1] ?? MAIN_CONTENT_REGEX.exec(str)?.[1] ?? str;
@@ -24,6 +25,7 @@ function handleDesc(str: string) {
     .replace(SCRIPT_REGEX, "")
     .replace(STYLE_REGEX, "")
     .replace(TITLE_REGEX, "")
+    .replace(TABLIST_REGEX, "")
     .replaceAll(/<[^>]*>|\s+/gm, " ")
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", '"')
