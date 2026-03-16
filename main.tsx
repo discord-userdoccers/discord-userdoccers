@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import Footer from "./components/Footer";
+import LoadingBar from "./components/LoadingBar";
 import MDX from "./components/MDX";
 import Menu from "./components/Menu";
 import MenuContext from "./contexts/MenuContext";
@@ -72,6 +73,7 @@ function App() {
 
   return (
     <>
+      <LoadingBar />
       <ThemeProvider
         defaultTheme="system"
         attribute="data-theme"
