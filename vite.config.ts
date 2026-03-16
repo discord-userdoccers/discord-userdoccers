@@ -69,7 +69,7 @@ export default defineConfig({
       const title = TITLE_REGEX.exec(html)?.[1]?.trim();
       const finalTitle = title
         ? `${title} - Discord Userdoccers`
-        : "Unofficial Discord API Documentation - Discord Userdoccers";
+        : "Discord Userdoccers";
       const finalDesc = handleDesc(html) || "👽 ALIEN ALIEN ALIEN 👽";
 
       const isBase = route === "/" || route === "/intro";
