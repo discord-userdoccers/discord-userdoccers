@@ -38,6 +38,23 @@ function handleDesc(str: string) {
 export default defineConfig({
   plugins: [
     {
+      name: "css-preload",
+      transformIndexHtml: {
+        order: "post",
+        handler(html) {
+          const regex = /<link rel="stylesheet"[^>]+href="([^"]+)"[^>]*>/g;
+          const hrefs: string[] = [];
+          let match;
+          while ((match = regex.exec(html)) !== null) hrefs.push(match[1]);
+          if (!hrefs.length) return html;
+          const preloads = hrefs
+            .map((href) => `  <link rel="preload" as="style" href="${href}" crossorigin="">`)
+            .join("\n");
+          return html.replace("<head>", `<head>\n${preloads}`);
+        },
+      },
+    },
+    {
       enforce: "pre",
       ...mdx({
         providerImportSource: "@mdx-js/react",
@@ -139,10 +156,10 @@ export default defineConfig({
         .replaceAll("__PLACEHOLDER_DESCRIPTION__", finalDesc)
         .replaceAll("__PLACEHOLDER_URL__", url)
         .replaceAll("__PLACEHOLDER_BASE_URL__", baseUrl)
-        .replaceAll("__PLACEHOLDER_JSON_LD__", jsonLd)
-        .replaceAll("__PLACEHOLDER_TWITTER_IMAGE__", twitterImage)
-        .replaceAll("__PLACEHOLDER_OG_IMAGE__", ogImage)
-        .replaceAll("__PLACEHOLDER_GOOGLE_SITE_VERIFICATION__", googleVerification);
+        .replaceAll("<!-- __PLACEHOLDER_JSON_LD__ -->", jsonLd)
+        .replaceAll("<!-- __PLACEHOLDER_TWITTER_IMAGE__ -->", twitterImage)
+        .replaceAll("<!-- __PLACEHOLDER_OG_IMAGE__ -->", ogImage)
+        .replaceAll("<!-- __PLACEHOLDER_GOOGLE_SITE_VERIFICATION__ -->", googleVerification);
     },
     onFinished: () => {
       // Clean up the useless static-loader-data folder that vite-react-ssg outputs
