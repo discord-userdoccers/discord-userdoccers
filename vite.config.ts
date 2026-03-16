@@ -144,6 +144,22 @@ export default defineConfig({
         .replaceAll("__PLACEHOLDER_OG_IMAGE__", ogImage)
         .replaceAll("__PLACEHOLDER_GOOGLE_SITE_VERIFICATION__", googleVerification);
     },
+    onFinished: () => {
+      // Clean up the useless static-loader-data folder that vite-react-ssg outputs
+      const distDir = path.resolve(__dirname, "./dist");
+      const loaderDataDir = path.join(distDir, "static-loader-data");
+      if (fs.existsSync(loaderDataDir)) {
+        fs.rmSync(loaderDataDir, { recursive: true, force: true });
+      }
+
+      // Clean up the generated manifest files
+      const files = fs.readdirSync(distDir);
+      for (const file of files) {
+        if (file.startsWith("static-loader-data-manifest")) {
+          fs.rmSync(path.join(distDir, file));
+        }
+      }
+    },
   },
   preview: {
     allowedHosts: true,

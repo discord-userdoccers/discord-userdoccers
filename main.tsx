@@ -7,7 +7,7 @@ import "./stylesheets/youtube.css";
 import "./stylesheets/snowflake-deconstruction.css";
 
 import { ViteReactSSG } from "vite-react-ssg";
-import { Outlet } from "react-router-dom";
+import { createBrowserRouter, Outlet, RouteObject } from "react-router-dom";
 import routes from "~react-pages";
 
 import classNames from "@lib/classnames";
@@ -105,4 +105,18 @@ export const createRoot = ViteReactSSG({
       children: routes,
     },
   ],
+  customCreateRouter: (routes, opts) => {
+    // Strip loaders injected by vite-react-ssg since we don't use React Router loaders
+    // This stops it from fetching useless static-loader-data json files on client navigation/hydration
+    const removeLoaders = (r: RouteObject[]) => {
+      for (const route of r) {
+        delete route.loader;
+        if (route.children) {
+          removeLoaders(route.children);
+        }
+      }
+    };
+    removeLoaders(routes);
+    return createBrowserRouter(routes, opts);
+  },
 });
