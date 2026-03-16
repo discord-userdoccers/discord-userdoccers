@@ -48,7 +48,7 @@ export default defineConfig({
           while ((match = regex.exec(html)) !== null) hrefs.push(match[1]);
           if (!hrefs.length) return html;
           const preloads = hrefs
-            .map((href) => `  <link rel="preload" as="style" href="${href}" crossorigin="">`)
+            .map((href) => `    <link rel="preload" as="style" href="${href}" crossorigin="">`)
             .join("\n");
           return html.replace("<head>", `<head>\n${preloads}`);
         },
@@ -78,6 +78,15 @@ export default defineConfig({
     alias: {
       "@components": path.resolve(__dirname, "./components"),
       "@lib": path.resolve(__dirname, "./lib"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name].[ext]",
+      },
     },
   },
   ssgOptions: {
