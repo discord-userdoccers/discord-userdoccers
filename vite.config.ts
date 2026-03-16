@@ -67,9 +67,7 @@ export default defineConfig({
     onPageRendered: (route, html) => {
       // note: this could probably be moved to its own function instead of bloating vite.config.ts, unsure if it should be for now ~ darkerink
       const title = TITLE_REGEX.exec(html)?.[1]?.trim();
-      const finalTitle = title
-        ? `${title} - Discord Userdoccers`
-        : "Discord Userdoccers";
+      const finalTitle = title ? `${title} - Discord Userdoccers` : "Discord Userdoccers";
       const finalDesc = handleDesc(html) || "👽 ALIEN ALIEN ALIEN 👽";
 
       const isBase = route === "/" || route === "/intro";
