@@ -7,6 +7,18 @@ import React, { RefObject, useEffect, useRef, useState } from "react";
 
 const cn = (...c: string[]) => c.join(" ");
 
+function getReactChildrenText(children: React.ReactNode): string {
+  let text = "";
+  React.Children.forEach(children, (child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      text += child;
+    } else if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.props.children) {
+      text += getReactChildrenText(child.props.children);
+    }
+  });
+  return text;
+}
+
 function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   const { showSuccessToast, showErrorToast } = useToast();
   const { selectedLanguage, setSelectedLanguage } = useCodegenLanguage();
@@ -136,6 +148,46 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
 export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"] & { useCodegen?: boolean }) {
   const tableRef = useRef<HTMLTableElement>(null);
 
+  let isCodegenable = props.useCodegen;
+
+  if (isCodegenable === undefined) {
+    isCodegenable = false;
+    React.Children.forEach(props.children, (child) => {
+      if (
+        React.isValidElement<{ children?: React.ReactNode; originalType?: string }>(child) &&
+        (child.type === TableHead ||
+          child.props?.originalType === "thead" ||
+          child.type === "thead" ||
+          (child.type as any)?.name === "TableHead")
+      ) {
+        React.Children.forEach(child.props.children, (row) => {
+          if (
+            React.isValidElement<{ children?: React.ReactNode; originalType?: string }>(row) &&
+            (row.type === TableRow ||
+              row.props?.originalType === "tr" ||
+              row.type === "tr" ||
+              (row.type as any)?.name === "TableRow")
+          ) {
+            const headings: string[] = [];
+            React.Children.forEach(row.props.children, (cell) => {
+              if (React.isValidElement<{ children?: React.ReactNode }>(cell)) {
+                headings.push(getReactChildrenText(cell.props.children).trim().toLowerCase());
+              }
+            });
+
+            if (
+              (headings[0] === "field" && headings[1] === "type") ||
+              headings[0] === "value" ||
+              (headings[0] === "event" && headings[1] === "value")
+            ) {
+              isCodegenable = true;
+            }
+          }
+        });
+      }
+    });
+  }
+
   return (
     <div className="group relative mt-0 max-w-full overflow-auto">
       <table
@@ -143,7 +195,7 @@ export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"]
         className="w-full border-collapse overflow-hidden rounded-md align-middle text-sm wrap-break-word"
         {...props}
       />
-      {props.useCodegen !== false && (
+      {isCodegenable && (
         <div className="absolute top-0 right-0 p-2 px-2">
           <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
         </div>
