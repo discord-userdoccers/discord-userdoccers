@@ -1,8 +1,8 @@
 import classNames from "@lib/classnames";
-import Link from "next/link";
 import { ReactNode } from "react";
 import ContentWrapper from "../components/mdx/ContentWrapper";
 import Paragraph from "../components/mdx/Paragraph";
+import { Link } from "react-router-dom";
 
 function LinkList({ className, children }: { className: string; children: ReactNode }) {
   const classes = classNames("grid gap-8 grid-cols-1 lg:grid-cols-2", className);
@@ -12,7 +12,7 @@ function LinkList({ className, children }: { className: string; children: ReactN
 function LinkPanel({ title, href, children }: { title: string; href: string; children: ReactNode }) {
   return (
     <li className="dark:bg-table-head-background-dark rounded-lg bg-indigo-100">
-      <Link href={href} className="block p-4">
+      <Link to={href} className="block p-4">
         <h4 className="text-center text-lg font-bold text-black dark:text-white">{title}</h4>
         <Paragraph>{children}</Paragraph>
       </Link>

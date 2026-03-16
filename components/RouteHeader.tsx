@@ -69,11 +69,19 @@ export default function RouteHeader({
   supportsBot,
 }: RouteHeaderProps) {
   const anchor = getNormalisedText(children);
+  const routeTitle = getRawText(children).toLowerCase();
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="group">
+    <div
+      className="group"
+      data-route-header="true"
+      data-route-title={routeTitle}
+      data-supports-bot={supportsBot ? "true" : undefined}
+      data-supports-oauth2={supportsOAuth2 ? "true" : undefined}
+      data-unauthenticated={unauthenticated ? "true" : undefined}
+    >
       <H3 className="mb-0" useAnchor={false} useCopy={false}>
         {/* NOTE: this margin is a hack cause the font sucks */}
         <a className="mb-px" href={`#${anchor}`}>
