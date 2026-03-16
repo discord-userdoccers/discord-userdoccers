@@ -83,8 +83,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        entryFileNames: "assets/[name].js",
-        chunkFileNames: "assets/[name].js",
+        // Work around uBlock Origin blocking /assets/push-notifications.js despite it NOT being a push notification script
+        entryFileNames: "assets/page-[name].js",
+        chunkFileNames: "assets/page-[name].js",
         assetFileNames: "assets/[name].[ext]",
       },
     },
