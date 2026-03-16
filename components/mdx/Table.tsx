@@ -143,7 +143,7 @@ function DeferredCopyBar({ tableRef, useCodegen }: { tableRef: RefObject<HTMLTab
     if (!parent) return;
 
     const onInteract = () => {
-      let codegenable = useCodegen;
+      let codegenable: boolean | undefined = useCodegen;
 
       if (codegenable === undefined && tableRef.current) {
         const ths = tableRef.current.querySelectorAll("thead th");
