@@ -12,7 +12,8 @@ import routes from "~react-pages";
 
 import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import Footer from "./components/Footer";
 import MDX from "./components/MDX";
@@ -22,11 +23,39 @@ import "@docsearch/css";
 import { CodegenLanguageProvider } from "./lib/type-generator/store";
 import OnThisPage from "./components/OnThisPage";
 import { ThemeWatcher } from "./components/ThemeWatcher";
+import navigationData from "./components/navigation/data.json";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
+  const location = useLocation();
+
+  useEffect(() => {
+    let pageTitle = "Discord Userdoccers";
+
+    for (const section of navigationData) {
+      const page = section.pages.find((p) => p.link === location.pathname || p.link + "/" === location.pathname);
+      if (page) {
+        pageTitle = `${page.name} - Discord Userdoccers`;
+        break;
+      }
+    }
+
+    if (pageTitle === "Discord Userdoccers") {
+      // Don't even wanna know what unholy situation leads to a page missing from nav
+      requestAnimationFrame(() => {
+        const h1Title = document.querySelector("h1")?.textContent?.trim();
+        if (h1Title && document.title !== `${h1Title} - Discord Userdoccers`) {
+          document.title = `${h1Title} - Discord Userdoccers`;
+        }
+      });
+    }
+
+    if (document.title !== pageTitle) {
+      document.title = pageTitle;
+    }
+  }, [location.pathname]);
 
   const fadeClasses = classNames("sidebar-fade", {
     open: sidebarOpen,
