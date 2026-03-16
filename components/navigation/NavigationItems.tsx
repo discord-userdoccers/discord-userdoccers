@@ -1,8 +1,9 @@
 import classNames from "@lib/classnames";
-import React, { createElement, Fragment } from "react";
+import React, { createElement, Fragment, Suspense } from "react";
 import { Link, useLocation } from "react-router-dom";
-import Searchbar from "../Searchbar";
 import { ICONS } from "./NavigationList";
+
+const Searchbar = React.lazy(() => import("../Searchbar"));
 
 interface MenuSelectionProps {
   title?: string;
@@ -55,6 +56,8 @@ export function NavigationLink({ href, className, children, icon }: NavigationLi
 
 export const SearchItem = (
   <div id="searchContainer" className="w-full flex-1 sm:flex">
-    <Searchbar />
+    <Suspense fallback={null}>
+      <Searchbar />
+    </Suspense>
   </div>
 );

@@ -38,24 +38,22 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
     };
   }, [dropdownRef]);
 
-  function tryCopyCodeToClipboard() {
+  async function tryCopyCodeToClipboard() {
     const table = props.tableRef.current;
-    const generator = LANGUAGE_CONFIG[selectedLanguage].generator;
 
     if (table) {
-      const code: string = generator(table);
-      (async () => {
-        await navigator.clipboard
-          .writeText(code)
-          .catch((err) => {
-            console.error(err);
-            showErrorToast("Failed to copy code to clipboard. Check console for details.");
-          })
-          .then(() => {
-            showSuccessToast("Copied code to clipboard.");
-            setShowCopyIcon(true);
-          });
-      })();
+      const generator = await LANGUAGE_CONFIG[selectedLanguage].loadGenerator();
+      const code = generator(table);
+      await navigator.clipboard
+        .writeText(code)
+        .catch((err) => {
+          console.error(err);
+          showErrorToast("Failed to copy code to clipboard. Check console for details.");
+        })
+        .then(() => {
+          showSuccessToast("Copied code to clipboard.");
+          setShowCopyIcon(true);
+        });
     } else {
       showErrorToast("Failed to generate code for this table. Check console for details.");
       console.error(
