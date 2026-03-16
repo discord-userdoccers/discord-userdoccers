@@ -1,5 +1,4 @@
 import classNames from "@lib/classnames";
-import { useRouter } from "next/router";
 import { useContext, useEffect, useRef } from "react";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
@@ -8,7 +7,6 @@ import Navigation from "./navigation/Navigation";
 
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const { open, setClose } = useContext(MenuContext);
 
   const classes = classNames(
@@ -29,9 +27,9 @@ export default function Menu() {
       }
     };
 
-    router.events.on("routeChangeComplete", handler);
-    return () => router.events.on("routeChangeComplete", handler);
-  }, [router.events, open, setClose]);
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, [open, setClose]);
 
   useOnClickOutside(ref as React.RefObject<HTMLDivElement>, setClose);
 

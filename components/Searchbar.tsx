@@ -1,12 +1,12 @@
 import { DocSearch } from "@docsearch/react";
 
 const config = {
-  appId: process.env.NEXT_PUBLIC_ALGOLIA_APP_ID ?? "JAJUDFJBI4",
-  apiKey: process.env.NEXT_PUBLIC_ALGOLIA_API_KEY ?? "bcee8efed01610170148dca8c067e80c",
-  index: process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME ?? "discord-usercers",
+  appId: import.meta.env.VITE_ALGOLIA_APP_ID ?? "JAJUDFJBI4",
+  apiKey: import.meta.env.VITE_ALGOLIA_API_KEY ?? "bcee8efed01610170148dca8c067e80c",
+  index: import.meta.env.VITE_ALGOLIA_INDEX_NAME ?? "discord-usercers",
   askAi: {
-    indexName: process.env.NEXT_PUBLIC_ALGOLIA_AI_INDEX ?? "discord-usercers-markdown",
-    assistantId: process.env.NEXT_PUBLIC_ALGOLIA_AI_ASSISTANT ?? "wJV42XivQUJI",
+    indexName: import.meta.env.VITE_ALGOLIA_AI_INDEX ?? "discord-usercers-markdown",
+    assistantId: import.meta.env.VITE_ALGOLIA_AI_ASSISTANT ?? "wJV42XivQUJI",
   },
 };
 

@@ -180,7 +180,7 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
   if (total > 0) {
     output += chalk.red.bold(`\u2716 ${total} problem${total === 1 ? "" : "s"}\n`);
   }
-  console.log(output);
+  output.trim() && console.log(output.trim());
 }
 
 function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>): void {
@@ -195,7 +195,7 @@ function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>):
           result.startLine ?? 0
         },col=${result.startColumn ?? 0},endColumn=${result.endColumn ?? result.startColumn ?? 0}::${
           result.title ?? "Invalid Link"
-        }`,
+        }`.trim(),
       );
     }
     github.endGroup();

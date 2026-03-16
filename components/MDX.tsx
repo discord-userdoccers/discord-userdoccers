@@ -1,5 +1,4 @@
 import { MDXProvider } from "@mdx-js/react";
-import Image from "next/legacy/image";
 import React from "react";
 import Alert from "./Alert";
 import Anchor from "./mdx/Anchor";
@@ -29,8 +28,13 @@ const COMPONENTS = {
   h5: H5,
   h6: H6,
   p: Paragraph,
-  code: Code,
-  inlineCode: InlineCode,
+  pre: ({ children, ...props }: React.DetailedHTMLProps<React.HTMLAttributes<HTMLPreElement>, HTMLPreElement>) => {
+    if (React.isValidElement(children) && (children.type === "code" || children.type === InlineCode)) {
+      return <Code {...(children.props as React.ComponentProps<typeof Code>)} />;
+    }
+    return <pre {...props}>{children}</pre>;
+  },
+  code: InlineCode,
   ul: UnorderedList,
   ol: OrderedList,
   li: ListItem,
@@ -46,7 +50,6 @@ const COMPONENTS = {
   a: Anchor,
 
   // Custom components
-  Image,
   Alert,
   RouteHeader,
   Collapsible,

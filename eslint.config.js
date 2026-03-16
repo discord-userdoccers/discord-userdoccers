@@ -2,8 +2,6 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import nextPlugin from "@next/eslint-plugin-next";
-import nextOnPages from "eslint-plugin-next-on-pages";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import reactPlugin from "eslint-plugin-react";
@@ -24,9 +22,7 @@ const compat = new FlatCompat({
 export default defineConfig([
   globalIgnores([
     "dist/*",
-    ".next/*",
     "**/*.js",
-    "**/next-env.d.ts",
     "ci/*",
     "*.config.cjs",
     "*.config.mjs",
@@ -35,16 +31,11 @@ export default defineConfig([
 
   ...compat.extends(
     "plugin:@typescript-eslint/recommended",
-    "plugin:eslint-plugin-next-on-pages/recommended",
     "plugin:react-hooks/recommended",
-    "plugin:@next/next/recommended",
-    "plugin:@next/next/core-web-vitals",
   ),
 
   {
     plugins: {
-      "@next/next": nextPlugin,
-      "next-on-pages": nextOnPages,
       "@typescript-eslint": tsPlugin,
       "react": reactPlugin,
       "react-hooks": reactHooksPlugin,
@@ -54,7 +45,7 @@ export default defineConfig([
       sourceType: "module",
       parser: tsParser,
       parserOptions: {
-        project: path.resolve(__dirname, "tsconfig.eslint.json"),
+        project: path.resolve(__dirname, "tsconfig.app.json"),
         ecmaFeatures: {
           jsx: true,
         },
@@ -66,8 +57,6 @@ export default defineConfig([
       },
     },
     rules: {
-      "@next/next/no-html-link-for-pages": "error",
-
       "react/react-in-jsx-scope": 0,
       // This rule crashes the fucking linter
       "react/jsx-filename-extension": "off",
