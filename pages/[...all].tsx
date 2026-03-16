@@ -1,5 +1,5 @@
-import { Navigate } from "react-router-dom";
+import NotFound from "./404";
 
-export default function NotFound() {
-  return <Navigate to="/404" replace />;
+export default function CatchAll() {
+  return <NotFound />;
 }
