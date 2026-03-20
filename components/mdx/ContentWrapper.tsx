@@ -1,80 +1,59 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Header from "../Header";
 import { EndpointProvider, useEndpointContext } from "../EndpointContext";
-import RouteHeader, { getRawText, RouteHeaderProps } from "../RouteHeader";
-import { H2 } from "./Heading";
 
 interface ContentWrapperProps {
   children: React.ReactNode;
 }
 
-function isRouteHeader(child: React.ReactNode): child is React.ReactElement<RouteHeaderProps> {
-  if (!React.isValidElement(child)) return false;
-  const type = child.type;
-  if (type === RouteHeader) return true;
-  if (typeof type === "function" && (type as { displayName?: string }).displayName === "RouteHeader") return true;
-  const props = child.props as Partial<RouteHeaderProps>;
-  if (typeof props.method === "string" && typeof props.url === "string") {
-    return true;
-  }
-  return false;
-}
-
-function isH2(child: React.ReactNode): boolean {
-  if (!React.isValidElement(child)) return false;
-  const type = child.type;
-  if (type === H2) return true;
-  if (typeof type === "function" && (type as { displayName?: string }).displayName === "H2") return true;
-  return false;
+function setElementVisibility(element: HTMLElement, visible: boolean) {
+  element.style.display = visible ? "" : "none";
+  element.toggleAttribute("data-endpoint-filter-hidden", !visible);
 }
 
 function FilteredContent({ children }: { children: React.ReactNode }) {
+  const articleRef = useRef<HTMLElement>(null);
   const { search, showBot, showOAuth2, showUnauthenticated } = useEndpointContext();
 
-  const childArray = React.Children.toArray(children);
+  useEffect(() => {
+    const article = articleRef.current;
 
-  let isEndpointVisible = true;
+    if (!article) return;
 
-  const filtered = childArray.map((child) => {
-    if (!React.isValidElement(child)) {
-      return isEndpointVisible ? child : null;
-    }
+    const elements = Array.from(article.children) as HTMLElement[];
+    const hasActiveFilters = showBot || showOAuth2 || showUnauthenticated;
+    let isEndpointVisible = true;
 
-    if (isH2(child)) {
-      // eslint-disable-next-line react-hooks/immutability
-      isEndpointVisible = true;
-      return child;
-    }
-
-    if (isRouteHeader(child)) {
-      const props = child.props;
-      const rawText = getRawText(props.children).toLowerCase();
-
-      const searchMatch = !search || rawText.includes(search);
-
-      let filterMatch = true;
-      const hasActiveFilters = showBot || showOAuth2 || showUnauthenticated;
-
-      if (hasActiveFilters) {
-        filterMatch =
-          (showBot && props.supportsBot) ||
-          (showOAuth2 && !!props.supportsOAuth2) ||
-          (showUnauthenticated && props.unauthenticated) ||
-          false;
-      } else {
-        filterMatch = true;
+    for (const element of elements) {
+      if (element.tagName === "H2") {
+        isEndpointVisible = true;
+        setElementVisibility(element, true);
+        continue;
       }
 
-      const isVisible = !!(searchMatch && filterMatch);
-      isEndpointVisible = isVisible;
+      if (element.dataset.routeHeader === "true") {
+        const routeTitle = element.dataset.routeTitle ?? "";
+        const searchMatch = !search || routeTitle.includes(search);
+        const filterMatch =
+          !hasActiveFilters ||
+          (showBot && element.dataset.supportsBot === "true") ||
+          (showOAuth2 && element.dataset.supportsOauth2 === "true") ||
+          (showUnauthenticated && element.dataset.unauthenticated === "true");
 
-      return isVisible ? child : null;
+        isEndpointVisible = searchMatch && filterMatch;
+        setElementVisibility(element, isEndpointVisible);
+        continue;
+      }
+
+      setElementVisibility(element, isEndpointVisible);
     }
+  }, [search, showBot, showOAuth2, showUnauthenticated]);
 
-    return isEndpointVisible ? child : null;
-  });
-
-  return <>{filtered}</>;
+  return (
+    <article ref={articleRef} className="m-auto mt-0 xl:mt-4">
+      {children}
+    </article>
+  );
 }
 
 export default function ContentWrapper({ children }: ContentWrapperProps) {
@@ -87,9 +66,7 @@ export default function ContentWrapper({ children }: ContentWrapperProps) {
         <Header />
         <div className="h-16 xl:hidden" />
         <main className="desktop-content-left-pad desktop-content-max w-full p-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-10 lg:pb-10">
-          <article className="m-auto mt-0 xl:mt-4">
-            <FilteredContent>{children}</FilteredContent>
-          </article>
+          <FilteredContent>{children}</FilteredContent>
         </main>
       </div>
     </EndpointProvider>

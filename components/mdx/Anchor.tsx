@@ -1,5 +1,5 @@
 import classNames from "@lib/classnames";
-import Link, { LinkProps } from "next/link";
+import { Link, type LinkProps } from "react-router-dom";
 import React from "react";
 
 // hack to make the props like each other
@@ -11,7 +11,7 @@ type DocLinkProps = React.ForwardRefExoticComponent<
 > & { href: string };
 
 function DocLink({ href, ...props }: DocLinkProps) {
-  return <Link href={href} {...props} />;
+  return <Link to={href} {...props} />;
 }
 
 export default function Anchor({ href, className, ...props }: React.JSX.IntrinsicElements["a"]) {
