@@ -37,6 +37,73 @@ Architecturally, RPC uses the same scopes as [OAuth2](/topics/oauth2). The follo
 | rpc.private.limited | Granted alongside `rpc.private`, as well as to HTTP transports utilizing a `GET` method                                                                       |
 | rpc.embedded_app    | Granted to any connection to a PostMessage transport                                                                                                          |
 
+### RPC Close Codes
+
+Close codes will either be received as a WebSocket close frame or a protocol-level `CLOSE` opcode. They will be accompanied by a human-friendly message describing the reason for the close.
+
+| Code | Name              |
+| ---- | ----------------- |
+| 1000 | CLOSE_NORMAL      |
+| 1003 | CLOSE_UNSUPPORTED |
+| 1006 | CLOSE_ABNORMAL    |
+| 4000 | INVALID_CLIENTID  |
+| 4001 | INVALID_ORIGIN    |
+| 4002 | RATELIMITED       |
+| 4003 | TOKEN_REVOKED     |
+| 4004 | INVALID_VERSION   |
+| 4005 | INVALID_ENCODING  |
+
+### RPC Errors
+
+Errors will be dispatched as a [`ERROR`](#error) event in response to an outgoing command. They will be accompanied by a human-friendly message describing the error.
+
+| Code     | Name                                   |
+| -------- | -------------------------------------- |
+| 1000     | UNKNOWN_ERROR                          |
+| 1001     | SERVICE_UNAVAILABLE                    |
+| 1002     | TRANSACTION_ABORTED                    |
+| 4000     | INVALID_PAYLOAD                        |
+| 4002     | INVALID_COMMAND                        |
+| 4003     | INVALID_GUILD                          |
+| 4004     | INVALID_EVENT                          |
+| 4005     | INVALID_CHANNEL                        |
+| 4006     | INVALID_PERMISSIONS                    |
+| 4007     | INVALID_CLIENTID                       |
+| 4008     | INVALID_ORIGIN                         |
+| 4009     | INVALID_TOKEN                          |
+| 4010     | INVALID_USER                           |
+| 4011     | INVALID_INVITE                         |
+| 4012     | INVALID_ACTIVITY_JOIN_REQUEST          |
+| 4015     | INVALID_ENTITLEMENT                    |
+| 4016     | INVALID_GIFT_CODE                      |
+| 4017     | INVALID_GUILD_TEMPLATE                 |
+| 4018     | INVALID_SOUND                          |
+| 4019     | INVALID_PROVIDER                       |
+| 4020     | INVALID_CONNECTION_CALLBACK_STATE      |
+| 4021     | BAD_REQUEST_FOR_PROVIDER               |
+| 5000     | OAUTH2_ERROR                           |
+| 5001     | SELECT_CHANNEL_TIMED_OUT               |
+| 5002     | GET_GUILD_TIMED_OUT                    |
+| 5003     | SELECT_VOICE_FORCE_REQUIRED            |
+| ~~5004~~ | ~~CAPTURE_SHORTCUT_ALREADY_LISTENING~~ |
+| 5005     | INVALID_ACTIVITY_SECRET                |
+| 5006     | NO_ELIGIBLE_ACTIVITY                   |
+| 5008     | PURCHASE_CANCELED                      |
+| 5009     | PURCHASE_ERROR                         |
+| 5010     | UNAUTHORIZED_FOR_ACHIEVEMENT           |
+| 5011     | RATE_LIMITED                           |
+| 5012     | UNAUTHORIZED_FOR_APPLICATION           |
+| 5013     | NO_CONNECTION_FOUND                    |
+
+###### Example RPC Error
+
+```json
+{
+  "code": 4000,
+  "message": "Invalid Client ID"
+}
+```
+
 ## WebSocket Transport
 
 All Discord clients have an RPC server running that allows control over local Discord clients. The local RPC server runs on localhost (`127.0.0.1`) and is set up to process WebSocket connections and proxy API requests.
@@ -64,7 +131,7 @@ The below query string parameters should be appended to the connection URL.
 
 #### Sending and Receiving Packets
 
-Packets are sent as JSON objects containing the [command you want to send to the Discord client](#outgoing-packet-structure). [Incoming packets](#incoming-packet-structure) will need to be correctly parsed to obtain the JSON response.
+Packets are sent as JSON objects containing the [command you want to send to the Discord client](#outgoing-payload-structure). [Incoming packets](#incoming-payload-structure) will need to be correctly parsed to obtain the JSON response.
 
 #### Authentication
 
@@ -134,7 +201,7 @@ The below query string parameters still apply.
 
 #### Sending and Receiving Packets
 
-Clients should send a `POST` request to the connection URL with a JSON body containing the [command you want to send](#outgoing-packet-structure). The server will respond with a JSON object containing the response of the command.
+Clients should send a `POST` request to the connection URL with a JSON body containing the [command you want to send](#outgoing-payload-structure). The server will respond with a JSON object containing the response of the command.
 
 An even more limited transport is available via a `GET` request, where authentication is entirely bypassed, and `client_id` can be omitted. However, this only grants the `rpc.private.limited` scope, which only allows a select few commands that don't require authenticated scopes.
 For this transport, a JSON-encoded `payload` query string parameter should be sent alongside the request, containing the same JSON object as the body of a `POST` request. A `callback` query string parameter may also be sent, to specify where
@@ -211,7 +278,7 @@ Once authenticated, you can call RPC commands on behalf of the user!
 
 | Field   | Type    | Description                                            |
 | ------- | ------- | ------------------------------------------------------ |
-| code    | integer | The reason for the closure                             |
+| code    | integer | The [close code](#rpc-close-codes)                     |
 | message | string  | A human-readable message explaining the closure reason |
 
 ## PostMessage Transport
@@ -683,7 +750,7 @@ Commands are the means in which an application can interface with the client.
 | [NETWORKING_CREATE_TOKEN](#networking-create-token) **(deprecated)**                          | Used by the GameSDK to retrieve a networking token                                                           | `rpc.local`                                     |
 | [USER_SETTINGS_GET_LOCALE](#user-settings-get-locale)                                         | Used to retrieve the client’s locale                                                                         | `identify`                                      |
 | [SEND_ANALYTICS_EVENT](#send-analytics-event)                                                 | Used to send an embedded activity analytics event to Discord                                                 |                                                 |
-| [OPEN_EXTERNAL_LINK](#open-external-link)                                                     | Used to prompt to open a given URL in the default web browser from the client                                | `rpc.authenticated` or `rpc.embedded_app`       |
+| [OPEN_EXTERNAL_LINK](#open-external-link)                                                     | Used to prompt to open a given URL in the default web browser                                                | `rpc.authenticated` or `rpc.embedded_app`       |
 | [CAPTURE_LOG](#capture-log)                                                                   | Used to capture logs into the Discord client devtools                                                        |                                                 |
 | [ENCOURAGE_HW_ACCELERATION](#encourage-hw-acceleration)                                       | Used to open a modal dialog encouraging hardware acceleration                                                |                                                 |
 | [SET_ORIENTATION_LOCK_STATE](#set-orientation-lock-state)                                     | Used to set options for orientation and picture-in-picture (PiP) modes                                       |                                                 |
@@ -708,34 +775,33 @@ Commands are the means in which an application can interface with the client.
 
 #### Authorize
 
-Used to authorize the current client with your app.
+Used to authorize the current client with your application.
 
 ###### Authorize Arguments Structure
 
-| Field                   | Type          | Description                                                                                                                                                                                                  |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| client_id               | snowflake     | The ID of the application                                                                                                                                                                                    |
-| response_type? ^1^      | string        | The [type of response to return](/topics/oauth2#response-type) (must be `code`)                                                                                                                              |
-| redirect_uri? ^2^ ^3^   | string        | The URL to redirect to after authorization; must match one of the registered redirect URIs for the application                                                                                               |
-| scopes?                 | array[string] | A list of scopes to request; may be omitted if the application has a populated [`integration_types_config`](/resources/application#application-object)                                                       |
-| scope? **(deprecated)** | string        | A space-delimited list of scopes to request; may be omitted if the application has a populated [`integration_types_config`](/resources/application#application-object)                                       |
-| code_challenge?         | string        | A code challenge for the [PKCE extension](/topics/oauth2#pkce) to the authorization code grant; must be used with `code_challenge_method`                                                                    |
-| code_challenge_method?  | string        | The method used to generate the code challenge (must be `S256`); only applicable for the [PKCE extension](/topics/oauth2#pkce) to the authorization code grant                                               |
-| state?                  | string        | A unique string to bind the user's request to their authenticated state                                                                                                                                      |
-| nonce?                  | string        | A unique string to bind the user's request to their authenticated state; only applicable for authorization code grants with the `openid` scope                                                               |
-| permissions? ^1^        | string        | The [permissions](/topics/permissions) you're requesting; only applicable when `scope` contains `bot`                                                                                                        |
-| guild_id?               | snowflake     | The ID of a guild to pre-fill the dropdown picker with; only applicable when `scope` contains `bot`, `applications.commands`, or `webhook.incoming` and `integration_type` is `GUILD_INSTALL`                |
-| channel_id?             | snowflake     | The ID of a channel to pre-fill the dropdown picker with; only applicable when `scope` contains `webhook.incoming`                                                                                           |
-| prompt?                 | string        | The [prompt behavior](/topics/oauth2#prompt-behavior) to use for the authorization flow (default `consent`)                                                                                                  |
-| disable_guild_select?   | boolean       | Disallows the user from changing the guild dropdown; only applicable when `scope` contains `bot` or `applications.commands`, or `webhook.incoming` and `integration_type` is `GUILD_INSTALL` (default false) |
-| integration_type?       | integer       | The [installation context](/resources/application#application-integration-type) for the authorization; only applicable when `scope` contains `applications.commands` (default `GUILD_INSTALL`)               |
-| pid?                    | integer       | The ID of the process to show OAuth2 flow overlay in                                                                                                                                                         |
+| Field                  | Type          | Description                                                                                                                                                                                                  |
+| ---------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| client_id              | snowflake     | The ID of the application                                                                                                                                                                                    |
+| response_type? ^1^     | string        | The [type of response to return](/topics/oauth2#response-type) (must be `code`)                                                                                                                              |
+| redirect_uri? ^2^ ^3^  | string        | The URL to redirect to after authorization; must match one of the registered redirect URIs for the application                                                                                               |
+| scopes?                | array[string] | A list of scopes to request; may be omitted if the application has a populated [`integration_types_config`](/resources/application#application-object)                                                       |
+| code_challenge?        | string        | A code challenge for the [PKCE extension](/topics/oauth2#pkce) to the authorization code grant; must be used with `code_challenge_method`                                                                    |
+| code_challenge_method? | string        | The method used to generate the code challenge (must be `S256`); only applicable for the [PKCE extension](/topics/oauth2#pkce) to the authorization code grant                                               |
+| state?                 | string        | A unique string to bind the user's request to their authenticated state                                                                                                                                      |
+| nonce?                 | string        | A unique string to bind the user's request to their authenticated state; only applicable for authorization code grants with the `openid` scope                                                               |
+| permissions? ^1^       | string        | The [permissions](/topics/permissions) you're requesting; only applicable when `scope` contains `bot`                                                                                                        |
+| guild_id?              | snowflake     | The ID of a guild to pre-fill the dropdown picker with; only applicable when `scope` contains `bot`, `applications.commands`, or `webhook.incoming` and `integration_type` is `GUILD_INSTALL`                |
+| channel_id?            | snowflake     | The ID of a channel to pre-fill the dropdown picker with; only applicable when `scope` contains `webhook.incoming`                                                                                           |
+| prompt?                | string        | The [prompt behavior](/topics/oauth2#prompt-behavior) to use for the authorization flow (default `consent`)                                                                                                  |
+| disable_guild_select?  | boolean       | Disallows the user from changing the guild dropdown; only applicable when `scope` contains `bot` or `applications.commands`, or `webhook.incoming` and `integration_type` is `GUILD_INSTALL` (default false) |
+| integration_type?      | integer       | The [installation context](/resources/application#application-integration-type) for the authorization; only applicable when `scope` contains `applications.commands` (default `GUILD_INSTALL`)               |
+| pid?                   | integer       | The ID of the process to overlay the OAuth2 flow in                                                                                                                                                          |
 
 ^1^ Required unless the basic [bot authorization flow](/topics/oauth2#bot-authorization-flow) is used.
 
 ^2^ If a `response_type` is specified and no `redirect_uri` is specified, the user will be redirected to the first registered redirect URI for the application.
 
-^3^ Only applicable if using WebSocket transport.
+^3^ Only applicable if using the `ws` transport.
 
 ###### Authorize Response Structure
 
@@ -755,11 +821,31 @@ Used to authenticate an existing client with your app.
 
 ###### Authenticate Response Structure
 
-This structure is a superset of the [Get Current Authorization Information](/topics/oauth2#get-current-authorization-information) response's body with the following additional fields:
+This structure is a superset of the [Get Current Authorization Information](/topics/oauth2#get-current-authorization-information) response with the following additional fields:
 
 | Field        | Type   | Description      |
 | ------------ | ------ | ---------------- |
 | access_token | string | The access token |
+
+#### Subscribe
+
+Used to subscribe to an RPC event. Accepts event subscription arguments. The outer `evt` field is used as the event name to subscribe to.
+
+###### Subscribe Response Structure
+
+| Field | Type   | Description    |
+| ----- | ------ | -------------- |
+| evt   | string | The event name |
+
+#### Unsubscribe
+
+Used to unsubscribe from an RPC event. Accepts event subscription arguments. The outer `evt` field is used as the event name to unsubscribe from.
+
+###### Unsubscribe Response Structure
+
+| Field | Type   | Description    |
+| ----- | ------ | -------------- |
+| evt   | string | The event name |
 
 #### Get Guild
 
@@ -778,7 +864,7 @@ Used to retrieve a list of guilds from the client. Responds with a list of [RPC 
 
 #### Get Channel
 
-Used to retrieve channel information from the client. Responds with a [RPC channel](#rpc-channel-object) object.
+Used to retrieve channel information from the client. Responds with an [RPC channel](#rpc-channel-object) object.
 
 ###### Get Channel Arguments Structure
 
@@ -834,65 +920,36 @@ Used to retrieve the friend list and relationship statuses.
 
 #### Get User
 
-Used to retrieve information about a specific user. Responds with a [RPC user](#rpc-user-object) object or null.
-
-#### Subscribe
-
-Used to subscribe to an RPC event. Accepts event subscription arguments. The outer `evt` field is used as event name to subscribe to.
-
-###### Subscribe Response Structure
-
-| Field | Type   | Description    |
-| ----- | ------ | -------------- |
-| evt   | string | The event name |
-
-#### Unsubscribe
-
-Used to unsubscribe from an RPC event. Accepts event subscription arguments. The outer `evt` field is used as event name to unsubscribe from.
-
-###### Unsubscribe Response Structure
-
-| Field | Type   | Description    |
-| ----- | ------ | -------------- |
-| evt   | string | The event name |
+Used to retrieve information about a specific user. Responds with an [RPC user](#rpc-user-object) object or `null`.
 
 #### Set User Voice Settings
 
-Used to change voice settings of users in voice channels.
+Used to change voice settings of users in a voice channel. Responds with the resolved settings.
 
 ###### Set User Voice Settings Arguments Structure
 
-| Field   | Type                      | Description                               |
-| ------- | ------------------------- | ----------------------------------------- |
-| user_id | snowflake                 | The ID of the user                        |
-| pan?    | [pan](#pan-object) object | The pan of the user                       |
-| volume? | integer                   | The percentage of volume (min 0, max 200) |
-| mute?   | boolean                   | Whether the user is muted                 |
-
-###### Set User Voice Settings Response Structure
-
-| Field   | Type                      | Description               |
-| ------- | ------------------------- | ------------------------- |
-| user_id | snowflake                 | The ID of the user        |
-| pan     | [pan](#pan-object) object | The pan of the user       |
-| volume  | integer                   | The percentage of volume  |
-| mute    | boolean                   | Whether the user is muted |
+| Field   | Type                         | Description                   |
+| ------- | ---------------------------- | ----------------------------- |
+| user_id | snowflake                    | The ID of the user            |
+| pan?    | [pan](#pan-structure) object | The pan of the user           |
+| volume? | integer                      | The volume percentage (0-200) |
+| mute?   | boolean                      | Whether the user is muted     |
 
 #### Set User Voice Settings 2
 
-Used to change voice settings of users in voice channels. Responds with null.
+Used to change voice settings of users in a voice channel. Responds with `null`.
 
 ###### Set User Voice Settings Arguments Structure
 
-| Field   | Type      | Description                               |
-| ------- | --------- | ----------------------------------------- |
-| user_id | snowflake | The ID of the user                        |
-| volume? | integer   | The percentage of volume (min 0, max 200) |
-| mute?   | boolean   | Whether the user is muted                 |
+| Field   | Type      | Description                   |
+| ------- | --------- | ----------------------------- |
+| user_id | snowflake | The ID of the user            |
+| volume? | integer   | The volume percentage (0-200) |
+| mute?   | boolean   | Whether the user is muted     |
 
 #### Push To Talk
 
-Used to enable or disable push-to-talk functionality. Responds with null.
+Used to enable or disable push-to-talk functionality. Responds with `null`.
 
 ###### Push To Talk Arguments Structure
 
@@ -902,54 +959,54 @@ Used to enable or disable push-to-talk functionality. Responds with null.
 
 #### Select Voice Channel
 
-Used to join or leave a voice channel, group DM, or DM. Responds with a [RPC channel](#rpc-channel-object) object or null.
+Used to join or leave a voice channel, group DM, or DM. Responds with an [RPC channel](#rpc-channel-object) object or `null`.
 
 ###### Select Voice Channel Arguments Structure
 
-| Field      | Type       | Description                                                    |
-| ---------- | ---------- | -------------------------------------------------------------- |
-| channel_id | ?snowflake | The ID of the voice channel to connect to (null to disconnect) |
-| timeout?   | integer    | Request timeout in seconds (max 60)                            |
-| force?     | boolean    | Whether to forcefully connect to voice channel (default false) |
-| navigate?  | boolean    | Whether to navigate to connected voice channel (deafult false) |
+| Field      | Type       | Description                                                      |
+| ---------- | ---------- | ---------------------------------------------------------------- |
+| channel_id | ?snowflake | The ID of the voice channel to connect to (`null` to disconnect) |
+| timeout?   | integer    | Request timeout in seconds (max 60)                              |
+| force?     | boolean    | Whether to forcefully connect to voice channel (default false)   |
+| navigate?  | boolean    | Whether to navigate to the voice channel (deafult false)         |
 
 #### Get Selected Voice Channel
 
-Used to get the current voice channel the client is in. Responds with a [RPC channel](#rpc-channel-object) object or null.
+Used to get the current voice channel the client is in. Responds with an [RPC channel](#rpc-channel-object) object or `null`.
 
 #### Select Text Channel
 
-Used to join or leave a text channel, group DM, or DM. Responds with a [RPC channel](#rpc-channel-object) object or null.
+Used to join or leave a text channel, group DM, or DM. Responds with an [RPC channel](#rpc-channel-object) object or `null`.
 
 ###### Select Text Channel Arguments Structure
 
-| Field      | Type       | Description                                                                    |
-| ---------- | ---------- | ------------------------------------------------------------------------------ |
-| channel_id | ?snowflake | The ID of the text channel to navigate to (null to navigate to "Friends" page) |
-| timeout?   | integer    | Request timeout in seconds (max 60)                                            |
+| Field      | Type       | Description                                                                          |
+| ---------- | ---------- | ------------------------------------------------------------------------------------ |
+| channel_id | ?snowflake | The ID of the text channel to navigate to (`null` to navigate to the "Friends" page) |
+| timeout?   | integer    | Request timeout in seconds (max 60)                                                  |
 
 #### Get Voice Settings
 
-Used to retrieve the client's voice settings. Responds with a [RPC voice settings](#rpc-voice-settings-object) object.
+Used to retrieve the client's voice settings. Responds with an [RPC voice settings](#rpc-voice-settings-object) object.
 
 #### Set Voice Settings
 
-Used to set the client's voice settings. Responds with a [RPC voice settings](#rpc-voice-settings-object) object.
+Used to set the client's voice settings. Responds with an [RPC voice settings](#rpc-voice-settings-object) object.
 
 ###### Set Voice Settings Arguments Structure
 
-| Field                   | Type                                                                 | Description                                       |
-| ----------------------- | -------------------------------------------------------------------- | ------------------------------------------------- |
-| input?                  | [RPC voice IO settings](#rpc-voice-io-settings-structure) object     | The input settings                                |
-| output?                 | [RPC voice IO settings](#rpc-voice-io-settings-structure) object     | The output settings                               |
-| mode?                   | [RPC voice settings mode](#rpc-voice-settings-mode-structure) object | The voice mode settings                           |
-| automatic_gain_control? | boolean                                                              | Whether automatic gain control is enabled         |
-| echo_cancellation?      | boolean                                                              | Whether echo cancellation is enabled              |
-| noise_suppression?      | boolean                                                              | Whether the background noise is being suppressed  |
-| qos?                    | boolean                                                              | Whether voice QoS (Quality of Service) is enabled |
-| silence_warning?        | boolean                                                              | Whether the silence warning notice is disabled    |
-| deaf?                   | boolean                                                              | Whether the user is locally deafened              |
-| mute?                   | boolean                                                              | Whether the user is locally muted                 |
+| Field                   | Type                                                                 | Description                                         |
+| ----------------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
+| input?                  | [RPC voice IO settings](#rpc-voice-io-settings-structure) object     | The input settings                                  |
+| output?                 | [RPC voice IO settings](#rpc-voice-io-settings-structure) object     | The output settings                                 |
+| mode?                   | [RPC voice settings mode](#rpc-voice-settings-mode-structure) object | The voice mode settings                             |
+| automatic_gain_control? | boolean                                                              | Whether automatic gain control is enabled           |
+| echo_cancellation?      | boolean                                                              | Whether echo cancellation is enabled                |
+| noise_suppression?      | boolean                                                              | Whether the background noise suppression is enabled |
+| qos?                    | boolean                                                              | Whether voice Quality of Service is enabled         |
+| silence_warning?        | boolean                                                              | Whether the silence warning notice is displayed     |
+| deaf?                   | boolean                                                              | Whether the user is locally deafened                |
+| mute?                   | boolean                                                              | Whether the user is locally muted                   |
 
 ###### Partial RPC Voice Settings Mode Structure
 
@@ -957,13 +1014,13 @@ Used to set the client's voice settings. Responds with a [RPC voice settings](#r
 | --------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | type?           | string                                                                    | The [type of voice settings mode](#rpc-voice-settings-mode-type) |
 | auto_threshold? | boolean                                                                   | Whether the voice activity threshold is automatically set        |
-| threshold?      | integer                                                                   | The threshold for voice activity (in dB, min -100, max 0)        |
+| threshold?      | integer                                                                   | The threshold (in dB) for voice activity (-100-0)                |
 | shortcut?       | array[partial [shortcut key combo](#shortcut-key-combo-structure) object] | The shortcut key combos for PTT                                  |
 | delay?          | integer                                                                   | The PTT release delay in milliseconds (max 2000)                 |
 
 #### Set Voice Settings 2
 
-Used to set the client's voice settings. Responds with null.
+Used to set the client's voice settings. Responds with `null`.
 
 ###### Set Voice Settings 2 Arguments Structure
 
@@ -982,7 +1039,7 @@ Used to set the client's voice settings. Responds with null.
 
 #### Set Activity
 
-Used to update a user's Rich Presence. Responds with an [activity](/resources/presence#activity-object) object.
+Used to update a user's rich presence. Responds with an [activity](/resources/presence#activity-object) object.
 
 ###### Set Activity Arguments Structure
 
@@ -991,7 +1048,7 @@ Used to update a user's Rich Presence. Responds with an [activity](/resources/pr
 | pid? ^1^ | integer                                         | The ID of the OS process that is sending the presence update request |
 | activity | ?[RPC activity](#rpc-activity-structure) object | The activity to set                                                  |
 
-^1^ Only required if the current transport is IPC.
+^1^ Only required for the `ipc` transport.
 
 ###### RPC Activity Structure
 
@@ -1009,10 +1066,8 @@ Used to update a user's Rich Presence. Responds with an [activity](/resources/pr
 | buttons?             | array[[RPC activity button](#rpc-activity-button-structure) object]             | Custom buttons shown in rich presence (1-2)                                                                      |
 | instance?            | boolean                                                                         | Whether the activity is an instanced game session (a match that will end)                                        |
 | supported_platforms? | array[string]                                                                   | The [platforms](/resources/presence#activity-platform-type) the activity is supported on (max 10)                |
-| type                 | integer                                                                         | The [activity type](/resources/presence#activity-type) (except `STREAMING`, `CUSTOM` and `HANG`)                 |
+| type                 | integer                                                                         | The [activity type](/resources/presence#activity-type) (except `STREAMING`, `CUSTOM`, and `HANG`)                |
 | status_display_type? | ?integer                                                                        | [Which field is displayed](/resources/presence#status-display-type) in the user's status text in the member list |
-
-^1^ For retrieving rich presence metadata, see [Get Activity Metadata](/resources/presence#get-activity-metadata). For retrieving secrets, see [Get Activity Secret](/resources/presence#get-activity-secret).
 
 ###### RPC Activity Party Structure
 
@@ -1038,7 +1093,7 @@ Used to update a user's Rich Presence. Responds with an [activity](/resources/pr
 
 #### Send Activity Join Invite
 
-Used to send an invite to another user for an activity. Responds with null.
+Used to send an invite to another user for an activity. Responds with `null`.
 
 ###### Send Activity Join Invite Arguments Structure
 
@@ -1049,7 +1104,7 @@ Used to send an invite to another user for an activity. Responds with null.
 
 #### Close Activity Join Request
 
-Used to reject a Rich Presence Ask to Join request. Responds with null.
+Used to reject a rich presence Ask to Join request. Responds with `null`.
 
 ###### Close Activity Join Request Arguments Structure
 
@@ -1059,7 +1114,7 @@ Used to reject a Rich Presence Ask to Join request. Responds with null.
 
 #### Activity Invite User
 
-Used to send an invite to another user for an activity. Responds with null.
+Used to send an invite to another user for an activity. Responds with `null`.
 
 ###### Send Activity Join Invite Arguments Structure
 
@@ -1072,7 +1127,7 @@ Used to send an invite to another user for an activity. Responds with null.
 
 #### Accept Activity Invite
 
-Used to accept an activity invite. Responds with null.
+Used to accept an activity invite. Responds with `null`.
 
 ###### Accept Activity Invite Arguments Structure
 
@@ -1087,11 +1142,11 @@ Used to accept an activity invite. Responds with null.
 
 #### Open Invite Dialog
 
-Used to present a modal to invite other users to the current embedded activity. Responds with null.
+Used to present a modal to invite other users to the current embedded activity. Responds with `null`.
 
 #### Open Share Moment Dialog
 
-Used to share an image from an embedded activity in recent DMs or channels. Responds with null.
+Used to share an image from an embedded activity in recent DMs or channels. Responds with `null`.
 
 The application must have the [`EMBEDDED`](/resources/application#application-flags) flag.
 
@@ -1103,13 +1158,13 @@ The application must have the [`EMBEDDED`](/resources/application#application-fl
 
 #### Share Interaction
 
-Used by embedded activities to present a modal to user asking where pre-defined slash command should be ran.
+Used by embedded activities to present a modal to user asking where a pre-defined slash command should be ran.
 
-The `content`, `preview_image`, and `components` fields are used within modal as command response preview.
+The `content`, `preview_image`, and `components` fields are used within the modal as a command response preview.
 
 <Alert type="warn">
 
-This command is meant to be used by the "12 Bullets to Midnight" integration only. Because of this, it is locked to the relevant application IDs (`1276239071764680926`, and `1257458870390099989` for internal application).
+This command is meant to be used by the 12 Bullets to Midnight application only. Because of this, it is locked to the game application IDs (`1276239071764680926` and `1257458870390099989`).
 
 </Alert>
 
@@ -1123,7 +1178,7 @@ This command is meant to be used by the "12 Bullets to Midnight" integration onl
 | require_launch_channel? | boolean                                                                                    | Whether to require that the current user should be participating in the embedded activity |
 | preview_image?          | [interaction response preview image](#interaction-response-preview-image-structure) object | The modal preview's image                                                                 |
 | components? ^1^         | array[[action row](/resources/components#action-row) object]                               | The modal preview's components                                                            |
-| pid?                    | integer                                                                                    | The ID of the OS process to open Discord overlay in                                       |
+| pid?                    | integer                                                                                    | The ID of the OS process to overlay the modal in                                          |
 
 ^1^ Only action rows are permitted. Only buttons are permitted inside action rows. The buttons can have only `type`, `style`, `label`, and `custom_id`. [`PREMIUM`](/resources/components#button-style) buttons are not permitted. The components can't have `id` field set.
 
@@ -1150,7 +1205,7 @@ This command is meant to be used by the "12 Bullets to Midnight" integration onl
 
 #### Initiate Image Upload
 
-Used by embedded activities to open file dialog and retrieve user-provided image.
+Used by embedded activities to open a file dialog and retrieve a user-provided image.
 
 ###### Initiate Image Upload Response Structure
 
@@ -1177,12 +1232,12 @@ The application must have the [`EMBEDDED`](/resources/application#application-fl
 | Field          | Type    | Description                              |
 | -------------- | ------- | ---------------------------------------- |
 | success        | boolean | Whether the link was successfully shared |
-| didCopyLink    | boolean | Whether the user did copy link           |
-| didSendMessage | boolean | Whether the user sent messages           |
+| didCopyLink    | boolean | Whether the user copied the link         |
+| didSendMessage | boolean | Whether the user sent a message          |
 
 #### Deep Link
 
-Used to navigate to certain route in the Discord client.
+Used to navigate to a route in the Discord client.
 
 ###### Deep Link Arguments Structure
 
@@ -1239,7 +1294,7 @@ Used to navigate to certain route in the Discord client.
 | applicationId? | snowflake | The ID of the embedded activity application              | `ACTIVITIES`                                                                                                                                                                                                        |
 | url?           | string    | The embedded activity URL                                | `ACTIVITIES`                                                                                                                                                                                                        |
 
-^1^ A special value of `@me` is used to indicate private channel.
+^1^ A special value of `@me` is used to indicate private channels.
 
 ###### Quest Home Sort Type
 
@@ -1268,7 +1323,7 @@ Used to navigate to certain route in the Discord client.
 
 #### Connections Callback
 
-Used to send the next part of connection flow to the client. Responds with null.
+Used to send the next part of connection flow to the client. Responds with `null`.
 
 ###### Connections Callback Arguments Structure
 
@@ -1303,30 +1358,6 @@ Used as callback for payment methods like PaySafeCard, Klarna, Przelewy24, and o
 | text    | string              | The body of the HTTP response, in text format |
 | status  | integer             | The status of the HTTP response               |
 
-#### Braintree Popup Bridge Callback
-
-Same as [Billing Popup Bridge Callback](#braintree-popup-bridge-callback), but `payment_source_type` is always [`PAYPAL`](/resources/billing#payment-source-type).
-
-This command is deprecated in favor of above one.
-
-###### Braintree Popup Bridge Callback Arguments Structure
-
-| Field  | Type                | Description                                |
-| ------ | ------------------- | ------------------------------------------ |
-| state  | string              | The unique identifier for the request flow |
-| path   | string              | The redirect API path                      |
-| query? | map[string, string] | Redirect query parameters                  |
-
-###### Braintree Popup Bridge Callback Response Structure
-
-| Field   | Type                | Description                                   |
-| ------- | ------------------- | --------------------------------------------- |
-| ok      | boolean             | Whether the HTTP response is successful       |
-| headers | map[string, string] | The headers of the HTTP response              |
-| body    | object              | The body of the HTTP response, parsed as JSON |
-| text    | string              | The body of the HTTP response, in text format |
-| status  | integer             | The status of the HTTP response               |
-
 #### Gift Code Browser
 
 Used to open a given gift code link in the client.
@@ -1355,16 +1386,14 @@ Used to open a given template link in the client.
 
 ###### Guild Template Browser Response Structure
 
-| Field             | Type                                                    | Description              |
-| ----------------- | ------------------------------------------------------- | ------------------------ |
-| guildTemplate ^1^ | [RPC guild template](#rpc-guild-template-object) object | The guild template       |
-| code              | string                                                  | The code of the template |
-
-^1^ The state always will be [`RESOLVED`](#rpc-guild-template-state).
+| Field         | Type                                                    | Description              |
+| ------------- | ------------------------------------------------------- | ------------------------ |
+| guildTemplate | [RPC guild template](#rpc-guild-template-object) object | The guild template       |
+| code          | string                                                  | The code of the template |
 
 #### Open Message
 
-Used to open a specific message or DM in the client. Responds with null.
+Used to open a specific message or DM in the client. Responds with `null`.
 
 ###### Open Message Arguments Structure
 
@@ -1377,7 +1406,7 @@ Used to open a specific message or DM in the client. Responds with null.
 
 #### Browser Handoff
 
-Used to end browser handoff. Responds with null.
+Used to end browser handoff. Responds with `null`.
 
 ###### Browser Handoff Arguments Structure
 
@@ -1388,7 +1417,7 @@ Used to end browser handoff. Responds with null.
 
 #### Set Certified Devices
 
-Used to send info about certified hardware devices. Responds with null.
+Used to send info about certified hardware devices. Responds with `null`.
 
 ###### Set Certified Devices Arguments Structure
 
@@ -1423,7 +1452,7 @@ Used to fetch a user's profile picture.
 
 #### Set Overlay Locked
 
-Used to set whether the overlay input is locked. Responds with null.
+Used to set whether the overlay input is locked. Responds with `null`.
 
 ###### Set Overlay Locked Arguments Structure
 
@@ -1434,7 +1463,7 @@ Used to set whether the overlay input is locked. Responds with null.
 
 #### Open Overlay Activity Invite
 
-Used to open the activity invite modal in the process' overlay. The activity set via [`SET_ACTIVITY`](#set-activity) command must have party and join secret. Responds with null.
+Used to open the activity invite modal in the process' overlay. The activity set via [`SET_ACTIVITY`](#set-activity) command must have party and join secret. Responds with `null`.
 
 ###### Open Overlay Activity Invite Arguments Structure
 
@@ -1466,7 +1495,7 @@ Used to open a voice settings modal in the process' overlay.
 
 #### Validate Application
 
-Used to validate the application. Responds with null if the user has entitlement for primary application's SKU.
+Used to validate the application. Responds with `null` if the user has entitlement for primary application's SKU.
 
 #### Get Entitlement Ticket
 
@@ -1549,10 +1578,10 @@ Used to launch the purchase flow for a specific SKU. Responds with a list of pur
 
 ###### Start Purchase Arguments Structure
 
-| Field  | Type      | Description                                            |
-| ------ | --------- | ------------------------------------------------------ |
-| sku_id | snowflake | The ID of the SKU to purchase                          |
-| pid?   | integer   | The ID of the OS process to blink (or open overlay in) |
+| Field  | Type      | Description                                               |
+| ------ | --------- | --------------------------------------------------------- |
+| sku_id | snowflake | The ID of the SKU to purchase                             |
+| pid?   | integer   | The ID of the OS process to overlay the purchase modal in |
 
 #### Start Premium Purchase
 
@@ -1560,9 +1589,9 @@ Used to initiate a premium subscription purchase.
 
 ###### Start Premium Purchase Arguments Structure
 
-| Field | Type    | Description                                            |
-| ----- | ------- | ------------------------------------------------------ |
-| pid?  | integer | The ID of the OS process to blink (or open overlay in) |
+| Field | Type    | Description                                               |
+| ----- | ------- | --------------------------------------------------------- |
+| pid?  | integer | The ID of the OS process to overlay the purchase modal in |
 
 #### Get SKUs
 
@@ -1594,7 +1623,7 @@ Used to retrieve a list of entitlements for the current user in an embedded cont
 
 #### Get Networking Config
 
-Used by GameSDK to retrieve proxy address and networking token.
+Used by the GameSDK to retrieve a proxy address and networking token.
 
 ###### Get Networking Config Response Structure
 
@@ -1605,15 +1634,15 @@ Used by GameSDK to retrieve proxy address and networking token.
 
 #### Networking System Metrics
 
-Used by GameSDK to send networking system metrics. Accepts an object.
+Used by the GameSDK to send networking system metrics. Accepts an object.
 
 #### Networking Peer Metrics
 
-Used by GameSDK to send networking peer metrics. Accepts an object.
+Used by the GameSDK to send networking peer metrics. Accepts an object.
 
 #### Networking Create Token
 
-Used by GameSDK to retrieve a networking token.
+Used by the GameSDK to retrieve a networking token.
 
 ###### Networking Create Token Response Structure
 
@@ -1634,7 +1663,7 @@ Used to retrieves the client’s locale.
 
 #### Send Analytics Event
 
-Used to send an analytics event to Discord via embedded activity. Responds with null.
+Used to send an analytics event to Discord via embedded activity. Responds with `null`.
 
 The application must have the [`EMBEDDED_FIRST_PARTY`](/resources/application#application-flags) flag.
 
@@ -1647,7 +1676,7 @@ The application must have the [`EMBEDDED_FIRST_PARTY`](/resources/application#ap
 
 #### Open External Link
 
-Used to prompt to open a given URL in the default web browser from the client. Responds with null.
+Used to prompt to open a given URL in the default web browser. Responds with `null`.
 
 ###### Open External Link Arguments Structure
 
@@ -1657,7 +1686,7 @@ Used to prompt to open a given URL in the default web browser from the client. R
 
 #### Capture Log
 
-Used to capture your logs into the Discord client logs. Responds with null.
+Used to capture a log entry in the client's console. Responds with `null`.
 
 ###### Capture Log Arguments Structure
 
@@ -1678,11 +1707,11 @@ Used to capture your logs into the Discord client logs. Responds with null.
 
 #### Encourage HW Acceleration
 
-Used to present a modal dialog to allow enabling of hardware acceleration. Accepts an empty object. Responds with null.
+Used to encourage users to turn on hardware acceleration. Accepts an empty object. Responds with `null`.
 
 #### Set Orientation Lock State
 
-Used to set options for orientation and picture-in-picture (PiP) modes. Responds with null.
+Used to set options for orientation and picture-in-picture (PiP) modes. Responds with `null`.
 
 ###### Set Orientation Lock State Arguments Structure
 
@@ -1694,13 +1723,13 @@ Used to set options for orientation and picture-in-picture (PiP) modes. Responds
 
 #### Get Platform Behaviors
 
-Used to retrieve platform-specific behaviors.
+Used to retrieve platform-specific behaviors. Response is unstable and subject to change.
 
 ###### Get Platform Behaviors Response Structure
 
-| Field                  | Type    | Description                              |
-| ---------------------- | ------- | ---------------------------------------- |
-| iosKeyboardResizesView | boolean | Whether the keyboard on iOS resizes view |
+| Field                   | Type    | Description                                  |
+| ----------------------- | ------- | -------------------------------------------- |
+| iosKeyboardResizesView? | boolean | Whether the keyboard on iOS resizes the view |
 
 #### Get Soundboard Sounds
 
@@ -1709,7 +1738,7 @@ Note that default sounds may have their `guild_id` set to `0`.
 
 #### Play Soundboard Sound
 
-Used to play a soundboard sound. Responds with null.
+Used to play a soundboard sound. Responds with `null`.
 
 ###### Play Soundboard Sound Arguments Structure
 
@@ -1720,11 +1749,11 @@ Used to play a soundboard sound. Responds with null.
 
 #### Toggle Video
 
-Used to toggle video in a call. Responds with null.
+Used to toggle video in a call. Responds with `null`.
 
 #### Toggle Screenshare
 
-Used to toggle screenshare in a call. Responds with null.
+Used to toggle screenshare in a call. Responds with `null`.
 If process ID is not provided, this will present a screenshare modal.
 
 ###### Toggle Screenshare Arguments Structure
@@ -1750,7 +1779,7 @@ If the user does not have connection for the provider, the Discord client will o
 
 <Alert type="warn">
 
-This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066`, and `1234546995360694434` for internal application).
+This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066` and `1234546995360694434`).
 
 </Alert>
 
@@ -1773,7 +1802,7 @@ Used for the Amazon Music activity to attempt to get the access token from exist
 
 <Alert type="warn">
 
-This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066`, and `1234546995360694434` for internal application).
+This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066` and `1234546995360694434`).
 
 </Alert>
 
@@ -1791,17 +1820,17 @@ This command is meant to be used by the Amazon Music integration only. Because o
 
 #### Navigate To Connections
 
-Used for Amazon Music, opens the connections page in settings. Accepts an empty object. Responds with null.
+Used for Amazon Music, opens the connections page in settings. Accepts an empty object. Responds with `null`.
 
 <Alert type="warn">
 
-This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066`, and `1234546995360694434` for internal application).
+This command is meant to be used by the Amazon Music integration only. Because of this, it is locked to the Amazon Music application IDs (`1214629548377768066` and `1234546995360694434`).
 
 </Alert>
 
 #### Invite User Embedded
 
-Used to invite a user to the current embedded activity set via [`SET_ACTIVITY`](#set-activity) command.
+Used to invite a user to the current embedded activity.
 
 ###### Invite User Embedded Arguments Structure
 
@@ -1875,48 +1904,48 @@ Used to start timer for a quest.
 
 ## RPC Events
 
-Events are payloads sent over the socket to a client that correspond to events in Discord.
+Events are payloads sent over the socket to a client that correspond to events in Discord. Many of these mirror actual [Gateway events](/gateway/gateway-events), so check there for more details!
 
-| Name                                                                            | Description                                                                                                         | Scopes                                     |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| [READY](#ready)                                                                 | Non-subscription event sent immediately after connecting, contains server information                               |                                            |
-| [ERROR](#error)                                                                 | Non-subscription event sent when there is an error, including command responses                                     |                                            |
-| [CURRENT_USER_UPDATE](#current-user-update)                                     | Sent when current user updates                                                                                      | `rpc.local`, `identify`                    |
-| [CURRENT_GUILD_MEMBER_UPDATE](#current-guild-member-update)                     | Sent when current user bound to a guild updates                                                                     | `identify` and `guilds.members.read`       |
-| [GUILD_STATUS](#guild-status)                                                   | Sent when a subscribed guild's state changes                                                                        | `rpc`                                      |
-| [GUILD_CREATE](#guild-create)                                                   | Sent when a guild is created/joined on the client                                                                   | `rpc`                                      |
-| [CHANNEL_CREATE](#channel-create)                                               | Sent when a channel is created/joined on the client                                                                 | `rpc`                                      |
-| [RELATIONSHIP_UPDATE](#relationship-update)                                     | Sent when a user's relationship updates                                                                             | `relationships.read`                       |
-| [VOICE_CHANNEL_SELECT](#voice-channel-select)                                   | Sent when the client moves voice channels                                                                           | `rpc`                                      |
-| [VOICE_STATE_CREATE](#voice-state-create)                                       | Sent when a user joins a subscribed voice channel                                                                   | `rpc` or `rpc.voice.read`                  |
-| [VOICE_STATE_DELETE](#voice-state-delete)                                       | Sent when a user parts a subscribed voice channel                                                                   | `rpc` or `rpc.voice.read`                  |
-| [VOICE_STATE_UPDATE](#voice-state-update)                                       | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)                           | `rpc` or `rpc.voice.read`                  |
-| [VOICE_SETTINGS_UPDATE](#voice-settings-update)                                 | Sent when the client's voice settings update                                                                        | `rpc` or `rpc.voice.read`                  |
-| [VOICE_SETTINGS_UPDATE_2](#voice-settings-update-2)                             | Same when the client's basic voice settings update                                                                  | `rpc.local`                                |
-| [VOICE_CONNECTION_STATUS](#voice-connection-status)                             | Sent when the client's voice connection status changes                                                              | `rpc` or `rpc.voice.read`                  |
-| [SPEAKING_START](#speaking-start)                                               | Sent when a user in a subscribed voice channel speaks                                                               | `rpc`, `rpc.voice.read`, or `rpc.local`    |
-| [SPEAKING_STOP](#speaking-stop)                                                 | Sent when a user in a subscribed voice channel stops speaking                                                       | `rpc`, `rpc.voice.read`, or `rpc.local`    |
-| [ACTIVITY_JOIN](#activity-join)                                                 | Sent when the user clicks a rich presence join invite in chat to join an activity                                   | `rpc`, `rpc.authenticated`, or `rpc.local` |
-| [ACTIVITY_JOIN_REQUEST](#activity-join-request)                                 | Sent when the user receives a Rich Presence Ask to Join request                                                     | `rpc` or `rpc.local`                       |
-| [ACTIVITY_SPECTATE](#activity-spectate)                                         | Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game                                | `rpc`, `rpc.authenticated`, or `rpc.local` |
-| [ACTIVITY_INVITE](#activity-invite)                                             | Sent when the user receives a Rich Presence Join request                                                            | `rpc` or `rpc.local`                       |
-| [ACTIVITY_PIP_MODE_UPDATE](#activity-pip-mode-update)                           | Sent when PiP (Picture-in-Picture) mode changes                                                                     |                                            |
-| [ACTIVITY_LAYOUT_MODE_UPDATE](#activity-layout-mode-update)                     | Sent when a user changes the layout mode in the Discord client                                                      |                                            |
-| [THERMAL_STATE_UPDATE](#thermal-state-update)                                   | Sent when thermal state of the mobile device is updated                                                             | `rpc.authenticated`                        |
-| [ORIENTATION_UPDATE](#orientation-update)                                       | For mobile devices, indicates a change in orientation of the screen                                                 | `rpc.authenticated`                        |
-| [ACTIVITY_INSTANCE_PARTICIPANTS_UPDATE](#activity-instance-participants-update) | Sent when the number of instance participants changes                                                               | `rpc.authenticated`                        |
-| [NOTIFICATION_CREATE](#notification-create)                                     | Sent when the client receives a notification (mention or new message in eligible channels)                          | `rpc` and `rpc.notifications.read`         |
-| [MESSAGE_CREATE](#message-create) ^1^                                           | Sent when a message is created in a subscribed text channel                                                         | `rpc`                                      |
-| [MESSAGE_UPDATE](#message-update) ^1^                                           | Sent when a message is updated in a subscribed text channel                                                         | `rpc`                                      |
-| [MESSAGE_DELETE](#message-delete) ^1^                                           | Sent when a message is deleted in a subscribed text channel                                                         | `rpc`                                      |
-| OVERLAY                                                                         | Sent to communicate with the game overlay                                                                           | `rpc.private`                              |
-| [OVERLAY_UPDATE](#overlay-update)                                               | Sent when the game overlay settings are changed for a process                                                       | `rpc.local`                                |
-| [ENTITLEMENT_CREATE](#entitlement-create)                                       | Sent when an entitlement is created for one of your application's SKUs                                              | `rpc.authenticated`, `rpc.local`           |
-| [ENTITLEMENT_DELETE](#entitlement-delete)                                       | Sent when an [entitlement is deleted](/topics/gateway-events#entitlement-delete) for one of your application's SKUs | `rpc.authenticated`, `rpc.local`           |
-| [SCREENSHARE_STATE_UPDATE](#screenshare-state-update)                           | Sent when a user's screenshare state changes                                                                        | `rpc.screenshare.read` or `rpc.local`      |
-| [VIDEO_STATE_UPDATE](#video-state-update)                                       | Sent when a user's video state changes                                                                              | `rpc.voice.read` or `rpc.local`            |
-| [AUTHORIZE_REQUEST](#authorize-request)                                         | Sent when an activity wants to authorize within the Discord client                                                  |                                            |
-| [QUEST_ENROLLMENT_STATUS_UPDATE](#quest-enrollment-status-update)               | Sent when a user's quest enrollment status changes                                                                  | `identify`                                 |
+| Name                                                                            | Description                                                                                | Scopes                                     |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| [READY](#ready)                                                                 | Non-subscription event sent immediately after connecting, contains server information      |                                            |
+| [ERROR](#error)                                                                 | Non-subscription event sent when there is an error, including command responses            |                                            |
+| [CURRENT_USER_UPDATE](#current-user-update)                                     | Sent when current user updates                                                             | `rpc.local`, `identify`                    |
+| [CURRENT_GUILD_MEMBER_UPDATE](#current-guild-member-update)                     | Sent when current user bound to a guild updates                                            | `identify` and `guilds.members.read`       |
+| [GUILD_STATUS](#guild-status)                                                   | Sent when a subscribed guild's state changes                                               | `rpc`                                      |
+| [GUILD_CREATE](#guild-create)                                                   | Sent when a guild is created/joined on the client                                          | `rpc`                                      |
+| [CHANNEL_CREATE](#channel-create)                                               | Sent when a channel is created/joined on the client                                        | `rpc`                                      |
+| [RELATIONSHIP_UPDATE](#relationship-update)                                     | Sent when a user's relationship updates                                                    | `relationships.read`                       |
+| [VOICE_CHANNEL_SELECT](#voice-channel-select)                                   | Sent when the client moves voice channels                                                  | `rpc`                                      |
+| [VOICE_STATE_CREATE](#voice-state-create)                                       | Sent when a user joins a subscribed voice channel                                          | `rpc` or `rpc.voice.read`                  |
+| [VOICE_STATE_DELETE](#voice-state-delete)                                       | Sent when a user parts a subscribed voice channel                                          | `rpc` or `rpc.voice.read`                  |
+| [VOICE_STATE_UPDATE](#voice-state-update)                                       | Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.)  | `rpc` or `rpc.voice.read`                  |
+| [VOICE_SETTINGS_UPDATE](#voice-settings-update)                                 | Sent when the client's voice settings update                                               | `rpc` or `rpc.voice.read`                  |
+| [VOICE_SETTINGS_UPDATE_2](#voice-settings-update-2)                             | Same when the client's basic voice settings update                                         | `rpc.local`                                |
+| [VOICE_CONNECTION_STATUS](#voice-connection-status)                             | Sent when the client's voice connection status changes                                     | `rpc` or `rpc.voice.read`                  |
+| [SPEAKING_START](#speaking-start)                                               | Sent when a user in a subscribed voice channel speaks                                      | `rpc`, `rpc.voice.read`, or `rpc.local`    |
+| [SPEAKING_STOP](#speaking-stop)                                                 | Sent when a user in a subscribed voice channel stops speaking                              | `rpc`, `rpc.voice.read`, or `rpc.local`    |
+| [ACTIVITY_JOIN](#activity-join)                                                 | Sent when the user clicks a rich presence join invite in chat to join an activity          | `rpc`, `rpc.authenticated`, or `rpc.local` |
+| [ACTIVITY_JOIN_REQUEST](#activity-join-request)                                 | Sent when the user receives a rich presence Ask to Join request                            | `rpc` or `rpc.local`                       |
+| [ACTIVITY_SPECTATE](#activity-spectate)                                         | Sent when the user clicks a rich presence spectate invite in chat to spectate a game       | `rpc`, `rpc.authenticated`, or `rpc.local` |
+| [ACTIVITY_INVITE](#activity-invite)                                             | Sent when the user receives a rich presence Join request                                   | `rpc` or `rpc.local`                       |
+| [ACTIVITY_PIP_MODE_UPDATE](#activity-pip-mode-update)                           | Sent when PiP (Picture-in-Picture) mode changes                                            |                                            |
+| [ACTIVITY_LAYOUT_MODE_UPDATE](#activity-layout-mode-update)                     | Sent when a user changes the layout mode in the Discord client                             |                                            |
+| [THERMAL_STATE_UPDATE](#thermal-state-update)                                   | Sent when thermal state of the mobile device is updated                                    | `rpc.authenticated`                        |
+| [ORIENTATION_UPDATE](#orientation-update)                                       | For mobile devices, indicates a change in orientation of the screen                        | `rpc.authenticated`                        |
+| [ACTIVITY_INSTANCE_PARTICIPANTS_UPDATE](#activity-instance-participants-update) | Sent when the number of instance participants changes                                      | `rpc.authenticated`                        |
+| [NOTIFICATION_CREATE](#notification-create)                                     | Sent when the client receives a notification (mention or new message in eligible channels) | `rpc` and `rpc.notifications.read`         |
+| [MESSAGE_CREATE](#message-create) ^1^                                           | Sent when a message is created in a subscribed text channel                                | `rpc`                                      |
+| [MESSAGE_UPDATE](#message-update) ^1^                                           | Sent when a message is updated in a subscribed text channel                                | `rpc`                                      |
+| [MESSAGE_DELETE](#message-delete) ^1^                                           | Sent when a message is deleted in a subscribed text channel                                | `rpc`                                      |
+| OVERLAY                                                                         | Sent to communicate with the game overlay                                                  | `rpc.private`                              |
+| [OVERLAY_UPDATE](#overlay-update)                                               | Sent when the game overlay settings are changed for your application                       | `rpc.local`                                |
+| [ENTITLEMENT_CREATE](#entitlement-create)                                       | Sent when an entitlement is created for one of your application's SKUs                     | `rpc.authenticated`, `rpc.local`           |
+| [ENTITLEMENT_DELETE](#entitlement-delete)                                       | Sent when an entitlement is deleted for one of your application's SKUs                     | `rpc.authenticated`, `rpc.local`           |
+| [SCREENSHARE_STATE_UPDATE](#screenshare-state-update)                           | Sent when a user's screenshare state changes                                               | `rpc.screenshare.read` or `rpc.local`      |
+| [VIDEO_STATE_UPDATE](#video-state-update)                                       | Sent when a user's video state changes                                                     | `rpc.voice.read` or `rpc.local`            |
+| [AUTHORIZE_REQUEST](#authorize-request)                                         | Sent when an activity wants to authorize within the Discord client                         |                                            |
+| [QUEST_ENROLLMENT_STATUS_UPDATE](#quest-enrollment-status-update)               | Sent when a user's quest enrollment status changes                                         | `identify`                                 |
 
 ^1^ Requires that the channel or guild's `application_id` matches the `client_id` of the connection, or the authorization has the `messages.read` scope.
 
@@ -1948,18 +1977,18 @@ Sent in response to outgoing command or event.
 
 ###### Error Structure
 
-| Field   | Type    | Description               |
-| ------- | ------- | ------------------------- |
-| code    | integer | The [error code](#errors) |
-| message | string  | The error message         |
+| Field   | Type    | Description                                   |
+| ------- | ------- | --------------------------------------------- |
+| code    | integer | The [error code](#rpc-errors)                 |
+| message | string  | A human-readable message describing the error |
 
 #### Current User Update
 
-Sent when properties about the current user change. Inner payload is a [RPC user](#rpc-user-object) object.
+Sent when properties about the current user change. Inner payload is an [RPC user](#rpc-user-object) object.
 
 #### Current Guild Member Update
 
-Sent when properties about the guild member change. Inner payload is a [RPC guild member](#rpc-guild-member-object) object.
+Sent when properties about the guild member change. Inner payload is an [RPC guild member](#rpc-guild-member-object) object.
 
 ###### Current Guild Member Update Subscription Arguments Structure
 
@@ -1993,7 +2022,7 @@ Sent when a channel is created/joined on the client. The inner payload is a [par
 
 #### Relationship Update
 
-Sent when a user's relationship updates. The inner payload is a [RPC relationship](#rpc-relationship-object) object.
+Sent when a user's relationship updates. The inner payload is an [RPC relationship](#rpc-relationship-object) object.
 
 #### Voice Channel Select
 
@@ -2008,7 +2037,7 @@ Sent when the client moves voice channels.
 
 #### Voice State Create
 
-Sent when a user joins a subscribed voice channel. The inner payload is a [RPC voice state](#rpc-voice-state-object) object.
+Sent when a user joins a subscribed voice channel. The inner payload is an [RPC voice state](#rpc-voice-state-object) object.
 
 ###### Voice State Create Subscription Arguments Structure
 
@@ -2018,7 +2047,7 @@ Sent when a user joins a subscribed voice channel. The inner payload is a [RPC v
 
 #### Voice State Delete
 
-Sent when a user parts a subscribed voice channel. The inner payload is a [RPC voice state](#rpc-voice-state-object) object.
+Sent when a user parts a subscribed voice channel. The inner payload is an [RPC voice state](#rpc-voice-state-object) object.
 
 ###### Voice State Delete Subscription Arguments Structure
 
@@ -2028,7 +2057,7 @@ Sent when a user parts a subscribed voice channel. The inner payload is a [RPC v
 
 #### Voice State Update
 
-Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.). The inner payload is a [RPC voice state](#rpc-voice-state-object) object.
+Sent when a user's voice state changes in a subscribed voice channel (mute, volume, etc.). The inner payload is an [RPC voice state](#rpc-voice-state-object) object.
 
 ###### Voice State Update Subscription Arguments Structure
 
@@ -2038,7 +2067,7 @@ Sent when a user's voice state changes in a subscribed voice channel (mute, volu
 
 #### Voice Settings Update
 
-Sent when the client's voice settings update. The inner payload is a [RPC voice settings](#rpc-voice-settings-object) object.
+Sent when the client's voice settings update. The inner payload is an [RPC voice settings](#rpc-voice-settings-object) object.
 
 #### Voice Settings Update 2
 
@@ -2131,30 +2160,9 @@ Sent when a user in a subscribed voice channel stops speaking.
 | channel_id | snowflake | The ID of the channel                    |
 | user_id    | snowflake | The ID of the user that stopped speaking |
 
-#### Game Join
-
-Sent when the user clicks a Rich Presence join invite in chat to join a game.
-
-###### Game Join Structure
-
-| Field   | Type    | Description                          |
-| ------- | ------- | ------------------------------------ |
-| secret  | string  | The join secret                      |
-| intent? | integer | The [game join intent](#join-intent) |
-
-#### Game Spectate
-
-Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game.
-
-###### Game Spectate Structure
-
-| Field  | Type   | Description           |
-| ------ | ------ | --------------------- |
-| secret | string | The spectating secret |
-
 #### Activity Join
 
-Sent when the user clicks a Rich Presence join invite in chat to join an activity.
+Sent when the user clicks a rich presence join invite in chat to join an activity.
 
 ###### Activity Join Structure
 
@@ -2172,7 +2180,7 @@ Sent when the user clicks a Rich Presence join invite in chat to join an activit
 
 #### Activity Join Request
 
-Sent when the user receives a Rich Presence Ask to Join request.
+Sent when the user receives a rich presence Ask to Join request.
 
 ###### Activity Join Request Structure
 
@@ -2186,7 +2194,7 @@ Sent when the user receives a Rich Presence Ask to Join request.
 
 #### Activity Spectate
 
-Sent when the user clicks a Rich Presence spectate invite in chat to spectate a game.
+Sent when the user clicks a rich presence spectate invite in chat to spectate a game.
 
 ###### Activity Spectate Structure
 
@@ -2196,7 +2204,7 @@ Sent when the user clicks a Rich Presence spectate invite in chat to spectate a 
 
 #### Activity Invite
 
-Sent when the user receives a Rich Presence Join request.
+Sent when the user receives a rich presence Join request.
 
 ###### Activity Invite Structure
 
@@ -2346,13 +2354,30 @@ Sent when a message is deleted in a subscribed text channel.
 | ----- | --------- | ----------------------------- |
 | id    | snowflake | The ID of the deleted message |
 
+#### Overlay Update
+
+Sent when the game overlay settings are changed for your application.
+
+###### Overlay Update Subscription Arguments Structure
+
+| Field | Type    | Description                                            |
+| ----- | ------- | ------------------------------------------------------ |
+| pid   | integer | The ID of the process to subscribe to/unsubscribe from |
+
+###### Overlay Update Structure
+
+| Field   | Type    | Description                                             |
+| ------- | ------- | ------------------------------------------------------- |
+| enabled | boolean | Whether the overlay is enabled for the application      |
+| locked  | boolean | Whether the overlay is locked in the subscribed process |
+
 #### Entitlement Create
 
 Sent when an entitlement is created when a user purchases or is otherwise granted one of your application's SKUs. The inner payload is an [entitlement](/resources/entitlement#entitlement-object) object.
 
 #### Entitlement Delete
 
-Sent when an [entitlement is deleted](/topics/gateway-events#entitlement-delete). The inner payload is an [entitlement](/resources/entitlement#entitlement-object) object.
+Sent when an entitlement is deleted. The inner payload is an [entitlement](/resources/entitlement#entitlement-object) object.
 
 #### Screenshare State Update
 
@@ -2397,72 +2422,3 @@ Sent when a user's quest enrollment status changes.
 | quest_id    | snowflake          | The ID of the quest                    |
 | is_enrolled | boolean            | Whether the user is accepted the quest |
 | enrolled_at | ?ISO8601 timestamp | When the user accepted the quest       |
-
-## Errors
-
-###### Critical Errors
-
-Critical errors will be sent as a `CLOSE` packet with a JSON object containing a numeric code and human-friendly message.
-
-| Code | Name              |
-| ---- | ----------------- |
-| 1000 | CLOSE_NORMAL      |
-| 1003 | CLOSE_UNSUPPORTED |
-| 1006 | CLOSE_ABNORMAL    |
-| 4000 | INVALID_CLIENTID  |
-| 4001 | INVALID_ORIGIN    |
-| 4002 | RATELIMITED       |
-| 4003 | TOKEN_REVOKED     |
-| 4004 | INVALID_VERSION   |
-| 4005 | INVALID_ENCODING  |
-
-###### Non-critical Errors
-
-Non-critical errors will be sent as a regular response, but with an `evt` of `ERROR` and the payload being an error object containing a numeric code and human-friendly message.
-
-| Code     | Name                                   |
-| -------- | -------------------------------------- |
-| 1000     | UNKNOWN_ERROR                          |
-| 1001     | SERVICE_UNAVAILABLE                    |
-| 1002     | TRANSACTION_ABORTED                    |
-| 4000     | INVALID_PAYLOAD                        |
-| 4002     | INVALID_COMMAND                        |
-| 4003     | INVALID_GUILD                          |
-| 4004     | INVALID_EVENT                          |
-| 4005     | INVALID_CHANNEL                        |
-| 4006     | INVALID_PERMISSIONS                    |
-| 4007     | INVALID_CLIENTID                       |
-| 4008     | INVALID_ORIGIN                         |
-| 4009     | INVALID_TOKEN                          |
-| 4010     | INVALID_USER                           |
-| 4011     | INVALID_INVITE                         |
-| 4012     | INVALID_ACTIVITY_JOIN_REQUEST          |
-| 4015     | INVALID_ENTITLEMENT                    |
-| 4016     | INVALID_GIFT_CODE                      |
-| 4017     | INVALID_GUILD_TEMPLATE                 |
-| 4018     | INVALID_SOUND                          |
-| 4019     | INVALID_PROVIDER                       |
-| 4020     | INVALID_CONNECTION_CALLBACK_STATE      |
-| 4021     | BAD_REQUEST_FOR_PROVIDER               |
-| 5000     | OAUTH2_ERROR                           |
-| 5001     | SELECT_CHANNEL_TIMED_OUT               |
-| 5002     | GET_GUILD_TIMED_OUT                    |
-| 5003     | SELECT_VOICE_FORCE_REQUIRED            |
-| ~~5004~~ | ~~CAPTURE_SHORTCUT_ALREADY_LISTENING~~ |
-| 5005     | INVALID_ACTIVITY_SECRET                |
-| 5006     | NO_ELIGIBLE_ACTIVITY                   |
-| 5008     | PURCHASE_CANCELED                      |
-| 5009     | PURCHASE_ERROR                         |
-| 5010     | UNAUTHORIZED_FOR_ACHIEVEMENT           |
-| 5011     | RATE_LIMITED                           |
-| 5012     | UNAUTHORIZED_FOR_APPLICATION           |
-| 5013     | NO_CONNECTION_FOUND                    |
-
-###### Example Error
-
-```json
-{
-  "code": 4000,
-  "message": "Invalid Client ID"
-}
-```
