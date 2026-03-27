@@ -1,0 +1,87 @@
+export const ENDPOINT_VARS: Record<string, string | null> = {
+  activity_instance: "/resources/application#embedded-activity-instance-object",
+  activity_link: "/resources/application#activity-link-object",
+  application: "/resources/application#application-object",
+  application_asset: "/resources/application#application-asset-object",
+  attachment: "/resources/message#attachment-object",
+  audio_context_type: "/resources/user-settings#audio-context-type",
+  audit_log: "/resources/audit-log#audit-log-entry-object",
+  authenticator: "/resources/user#authenticator-object",
+  authenticator_type: "/authentication#authenticator-type",
+  automod_rule: "/resources/auto-moderation#automod-rule-object",
+  avatar: "/resources/user#avatar-structure",
+  channel: "/resources/channel#channel-object",
+  classification: "/resources/safety-hub#classification-object",
+  cloud_attachment: "/resources/message#cloud-attachment-structure",
+  collection: "/resources/store#storefront-collection-object",
+  command: "/interactions/application-commands#application-command-object",
+  company: "/resources/team#company-object",
+  connection: "/resources/connected-accounts#connection-object",
+  device: "/resources/connected-accounts#console-device-object",
+  discovery_category: "/resources/discovery#discovery-category-object",
+  emoji: "/resources/emoji#emoji-object",
+  entitlement: "/resources/entitlement#entitlement-object",
+  entity: null, // special case
+  eula: "/resources/store#eula-object",
+  forum_tag: "/resources/channel#forum-tag-object",
+  game_invite: "/resources/game-invite#game-invite-object",
+  game_server: "/resources/guild#game-server-object",
+  gift_code: "/resources/entitlement#gift-code-object",
+  gift_code_batch: "/resources/entitlement#gift-code-batch-object",
+  guild: "/resources/guild#guild-object",
+  guild_join_request: "/resources/guild#guild-join-request-object",
+  guild_scheduled_event: "/resources/guild-scheduled-event#guild-scheduled-event-object",
+  integration: "/resources/integration#integration-object",
+  interaction: "/interactions/receiving-and-responding#interaction-object",
+  invite: "/resources/invite#invite-object",
+  lobby: "/resources/lobby#lobby-object",
+  message: "/resources/message#message-object",
+  notification_center_item: "/resources/notification-center#notification-center-item-object",
+  notification_settings_snapshot: "/resources/user-settings#notification-settings-snapshot-object",
+  overwrite: "/resources/channel#permission-overwrite-object",
+  payment: "/resources/payment#payment-object",
+  payment_source: "/resources/billing#payment-source-object",
+  payout: "/resources/team#team-payout-object",
+  poll: "/resources/message#poll-object",
+  poll_answer: "/resources/message#poll-answer-structure",
+  premium_guild_subscription: "/resources/guild#premium-guild-subscription-object",
+  product: "/resources/store#storefront-product-object",
+  promotion: "/resources/promotion#promotion-object",
+  quest: "/resources/quests#quest-object",
+  quest_content_type: "/resources/quests#quest-content-type",
+  read_state: "/topics/read-state#read-state-object",
+  referral: "/resources/premium-referral#premium-referral-object",
+  role: "/resources/guild#role-object",
+  sdk_release: "/resources/application#social-sdk-release-object",
+  sku: "/resources/store#sku-object",
+  sound: "/resources/soundboard#soundboard-sound-object",
+  stage_instance: "/resources/stage-instance#stage-instance-object",
+  sticker: "/resources/sticker#sticker-object",
+  sticker_pack: "/resources/sticker#sticker-pack-object",
+  store_listing: "/resources/store#store-listing-object",
+  stream_key: "/gateway/gateway-events#stream-key",
+  subscription: "/resources/subscription#subscription-object",
+  summary: "/resources/message#conversation-summary-object",
+  survey: "/resources/user#user-survey-object",
+  team: "/resources/team#team-object",
+  template: "/resources/guild-template#guild-template-object",
+  token: "/topics/oauth2#oauth2-authorization-object",
+  user: "/resources/user#user-object",
+  user_settings_proto_type: "/resources/user-settings-proto#user-settings-proto-type",
+  user_trial_offer: "/resources/billing#user-trial-offer-object",
+  voice_state: "/resources/voice#voice-state-object",
+  webhook: "/resources/webhook#webhook-object",
+};
+
+export function resolveUrlVariables(url: string) {
+  const parts = url.split(/(\{.*?\})/g);
+  return parts.map((part) => {
+    if (part.startsWith("{") && part.endsWith("}")) {
+      const variable = part.slice(1, -1);
+      const entity = variable.split(".")[0];
+      const href = ENDPOINT_VARS[entity];
+      return { text: part, href };
+    }
+    return { text: part, href: undefined };
+  });
+}

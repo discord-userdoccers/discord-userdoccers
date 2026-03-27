@@ -1,5 +1,6 @@
 import classNames from "@lib/classnames";
 import React, { Suspense, useRef, useState } from "react";
+import { resolveUrlVariables } from "@lib/endpoints";
 import IconBadge from "./IconBadge";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
@@ -126,7 +127,22 @@ export default function RouteHeader({
       </H3>
       <div ref={containerRef} className="mt-1 flex items-center">
         <MethodBadge method={method} />
-        <code className="text-text-light dark:text-text-dark p-2 text-base break-all">{url}</code>
+        <code className="text-text-light dark:text-text-dark p-2 text-base break-all">
+          {resolveUrlVariables(url).map(({ text, href }, i) =>
+            href ? (
+              <a
+                key={i}
+                href={href}
+                className="text-brand-link-light dark:text-brand-link-dark hover:underline"
+                style={{ fontSize: "inherit", fontFamily: "inherit", lineHeight: "inherit" }}
+              >
+                {text}
+              </a>
+            ) : (
+              text
+            ),
+          )}
+        </code>
         <button
           onClick={() => {
             setDialogMounted(true);
