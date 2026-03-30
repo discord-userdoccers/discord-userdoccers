@@ -2,8 +2,11 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import path from "path";
 import * as github from "@actions/core";
 import chalk from "chalk";
+// @ts-ignore - I don't want to add this to the includes
+import { ENDPOINT_VARS } from "../lib/endpoints.ts";
 
 const cwd = process.env.GITHUB_ACTIONS ? process.env.GITHUB_WORKSPACE! : process.cwd();
+const checkAllVariables = process.argv.includes("--all");
 
 function importDirectory(directory: string, extension: string, subdirectories = true) {
   try {
@@ -159,6 +162,75 @@ for (const [name, raw] of mdxFiles) {
     validLinks,
     ownResults,
   );
+
+  let inCodeBlock = false;
+  file.forEach((line, lineNum) => {
+    if (line.startsWith("```")) {
+      inCodeBlock = !inCodeBlock;
+      if (line.length > 3 && line.endsWith("```")) inCodeBlock = !inCodeBlock;
+    }
+    if (inCodeBlock) return;
+
+    const routeMatch = line.match(/<RouteHeader[^>]*url="([^"]+)"/);
+    if (routeMatch) {
+      const url = routeMatch[1];
+      const variableRegex = /\{([^}]+)\}/g;
+      let varMatch;
+      while ((varMatch = variableRegex.exec(url)) !== null) {
+        const fullVarName = varMatch[1];
+        if (!fullVarName.includes(".") && !checkAllVariables) continue;
+
+        const variableName = fullVarName.split(".")[0];
+        if (ENDPOINT_VARS[variableName] === undefined) {
+          ownResults.push({
+            title: `Endpoint variable ${chalk.cyan(`{${fullVarName}}`)} does not have a definition in ENDPOINT_VARS`,
+            startLine: lineNum + 1,
+            startColumn: routeMatch.index! + routeMatch[0].indexOf(varMatch[0]),
+            endColumn: routeMatch.index! + routeMatch[0].indexOf(varMatch[0]) + varMatch[0].length,
+          });
+        }
+      }
+    }
+  });
+}
+
+const endpointsFile = "lib/endpoints.ts";
+if (!results.has(endpointsFile)) {
+  results.set(endpointsFile, []);
+}
+const endpointsResults = results.get(endpointsFile)!;
+const endpointsFileLines = readFileSync(path.join(cwd, endpointsFile), "utf8").split("\n");
+
+for (const [variable, url] of Object.entries(ENDPOINT_VARS)) {
+  if (!url) continue;
+
+  let startLine = 1;
+  const varLineIndex = endpointsFileLines.findIndex((line) => line.includes(`${variable}:`));
+  if (varLineIndex !== -1) {
+    startLine = varLineIndex + 1;
+  }
+
+  const split = url.split("#");
+  const baseUrl = split[0].endsWith("/") ? split[0].slice(0, -1) : split[0];
+  const anchor = split[1];
+
+  if (!validLinks.has(baseUrl)) {
+    endpointsResults.push({
+      title: `ENDPOINT_VARS base url ${chalk.blueBright(baseUrl)} does not exist for variable ${chalk.cyan(variable)}`,
+      startLine,
+    });
+    continue;
+  }
+
+  if (anchor) {
+    const validAnchors = validLinks.get(baseUrl)!;
+    if (!validAnchors.includes(anchor)) {
+      endpointsResults.push({
+        title: `ENDPOINT_VARS anchor ${chalk.cyan(anchor)} does not exist on ${chalk.blueBright(baseUrl)} for variable ${chalk.cyan(variable)}`,
+        startLine,
+      });
+    }
+  }
 }
 
 function printResults(resultMap: Map<string, github.AnnotationProperties[]>): void {

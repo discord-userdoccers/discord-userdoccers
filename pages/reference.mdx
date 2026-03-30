@@ -561,20 +561,22 @@ Additionally, types of fields are not verified, and all documented enums are mer
 
 While the launch signature may appear to be a random UUID, certain bits are used to encode information about the client, specifically whether certain client mods are detected.
 
-| Value      | Name          |
-| ---------- | ------------- |
-| 1 \<\< 119 | JQUERY        |
-| 1 \<\< 108 | BETTERDISCORD |
-| 1 \<\< 100 | RAMBOX        |
-| 1 \<\< 91  | VENDETTA      |
-| 1 \<\< 84  | VENCORD       |
-| 1 \<\< 75  | REPLUGGED     |
-| 1 \<\< 61  | LEGCORD       |
-| 1 \<\< 55  | DORION        |
-| 1 \<\< 48  | GOOFCORD      |
-| 1 \<\< 38  | OPENASAR      |
-| 1 \<\< 24  | SHELTER       |
-| 1 \<\< 11  | MOONLIGHT     |
+| Value      | Name          | Detection Keys                                               |
+| ---------- | ------------- | ------------------------------------------------------------ |
+| 1 \<\< 119 | JQUERY        | `jQuery`, `$`, `fn`, `jquery`                                |
+| 1 \<\< 108 | BETTERDISCORD | `BetterDiscord`, `BetterDiscordPreload`, `BdApi`             |
+| 1 \<\< 100 | RAMBOX        | `rambox`                                                     |
+| 1 \<\< 91  | VENDETTA      | `revenge`, `vendetta`, `bunny`, `kettu`                      |
+| 1 \<\< 84  | VENCORD       | `Vencord`, `VencordNative`, `VesktopNative`, `VencordMobile` |
+| 1 \<\< 75  | REPLUGGED     | `replugged`, `RepluggedNative`                               |
+| 1 \<\< 61  | LEGCORD       | `legcord`, `LegcordRPC`                                      |
+| 1 \<\< 55  | DORION        | `Dorion`, `__DORION_CONFIG__`, `__DORION_INIT__`             |
+| 1 \<\< 48  | GOOFCORD      | `GCDP`                                                       |
+| 1 \<\< 38  | OPENASAR      | `openasar`                                                   |
+| 1 \<\< 24  | SHELTER       | `shelter`                                                    |
+| 1 \<\< 11  | MOONLIGHT     | `moonlight`, `moonlightNode`                                 |
+
+Client mods are detected by passing `globalThis` to libdiscore (Wasm). For each client mod, it loops over each built-in obfuscated detection key, deobfuscates it (hex decode and XOR 0x73) and checks if it exists in the passed object.
 
 A default launch signature can be generated with the following pseudocode:
 
@@ -989,13 +991,13 @@ All message create endpoints accept file attachments, indicated by the `files[n]
 
 <Collapsible title="Upload Limits" description="How are file upload limits calculated?" icon="list">
 
-The file upload size limit applies to each file in a request. The default limit is **10 MiB** for all users, but may be higher depending on their [premium type](https://support.discord.com/hc/en-us/articles/115000435108)
-or the target guild's [premium tier](https://support.discord.com/hc/en-us/articles/360028038352), whichever is higher. The table below summarizes the raised limits:
+The file upload size limit applies to each file in a request, but the total attachment size may not exceed **500 MiB**. The default limit is **10 MiB** for all users, but may be higher depending on their
+[premium type](https://support.discord.com/hc/en-us/articles/115000435108) or the target guild's [premium tier](https://support.discord.com/hc/en-us/articles/360028038352), whichever is higher. The table below summarizes the raised limits:
 
 <Alert type="info">
 
-Note that Cloudflare enforces a maximum request size of less than **200 MiB**. Exceeding this limit will fail with a 413 payload too large.
-To upload files larger than **200 MiB**, you must utilize [Google Cloud uploads](#uploading-to-google-cloud).
+Note that Cloudflare enforces a maximum request size of less than **500 MiB**. Exceeding this limit will fail with a 413 payload too large.
+To upload a set of files larger than this, you must utilize [Google Cloud uploads](#uploading-to-google-cloud).
 
 </Alert>
 
@@ -1081,7 +1083,7 @@ Content-Type: image/gif
 ###### Using Attachments within Embeds
 
 You can upload attachments when creating a message and use those attachments within your embed. To do this, you will want to upload files as part of your `multipart/form-data` body.
-Make sure that you're uploading files which contain a filename, as you will need to reference it in your payload. Note that filenames are normalized by Discord, so sending exotic characters in the filename may lead to unexpected results.
+Make sure that you're uploading files which contain a filename, as you will need to reference it in your payload.
 
 <Alert type="warn">
 
@@ -1109,7 +1111,7 @@ For example:
 
 You can upload large attachments quickly directly to Discord's Google Cloud storage bucket, using the [Create Attachments](/resources/message#create-attachments) endpoint to generate upload URLs, and sending each generated URL a `PUT` request with the intended attachment as the body.
 
-This allows you to sidestep the Discord request size limit of **200 MiB** and upload up a file up to **500 MiB** directly to Google Cloud. Note that [file size limits](#uploading-files) will still apply when sending the attachment in a message.
+This allows you to upload up a file up to **500 MiB** directly to Google Cloud. Note that [file size limits](#uploading-files) will still apply when sending the attachment in a message.
 
 An example implementation in Python pseudocode would be:
 
