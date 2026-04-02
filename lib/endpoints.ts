@@ -24,6 +24,8 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   entity: null, // special case
   eula: "/resources/store#eula-object",
   forum_tag: "/resources/channel#forum-tag-object",
+  game: "/resources/game#game-object",
+  game_claim: "/resources/game#game-claim-object",
   game_invite: "/resources/game-invite#game-invite-object",
   game_server: "/resources/guild#game-server-object",
   gift_code: "/resources/entitlement#gift-code-object",
