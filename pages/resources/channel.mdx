@@ -1307,6 +1307,24 @@ Returns archived threads in the channel that are of [type](#channel-type) `PRIVA
 
 Returns threads in the channel that match the search parameters. Requires the `READ_MESSAGE_HISTORY` permission.
 
+<Alert type="warn">
+
+If the entity you are searching is not yet indexed, the endpoint will return a 200 OK response. Unexpectedly, the response body will not contain any search results, and will look similar to an error response:
+
+```json
+{
+  "message": "Index not yet available. Try again later",
+  "code": 110000,
+  "documents_indexed": 0,
+  "retry_after": 2
+}
+```
+
+You should retry the request after the timeframe specified in the `retry_after` field. If the `retry_after` field is `0`, you should retry the request after a short delay.
+See [the unavailable resources section](/topics/rate-limits#unavailable-resources) for more information.
+
+</Alert>
+
 ###### Query String Params
 
 | Field        | Type             | Description                                                                                  |
@@ -1320,8 +1338,10 @@ Returns threads in the channel that match the search parameters. Requires the `R
 | sort_order?  | string           | The direction to sort (`asc` or `desc`, default `desc`)                                      |
 | limit?       | integer          | Max number of threads to return (1-25, default 25)                                           |
 | offset?      | integer          | Number of threads to skip before returning results (max 9975)                                |
-| max_id?      | snowflake        | Get threads before this thread ID                                                            |
-| min_id?      | snowflake        | Get threads after this thread ID                                                             |
+| max_id? ^1^  | snowflake        | Get threads before this thread ID                                                            |
+| min_id? ^1^  | snowflake        | Get threads after this thread ID                                                             |
+
+^1^ When sorting by `creation_time`, these parameters may be used for pagination instead of `offset`. This allows search to paginate through more than 10,000 results.
 
 ###### Thread Sort Mode
 
