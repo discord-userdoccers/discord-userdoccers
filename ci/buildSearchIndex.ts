@@ -10,6 +10,8 @@ const DIMS = 768;
 const BATCH_SIZE = 100;
 const GEMINI_BASE = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}`;
 const HASH_FILE = join(process.cwd(), "public", "search-index.hash");
+const INDEX_FILE = join(process.cwd(), "public", "search-index.json");
+const VECTORS_FILE = join(process.cwd(), "public", "search-vectors.bin");
 
 interface Chunk {
   title: string;
@@ -217,9 +219,9 @@ async function embed(texts: string[]): Promise<number[][]> {
 
 if (!GEMINI_API_KEY) {
   console.warn("⚠ GEMINI_API_KEY not set, writing empty search index");
-  if (!existsSync(join(process.cwd(), "public", "search-index.json"))) {
-    await writeFile(join(process.cwd(), "public", "search-index.json"), "[]");
-    await writeFile(join(process.cwd(), "public", "search-vectors.bin"), Buffer.alloc(0));
+  if (!existsSync(INDEX_FILE)) {
+    await writeFile(INDEX_FILE, "[]");
+    await writeFile(VECTORS_FILE, Buffer.alloc(0));
   }
   process.exit(0);
 }
@@ -228,34 +230,77 @@ const root = join(process.cwd(), "pages");
 const files = (await walk(root)).sort();
 console.log(`Found ${files.length} MDX files`);
 
-// Hash all MDX content to detect changes
-const hasher = createHash("sha256");
-for (const file of files) {
-  hasher.update(await readFile(file));
-}
-const contentHash = hasher.digest("hex");
-
-// Check if index is already up-to-date
-const indexExists =
-  existsSync(join(process.cwd(), "public", "search-index.json")) &&
-  existsSync(join(process.cwd(), "public", "search-vectors.bin"));
-
-if (existsSync(HASH_FILE)) {
-  const oldHash = (await readFile(HASH_FILE, "utf-8")).trim();
-  if (oldHash === contentHash && indexExists) {
-    console.log("✓ Search index is up-to-date, skipping embedding generation");
-    process.exit(0);
+// Load old per-file hashes (format: { [rel]: sha256hex })
+const indexExists = existsSync(INDEX_FILE) && existsSync(VECTORS_FILE);
+let oldHashes: Record<string, string> = {};
+if (existsSync(HASH_FILE) && indexExists) {
+  try {
+    const raw = (await readFile(HASH_FILE, "utf-8")).trim();
+    // Support both old single-hash format (64-char hex) and new JSON object format
+    oldHashes = raw.startsWith("{") ? JSON.parse(raw) : {};
+  } catch {
+    oldHashes = {};
   }
 }
 
+// Load existing index for incremental reuse
+interface StoredChunk {
+  title: string;
+  section: string;
+  path: string;
+  anchor: string;
+  content: string;
+}
+type CachedPage = { chunks: StoredChunk[]; vecs: number[][] };
+const cachedByPath = new Map<string, CachedPage>();
+
+if (indexExists && Object.keys(oldHashes).length > 0) {
+  const oldMeta = JSON.parse(await readFile(INDEX_FILE, "utf-8")) as StoredChunk[];
+  const oldVecBuf = await readFile(VECTORS_FILE);
+  const oldVecs = new Float32Array(oldVecBuf.buffer, oldVecBuf.byteOffset, oldVecBuf.byteLength / 4);
+
+  for (let i = 0; i < oldMeta.length; i++) {
+    const c = oldMeta[i];
+    if (!cachedByPath.has(c.path)) cachedByPath.set(c.path, { chunks: [], vecs: [] });
+    const entry = cachedByPath.get(c.path)!;
+    entry.chunks.push(c);
+    entry.vecs.push(Array.from(oldVecs.slice(i * DIMS, (i + 1) * DIMS)));
+  }
+  console.log(`Loaded ${oldMeta.length} cached chunks from ${cachedByPath.size} pages`);
+}
+
+// Per-file incremental processing
 const allChunks: Chunk[] = [];
+const allEmbeddings: number[][] = [];
+// Indices into allChunks/allEmbeddings that need fresh embeddings
+const toEmbedIndices: number[] = [];
+const toEmbedTexts: string[] = [];
+const newHashes: Record<string, string> = {};
+let cachedCount = 0;
+let changedFiles = 0;
 
 for (const file of files) {
   const rel = file.slice(root.length + 1, -4).replaceAll(sep, "/");
   const pagePath = rel === "index" ? "/" : `/${rel}`;
-  const raw = await readFile(file, "utf-8");
-  const parsed = matter(raw);
+  const rawBytes = await readFile(file);
+  const fileHash = createHash("sha256").update(rawBytes).digest("hex");
+  newHashes[rel] = fileHash;
 
+  const cached = cachedByPath.get(pagePath);
+  if (fileHash === oldHashes[rel] && cached) {
+    // File unchanged, reuse existing chunks and embeddings
+    for (let i = 0; i < cached.chunks.length; i++) {
+      allEmbeddings.push(cached.vecs[i]);
+      allChunks.push(cached.chunks[i] as Chunk);
+    }
+    cachedCount += cached.chunks.length;
+    continue;
+  }
+
+  // File changed or new, re-chunk and queue for embedding
+  changedFiles++;
+  const raw = rawBytes.toString("utf-8");
+  const parsed = matter(raw);
   const title =
     parsed.data.name ??
     parsed.content
@@ -265,16 +310,29 @@ for (const file of files) {
       ?.replace(/^#+\s+/, "") ??
     rel;
 
-  allChunks.push(...chunkPage(parsed.content, title, pagePath));
+  const newChunks = chunkPage(parsed.content, title, pagePath);
+  for (const chunk of newChunks) {
+    toEmbedIndices.push(allChunks.length);
+    toEmbedTexts.push(`title: ${chunk.title} — ${chunk.section} | text: ${chunk.content}`);
+    allChunks.push(chunk);
+    allEmbeddings.push([]); // placeholder, filled after embed()
+  }
 }
 
-console.log(`${allChunks.length} chunks from ${files.length} pages`);
+console.log(
+  `${allChunks.length} total chunks: ${cachedCount} cached (${files.length - changedFiles} files), ${toEmbedTexts.length} to embed (${changedFiles} files)`,
+);
 
-// Gemini Embedding 2 asymmetric retrieval format for documents
-const texts = allChunks.map((c) => `title: ${c.title} — ${c.section} | text: ${c.content}`);
-console.log(`Generating embeddings (${MODEL})...`);
-const embeddings = await embed(texts);
-console.log(`${embeddings.length} embeddings (${embeddings[0]?.length ?? 0} dims)`);
+if (toEmbedTexts.length > 0) {
+  console.log(`Generating embeddings (${MODEL})...`);
+  const freshEmbeddings = await embed(toEmbedTexts);
+  console.log(`${freshEmbeddings.length} new embeddings (${freshEmbeddings[0]?.length ?? 0} dims)`);
+  for (let i = 0; i < toEmbedIndices.length; i++) {
+    allEmbeddings[toEmbedIndices[i]] = freshEmbeddings[i];
+  }
+} else {
+  console.log("✓ All chunks up-to-date, no embeddings needed");
+}
 
 // Write metadata (content truncated for snippet display)
 const meta = allChunks.map(({ title, section, path, anchor, content }) => ({
@@ -284,17 +342,17 @@ const meta = allChunks.map(({ title, section, path, anchor, content }) => ({
   anchor,
   content: content.slice(0, 300),
 }));
-await writeFile(join(process.cwd(), "public", "search-index.json"), JSON.stringify(meta));
+await writeFile(INDEX_FILE, JSON.stringify(meta));
 
 // Write embeddings as raw Float32
-const flat = new Float32Array(embeddings.length * DIMS);
-for (let i = 0; i < embeddings.length; i++) {
-  flat.set(embeddings[i], i * DIMS);
+const flat = new Float32Array(allEmbeddings.length * DIMS);
+for (let i = 0; i < allEmbeddings.length; i++) {
+  flat.set(allEmbeddings[i], i * DIMS);
 }
-await writeFile(join(process.cwd(), "public", "search-vectors.bin"), Buffer.from(flat.buffer));
+await writeFile(VECTORS_FILE, Buffer.from(flat.buffer));
 
-// Write content hash for cache invalidation
-await writeFile(HASH_FILE, contentHash);
+// Write per-file hash map for next incremental run
+await writeFile(HASH_FILE, JSON.stringify(newHashes));
 
 console.log(`✓ search-index.json (${meta.length} chunks, ${(JSON.stringify(meta).length / 1024).toFixed(0)} KiB)`);
 console.log(`✓ search-vectors.bin (${(flat.byteLength / 1024).toFixed(0)} KiB)`);
