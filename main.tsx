@@ -20,7 +20,6 @@ import LoadingBar from "./components/LoadingBar";
 import MDX from "./components/MDX";
 import Menu from "./components/Menu";
 import MenuContext from "./contexts/MenuContext";
-import "@docsearch/css";
 import { CodegenLanguageProvider } from "./lib/type-generator/store";
 import OnThisPage from "./components/OnThisPage";
 import { ThemeWatcher } from "./components/ThemeWatcher";

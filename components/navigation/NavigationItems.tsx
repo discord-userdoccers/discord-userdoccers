@@ -55,7 +55,7 @@ export function NavigationLink({ href, className, children, icon }: NavigationLi
 }
 
 export const SearchItem = (
-  <div id="searchContainer" className="w-full flex-1 sm:flex">
+  <div className="mb-4 w-full">
     <Suspense fallback={null}>
       <Searchbar />
     </Suspense>
