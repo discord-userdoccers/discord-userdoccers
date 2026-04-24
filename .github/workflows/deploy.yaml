@@ -34,9 +34,22 @@ jobs:
       - name: Export Environment Variables
         uses: infovista-opensource/vars-to-env-action@2.0.0
         with:
-            secrets: ${{ toJSON(vars) }}
+          secrets: ${{ toJSON(vars) }}
+
+      - name: Restore search index cache
+        id: search-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            public/search-index.json
+            public/search-vectors.bin
+            public/search-index.hash
+          key: search-index-${{ hashFiles('pages/**/*.mdx') }}
+          restore-keys: search-index-
 
       - name: Install and Build Artifacts
+        env:
+          GEMINI_API_KEY: ${{ github.ref == 'refs/heads/master' && secrets.GEMINI_API_KEY || '' }}
         run: |
           # Prevent supply chain attack by installing packages before pulling PR
           pnpm install --frozen-lockfile --production=false

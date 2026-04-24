@@ -8,7 +8,7 @@ export function ThemeWatcher() {
     if (!resolvedTheme) return;
 
     // When "amoled" is active, we force the "dark" class as well to ensure
-    // external libraries (like DocSearch) pick up the dark theme
+    // external libraries pick up the dark theme
     // next-themes handles the data-theme attribute via the value prop in _app.tsx
     if (resolvedTheme === "amoled") {
       document.documentElement.classList.add("amoled");
