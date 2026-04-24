@@ -1158,7 +1158,7 @@ Sent when a client has completed the initial handshake with the Gateway (for new
 | connection_request_data? ^11^             | [console connection request data](#console-connection-request-data-structure) object                                       | Pending connection request data                                                                                                                                                                                                                                               |
 | ad_personalization_toggles_disabled ^1^   | boolean                                                                                                                    | Whether personalization toggles for quests are disabled                                                                                                                                                                                                                       |
 | broadcaster_user_ids **(deprecated)** ^1^ | array[snowflake]                                                                                                           | IDs of users currently broadcasting                                                                                                                                                                                                                                           |
-| regional_feature_config ^1^               | [regional feature config](#regional-feature-config-object) object                                                          | Configuration of features that can be restricted by the region you are connecting from                                                                                                                                                                                        |
+| regional_feature_config ^1^               | [regional feature config](#regional-feature-config-object) object                                                          | Defines which features are enabled or restricted based on the geographic region of the connecting client                                                                                                                                                                      |
 
 ^1^ Feature is not available to or not tracked for bots. This field may be empty, omitted, or `null`.
 
@@ -1212,13 +1212,13 @@ A generic object used to represent versioned data. Depends on specific capabilit
 
 ###### Gateway Application Structure
 
-| Field          | Type      | Description                                                                     |
-| -------------- | --------- | ------------------------------------------------------------------------------- |
-| id             | snowflake | The ID of the application                                                       |
-| flags          | integer   | The [application's flags](/resources/application#application-flags)             |
-| flags_new      | string    | The [application's flags](/resources/application#application-flags) as a string |
-| name? ^1^      | string    | The name of the application                                                     |
-| parent_id? ^1^ | snowflake | The ID of the parent application                                                |
+| Field          | Type      | Description                                                                                             |
+| -------------- | --------- | ------------------------------------------------------------------------------------------------------- |
+| id             | snowflake | The ID of the application                                                                               |
+| flags          | integer   | The [application's flags](/resources/application#application-flags), limited to `1 << 53`               |
+| flags_new      | string    | The [application's flags](/resources/application#application-flags), including those surpassing `1<<53` |
+| name? ^1^      | string    | The name of the application                                                                             |
+| parent_id? ^1^ | snowflake | The ID of the parent application                                                                        |
 
 ^1^ Only available in [OAuth2 contexts](/gateway/using-gateway#oauth2-and-the-gateway).
 
@@ -1288,33 +1288,33 @@ A generic object used to represent versioned data. Depends on specific capabilit
 
 ###### Regional Feature Config Object
 
-| Field                    | Type   | Description                                                      |
-| ------------------------ | ------ | ---------------------------------------------------------------- |
-| age_gated_features       | number | Bitflag of [age gated features](#age-gated-features)             |
-| teen_by_default_settings | number | Bitflag of [teen by default settings](#teen-by-default-settings) |
+| Field                    | Type   | Description                                                                             |
+| ------------------------ | ------ | --------------------------------------------------------------------------------------- |
+| age_gated_features       | number | Bitfield representing [age-gated actions and content](#age-gated-features)              |
+| teen_by_default_settings | number | Bitfield representing [safety settings restricted for teens](#teen-by-default-settings) |
 
 ###### Age Gated Features
 
-| Value  | Name                                | Description                                         |
-| ------ | ----------------------------------- | --------------------------------------------------- |
-| 1\<\<0 | AGE_GATED_SPACES                    | Restricted from guilds marked as NSFW               |
-| 1\<\<1 | SENSITIVE_CONTENT_SHOW_SETTING      | Restricted from changing sensitive content settings |
-| 1\<\<2 | DM_PRIVACY_SETTINGS                 | Restricted from changing DM privacy settings        |
-| 1\<\<3 | MESSAGE_REQUEST_RESTRICTIONS_TOGGLE | Restricted from receiving message requests          |
-| 1\<\<4 | LARGE_SERVER_ACCESS                 | Restricted from large guilds                        |
-| 1\<\<5 | COMMANDS_TOGGLE                     | Restricted from using commands marked as NSFW       |
-| 1\<\<6 | REACTIVE_CHECK                      | Generic age verification required flag              |
-| 1\<\<7 | STAGE_SPEAKING                      | Restricted from speaking in stages                  |
+| Value    | Name                                | Description                                                                                                                  |
+| -------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1 \<\< 0 | AGE_GATED_SPACES                    | Restricted from joining or viewing guilds and channels marked as NSFW                                                        |
+| 1 \<\< 1 | SENSITIVE_CONTENT_SHOW_SETTING      | Restricted from changing sensitive content settings                                                                          |
+| 1 \<\< 2 | DM_PRIVACY_SETTINGS                 | Restricted from changing DM privacy and scanning settings                                                                    |
+| 1 \<\< 3 | MESSAGE_REQUEST_RESTRICTIONS_TOGGLE | Restricted from changing message request filtering settings                                                                  |
+| 1 \<\< 4 | LARGE_SERVER_ACCESS                 | Restricted from joining or viewing guilds with the [`AGE_VERIFICATION_LARGE_GUILD` feature](/resources/guild#guild-features) |
+| 1 \<\< 5 | COMMANDS_TOGGLE                     | Restricted from using commands marked as NSFW                                                                                |
+| 1 \<\< 6 | REACTIVE_CHECK                      | Requires the client to perform a silent age verification check before accessing gated features                               |
+| 1 \<\< 7 | STAGE_SPEAKING                      | Restricted from starting stages or raising a hand to speak in stage channels                                                 |
 
 ###### Teen By Default Settings
 
-| Value  | Name                                 | Description                                                   |
-| ------ | ------------------------------------ | ------------------------------------------------------------- |
-| 1\<\<0 | SENSITIVE_CONTENT                    | Restricts sensitive content settings                          |
-| 1\<\<1 | FRIEND_REQUEST_STRANGER_CONFIRMATION | Restricts "everyone" option from friend request settings      |
-| 1\<\<2 | MESSAGE_REQUEST_RESTRICTIONS         | Restricts toggling message requests                           |
-| 1\<\<3 | GUILD_ACTIVITY_STATUS                | Restricts large server options from activity privacy settings |
-| 1\<\<4 | SPAM_FILTERS                         | Restricts NSFW content options from spam filter settings      |
+| Value    | Name                                 | Description                                                   |
+| -------- | ------------------------------------ | ------------------------------------------------------------- |
+| 1 \<\< 0 | SENSITIVE_CONTENT                    | Forces sensitive content filters to be enabled                |
+| 1 \<\< 1 | FRIEND_REQUEST_STRANGER_CONFIRMATION | Disables the everyone option in friend request settings       |
+| 1 \<\< 2 | MESSAGE_REQUEST_RESTRICTIONS         | Restricts toggling message requests                           |
+| 1 \<\< 3 | GUILD_ACTIVITY_STATUS                | Forces activity status sharing to be disabled in large guilds |
+| 1 \<\< 4 | SPAM_FILTERS                         | Forces spam filters to their highest restriction level in DMs |
 
 #### Ready Supplemental
 
