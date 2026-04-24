@@ -289,7 +289,7 @@ export default function Searchbar() {
       >
         <SearchIcon className="h-4 w-4 shrink-0" />
         <span className="flex-1 text-left">Search docs...</span>
-        <kbd className="hidden rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs font-medium text-gray-400 sm:inline-block dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500">
+        <kbd className="border-brand-blurple/40 bg-brand-blurple/10 text-brand-blurple hidden rounded border px-1.5 py-0.5 text-xs font-medium sm:inline-block">
           {isMac ? "⌘" : "Ctrl+"}K
         </kbd>
       </button>
