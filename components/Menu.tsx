@@ -4,7 +4,7 @@ import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
 import Bars from "./icons/Bars";
 import Navigation from "./navigation/Navigation";
-import { openSearch } from "./Searchbar";
+import { openSearch } from "./searchEvents";
 
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);
@@ -54,7 +54,7 @@ export default function Menu() {
           <div className="flex grow flex-col overflow-y-auto pt-5 pb-4">
             <div className="flex flex-1 flex-col items-start">
               <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black xl:hidden dark:text-white" />
-              <Navigation />
+              {open && <Navigation />}
             </div>
           </div>
         </div>

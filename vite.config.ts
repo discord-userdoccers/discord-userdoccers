@@ -89,6 +89,13 @@ export default defineConfig({
         entryFileNames: "assets/page-[name].js",
         chunkFileNames: "assets/page-[name].js",
         assetFileNames: "assets/[name].[ext]",
+        manualChunks(id, { getModuleInfo }) {
+          if (id.includes("node_modules/react-dom/")) return "vendor-react";
+          if (id.includes("node_modules/react/")) return "vendor-react";
+          if (id.includes("node_modules/react-router")) return "vendor-react";
+          if (id.includes("node_modules/prism-react-renderer")) return "vendor-prism";
+          if (id.includes("node_modules/@headlessui")) return "vendor-ui";
+        },
       },
     },
   },

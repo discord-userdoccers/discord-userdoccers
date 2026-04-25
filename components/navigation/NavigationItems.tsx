@@ -1,6 +1,6 @@
 import classNames from "@lib/classnames";
-import React, { createElement, Fragment, Suspense } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { createElement, Suspense } from "react";
+import { NavLink } from "react-router-dom";
 import { ICONS } from "./NavigationList";
 
 const Searchbar = React.lazy(() => import("../Searchbar"));
@@ -32,25 +32,20 @@ interface NavigationLinkProps {
 }
 
 export function NavigationLink({ href, className, children, icon }: NavigationLinkProps) {
-  const location = useLocation();
-
-  const classes = classNames("flex items-center font-whitney rounded-md pl-3 gap-1", className, {
-    "bg-brand-blurple text-white": location.pathname === href,
-    "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
-      location.pathname !== href,
-  });
-
-  const linkClasses = classNames("group flex items-center pr-2 pl-0 py-1 w-full font-medium");
-
   return (
-    <Fragment>
-      <span className={classes}>
-        {icon != null && createElement(ICONS[icon], { className: "size-5 shrink-0" })}
-        <Link to={href} className={linkClasses}>
-          {children}
-        </Link>
-      </span>
-    </Fragment>
+    <NavLink
+      to={href}
+      className={({ isActive }) =>
+        classNames("font-whitney flex items-center gap-1 rounded-md pl-3", className, {
+          "bg-brand-blurple text-white": isActive,
+          "text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text hover:bg-theme-light-sidebar-hover hover:text-theme-light-sidebar-hover-text dark:hover:bg-theme-dark-sidebar-hover dark:hover:text-white":
+            !isActive,
+        })
+      }
+    >
+      {icon != null && createElement(ICONS[icon], { className: "size-5 shrink-0" })}
+      <span className="group flex w-full items-center py-1 pr-2 pl-0 font-medium">{children}</span>
+    </NavLink>
   );
 }
 

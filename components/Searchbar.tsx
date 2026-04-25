@@ -3,12 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SearchIcon } from "./mdx/icons/SearchIcon";
 import classNames from "@lib/classnames";
-
-// Single global open callback
-let _openSearch: (() => void) | null = null;
-export function openSearch() {
-  _openSearch?.();
-}
+import { registerOpenSearch } from "./searchEvents";
 
 const DEBOUNCE_MS = 100;
 
@@ -159,7 +154,7 @@ export default function Searchbar() {
 
   // Register this instance as the ctrl+k open target
   useEffect(() => {
-    _openSearch = () => setOpen(true);
+    registerOpenSearch(() => setOpen(true));
   }, []);
 
   // Debounced search

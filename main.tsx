@@ -15,7 +15,6 @@ import { ThemeProvider } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import Footer from "./components/Footer";
 import LoadingBar from "./components/LoadingBar";
 import MDX from "./components/MDX";
 import Menu from "./components/Menu";
@@ -91,7 +90,6 @@ function App() {
             {component}
             <OnThisPage />
           </div>
-          <Footer />
         </MenuContext.Provider>
       </ThemeProvider>
     </>

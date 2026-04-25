@@ -1,35 +1,31 @@
-import React, { createContext, Dispatch, SetStateAction, useCallback, useContext, useEffect, useState } from "react";
-import { toast, ToastContainer, ToastOptions } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, {
+  createContext,
+  Dispatch,
+  SetStateAction,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { Language } from "@lib/type-generator/languageConfig";
 
-// Define default options, now with Tailwind classes
-const defaultOptions: ToastOptions = {
-  position: "bottom-center",
-  autoClose: 3000,
-  hideProgressBar: false,
-  closeOnClick: true,
-  rtl: false,
-  pauseOnFocusLoss: true,
-  draggable: true,
-  pauseOnHover: true,
-  theme: "light", // Keep the theme option, react-toastify handles it.
-};
+const successClassName =
+  "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-100 border border-green-400 dark:border-green-600 rounded-md shadow-lg";
+const errorClassName =
+  "bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-100 border border-red-400 dark:border-red-600 rounded-md shadow-lg";
 
-// Success and error options (can be extended if needed)
-const successOptions: ToastOptions = {
-  ...defaultOptions,
-  className:
-    "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-100 border border-green-400 dark:border-green-600 rounded-md shadow-lg",
-  // icon: <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-300 mr-2" />,
-};
+// Lazy-load react-toastify
+const LazyToastContainer = React.lazy(() => import("react-toastify").then((m) => ({ default: m.ToastContainer })));
 
-const errorOptions: ToastOptions = {
-  ...defaultOptions,
-  className:
-    "bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-100 border border-red-400 dark:border-red-600 rounded-md shadow-lg",
-  // icon: <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-300 mr-2" />,
-};
+// Dynamically load toast + CSS on first use
+let toastFn: typeof import("react-toastify").toast | null = null;
+async function getToast() {
+  if (toastFn) return toastFn;
+  const [mod] = await Promise.all([import("react-toastify"), import("react-toastify/dist/ReactToastify.css")]);
+  toastFn = mod.toast;
+  return toastFn;
+}
 
 // Define the context for the toast functionality
 interface ToastContextProps {
@@ -41,12 +37,18 @@ const ToastContext = createContext<ToastContextProps | undefined>(undefined);
 
 // Create the Toast Provider component
 const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hasToasted, setHasToasted] = useState(false);
+
   const showSuccessToast = useCallback((message: React.ReactNode) => {
-    toast.success(message, successOptions);
+    setHasToasted(true);
+    getToast().then((t) =>
+      t.success(message, { position: "bottom-center", autoClose: 3000, className: successClassName }),
+    );
   }, []);
 
   const showErrorToast = useCallback((message: React.ReactNode) => {
-    toast.error(message, errorOptions);
+    setHasToasted(true);
+    getToast().then((t) => t.error(message, { position: "bottom-center", autoClose: 3000, className: errorClassName }));
   }, []);
 
   const contextValue = {
@@ -57,18 +59,11 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      <ToastContainer
-        position="bottom-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+      {hasToasted && (
+        <Suspense fallback={null}>
+          <LazyToastContainer position="bottom-center" autoClose={3000} theme="light" />
+        </Suspense>
+      )}
     </ToastContext.Provider>
   );
 };

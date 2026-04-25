@@ -109,7 +109,7 @@ interface IndexCache {
 // CF Workers reuse V8 isolates between requests on the same edge node
 // Caching the parsed index in globalThis avoids re-fetching and re-parsing
 // the ~10 MB vectors binary on every request
-declare const globalThis: { __searchIndex?: IndexCache };
+declare const globalThis: { __searchIndex?: IndexCache; __llmsPages?: Map<string, string> };
 
 async function loadIndex(assets: SearchAssets, origin: string): Promise<IndexCache> {
   if (globalThis.__searchIndex) return globalThis.__searchIndex;
@@ -168,26 +168,34 @@ export async function search(query: string, env: SearchEnv, origin: string, limi
   return scored.slice(0, limit);
 }
 
-export async function fetchPage(path: string, assets: SearchAssets, origin: string): Promise<string> {
-  if (!path.startsWith("/")) throw new SearchError("Path must start with /", 400);
-  if (path.includes("..")) throw new SearchError("Invalid path", 400);
+async function loadLlmsPages(assets: SearchAssets, origin: string): Promise<Map<string, string>> {
+  if (globalThis.__llmsPages) return globalThis.__llmsPages;
 
   const res = await assets.fetch(`${origin}/llms.txt`);
   if (!res.ok) throw new SearchError("llms.txt unavailable", 503);
   const text = await res.text();
 
-  // Each page section in llms.txt starts with "# Title\nLink: <url>" and ends
-  // just before the next such block (or end-of-file)
+  const pages = new Map<string, string>();
   const sections = text.split(/(?=^# .+\nLink: )/m);
-  const normalised = path.replace(/\/$/, "") || "/";
-
-  const section = sections.find((s) => {
-    const linkMatch = s.match(/^Link:\s+https?:\/\/[^/\s]+(\/[^\s]*)$/m);
-    if (!linkMatch) return false;
+  for (const section of sections) {
+    const linkMatch = section.match(/^Link:\s+https?:\/\/[^/\s]+(\/[^\s]*)$/m);
+    if (!linkMatch) continue;
     const sectionPath = linkMatch[1].replace(/\/$/, "") || "/";
-    return sectionPath === normalised;
-  });
+    pages.set(sectionPath, section.trim());
+  }
+
+  globalThis.__llmsPages = pages;
+  return pages;
+}
+
+export async function fetchPage(path: string, assets: SearchAssets, origin: string): Promise<string> {
+  if (!path.startsWith("/")) throw new SearchError("Path must start with /", 400);
+  if (path.includes("..")) throw new SearchError("Invalid path", 400);
+
+  const pages = await loadLlmsPages(assets, origin);
+  const normalised = path.replace(/\/$/, "") || "/";
+  const section = pages.get(normalised);
 
   if (!section) throw new SearchError(`Page not found: ${path}`, 404);
-  return section.trim();
+  return section;
 }
