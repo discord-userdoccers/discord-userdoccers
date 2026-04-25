@@ -1,85 +1,8 @@
-import React, {
-  createContext,
-  Dispatch,
-  SetStateAction,
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { Language } from "@lib/type-generator/languageConfig";
+import { ToastProvider } from "../../components/Toast";
 
-const successClassName =
-  "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-100 border border-green-400 dark:border-green-600 rounded-md shadow-lg";
-const errorClassName =
-  "bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-100 border border-red-400 dark:border-red-600 rounded-md shadow-lg";
-
-// Lazy-load react-toastify
-let toastMod: typeof import("react-toastify") | null = null;
-const toastReady = import("react-toastify").then((m) => {
-  toastMod = m;
-  return m;
-});
-import("react-toastify/dist/ReactToastify.css");
-
-const LazyToastContainer = React.lazy(() => toastReady.then((m) => ({ default: m.ToastContainer })));
-
-// Define the context for the toast functionality
-interface ToastContextProps {
-  showSuccessToast: (message: React.ReactNode) => void;
-  showErrorToast: (message: React.ReactNode) => void;
-}
-
-const ToastContext = createContext<ToastContextProps | undefined>(undefined);
-
-// Create the Toast Provider component
-const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ready, setReady] = useState(!!toastMod);
-
-  useEffect(() => {
-    if (!ready) {
-      toastReady.then(() => setReady(true));
-    }
-  }, [ready]);
-
-  const showSuccessToast = useCallback((message: React.ReactNode) => {
-    if (toastMod) {
-      toastMod.toast.success(message, { position: "bottom-center", autoClose: 3000, className: successClassName });
-    }
-  }, []);
-
-  const showErrorToast = useCallback((message: React.ReactNode) => {
-    if (toastMod) {
-      toastMod.toast.error(message, { position: "bottom-center", autoClose: 3000, className: errorClassName });
-    }
-  }, []);
-
-  const contextValue = {
-    showSuccessToast,
-    showErrorToast,
-  };
-
-  return (
-    <ToastContext.Provider value={contextValue}>
-      {children}
-      {ready && (
-        <Suspense fallback={null}>
-          <LazyToastContainer position="bottom-center" autoClose={3000} theme="light" />
-        </Suspense>
-      )}
-    </ToastContext.Provider>
-  );
-};
-
-// Custom hook to use the toast context
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
-};
+export { useToast } from "../../components/Toast";
 
 // Define the type for the store value.  Use a generic for the localStorage hook
 type StoreValue<T> = T;

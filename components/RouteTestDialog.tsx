@@ -8,7 +8,7 @@ import { SettingsIcon } from "./mdx/icons/SettingsIcon";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
 import { Tokenizer } from "../lib/type-generator/tokenizer";
 import { MethodBadge, type RESTMethod } from "./RouteHeader";
-import { toast } from "react-toastify";
+import { useToast } from "../lib/type-generator/store";
 import platform from "platform";
 
 const USER_TOKEN_REGEX: RegExp = /[\w]{24}\.[\w]{6}\.[\w-_]{27}/;
@@ -185,6 +185,7 @@ interface APIRequestOptions {
   locale: string;
   customHeaders: { key: string; value: string }[];
   auditLogReason?: string;
+  onError: (msg: string) => void;
 }
 
 async function sendApiRequest({
@@ -199,6 +200,7 @@ async function sendApiRequest({
   locale,
   customHeaders,
   auditLogReason,
+  onError,
 }: APIRequestOptions) {
   let finalUrl = `https://discord.com/api/v${apiVersion}${url}`;
 
@@ -240,7 +242,7 @@ async function sendApiRequest({
     headers.set("X-Super-Properties", await getSuperProperties());
   } catch (error) {
     console.error(error);
-    toast.error("Failed to fetch super properties!");
+    onError("Failed to fetch super properties!");
     return;
   }
 
@@ -868,6 +870,7 @@ export default function RouteTestDialog({
     body: unknown;
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const { showErrorToast } = useToast();
   const [hasAgreed, setHasAgreed] = useState(false);
 
   useEffect(() => {
@@ -971,7 +974,7 @@ export default function RouteTestDialog({
               }
             } catch (e) {
               console.error("Failed to parse table", e);
-              toast.error("Failed to parse documentation.");
+              showErrorToast("Failed to parse documentation.");
             }
           }
           node = node.nextElementSibling;
@@ -1004,6 +1007,7 @@ export default function RouteTestDialog({
       locale,
       customHeaders,
       auditLogReason,
+      onError: showErrorToast,
     });
 
     if (result) setResponse(result);
