@@ -100,10 +100,20 @@ async function embedQuery(text: string, apiKey: string): Promise<number[]> {
   return json.embedding.values;
 }
 
-async function loadIndex(
-  assets: SearchAssets,
-  origin: string,
-): Promise<{ chunks: ChunkMeta[]; vectors: Float32Array; dims: number }> {
+interface IndexCache {
+  chunks: ChunkMeta[];
+  vectors: Float32Array;
+  dims: number;
+}
+
+// CF Workers reuse V8 isolates between requests on the same edge node
+// Caching the parsed index in globalThis avoids re-fetching and re-parsing
+// the ~10 MB vectors binary on every request
+declare const globalThis: { __searchIndex?: IndexCache };
+
+async function loadIndex(assets: SearchAssets, origin: string): Promise<IndexCache> {
+  if (globalThis.__searchIndex) return globalThis.__searchIndex;
+
   const [metaRes, vecRes] = await Promise.all([
     assets.fetch(`${origin}/search-index.json`),
     assets.fetch(`${origin}/search-vectors.bin`),
@@ -124,7 +134,8 @@ async function loadIndex(
     throw new SearchError("Search index corrupt", 503);
   }
 
-  return { chunks, vectors, dims };
+  globalThis.__searchIndex = { chunks, vectors, dims };
+  return globalThis.__searchIndex;
 }
 
 export async function search(query: string, env: SearchEnv, origin: string, limit = 10): Promise<ScoredResult[]> {
@@ -133,10 +144,12 @@ export async function search(query: string, env: SearchEnv, origin: string, limi
   if (trimmed.length > 200) throw new SearchError("Query too long", 400);
   if (!env.GEMINI_API_KEY) throw new SearchError("Search not configured", 503);
 
-  const { chunks, vectors, dims } = await loadIndex(env.ASSETS, origin);
-  if (!chunks.length) return [];
+  const [{ chunks, vectors, dims }, qvec] = await Promise.all([
+    loadIndex(env.ASSETS, origin),
+    embedQuery(trimmed, env.GEMINI_API_KEY),
+  ]);
 
-  const qvec = await embedQuery(trimmed, env.GEMINI_API_KEY);
+  if (!chunks.length) return [];
 
   if (qvec.length !== dims) {
     throw new SearchError(`Dimension mismatch: query=${qvec.length}, index=${dims}. Index rebuild required.`, 503);

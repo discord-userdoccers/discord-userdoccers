@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { SearchIcon } from "./mdx/icons/SearchIcon";
 import classNames from "@lib/classnames";
 
-const DEBOUNCE_MS = 150;
+const DEBOUNCE_MS = 100;
 
 interface SearchResult {
   title: string;
