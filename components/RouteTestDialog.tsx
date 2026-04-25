@@ -982,7 +982,7 @@ export default function RouteTestDialog({
         }
       }
     }
-  }, [url, method, isOpen, triggerRef]);
+  }, [url, method, isOpen, triggerRef, showErrorToast]);
 
   const handleSend = async () => {
     if (Object.values(pathParams).some((val) => !val)) return;
