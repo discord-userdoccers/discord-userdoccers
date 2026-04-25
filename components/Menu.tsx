@@ -1,5 +1,6 @@
 import classNames from "@lib/classnames";
 import { useContext, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
 import Bars from "./icons/Bars";
@@ -9,6 +10,13 @@ import { openSearch } from "./searchEvents";
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);
   const { open, setClose } = useContext(MenuContext);
+  const { pathname } = useLocation();
+
+  // Close the mobile overlay whenever the route changes
+  useEffect(() => {
+    if (open) setClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const classes = classNames(
     [

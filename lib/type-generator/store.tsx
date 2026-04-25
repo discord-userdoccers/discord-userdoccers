@@ -16,16 +16,14 @@ const errorClassName =
   "bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-100 border border-red-400 dark:border-red-600 rounded-md shadow-lg";
 
 // Lazy-load react-toastify
-const LazyToastContainer = React.lazy(() => import("react-toastify").then((m) => ({ default: m.ToastContainer })));
+let toastMod: typeof import("react-toastify") | null = null;
+const toastReady = import("react-toastify").then((m) => {
+  toastMod = m;
+  return m;
+});
+import("react-toastify/dist/ReactToastify.css");
 
-// Dynamically load toast + CSS on first use
-let toastFn: typeof import("react-toastify").toast | null = null;
-async function getToast() {
-  if (toastFn) return toastFn;
-  const [mod] = await Promise.all([import("react-toastify"), import("react-toastify/dist/ReactToastify.css")]);
-  toastFn = mod.toast;
-  return toastFn;
-}
+const LazyToastContainer = React.lazy(() => toastReady.then((m) => ({ default: m.ToastContainer })));
 
 // Define the context for the toast functionality
 interface ToastContextProps {
@@ -37,18 +35,24 @@ const ToastContext = createContext<ToastContextProps | undefined>(undefined);
 
 // Create the Toast Provider component
 const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [hasToasted, setHasToasted] = useState(false);
+  const [ready, setReady] = useState(!!toastMod);
+
+  useEffect(() => {
+    if (!ready) {
+      toastReady.then(() => setReady(true));
+    }
+  }, [ready]);
 
   const showSuccessToast = useCallback((message: React.ReactNode) => {
-    setHasToasted(true);
-    getToast().then((t) =>
-      t.success(message, { position: "bottom-center", autoClose: 3000, className: successClassName }),
-    );
+    if (toastMod) {
+      toastMod.toast.success(message, { position: "bottom-center", autoClose: 3000, className: successClassName });
+    }
   }, []);
 
   const showErrorToast = useCallback((message: React.ReactNode) => {
-    setHasToasted(true);
-    getToast().then((t) => t.error(message, { position: "bottom-center", autoClose: 3000, className: errorClassName }));
+    if (toastMod) {
+      toastMod.toast.error(message, { position: "bottom-center", autoClose: 3000, className: errorClassName });
+    }
   }, []);
 
   const contextValue = {
@@ -59,7 +63,7 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      {hasToasted && (
+      {ready && (
         <Suspense fallback={null}>
           <LazyToastContainer position="bottom-center" autoClose={3000} theme="light" />
         </Suspense>
