@@ -4,6 +4,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { SearchIcon } from "./mdx/icons/SearchIcon";
 import classNames from "@lib/classnames";
 
+// Single global open callback
+let _openSearch: (() => void) | null = null;
+export function openSearch() {
+  _openSearch?.();
+}
+
 const DEBOUNCE_MS = 100;
 
 interface SearchResult {
@@ -151,16 +157,9 @@ export default function Searchbar() {
   const navigate = useNavigate();
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Global Ctrl+K / Cmd+K shortcut
+  // Register this instance as the ctrl+k open target
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    _openSearch = () => setOpen(true);
   }, []);
 
   // Debounced search
@@ -272,9 +271,16 @@ export default function Searchbar() {
           e.preventDefault();
           if (results[selected]) go(results[selected]);
           break;
+        case "k":
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            close();
+          }
+          break;
       }
     },
-    [results, selected, go],
+    [results, selected, go, close],
   );
 
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);

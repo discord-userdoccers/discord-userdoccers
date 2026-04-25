@@ -4,6 +4,7 @@ import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
 import Bars from "./icons/Bars";
 import Navigation from "./navigation/Navigation";
+import { openSearch } from "./Searchbar";
 
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);
@@ -30,6 +31,18 @@ export default function Menu() {
     window.addEventListener("popstate", handler);
     return () => window.removeEventListener("popstate", handler);
   }, [open, setClose]);
+
+  // Single global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        openSearch();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useOnClickOutside(ref as React.RefObject<HTMLDivElement>, setClose);
 
