@@ -3,8 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SearchIcon } from "./mdx/icons/SearchIcon";
 import classNames from "@lib/classnames";
+import { registerOpenSearch } from "./searchEvents";
 
-const DEBOUNCE_MS = 150;
+const DEBOUNCE_MS = 100;
 
 interface SearchResult {
   title: string;
@@ -151,16 +152,9 @@ export default function Searchbar() {
   const navigate = useNavigate();
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Global Ctrl+K / Cmd+K shortcut
+  // Register this instance as the ctrl+k open target
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    registerOpenSearch(() => setOpen(true));
   }, []);
 
   // Debounced search
@@ -272,9 +266,16 @@ export default function Searchbar() {
           e.preventDefault();
           if (results[selected]) go(results[selected]);
           break;
+        case "k":
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            close();
+          }
+          break;
       }
     },
-    [results, selected, go],
+    [results, selected, go, close],
   );
 
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
@@ -285,6 +286,14 @@ export default function Searchbar() {
       <button
         type="button"
         onClick={() => setOpen(true)}
+        onKeyDown={(e) => {
+          // Open the dialog and seed query when the user starts typing on the focused button
+          if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            e.preventDefault();
+            setQuery(e.key);
+            setOpen(true);
+          }
+        }}
         className="amoled:border amoled:border-[#333] amoled:bg-black flex w-full items-center gap-2 rounded-xl bg-[#f2f3f5] px-3 py-2 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:bg-[#323339] dark:text-gray-400 dark:hover:text-gray-200"
       >
         <SearchIcon className="h-4 w-4 shrink-0" />

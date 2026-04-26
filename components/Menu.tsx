@@ -1,13 +1,22 @@
 import classNames from "@lib/classnames";
 import { useContext, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import MenuContext from "../contexts/MenuContext";
 import useOnClickOutside from "../hooks/useOnClickOutside";
 import Bars from "./icons/Bars";
 import Navigation from "./navigation/Navigation";
+import { openSearch } from "./searchEvents";
 
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);
   const { open, setClose } = useContext(MenuContext);
+  const { pathname } = useLocation();
+
+  // Close the mobile overlay whenever the route changes
+  useEffect(() => {
+    if (open) setClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const classes = classNames(
     [
@@ -31,6 +40,18 @@ export default function Menu() {
     return () => window.removeEventListener("popstate", handler);
   }, [open, setClose]);
 
+  // Single global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        openSearch();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   useOnClickOutside(ref as React.RefObject<HTMLDivElement>, setClose);
 
   return (
@@ -41,7 +62,7 @@ export default function Menu() {
           <div className="flex grow flex-col overflow-y-auto pt-5 pb-4">
             <div className="flex flex-1 flex-col items-start">
               <Bars onClick={setClose} className="ml-6 h-7 cursor-pointer text-black xl:hidden dark:text-white" />
-              <Navigation />
+              {open && <Navigation />}
             </div>
           </div>
         </div>
