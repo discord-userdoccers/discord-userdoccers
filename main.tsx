@@ -12,13 +12,15 @@ import routes from "~react-pages";
 
 import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import LoadingBar from "./components/LoadingBar";
 import MDX from "./components/MDX";
 import Menu from "./components/Menu";
 import MenuContext from "./contexts/MenuContext";
+
+const Searchbar = React.lazy(() => import("./components/Searchbar"));
 import { CodegenLanguageProvider } from "./lib/type-generator/store";
 import OnThisPage from "./components/OnThisPage";
 import { ThemeWatcher } from "./components/ThemeWatcher";
@@ -89,6 +91,9 @@ function App() {
             <Menu />
             {component}
             <OnThisPage />
+            <Suspense fallback={null}>
+              <Searchbar />
+            </Suspense>
           </div>
         </MenuContext.Provider>
       </ThemeProvider>

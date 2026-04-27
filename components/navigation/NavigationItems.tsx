@@ -1,9 +1,8 @@
 import classNames from "@lib/classnames";
-import React, { createElement, Suspense } from "react";
+import React, { createElement } from "react";
 import { NavLink } from "react-router-dom";
 import { ICONS } from "./NavigationList";
-
-const Searchbar = React.lazy(() => import("../Searchbar"));
+import SearchTrigger from "../SearchTrigger";
 
 interface MenuSelectionProps {
   title?: string;
@@ -51,8 +50,6 @@ export function NavigationLink({ href, className, children, icon }: NavigationLi
 
 export const SearchItem = (
   <div className="mb-4 w-full">
-    <Suspense fallback={null}>
-      <Searchbar />
-    </Suspense>
+    <SearchTrigger />
   </div>
 );
