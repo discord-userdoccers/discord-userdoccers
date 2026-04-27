@@ -302,7 +302,7 @@ export default function Searchbar() {
         <div className="fixed inset-0 xl:flex xl:items-start xl:justify-center xl:px-4 xl:pt-[15vh]">
           <DialogPanel
             transition
-            className="dark:bg-background-dark amoled:bg-black amoled:xl:ring-[#333] flex h-dvh w-full flex-col overflow-hidden bg-white transition-all data-closed:opacity-0 data-enter:duration-200 data-leave:duration-150 xl:h-auto xl:max-w-xl xl:rounded-2xl xl:shadow-2xl xl:ring-1 xl:ring-black/5 xl:data-closed:scale-95 dark:xl:ring-white/10"
+            className="dark:bg-background-dark amoled:bg-black amoled:xl:ring-[#333] flex h-dvh w-full flex-col overflow-hidden bg-white xl:h-auto xl:max-w-xl xl:rounded-2xl xl:shadow-2xl xl:ring-1 xl:ring-black/5 xl:transition-all xl:data-closed:scale-95 xl:data-closed:opacity-0 xl:data-enter:duration-200 xl:data-leave:duration-150 dark:xl:ring-white/10"
           >
             {/* Header row: back arrow on mobile, search icon on xl+ */}
             <div className="flex items-center gap-2 border-b border-gray-200 px-3 xl:gap-3 xl:px-4 dark:border-gray-700">
