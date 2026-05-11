@@ -30,6 +30,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
+  const toggleSidebarHidden = useCallback(() => setSidebarHidden((prev) => !prev), []);
   const location = useLocation();
 
   useEffect(() => {
@@ -84,7 +86,7 @@ function App() {
           amoled: "dark",
         }}
       >
-        <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
+        <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose, sidebarHidden, toggleSidebarHidden }}>
           <ThemeWatcher />
           <div className="app-wrapper">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />

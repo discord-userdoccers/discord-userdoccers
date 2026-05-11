@@ -9,7 +9,7 @@ import { openSearch } from "./searchEvents";
 
 export default function Menu() {
   const ref = useRef<HTMLDivElement>(null);
-  const { open, setClose } = useContext(MenuContext);
+  const { open, setClose, sidebarHidden, toggleSidebarHidden } = useContext(MenuContext);
   const { pathname } = useLocation();
 
   // Close the mobile overlay whenever the route changes
@@ -40,17 +40,21 @@ export default function Menu() {
     return () => window.removeEventListener("popstate", handler);
   }, [open, setClose]);
 
-  // Single global Ctrl+K / Cmd+K listener
+  // Single global key listener
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         openSearch();
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        toggleSidebarHidden();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [toggleSidebarHidden]);
 
   useOnClickOutside(ref as React.RefObject<HTMLDivElement>, setClose);
 
@@ -68,10 +72,25 @@ export default function Menu() {
         </div>
       </div>
 
+      {/* Floating button to show sidebar when hidden (desktop only) */}
+      {sidebarHidden && (
+        <button
+          className="bg-sidebar-tertiary-light dark:bg-sidebar-secondary-dark hover:bg-brand-blurple dark:hover:bg-brand-blurple fixed top-4 left-3 z-20 hidden rounded-md p-2 text-black transition duration-100 hover:text-white xl:flex dark:text-white"
+          onClick={toggleSidebarHidden}
+          title="Show sidebar (Ctrl+B)"
+          aria-label="Show sidebar"
+        >
+          <Bars className="h-5 w-5" />
+        </button>
+      )}
+
       {/* Desktop fixed sidebar */}
       <aside
-        className="desktop-left-nav text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text fixed top-0 z-20 hidden h-dvh w-80 text-sm xl:block"
-        aria-hidden={false}
+        className={classNames(
+          "desktop-left-nav text-theme-light-sidebar-text dark:text-theme-dark-sidebar-text fixed top-0 z-20 hidden h-dvh w-80 text-sm",
+          { "xl:block": !sidebarHidden },
+        )}
+        aria-hidden={sidebarHidden}
       >
         <div className="dark:bg-sidebar-tertiary-dark flex h-full w-80 flex-col bg-white">
           <div className="flex grow flex-col overflow-y-auto pt-5 pb-4">
