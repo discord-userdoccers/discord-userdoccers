@@ -33,6 +33,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   guild: "/resources/guild#guild-object",
   guild_join_request: "/resources/guild#guild-join-request-object",
   guild_scheduled_event: "/resources/guild-scheduled-event#guild-scheduled-event-object",
+  guild_scheduled_event_exception: "/resources/guild-scheduled-event#guild-scheduled-event-exception-object",
   integration: "/resources/integration#integration-object",
   interaction: "/interactions/receiving-and-responding#interaction-object",
   invite: "/resources/invite#invite-object",
