@@ -1,0 +1,187 @@
+# Build overrides
+
+Build overrides are staff-generated links that override your client build to a specific commit/branch, they are used to share builds for early access/testing.
+
+### Build Override Platform
+
+| Value              | Description                   |
+| ------------------ | ----------------------------- |
+| discord_marketing  | The Discord marketing website |
+| discord_web        | The Discord web client        |
+| discord_ios        | The Discord iOS client        |
+| discord_android    | The Discord Android client    |
+| discord_developers | The Discord developer portal  |
+
+### Build Override Release Channel
+
+| Value   | Description |
+| ------- | ----------- |
+| all     | All         |
+| canary  | Canary      |
+| ptb     | PTB         |
+| stable  | Stable      |
+| staging | Staging     |
+
+### Build Override Expiry
+
+| Value   | Name   | Description |
+| ------- | ------ | ----------- |
+| 3600    | 1hr    | 1 Hour      |
+| 86400   | 1day   | 1 Day       |
+| 259200  | 3days  | 3 Days      |
+| 604800  | 1week  | 1 Week      |
+| 1209600 | 2weeks | 2 Weeks     |
+| 1814400 | 3weeks | 3 Weeks     |
+| 2628000 | 1month | 1 Month     |
+
+### Build Override Object
+
+| Field | Type             | Description                    |
+| ----- | ---------------- | ------------------------------ |
+| type  | "id" \| "branch" | Type of build override         |
+| id    | string           | Identifier of the target build |
+
+### Build Override Link Object
+
+| Field               | Type                                                         | Description                                                   |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
+| targetBuildOverride | map[string, [build override](#build-override-object) object] | Mapping of platform to Commit ID/Branch                       |
+| releaseChannel      | string                                                       | The release channel this override applies to                  |
+| validForUserIds     | array[snowflake]                                             | List of user IDs allowed to apply this override               |
+| allowLoggedOut      | boolean                                                      | Whether unauthenticated users can apply this override         |
+| expiresAt           | ISO8601 timestamp                                            | When this override expires                                    |
+| allowedVersions?    | array[string]                                                | Allowed client versions for this override                     |
+| experiments?        | ?map[string, integer]                                        | Experiments buckets overrides applied alongside this override |
+
+### Build Override Cookie Payload Object
+
+| Field              | Type                                                                                            | Description                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| discord_web        | BuildOverride                                                                                   | Optional build override for Discord web        |
+| discord_android    | BuildOverride                                                                                   | Optional build override for Discord Android    |
+| discorrd_ios       | BuildOverride                                                                                   | Optional build override for Discord iOS        |
+| discord_marketing  | BuildOverride                                                                                   | Optional build override for Discord marketing  |
+| discord_developers | BuildOverride                                                                                   | Optional build override for Discord developers |
+| $meta              | [build override cookie payload metadata](#build-override-cookie-payload-metadata-object) object | Metadata for the cookie                        |
+
+### Build Override Cookie Payload Metadata Object
+
+| Field        | Type                  | Description                                                   |
+| ------------ | --------------------- | ------------------------------------------------------------- |
+| expiresAt    | ISO8601 timestamp     | Expiration timestamp for the cookie                           |
+| experiments? | ?map[string, integer] | Experiments buckets overrides applied alongside this override |
+
+### Build Override API Metadata Object
+
+| Field            | Type                  | Description                                                                    |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------ |
+| release_channel  | string                | The [release channel](#build-override-release-channel) for this build override |
+| ttl_seconds      | integer               | The [expiry](#build-override-expiry) of this build override in seconds         |
+| user_ids         | array[snowflake]      | List of users that can apply this build override                               |
+| allowed_versions | array[string]         | List of allowed versions where this build override can be applied              |
+| allow_logged_out | boolean               | Whether logged out users can apply this build override                         |
+| experiments?     | ?map[string, integer] | Experiments buckets overrides applied alongside this override                  |
+
+### Build Override cookie
+
+The cookie for build overrides is `buildOverride`, it is a base64 encoded pair in this format:
+
+`base64(signature) + "." + base64(metdata)`
+
+Where:
+
+- `signature` is a cryptographic signature
+- `metadata` is the [build override cookie payload](#build-override-cookie-payload-object) object
+
+## Endpoints
+
+The base url for these endpoints is `https://canary.discord.com/__development/`.
+
+<RouteHeader method="GET" url="/build_overrides" unauthenticated>
+  Get applied build overrides
+</RouteHeader>
+
+Gives list of applied build overrides.
+
+###### Response Body
+
+Returns map[string, [build override](#build-override-object) object]
+
+<RouteHeader method="POST" url="/create_build_override_link">
+  Create build override link
+</RouteHeader>
+
+Creates sharable build override link.
+
+<Alert type="warn">
+
+This endpoint is only usable by Discord employees.
+
+</Alert>
+
+###### Request Body
+
+| Field     | Type                                                                   | Description        |
+| --------- | ---------------------------------------------------------------------- | ------------------ |
+| overrides | map[string, [build override](#build-override-object) object]           | Overrides to apply |
+| meta      | [build override metadata](#build-override-api-metadata-object) object] | Overrides to apply |
+
+###### Response Body
+
+| Field | Type   | Description                   |
+| ----- | ------ | ----------------------------- |
+| url   | string | Generated build override link |
+
+<RouteHeader method="PUT" url="/build_overrides">
+  Apply build override
+</RouteHeader>
+
+Applies build override.
+
+<Alert type="warn">
+
+This endpoint is only usable by Discord employees.
+
+</Alert>
+
+###### Request Body
+
+| Field     | Type                                                         | Description        |
+| --------- | ------------------------------------------------------------ | ------------------ |
+| overrides | map[string, [build override](#build-override-object) object] | Overrides to apply |
+| version?  | string                                                       | Client version     |
+
+###### Response Body
+
+Returns a 201 empty body status code upon success.
+With `set-cookie` header being equal to `buildOverride=<signed cookie>`
+
+<RouteHeader method="PUT" url="/build_overrides/link">
+  Apply build override from link
+</RouteHeader>
+
+Applies build override from link.
+
+###### Request Body
+
+| Field    | Type   | Description                                           |
+| -------- | ------ | ----------------------------------------------------- |
+| token    | string | User token                                            |
+| payload  | string | Build override payload from link (`s` query paramter) |
+| version? | string | Client version                                        |
+
+###### Response Body
+
+Returns a 201 empty body status code upon success.
+With `set-cookie` header being equal to `buildOverride=<signed cookie>`
+
+<RouteHeader method="DELETE" url="/build_overrides" unauthenticated>
+  Disable build overrides
+</RouteHeader>
+
+Disables applied build overrides.
+
+###### Response Body
+
+Returns a 201 empty body status code upon success.
+With `set-cookie` header being equal to `buildOverride=null`
