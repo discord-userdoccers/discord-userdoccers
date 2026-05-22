@@ -2789,22 +2789,21 @@ Returns a list of join requests for the guild for manual approval. Requires the 
 
 ###### Query String Params
 
-| Field   | Type      | Description                                                                |
-| ------- | --------- | -------------------------------------------------------------------------- |
-| status  | string    | The [status of the join requests](#guild-join-request-status) to filter by |
-| limit?  | integer   | Max number of join requests to return (1-100, default 100)                 |
-| before? | snowflake | Get join requests before this request ID                                   |
-| after?  | snowflake | Get join requests after this request ID                                    |
+| Field      | Type      | Description                                                                |
+| ---------- | --------- | -------------------------------------------------------------------------- |
+| status ^1^ | string    | The [status of the join requests](#guild-join-request-status) to filter by |
+| limit?     | integer   | Max number of join requests to return (1-100, default 100)                 |
+| before?    | snowflake | Get join requests before this request ID                                   |
+| after?     | snowflake | Get join requests after this request ID                                    |
+
+^1^ If a status of `STARTED` is provided, the request will fail with a [`50035` JSON error code](/topics/errors#json-error-codes).
 
 ###### Response Body
 
-| Field                    | Type                                                    | Description                                            |
-| ------------------------ | ------------------------------------------------------- | ------------------------------------------------------ |
-| guild_join_requests? ^1^ | array[[guild join request](#guild-join-request-object)] | The join requests for the guild                        |
-| total?                   | integer                                                 | The total number of join requests that match the query |
-| limit                    | integer                                                 | The maximum number of join requests returned           |
-
-^1^ Join requests are omitted when retrieving requests with the [`STARTED` status](#guild-join-request-status).
+| Field               | Type                                                    | Description                                            |
+| --------------------| ------------------------------------------------------- | ------------------------------------------------------ |
+| guild_join_requests | array[[guild join request](#guild-join-request-object)] | The join requests for the guild                        |
+| total?              | integer                                                 | The total number of join requests that match the query |
 
 <RouteHeader method="GET" url="/join-requests/{guild_join_request.id}">
   Get Guild Join Request
@@ -2883,11 +2882,17 @@ If a group DM channel already exists for the join request, the requestor will be
 
 </Alert>
 
-<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/id/{guild_join_request.id}">
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/{guild_join_request.id}">
   Action Guild Join Request
 </RouteHeader>
 
 Accepts or denies a join request for the guild. Requires the `KICK_MEMBERS` permission. Returns a [guild join request](#guild-join-request-object) object on success. Fires a [Guild Join Request Update](/gateway/gateway-events#guild-join-request-update) and optionally a [Guild Member Add](/gateway/gateway-events#guild-member-add) or [Guild Member Remove](/gateway/gateway-events#guild-member-remove) Gateway event.
+
+<Alert type="info">
+
+This endpoint was previously keyed by user ID, allowing a [user ID](/resources/user#user-object) to be used in place of the [guild join request ID](#guild-join-request-object) in the request path. This behavior is believed to be deprecated and should not be relied upon.
+
+</Alert>
 
 ###### JSON Params
 
@@ -2896,11 +2901,11 @@ Accepts or denies a join request for the guild. Requires the `KICK_MEMBERS` perm
 | action            | string  | The [action to take](#guild-join-request-status) on the join requests (only `APPROVED` and `REJECTED` can be used) |
 | rejection_reason? | ?string | The reason for rejecting the join request (max 160 characters)                                                     |
 
-<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/{user.id}">
-  Action Guild Join Request by User
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/id/{guild_join_request.id}" deprecated>
+  Action Guild Join Request by ID
 </RouteHeader>
 
-Same as above, except this endpoint is keyed by the user ID instead of the guild join request ID.
+Same as above, except this endpoint does not accept a [user ID](/resources/user#user-object) in place of the [guild join request ID](#guild-join-request-object).
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/requests">
   Bulk Action Guild Join Requests
@@ -2913,6 +2918,12 @@ Accepts or denies all pending join requests for the guild. Requires the `KICK_ME
 | Field  | Type   | Description                                                                                                        |
 | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
 | action | string | The [action to take](#guild-join-request-status) on the join requests (only `APPROVED` and `REJECTED` can be used) |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/requests/users/{user.id}">
+  List User Guild Join Requests
+</RouteHeader>
+
+Returns a list of [guild join request](#guild-join-request-object) objects that the user has previously submitted to the guild.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/welcome-screen" supportsBot>
   Get Guild Welcome Screen
