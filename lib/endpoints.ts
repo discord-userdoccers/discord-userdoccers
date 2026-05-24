@@ -3,7 +3,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   activity_link: "/resources/application#activity-link-object",
   application: "/resources/application#application-object",
   application_asset: "/resources/application#application-asset-object",
-  oauth_application_asset: "/resources/application#application-oauth-asset-object",
+  oauth2_application_asset: "/resources/application#application-oauth2-asset-object",
   attachment: "/resources/message#attachment-object",
   audio_context_type: "/resources/user-settings#audio-context-type",
   audit_log: "/resources/audit-log#audit-log-entry-object",
