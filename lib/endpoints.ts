@@ -3,6 +3,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   activity_link: "/resources/application#activity-link-object",
   application: "/resources/application#application-object",
   application_asset: "/resources/application#application-asset-object",
+  oauth_application_asset: "/resources/application#application-oauth-asset-object",
   attachment: "/resources/message#attachment-object",
   audio_context_type: "/resources/user-settings#audio-context-type",
   audit_log: "/resources/audit-log#audit-log-entry-object",
@@ -74,6 +75,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   user_trial_offer: "/resources/billing#user-trial-offer-object",
   voice_state: "/resources/voice#voice-state-object",
   webhook: "/resources/webhook#webhook-object",
+  widget_config: "/resources/widgets#widget-config-object",
 };
 
 export function resolveUrlVariables(url: string) {
