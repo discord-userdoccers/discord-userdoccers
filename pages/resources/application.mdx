@@ -815,9 +815,9 @@ It is in the format `<location_kind>-<location_guild_id>-<location_channel_id>`,
 | icon_hash?           | ?string                                                              | The game's [icon hash](/reference#cdn-formatting)                                            |
 | game_flags?          | integer                                                              | The [game's flags](/resources/game#game-flags)                                               |
 
-### Application Asset Object
+### Application OAuth2 Asset Object
 
-###### Application Asset Structure
+###### Application OAuth2 Asset Structure
 
 | Field                 | Type    | Description                                      |
 | --------------------- | ------- | ------------------------------------------------ |
@@ -825,14 +825,14 @@ It is in the format `<location_kind>-<location_guild_id>-<location_channel_id>`,
 | type **(deprecated)** | integer | The [type of the asset](#application-asset-type) |
 | name                  | string  | The name of the asset                            |
 
-###### Application Asset Type
+###### Application OAuth2 Asset Type
 
 | Value | Name  | Description |
 | ----- | ----- | ----------- |
 | 1     | SMALL | Small asset |
 | 2     | LARGE | Large asset |
 
-###### Example Application Asset
+###### Example Application OAuth2 Asset
 
 ```json
 {
@@ -841,6 +841,41 @@ It is in the format `<location_kind>-<location_guild_id>-<location_channel_id>`,
   "name": "alien"
 }
 ```
+
+### Application Asset Object
+
+###### Application Asset Structure
+
+| Field      | Type                                                                    | Description                                                  |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------------------------------ |
+| asset_id   | snowflake                                                               | The [ID of the asset](/reference#cdn-formatting)             |
+| asset_type | string                                                                  | The [type of the asset](#application-asset-type)             |
+| key        | string                                                                  | The name of the asset                                        |
+| metadata   | [application asset metadata](#application-asset-metadata-object) object | The metadata for the asset                                   |
+| updated_at | ISO8601 timestamp                                                       | When the asset was last updated                              |
+| visibility | string                                                                  | The [visibility of the asset](#application-asset-visibility) |
+
+###### Application Asset Metadata Object
+
+| Field        | Type    | Description                   |
+| ------------ | ------- | ----------------------------- |
+| content_type | string  | The content type of the asset |
+| height       | integer | The height of the asset       |
+| width        | integer | The width of the asset        |
+| is_animated  | boolean | Whether the asset is animated |
+
+###### Application Asset Type
+
+| Value | Description    |
+| ----- | -------------- |
+| image | An image asset |
+
+###### Application Asset Visibility
+
+| Value   | Description                         |
+| ------- | ----------------------------------- |
+| private | Whether the asset should be private |
+| public  | Whether the asset should be public  |
 
 ### Application Role Connection Object
 
@@ -1713,7 +1748,7 @@ Notes:
 | url_map | array[[application proxy mapping](#application-proxy-mapping-structure) object] | The URLs mapped to the proxy |
 
 <RouteHeader method="GET" url="/oauth2/applications/{application.id}/assets" unauthenticated>
-  Get Application Assets
+  Get OAuth2 Application Assets
 </RouteHeader>
 
 Returns a list of [application assets](#application-asset-object) for the given application ID.
@@ -1725,7 +1760,7 @@ Returns a list of [application assets](#application-asset-object) for the given 
 | nocache? | boolean | Whether to bypass cache for the response (default false) |
 
 <RouteHeader method="POST" url="/oauth2/applications/{application.id}/assets">
-  Create Application Asset
+  Create OAuth2 Application Asset
 </RouteHeader>
 
 Creates a new application asset for the given application ID. User must be the owner of the application or developer of the owning team. Returns an [application asset](#application-asset-object) object on success.
@@ -1744,8 +1779,8 @@ Due to caching, it may take a while for the asset to be retrievable after creati
 | type  | integer                           | The [type of the asset](#application-asset-type) |
 | image | [image data](/reference#cdn-data) | The asset's image                                |
 
-<RouteHeader method="DELETE" url="/oauth2/applications/{application.id}/assets/{application_asset.id}">
-  Delete Application Asset
+<RouteHeader method="DELETE" url="/oauth2/applications/{application.id}/assets/{oauth2_application_asset.id}">
+  Delete OAuth2 Application Asset
 </RouteHeader>
 
 Deletes an application asset permanently. User must be the owner of the application or developer of the owning team. Returns a 204 empty response on success.
@@ -1779,6 +1814,60 @@ Proxies a list of URLs for the given application ID. Returns a list of [external
   }
 ]
 ```
+
+<RouteHeader method="GET" url="/applications/{application.id}/assets" supportsBot>
+  Get Application Assets
+</RouteHeader>
+
+Returns a list of [application assets](#application-asset-object) for the given application ID. User must be the owner of the application or developer of the owning team.
+
+<RouteHeader method="POST" url="/applications/{application.id}/assets/upload" supportsBot>
+  Upload Application Asset
+</RouteHeader>
+
+Creates attachment URLs to upload the intended attachments directly to Discord's GCP storage bucket. Returns an array of
+[cloud attachment](/resources/message#cloud-attachment-structure) objects. See [Uploading to Google
+Cloud](/reference#uploading-to-google-cloud) for more information.
+
+###### JSON Params
+
+| Field     | Type    | Description                                  |
+| --------- | ------- | -------------------------------------------- |
+| filename  | string  | The name of the file being uploaded          |
+| file_size | integer | The size of the file being uploaded in bytes |
+
+<RouteHeader method="POST" url="/applications/{application.id}/assets" supportsBot>
+  Create Application Asset
+</RouteHeader>
+
+Creates an application asset. User must be the owner of the application or developer of the owning team. Returns the created [application asset](#application-asset-object) on success.
+
+###### JSON Params
+
+| Field             | Type    | Description                                              |
+| ----------------- | ------- | -------------------------------------------------------- |
+| key               | string  | The name of the file being uploaded                      |
+| uploaded_filename | integer | The size of the file being uploaded in bytes             |
+| visibility?       | ?string | The [visibility](#application-asset-object) of the asset |
+
+<RouteHeader method="PATCH" url="/applications/{application.id}/{application_asset.key}" supportsBot>
+  Update Application Asset
+</RouteHeader>
+
+Updates an application asset. User must be the owner of the application or developer of the owning team.Returns the updated [application asset](#application-asset-object) on success.
+
+###### JSON Params
+
+| Field              | Type    | Description                                               |
+| ------------------ | ------- | --------------------------------------------------------- |
+| uploaded_filename? | string  | The name of the file pre-uploaded to Discord's GCP bucket |
+| visibility?        | ?string | The [visibility](#application-asset-object) of the asset  |
+
+<RouteHeader method="DELETE" url="/applications/{application.id}/{application_asset.key}" supportsBot>
+  Delete Application Asset
+</RouteHeader>
+
+Deletes an application asset. User must be the owner of the application or developer of the owning team. Returns a 204 empty response on success.
 
 <RouteHeader method="POST" url="/applications/{application.id}/attachment" supportsOAuth2 supportsBot>
   Create Application Attachment
@@ -2193,69 +2282,3 @@ Returns a reason for why an application cannot be deleted.
 | ---------- | -------- | ----------------------------------------------------------------------------------- |
 | deletable? | ?boolean | Whether the application is deletable (default false)                                |
 | reason?    | ?integer | The [reason](#application-undeletable-reason) why the application cannot be deleted |
-
-<RouteHeader method="POST" url="/application-identities" supportsOAuth2>
-  Get Bulk Application Identities
-</RouteHeader>
-
-Returns a list of partial [application identity](#partial-application-identity-structure) objects connected to the authorized application.
-
-<Alert type="warn">
-
-This endpoint is only usable with an OAuth2 access token.
-
-</Alert>
-
-###### JSON Params
-
-| Field        | Type             | Description                                             |
-| ------------ | ---------------- | ------------------------------------------------------- |
-| user_ids ^1^ | array[snowflake] | The IDs of the users to retrieve identities for (1-100) |
-
-^1^ Invalid IDs are ignored.
-
-###### Partial Application Identity Structure
-
-| Field            | Type      | Description                                          |
-| ---------------- | --------- | ---------------------------------------------------- |
-| user_id          | snowflake | The ID of the user                                   |
-| external_user_id | string    | The ID of the user on the external identity provider |
-
-<RouteHeader
-  method="GET"
-  url="/applications/{application.id}/users/{user.id}/identities/{external_user_id}/profile"
-  supportsBot
->
-  Get User Application Profile
-</RouteHeader>
-
-Returns an [user application profile](/gateway/gateway-events#user-application-profile-structure) object for the given application, user, and external user IDs.
-
-<Alert type="warn">
-
-This endpoint is not usable by user accounts.
-
-</Alert>
-
-<RouteHeader
-  method="PATCH"
-  url="/applications/{application.id}/users/{user.id}/identities/{external_user_id}/profile"
-  supportsBot
->
-  Modify User Application Profile
-</RouteHeader>
-
-Modifies the user's application profile. Returns an [user application profile](/gateway/gateway-events#user-application-profile-structure) object on success.
-
-<Alert type="warn">
-
-This endpoint is not usable by user accounts.
-
-</Alert>
-
-###### JSON Params
-
-| Field     | Type   | Description                                                                                       |
-| --------- | ------ | ------------------------------------------------------------------------------------------------- |
-| username? | string | The username (max 1024)                                                                           |
-| metadata? | object | Custom metadata for the user application profile (max 25 keys, 1024 characters per key and value) |
