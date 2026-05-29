@@ -1,0 +1,57 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+# Runs do not need to be concurrent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    # Run if
+    # - event == 'push'
+    # - event == 'pull_request' && origin_repo != project_repo (i.e. a fork)
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+
+    name: Build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: pnpm
+
+      - name: Restore Search Index Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            public/search-index.json
+            public/search-vectors.bin
+            public/search-index.hash
+          key: search-index-${{ github.run_id }}
+          restore-keys: search-index-
+
+      - name: Install and Build Artifacts
+        env:
+          VITE_ERROR_CODES_ENDPOINT: ${{ vars.VITE_ERROR_CODES_ENDPOINT }}
+        run: |
+          pnpm install --frozen-lockfile --production=false
+          pnpm build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vite-dist
+          path: dist/
