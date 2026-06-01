@@ -1,155 +1,102 @@
 name: Deploy
+run-name: ${{ github.event.workflow_run.display_title }}
 
 on:
-  push:
-  pull_request_target:
+  workflow_run:
+    workflows: [Build]
+    types:
+      - completed
 
 # Runs do not need to be concurrent
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  deployments: write
 
 jobs:
   deploy:
-    permissions:
-      deployments: write
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
 
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
-
-    runs-on: blacksmith-4vcpu-ubuntu-2404
     name: Deploy
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Setup Variables
+        id: vars
+        shell: bash
+        run: |
+          # WARNING:
+          # use '...' especially when using github templating
+          # only use "..." when using bash variable references
+
+          output() {
+            echo "$1=$2" >> "$GITHUB_OUTPUT"
+          }
+
+          EVENT='${{ github.event.workflow_run.event }}'
+          BRANCH='${{ github.event.workflow_run.head_branch }}'
+
+          output event "$EVENT"
+          output branch "$BRANCH"
+
+          if [[ "$EVENT" == "pull_request" ]]; then
+            output deploy_branch 'pr-${{ github.event.workflow_run.pull_requests[0].number }}'
+          else
+            output deploy_branch "$BRANCH"
+          fi
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: 23
           cache: pnpm
 
-      - name: Export Environment Variables
-        uses: infovista-opensource/vars-to-env-action@2.0.0
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
         with:
-          secrets: ${{ toJSON(vars) }}
+          name: vite-dist
+          path: dist/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
-      - name: Restore search index cache
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        uses: actions/cache@v4
-        with:
-          path: |
-            public/search-index.json
-            public/search-vectors.bin
-            public/search-index.hash
-          key: search-index-${{ github.run_id }}
-          restore-keys: search-index-
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile --production=false
 
-      - name: Install and Build Artifacts
+      - name: Build Search Index
+        if: steps.vars.outputs.event == 'push' && steps.vars.outputs.branch == 'master'
         env:
-          GEMINI_API_KEY: ${{ github.ref == 'refs/heads/master' && secrets.GEMINI_API_KEY || '' }}
-        run: |
-          # Prevent supply chain attack by installing packages before pulling PR
-          pnpm install --frozen-lockfile --production=false
-
-          # Pull the PR branch if necessary
-          if [ "${{ github.event_name }}" == "pull_request_target" ]; then
-            git fetch origin "pull/${{ github.event.number }}/head:pull/${{ github.event.number }}/head"
-            git switch "pull/${{ github.event.number }}/head"
-          fi
-
-          pnpm build
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: pnpm run prebuild:search
 
       - name: Deploy Site
         id: deploy
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy --branch ${{ github.event_name == 'pull_request_target' && format('pr-{0}', github.event.number) || github.ref_name }}
+          command: pages deploy --branch ${{ steps.vars.outputs.deploy_branch }}
 
       - name: Notify Deployment
-        uses: actions/github-script@v7
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
           PROJECT_NAME: "discord-userdoccers"
 
-          DEPLOYMENT_DESCRIPTION: ${{ github.event_name == 'push' &&  github.event.head_commit.message || github.event.pull_request.title }}
-        with:
-          script: |
-            const { CLOUDFLARE_ACCOUNT_ID, PROJECT_NAME } = process.env;
+          DEPLOYMENT_ENVIRONMENT: ${{ steps.deploy.outputs.pages-environment }}
 
-            const DEPLOYMENT_ENVIRONMENT = "${{ steps.deploy.outputs.pages-environment }}";
-            const DEPLOYMENT_URL = "${{ steps.deploy.outputs.deployment-url }}";
-            const DEPLOYMENT_ALIAS_URL = "${{ steps.deploy.outputs.pages-deployment-alias-url }}" || "https://docs.discord.food";
-            const DEPLOYMENT_ID = "${{ steps.deploy.outputs.pages-deployment-id }}";
-            const DEPLOYMENT_DESCRIPTION = process.env.DEPLOYMENT_DESCRIPTION;
-
-            const envConfig = {
-              production: {
-                environment: "Production",
-                production: true,
-                description: DEPLOYMENT_DESCRIPTION,
-              },
-              preview: {
-                environment: "Preview",
-                production: false,
-                description: DEPLOYMENT_DESCRIPTION,
-              },
-            };
-
-            const { environment, production: production_environment, description } = envConfig[DEPLOYMENT_ENVIRONMENT];
-
-            const deploymentRef = context.eventName === "pull_request_target"
-              ? context.payload.pull_request.head.sha
-              : context.sha;
-
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: deploymentRef,
-              environment,
-              production_environment,
-              description,
-              required_contexts: [],
-              auto_merge: false,
-              payload: context.eventName === "pull_request_target"
-                        ? { pull_request: context.payload.number }
-                        : { }
-            });
-
-            if (deployment.status !== 201) {
-              core.error(deployment.data.message ?? "error creating deployment", {
-                title: "Deployment Failed",
-              });
-
-              return;
-            }
-
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              environment,
-              production_environment,
-              description,
-              deployment_id: deployment.data.id,
-              environment_url: DEPLOYMENT_URL,
-              log_url: `https://dash.cloudflare.com/${CLOUDFLARE_ACCOUNT_ID}/pages/view/${PROJECT_NAME}/${DEPLOYMENT_ID}`,
-              state: "success",
-              auto_inactive: false,
-            });
-
-            await core.summary
-              .addRaw(
-                `# ${environment} Deployment
-
-            | Name                           | Result                  |
-            | ------------------------------ | ----------------------- |
-            | **Last commit:**               | ${deploymentRef}        |
-            | **${environment} URL**:        | ${DEPLOYMENT_URL}       |
-            | **Branch ${environment} URL**: | ${DEPLOYMENT_ALIAS_URL} |`,
-              )
-              .write();
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url || 'https://docs.discord.food' }}
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+        run: pnpm run ci:deploy
+            
