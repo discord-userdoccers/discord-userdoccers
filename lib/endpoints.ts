@@ -76,6 +76,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   voice_state: "/resources/voice#voice-state-object",
   webhook: "/resources/webhook#webhook-object",
   widget_config: "/resources/widgets#widget-config-object",
+  wishlist: "/resources/wishlist#wishlist-object",
 };
 
 export function resolveUrlVariables(url: string) {
