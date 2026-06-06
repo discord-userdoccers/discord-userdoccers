@@ -45,6 +45,14 @@ const ENV_CONF = {
   },
 };
 
+function truncate(str: string, maxLength: number) {
+  if (str.length <= maxLength) {
+    return str;
+  }
+
+  return str.slice(0, maxLength - 3) + "...";
+}
+
 async function getMetadata(github: ReturnType<typeof getOctokit>) {
   const {
     workflow_run: { event, head_commit, head_sha, pull_requests },
@@ -97,7 +105,9 @@ async function main() {
 
   const { environment, production_environment } = ENV_CONF[DEPLOYMENT_ENVIRONMENT];
 
-  const { ref, payload, description } = await getMetadata(github);
+  const { ref, payload, description: rawDescription } = await getMetadata(github);
+
+  const description = truncate(rawDescription.split("\n")[0], 140);
 
   const deployment = await github.rest.repos.createDeployment({
     owner: context.repo.owner,
