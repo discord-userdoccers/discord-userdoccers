@@ -4,13 +4,13 @@
 
 ###### Wishlist Structure
 
-| Field              | Type                                                                           | Description                                 |
-| ------------------ | ------------------------------------------------------------------------------ | ------------------------------------------- |
-| id                 | snowflake                                                                      | The ID of the wishlist                      |
-| user_id            | snowflake                                                                      | The ID of the user                          |
-| wishlist_items     | array[[wishlist item](#wishlist-item-object) object]                           | The items in the wishlist                   |
-| applications       | array[partial [application](/resources/application#application-object) object] | The applications referenced in the wishlist |
-| storefront_pricing | [storefront pricing](/resources/store#storefront-pricing-object) object        | The storefront pricing of the wished items  |
+| Field              | Type                                                                           | Description                                     |
+| ------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| id                 | snowflake                                                                      | The ID of the wishlist                          |
+| user_id            | snowflake                                                                      | The ID of the user                              |
+| wishlist_items     | array[[wishlist item](#wishlist-item-object) object]                           | The items in the wishlist                       |
+| applications       | array[partial [application](/resources/application#application-object) object] | The applications referenced across the wishlist |
+| storefront_pricing | [storefront prices](/resources/store#storefront-prices-object) object          | The storefront prices of the wished items       |
 
 ### Wishlist Item Object
 
@@ -45,8 +45,15 @@ Returns a [wishlist](#wishlist-object) object for the given wishlist ID.
 
 | Field            | Type    | Description                                                                                       |
 | ---------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| source?          | string  | [Where](#wishlist-request-surface) the request came from                                          |
 | country_code?    | string  | The user's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code    |
 | payment_gateway? | integer | The [payment gateway](/resources/billing#payment-gateway) (only `APPLE` and `GOOGLE` are allowed) |
+
+###### Wishlist Request Surface
+
+| Value        | Description  |
+| ------------ | ------------ |
+| user_profile | User profile |
 
 <RouteHeader method="PATCH" url="/users/@me/wishlists/{wishlist.id}">
   Modify Wishlist
@@ -104,4 +111,29 @@ Removes a wishlist item for the given wishlist and SKU ID. Returns a [wishlist](
 | country_code?    | string  | The user's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code    |
 | payment_gateway? | integer | The [payment gateway](/resources/billing#payment-gateway) (only `APPLE` and `GOOGLE` are allowed) |
 
-                USER_WISHLIST_RECOMMENDATIONS: "/wishlist/gift-recommendations",
+<RouteHeader method="GET" url="/wishlist/gift-recommendations">
+  Get Wishlist Gift Recommendations
+</RouteHeader>
+
+Returns recommended giftable SKUs for the specified users.
+
+###### Query String Params
+
+| Field                | Type             | Description                                                                                    |
+| -------------------- | ---------------- | ---------------------------------------------------------------------------------------------- |
+| application_ids      | array[snowflake] | The IDs of the applications (1-10)                                                             |
+| user_ids             | array[snowflake] | The IDs of the users (1-5)                                                                     |
+| max_recommendations? | integer          | Max number of recommendations to return (1-30, default 20)                                     |
+| localize?            | boolean          | Whether to localize the SKUs (default true)                                                    |
+| country_code?        | string           | The user's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| payment_gateway?     | integer          | The [payment gateway](/resources/billing#payment-gateway)                                      |
+
+###### Response Body
+
+| Field                   | Type                                                                                                   | Description                                                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| skus                    | array[[SKU](/resources/store#sku-object) object]                                                       | The SKUs                                                                                                                                     |
+| skus_to_user_and_reason | map[snowflake, map[snowflake, integer]]                                                                | A mapping of the SKU IDs to mapping of the user IDs to the [reason why the SKU was recommended to the user](#wishlist-recommendation-reason) |
+| applications            | array[partial [application](/resources/application#application-object) object]                         | The applications referenced across all SKUs                                                                                                  |
+| user_discounts          | array[[collectible user discount](/resources/collectibles#collectible-user-discount-structure) object] | The discounts the user is eligible for                                                                                                       |
+| storefront_pricing      | ?[storefront prices](/resources/store#storefront-prices-object) object                                 | The storefront prices of the recommended items                                                                                               |
