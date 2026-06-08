@@ -30,7 +30,7 @@ export class GoGenerator {
     for (const property of layout.contents) {
       const isEnum = layout.type === TableType.Enum;
 
-      let rawField = this.typeToString(property.field, true);
+      const rawField = this.typeToString(property.field, true);
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
       const jsonKey = rawField;

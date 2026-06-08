@@ -30,7 +30,7 @@ export class PythonGenerator {
 
     for (const property of layout.contents) {
       const isEnum = layout.type === TableType.Enum;
-      let field = this.typeToString(property.field, true);
+      const field = this.typeToString(property.field, true);
 
       const isDeprecated = this.typeToString(property.field).includes("(deprecated)");
 
