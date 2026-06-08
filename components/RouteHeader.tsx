@@ -1,5 +1,6 @@
 import classNames from "@lib/classnames";
-import React, { useRef, useState } from "react";
+import React, { Suspense, useRef, useState } from "react";
+import { resolveUrlVariables } from "@lib/endpoints";
 import IconBadge from "./IconBadge";
 import { getNormalisedText, H3 } from "./mdx/Heading";
 import { WarningIcon } from "./mdx/icons/WarningIcon";
@@ -8,7 +9,8 @@ import { WrenchIcon } from "./mdx/icons/WrenchIcon";
 import { LockUnlockedIcon } from "./mdx/icons/LockUnlockedIcon";
 import { TopicsIcon } from "./mdx/icons/TopicsIcon";
 import { KeyIcon } from "./mdx/icons/KeyIcon";
-import RouteTestDialog from "./RouteTestDialog";
+
+const RouteTestDialog = React.lazy(() => import("./RouteTestDialog"));
 
 export function getRawText(node: React.ReactNode): string {
   if (typeof node === "string") return node;
@@ -69,11 +71,20 @@ export default function RouteHeader({
   supportsBot,
 }: RouteHeaderProps) {
   const anchor = getNormalisedText(children);
+  const routeTitle = getRawText(children).toLowerCase();
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [dialogMounted, setDialogMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="group">
+    <div
+      className="group"
+      data-route-header="true"
+      data-route-title={routeTitle}
+      data-supports-bot={supportsBot ? "true" : undefined}
+      data-supports-oauth2={supportsOAuth2 ? "true" : undefined}
+      data-unauthenticated={unauthenticated ? "true" : undefined}
+    >
       <H3 className="mb-0" useAnchor={false} useCopy={false}>
         {/* NOTE: this margin is a hack cause the font sucks */}
         <a className="mb-px" href={`#${anchor}`}>
@@ -116,22 +127,44 @@ export default function RouteHeader({
       </H3>
       <div ref={containerRef} className="mt-1 flex items-center">
         <MethodBadge method={method} />
-        <code className="text-text-light dark:text-text-dark p-2 text-base break-all">{url}</code>
+        <code className="text-text-light dark:text-text-dark p-2 text-base break-all">
+          {resolveUrlVariables(url).map(({ text, href }, i) =>
+            href ? (
+              <a
+                key={i}
+                href={href}
+                className="text-brand-link-light dark:text-brand-link-dark hover:underline"
+                style={{ fontSize: "inherit", fontFamily: "inherit", lineHeight: "inherit" }}
+              >
+                {text}
+              </a>
+            ) : (
+              text
+            ),
+          )}
+        </code>
         <button
-          onClick={() => setIsTestDialogOpen(true)}
+          onClick={() => {
+            setDialogMounted(true);
+            setIsTestDialogOpen(true);
+          }}
           className="bg-brand-blurple hover:bg-brand-blurple/80 ml-auto rounded-sm px-3 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
         >
           Test
         </button>
       </div>
-      <RouteTestDialog
-        isOpen={isTestDialogOpen}
-        onClose={() => setIsTestDialogOpen(false)}
-        method={method}
-        url={url}
-        triggerRef={containerRef}
-        supportsAuditReason={supportsAuditReason}
-      />
+      {dialogMounted && (
+        <Suspense fallback={null}>
+          <RouteTestDialog
+            isOpen={isTestDialogOpen}
+            onClose={() => setIsTestDialogOpen(false)}
+            method={method}
+            url={url}
+            triggerRef={containerRef}
+            supportsAuditReason={supportsAuditReason}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

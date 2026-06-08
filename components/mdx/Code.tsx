@@ -134,10 +134,10 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                   isDiff = true;
                 }
 
-                const lineProps = getLineProps({ line, key: i });
+                const { key: lineKey, ...lineProps } = getLineProps({ line, key: i });
 
                 return (
-                  <div className="block" key={i + 1} {...lineProps} style={lineClass}>
+                  <div key={lineKey} className="block" {...lineProps} style={lineClass}>
                     {isTerminal && !isDiff && <span className={lineNumberClasses}>$</span>}
                     {!isTerminal && !isDiff && hasLines && <span className={lineNumberClasses}>{i + 1}</span>}
                     {isDiff && hasLines && (
@@ -157,20 +157,18 @@ export default function Code({ children, className, file, ...props }: CodeProps)
                           (key === 0 || key === 1) &&
                           Object.values(SYMBOLS).includes(token.content.charAt(0) as string)
                         ) {
-                          return (
-                            <span
-                              {...getTokenProps({
-                                token: {
-                                  ...token,
-                                  content: token.content.slice(1),
-                                },
-                                key,
-                              })}
-                            />
-                          );
+                          const { key: tokenKey, ...tokenProps } = getTokenProps({
+                            token: {
+                              ...token,
+                              content: token.content.slice(1),
+                            },
+                            key,
+                          });
+                          return <span key={tokenKey} {...tokenProps} />;
                         }
 
-                        return <span {...getTokenProps({ token, key })} />;
+                        const { key: tokenKey, ...tokenProps } = getTokenProps({ token, key });
+                        return <span key={tokenKey} {...tokenProps} />;
                       })}
                     </span>
                   </div>

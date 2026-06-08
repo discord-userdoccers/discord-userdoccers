@@ -38,24 +38,22 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
     };
   }, [dropdownRef]);
 
-  function tryCopyCodeToClipboard() {
+  async function tryCopyCodeToClipboard() {
     const table = props.tableRef.current;
-    const generator = LANGUAGE_CONFIG[selectedLanguage].generator;
 
     if (table) {
-      const code: string = generator(table);
-      (async () => {
-        await navigator.clipboard
-          .writeText(code)
-          .catch((err) => {
-            console.error(err);
-            showErrorToast("Failed to copy code to clipboard. Check console for details.");
-          })
-          .then(() => {
-            showSuccessToast("Copied code to clipboard.");
-            setShowCopyIcon(true);
-          });
-      })();
+      const generator = await LANGUAGE_CONFIG[selectedLanguage].loadGenerator();
+      const code = generator(table);
+      await navigator.clipboard
+        .writeText(code)
+        .catch((err) => {
+          console.error(err);
+          showErrorToast("Failed to copy code to clipboard. Check console for details.");
+        })
+        .then(() => {
+          showSuccessToast("Copied code to clipboard.");
+          setShowCopyIcon(true);
+        });
     } else {
       showErrorToast("Failed to generate code for this table. Check console for details.");
       console.error(
@@ -132,6 +130,68 @@ function CopyBar(props: { tableRef: RefObject<HTMLTableElement> }) {
   );
 }
 
+function DeferredCopyBar({ tableRef, useCodegen }: { tableRef: RefObject<HTMLTableElement>; useCodegen?: boolean }) {
+  const [shouldRender, setShouldRender] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (useCodegen === false) return;
+
+    const parent = containerRef.current?.parentElement;
+    if (!parent) return;
+
+    const onInteract = () => {
+      let codegenable: boolean | undefined = useCodegen;
+
+      if (codegenable === undefined && tableRef.current) {
+        const ths = tableRef.current.querySelectorAll("thead th");
+        const headings = Array.from(ths).map((th) => th.textContent?.trim().toLowerCase() || "");
+
+        if (
+          (headings[0] === "field" && headings[1] === "type") ||
+          headings[0] === "value" ||
+          (headings[0] === "event" && headings[1] === "value")
+        ) {
+          codegenable = true;
+        } else {
+          codegenable = false;
+        }
+      }
+
+      if (codegenable) {
+        setShouldRender(true);
+      }
+
+      // Cleanup listeners after the first interaction
+      parent.removeEventListener("mouseenter", onInteract);
+      parent.removeEventListener("focusin", onInteract);
+      parent.removeEventListener("touchstart", onInteract);
+    };
+
+    parent.addEventListener("mouseenter", onInteract, { once: true });
+    parent.addEventListener("focusin", onInteract, { once: true });
+    parent.addEventListener("touchstart", onInteract, { once: true, passive: true });
+
+    return () => {
+      parent.removeEventListener("mouseenter", onInteract);
+      parent.removeEventListener("focusin", onInteract);
+      parent.removeEventListener("touchstart", onInteract);
+    };
+  }, [useCodegen, tableRef]);
+
+  if (useCodegen === false) return null;
+
+  if (shouldRender) {
+    return (
+      <div className="absolute top-0 right-0 p-2 px-2">
+        <CopyBar tableRef={tableRef} />
+      </div>
+    );
+  }
+
+  return <div className="absolute top-0 right-0 p-2 px-2" ref={containerRef} />;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- needed to avoid react bug
 export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"] & { useCodegen?: boolean }) {
   const tableRef = useRef<HTMLTableElement>(null);
@@ -144,9 +204,7 @@ export function Table({ ref: _, ...props }: React.JSX.IntrinsicElements["table"]
         {...props}
       />
       {props.useCodegen !== false && (
-        <div className="absolute top-0 right-0 p-2 px-2">
-          <CopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} />
-        </div>
+        <DeferredCopyBar tableRef={tableRef as React.RefObject<HTMLTableElement>} useCodegen={props.useCodegen} />
       )}
     </div>
   );

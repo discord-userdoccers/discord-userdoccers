@@ -2,31 +2,30 @@ import Go from "@components/icons/Go";
 import Python from "@components/icons/Python";
 import Rust from "@components/icons/Rust";
 import TypeScript from "@components/icons/TypeScript";
-import { GoGenerator } from "@lib/type-generator/go";
-import { PythonGenerator } from "@lib/type-generator/python";
-import { RustGenerator } from "@lib/type-generator/rust";
-import { TypescriptGenerator } from "@lib/type-generator/typescript";
 
 export const LANGUAGE_CONFIG = {
   Python: {
     label: "Python",
     icon: Python,
-    generator: (ref: HTMLTableElement) => new PythonGenerator(ref).generateCode(),
+    loadGenerator: () =>
+      import("./python").then((m) => (ref: HTMLTableElement) => new m.PythonGenerator(ref).generateCode()),
   },
   TypeScript: {
     label: "TypeScript",
     icon: TypeScript,
-    generator: (ref: HTMLTableElement) => new TypescriptGenerator(ref).generateCode(),
+    loadGenerator: () =>
+      import("./typescript").then((m) => (ref: HTMLTableElement) => new m.TypescriptGenerator(ref).generateCode()),
   },
   Rust: {
     label: "Rust",
     icon: Rust,
-    generator: (ref: HTMLTableElement) => new RustGenerator(ref).generateCode(),
+    loadGenerator: () =>
+      import("./rust").then((m) => (ref: HTMLTableElement) => new m.RustGenerator(ref).generateCode()),
   },
   Go: {
     label: "Go",
     icon: Go,
-    generator: (ref: HTMLTableElement) => new GoGenerator(ref).generateCode(),
+    loadGenerator: () => import("./go").then((m) => (ref: HTMLTableElement) => new m.GoGenerator(ref).generateCode()),
   },
 } as const;
 

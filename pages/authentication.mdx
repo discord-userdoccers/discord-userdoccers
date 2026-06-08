@@ -110,8 +110,8 @@ Once the user is logged in, the client should store the authentication token to 
 
 ### Passwordless Login
 
-An alternative to the traditional email/password login flow is the WebAuthn Conditional UI flow.
-This [allows users to log in using an WebAuthn device](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/isConditionalMediationAvailable) (e.g. a security key) instead of a password.
+An alternative to the traditional email/password login flow is the WebAuthn Passwordless flow.
+This allows users to log in using an WebAuthn device (e.g. a security key) instead of a password.
 
 To use this flow, the client must first generate a challenge using the [Start Passwordless Login](#start-passwordless-login) endpoint. After the user completes the WebAuthn challenge, the client must use the [Finish Passwordless Login](#finish-passwordless-login) endpoint to complete the login process.
 Using this flow, you must still take care to handle any errors as outlined above.
@@ -213,10 +213,10 @@ Where a login is initiated from outside of the normal login flow.
 
 A partial settings object to bootstrap the client with.
 
-| Field  | Type   | Description                                                                                                   |
-| ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| locale | string | The [language option](/reference#locales) chosen by the user                                                  |
-| theme  | string | The [client theme](/resources/user-settings#theme) selected by the user (only `dark` or `light` are returned) |
+| Field  | Type   | Description                                                             |
+| ------ | ------ | ----------------------------------------------------------------------- |
+| locale | string | The [language option](/reference#locales) chosen by the user            |
+| theme  | string | The [client theme](/resources/user-settings#theme) selected by the user |
 
 ###### Login Required Action Type
 
@@ -234,7 +234,7 @@ Actions the user must complete after a successful login.
   "token": "ODUyODkyMjk3NjYxOTA2OTkz.GX5Xdp.22jsdSqEiHLUYEJSsjeq_vJKLpOofd5QMksqw32e",
   "user_settings": {
     "locale": "en-US",
-    "theme": "dark"
+    "theme": "midnight"
   },
   "required_actions": ["update_password"]
 }
@@ -310,8 +310,36 @@ Suspended authentication tokens cannot be used as a regular authentication token
 }
 ```
 
-<RouteHeader method="POST" url="/auth/conditional/start" unauthenticated>
+<RouteHeader method="POST" url="/auth/passwordless/start" unauthenticated>
   Start Passwordless Login
+</RouteHeader>
+
+Generates a challenge to start the passwordless flow for WebAuthn login.
+
+<Alert type="info">
+
+If this endpoint is requested with a valid authentication token, an [authentication token](<#example-response-(completed)>) will be returned irrespective of the request body.
+
+</Alert>
+
+###### Response Body
+
+| Field     | Type   | Description                                                                                                                                                                           |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ticket    | string | The WebAuthn login ticket                                                                                                                                                             |
+| challenge | string | The stringified JSON [public key credential request options](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#web_authentication_api) challenge for WebAuthn |
+
+###### Example Response
+
+```json
+{
+  "challenge": "{\"publicKey\":{\"challenge\":\"sLPruFUWBzowZjYy5d2caF2067pw44butrN0iHm_8k4\",\"timeout\":60000,\"rpId\":\"discord.com\",\"allowCredentials\":[],\"userVerification\":\"required\",\"extensions\":{\"uvm\":true}}}",
+  "ticket": "b9f98b82-c3a7-49b6-b881-f83418fa2dbe"
+}
+```
+
+<RouteHeader method="POST" url="/auth/conditional/start" unauthenticated>
+  Start Conditional Login
 </RouteHeader>
 
 Generates a challenge to start the conditional UI flow for WebAuthn login.
@@ -319,6 +347,15 @@ Generates a challenge to start the conditional UI flow for WebAuthn login.
 <Alert type="info">
 
 If this endpoint is requested with a valid authentication token, an [authentication token](<#example-response-(completed)>) will be returned irrespective of the request body.
+
+</Alert>
+
+<Alert type="warn">
+
+Unlike [Start Passwordless Login](#start-passwordless-login), the `challenge` returned by this endpoint has
+[`mediation`](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#mediation) set to `conditional`.
+This causes [conditional mediation](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#autofill_ui),
+requiring user interaction before a passkey can be selected.
 
 </Alert>
 
@@ -364,12 +401,12 @@ Suspended authentication tokens cannot be used as a regular authentication token
 
 ###### JSON Params
 
-| Field             | Type    | Description                                                                                                                                     |
-| ----------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| ticket            | string  | The WebAuthn login ticket received from the [Start Passwordless Login](#start-passwordless-login) endpoint                                      |
-| credential        | string  | The stringified JSON [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON) for WebAuthn |
-| login_source?     | ?string | The [source of the login request](#login-source)                                                                                                |
-| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request                                                                                    |
+| Field             | Type    | Description                                                                                                                                                       |
+| ----------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ticket            | string  | The WebAuthn login ticket received from the [Start Passwordless Login](#start-passwordless-login) or [Start Conditional Login](#start-conditional-login) endpoint |
+| credential        | string  | The stringified JSON [public key credential response](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/toJSON) for WebAuthn                   |
+| login_source?     | ?string | The [source of the login request](#login-source)                                                                                                                  |
+| gift_code_sku_id? | ?string | The SKU ID of the gift code that initiated the login request                                                                                                      |
 
 ###### Response Body
 

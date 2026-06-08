@@ -1,86 +1,8 @@
-import React, { createContext, Dispatch, SetStateAction, useCallback, useContext, useEffect, useState } from "react";
-import { toast, ToastContainer, ToastOptions } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { Language } from "@lib/type-generator/languageConfig";
+import { ToastProvider } from "../../components/Toast";
 
-// Define default options, now with Tailwind classes
-const defaultOptions: ToastOptions = {
-  position: "bottom-center",
-  autoClose: 3000,
-  hideProgressBar: false,
-  closeOnClick: true,
-  rtl: false,
-  pauseOnFocusLoss: true,
-  draggable: true,
-  pauseOnHover: true,
-  theme: "light", // Keep the theme option, react-toastify handles it.
-};
-
-// Success and error options (can be extended if needed)
-const successOptions: ToastOptions = {
-  ...defaultOptions,
-  className:
-    "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-100 border border-green-400 dark:border-green-600 rounded-md shadow-lg",
-  // icon: <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-300 mr-2" />,
-};
-
-const errorOptions: ToastOptions = {
-  ...defaultOptions,
-  className:
-    "bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-100 border border-red-400 dark:border-red-600 rounded-md shadow-lg",
-  // icon: <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-300 mr-2" />,
-};
-
-// Define the context for the toast functionality
-interface ToastContextProps {
-  showSuccessToast: (message: React.ReactNode) => void;
-  showErrorToast: (message: React.ReactNode) => void;
-}
-
-const ToastContext = createContext<ToastContextProps | undefined>(undefined);
-
-// Create the Toast Provider component
-const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const showSuccessToast = useCallback((message: React.ReactNode) => {
-    toast.success(message, successOptions);
-  }, []);
-
-  const showErrorToast = useCallback((message: React.ReactNode) => {
-    toast.error(message, errorOptions);
-  }, []);
-
-  const contextValue = {
-    showSuccessToast,
-    showErrorToast,
-  };
-
-  return (
-    <ToastContext.Provider value={contextValue}>
-      {children}
-      <ToastContainer
-        position="bottom-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </ToastContext.Provider>
-  );
-};
-
-// Custom hook to use the toast context
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
-};
+export { useToast } from "../../components/Toast";
 
 // Define the type for the store value.  Use a generic for the localStorage hook
 type StoreValue<T> = T;

@@ -19,10 +19,11 @@ export const Tabs: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="mt-6">
-      <div className="mb-4 flex overflow-x-auto border-b border-gray-200 dark:border-gray-700">
+      <div role="tablist" className="mb-4 flex overflow-x-auto border-b border-gray-200 dark:border-gray-700">
         {tabs.map((tab, index) => (
           <button
             key={index}
+            role="tab"
             className={classNames(
               "font-whitney border-b-2 px-4 py-2 font-bold whitespace-nowrap transition-colors duration-200",
               activeTab === index

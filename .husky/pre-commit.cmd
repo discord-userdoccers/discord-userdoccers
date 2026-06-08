@@ -15,4 +15,9 @@ if !errorlevel! neq 0 (
   exit /b !errorlevel!
 )
 
+pnpm test:links
+if !errorlevel! neq 0 (
+  exit /b !errorlevel!
+)
+
 exit /b 0
