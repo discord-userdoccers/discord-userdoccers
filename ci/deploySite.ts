@@ -16,6 +16,12 @@ declare global {
       DEPLOYMENT_URL: string;
       DEPLOYMENT_ALIAS_URL: string;
       DEPLOYMENT_ID: string;
+
+      DEPLOYMENT_REF: string;
+      // Empty string or number
+      DEPLOYMENT_PR_NUMBER: string;
+      // JSON stringified
+      DEPLOYMENT_DESCRIPTION: string;
     }
   }
 }
@@ -32,6 +38,10 @@ const {
   DEPLOYMENT_URL,
   DEPLOYMENT_ALIAS_URL,
   DEPLOYMENT_ID,
+
+  DEPLOYMENT_REF,
+  DEPLOYMENT_PR_NUMBER,
+  DEPLOYMENT_DESCRIPTION,
 } = process.env;
 
 const ENV_CONF = {
@@ -53,45 +63,6 @@ function truncate(str: string, maxLength: number) {
   return str.slice(0, maxLength - 3) + "...";
 }
 
-async function getMetadata(github: ReturnType<typeof getOctokit>) {
-  const {
-    workflow_run: { event, head_commit, head_sha, pull_requests },
-  } = context.payload as WorkflowRunCompletedEvent;
-
-  if (event == "pull_request") {
-    const [
-      {
-        head: { sha },
-        number,
-      },
-    ] = pull_requests;
-
-    const pr = await github.rest.pulls.get({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      pull_number: number,
-    });
-
-    if (pr.status != 200) {
-      error(pr.data.message ?? "error fetching PR", { title: "Fetching PR Failed" });
-
-      process.exit(1);
-    }
-
-    return {
-      ref: sha,
-      payload: { pull_request: number },
-      description: pr.data.pullRequest.title,
-    };
-  }
-
-  return {
-    ref: head_sha,
-    payload: {},
-    description: head_commit.message,
-  };
-}
-
 async function main() {
   if (!["production", "preview"].includes(DEPLOYMENT_ENVIRONMENT)) {
     error('expected DEPLOYMENT_ENVIRONMENT to be one of ("production", "preview")', {
@@ -105,20 +76,18 @@ async function main() {
 
   const { environment, production_environment } = ENV_CONF[DEPLOYMENT_ENVIRONMENT];
 
-  const { ref, payload, description: rawDescription } = await getMetadata(github);
-
-  const description = truncate(rawDescription.split("\n")[0], 140);
+  const description = truncate(JSON.parse(DEPLOYMENT_DESCRIPTION).split("\n")[0], 140);
 
   const deployment = await github.rest.repos.createDeployment({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    ref,
+    ref: DEPLOYMENT_REF,
     environment,
     production_environment,
     description,
     required_contexts: [],
     auto_merge: false,
-    payload,
+    payload: DEPLOYMENT_PR_NUMBER ? { pull_request: Number(DEPLOYMENT_PR_NUMBER) } : {},
   });
 
   if (deployment.status !== 201) {
@@ -146,7 +115,7 @@ async function main() {
 
 | Name                           | Result                  |
 | ------------------------------ | ----------------------- |
-| **Last commit:**               | ${ref}                  |
+| **Last commit:**               | ${DEPLOYMENT_REF}       |
 | **${environment} URL**:        | ${DEPLOYMENT_URL}       |
 | **Branch ${environment} URL**: | ${DEPLOYMENT_ALIAS_URL} |`,
     )
