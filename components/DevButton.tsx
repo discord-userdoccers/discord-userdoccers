@@ -1,7 +1,6 @@
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from "@headlessui/react";
 import React, { Fragment } from "react";
 import AngleBrackets from "./icons/AngleBrackets";
-import HyperlinkIcon from "./icons/Hyperlink";
 
 const REPO = "https://github.com/discord-userdoccers/discord-userdoccers";
 
