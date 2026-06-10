@@ -58,6 +58,12 @@ function App() {
     if (document.title !== pageTitle) {
       document.title = pageTitle;
     }
+
+    const hash = location.hash.slice(1);
+
+    if (hash) {
+      document.getElementById(hash)?.scrollIntoView();
+    }
   }, [location.pathname]);
 
   const fadeClasses = classNames("sidebar-fade", {
