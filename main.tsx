@@ -25,6 +25,7 @@ import { CodegenLanguageProvider } from "./lib/type-generator/store";
 import OnThisPage from "./components/OnThisPage";
 import { ThemeWatcher } from "./components/ThemeWatcher";
 import navigationData from "./components/navigation/data.json";
+import DevButton from "@components/DevButton";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -98,6 +99,7 @@ function App() {
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
             {component}
+            {import.meta.env.VITE_DEV_BUTTON_COMMIT && <DevButton />}
             <OnThisPage />
             <Suspense fallback={null}>
               <Searchbar />
