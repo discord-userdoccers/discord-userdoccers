@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Setup Variables
-        id: vars
+        id: deploy_vars
         shell: bash
         run: |
           # WARNING:
@@ -72,7 +72,7 @@ jobs:
         run: pnpm install --frozen-lockfile --production=false
 
       - name: Build Search Index
-        if: steps.vars.outputs.event == 'push' && steps.vars.outputs.branch == 'master'
+        if: steps.deploy_vars.outputs.event == 'push' && steps.deploy_vars.outputs.branch == 'master'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: pnpm run prebuild:search
@@ -83,11 +83,11 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy --branch ${{ steps.vars.outputs.deploy_branch }}
+          command: pages deploy --branch ${{ steps.deploy_vars.outputs.deploy_branch }}
 
       - name: Notify Deployment
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
