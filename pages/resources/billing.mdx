@@ -59,20 +59,22 @@ Discord supports a variety of payment providers to enable billing for first-part
 
 ###### Billing Address Structure
 
-| Field        | Type    | Description                           |
-| ------------ | ------- | ------------------------------------- |
-| line_1       | string  | The address of the location           |
-| line_2?      | ?string | The secondary address of the location |
-| name         | string  | The name of the payment source        |
-| postal_code? | string  | The postal code of the location       |
-| city         | string  | The city of the location              |
-| state?       | string  | The state or province of the location |
-| country      | string  | The country of the location           |
+| Field        | Type    | Description                               |
+| ------------ | ------- | ----------------------------------------- |
+| line_1       | string  | The address of the location               |
+| line_2?      | ?string | The secondary address of the location     |
+| name         | string  | The name of the payment source            |
+| postal_code? | string  | The postal code of the location           |
+| city         | string  | The city of the location                  |
+| state?       | string  | The state or province of the location     |
+| country      | string  | The country of the location               |
+| email?       | string  | The email address for the billing address |
 
 ###### Payment Source Type
 
 | Value | Name                    | Description        |
 | ----- | ----------------------- | ------------------ |
+| 0     | UNKNOWN                 | Unknown            |
 | 1     | CARD                    | Credit card        |
 | 2     | PAYPAL                  | PayPal             |
 | 3     | GIROPAY                 | Giropay            |
@@ -92,6 +94,7 @@ Discord supports a variety of payment providers to enable billing for first-part
 | 17    | CASH_APP                | Cash App           |
 | 18    | APPLE                   | Apple Pay          |
 | 19    | TDS_WALLET              | TDS Wallet         |
+| 20    | PIX                     | Pix                |
 
 ###### Payment Gateway
 
@@ -112,10 +115,11 @@ Discord supports a variety of payment providers to enable billing for first-part
 
 ###### Payment Source Flags
 
-| Value    | Name               | Description                                             |
-| -------- | ------------------ | ------------------------------------------------------- |
-| 1 \<\< 0 | NEW                | Payment source is new                                   |
-| 1 \<\< 1 | SUCCESSFUL_PAYMENT | Payment source has been successfully used at least once |
+| Value    | Name               | Description                                              |
+| -------- | ------------------ | -------------------------------------------------------- |
+| 1 \<\< 0 | NEW                | Payment source is new                                    |
+| 1 \<\< 1 | SUCCESSFUL_PAYMENT | Payment source has been successfully used at least once  |
+| 1 \<\< 4 | FAILED_ADDRESS     | Billing address validation failed for the payment source |
 
 ### Gateway Checkout Context Object
 
@@ -268,6 +272,12 @@ Returns a [payment source](#payment-source-object) object for a given payment so
 
 Creates a payment source. Returns a [payment source](#payment-source-object) object on success. Fires a [User Payment Sources Update](/gateway/gateway-events#user-payment-sources-update) Gateway event.
 
+###### Query String Params
+
+| Field     | Type   | Description                                       |
+| --------- | ------ | ------------------------------------------------- |
+| location? | string | The analytics location the request initiated from |
+
 ###### JSON Params
 
 | Field                  | Type                                                 | Description                                                                                           |
@@ -278,6 +288,7 @@ Creates a payment source. Returns a [payment source](#payment-source-object) obj
 | billing_address_token? | string                                               | The validation token obtained from the [Validate Billing Address](#validate-billing-address) endpoint |
 | return_url?            | string                                               | The URL to return to after the payment source is created                                              |
 | bank?                  | string                                               | The bank information for the payment source                                                           |
+| default?               | boolean                                              | Whether the payment source should be the default payment source                                       |
 
 <RouteHeader method="PATCH" url="/users/@me/billing/payment-sources/{payment_source.id}" mfa>
   Modify Payment Source
@@ -306,6 +317,8 @@ Deletes a payment source. Returns a 204 empty response on success. Fires a [User
 
 Validates a billing address.
 
+###### JSON Params
+
 | Field           | Type                                                 | Description                     |
 | --------------- | ---------------------------------------------------- | ------------------------------- |
 | billing_address | [billing address](#billing-address-structure) object | The billing address to validate |
@@ -333,6 +346,26 @@ Creates a Stripe SetupIntent and returns the client secret. See the [Stripe docu
 | Field         | Type   | Description                          |
 | ------------- | ------ | ------------------------------------ |
 | client_secret | string | The client secret of the SetupIntent |
+
+<RouteHeader method="POST" url="/users/@me/billing/stripe/payment-elements/setup-intents">
+  Create Stripe Payment Elements Setup Intent
+</RouteHeader>
+
+Creates a Stripe SetupIntent for Stripe Payment Elements and returns the client secret and custom payment methods.
+
+###### Response Body
+
+| Field                  | Type                                                                                  | Description                                |
+| ---------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------ |
+| client_secret          | string                                                                                | The client secret of the SetupIntent       |
+| custom_payment_methods | array[[Stripe custom payment method](#stripe-custom-payment-method-structure) object] | Custom payment methods for Stripe Elements |
+
+###### Stripe Custom Payment Method Structure
+
+| Field                    | Type    | Description                                                                   |
+| ------------------------ | ------- | ----------------------------------------------------------------------------- |
+| custom_payment_method_id | string  | The ID of the custom payment method                                           |
+| payment_source_type      | integer | The [payment source type](#payment-source-type) for the custom payment method |
 
 <RouteHeader method="POST" url="/users/@me/billing/paypal/billing-agreement-tokens">
   Create PayPal Billing Agreement Token
