@@ -40,7 +40,7 @@ The voice server does not provide a default version. You must explicitly pass a 
 | 5       | Available   | Added [Opcode 15 Media Sink Wants](#gateway-events)                                                     |
 | 4       | Available   | Changed [speaking status](#speaking-flags) from boolean to bitmask                                      |
 | 3       | Deprecated  | Added video functionality, consolidated [Opcode 1 Hello](#gateway-events) payload                       |
-| 2       | Deprecated  | Changed Gateway heartbeat reply to [Opcode 6 Heartbeak ACK](#gateway-events)                            |
+| 2       | Deprecated  | Changed Gateway heartbeat reply to [Opcode 6 Heartbeat ACK](#gateway-events)                            |
 | 1       | Deprecated  | Initial version                                                                                         |
 
 ###### Gateway Commands
@@ -54,7 +54,13 @@ The voice server does not provide a default version. You must explicitly pass a 
 | [Select Protocol](#select-protocol-structure)             | Select the voice protocol and mode        |
 | [Session Update](<#session-update-structure-(send)>)      | Indicate the client's supported codecs    |
 | [Speaking](#speaking-structure)                           | Indicate the user's speaking state        |
+| [Video](#video)                                           | Indicate the user's video state           |
 | [Voice Backend Version](#voice-backend-version-structure) | Request the current voice backend version |
+| [DAVE Protocol Transition Ready](#protocol-transitions)   | Indicate that a DAVE transition is ready  |
+| [MLS Key Package](#key-packages)                          | Send an MLS key package                   |
+| [MLS Commit Welcome](#proposals-and-commits)              | Send an MLS commit and optional welcome   |
+| [MLS Invalid Commit Welcome](#invalid-group)              | Report an invalid MLS commit or welcome   |
+| [No Route](#no-route)                                     | Indicate that no RTC route was available  |
 
 ###### Gateway Events
 
@@ -62,11 +68,18 @@ The voice server does not provide a default version. You must explicitly pass a 
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | [Hello](#hello-structure)                                           | Defines the heartbeat interval                                                                                       |
 | [Heartbeat ACK](#example-heartbeat-ack)                             | Acknowledges a received client heartbeat                                                                             |
+| [DAVE Protocol Execute Transition](#protocol-transitions)           | Execute a prepared DAVE protocol or MLS group transition                                                             |
+| [DAVE Protocol Prepare Epoch](#version-change-&-upgrade)            | Prepare a DAVE protocol version or MLS epoch transition                                                              |
+| [DAVE Protocol Prepare Transition](#downgrade)                      | Prepare a transition away from the current DAVE protocol                                                             |
 | [Clients Connect](#client-connections)                              | A user connected to voice, also sent on initial connection to inform the client of existing users                    |
 | [Client Flags](#client-connections)                                 | Contains the flags of a user that connected to voice, also sent on initial connection for each existing user         |
 | [Client Platform](#client-connections)                              | Contains the platform type of a user that connected to voice, also sent on initial connection for each existing user |
 | [Client Disconnect](#client-disconnections)                         | A user disconnected from voice                                                                                       |
 | [Media Sink Wants](#simulcasting)                                   | Requested media stream quality updated                                                                               |
+| [MLS Announce Commit Transition](#proposals-and-commits)            | Dispatches the winning MLS commit for the current epoch                                                              |
+| [MLS External Sender Package](#external-sender)                     | Provides the voice server's MLS external sender package                                                              |
+| [MLS Proposals](#proposals-and-commits)                             | Dispatches MLS proposals that group members must process                                                             |
+| [MLS Welcome](#welcome)                                             | Welcomes a pending member into the MLS group                                                                         |
 | [Ready](#ready-structure)                                           | Contains SSRC, IP/Port, experiment, and encryption mode information                                                  |
 | [Resumed](#example-resumed)                                         | Acknowledges a successful connection resume                                                                          |
 | [Session Description](#session-description-structure)               | Acknowledges a successful protocol selection and contains the information needed to send/receive RTC data            |
@@ -149,7 +162,7 @@ All JSON payloads sent to the Gateway must be text frames. Binary frames are not
 
 | Field           | Type                                                     | Description                                     |
 | --------------- | -------------------------------------------------------- | ----------------------------------------------- |
-| type ^1^        | string                                                   | The [type of media stream](#media-type) to send |
+| type            | string                                                   | The [type of media stream](#media-type) to send |
 | rid             | string                                                   | The RTP stream ID                               |
 | quality?        | integer                                                  | The media quality to send (0-100, default 0)    |
 | active?         | boolean                                                  | Whether the stream is active (default false)    |
@@ -159,16 +172,16 @@ All JSON payloads sent to the Gateway must be text frames. Binary frames are not
 | ssrc?           | integer                                                  | The SSRC of the stream                          |
 | rtx_ssrc?       | integer                                                  | The SSRC of the retransmission stream           |
 
-^1^ Currently, this field is ignored and always set to `video`.
-
 ###### Media Type
 
-| Value  | Description |
-| ------ | ----------- |
-| audio  | Audio       |
-| video  | Video       |
-| screen | Screenshare |
-| test   | Speed test  |
+| Value      | Description |
+| ---------- | ----------- |
+| audio      | Audio       |
+| video      | Video       |
+| screen ^1^ | Screenshare |
+| test       | Speed test  |
+
+^1^ For stream connections, clients may offer `screen` in [Identify](#identify-structure). The voice server will still populate the negotiated stream as `video` in [Ready](#ready-structure), as `video` is the actual underlying media type.
 
 ###### Stream Resolution Structure
 
@@ -192,6 +205,7 @@ All JSON payloads sent to the Gateway must be text frames. Binary frames are not
   "op": 0,
   "d": {
     "server_id": "41771983423143937",
+    "channel_id": "127121515262115840",
     "user_id": "104694319306248192",
     "session_id": "30f32c5d54ae86130fc4a215c7474263",
     "token": "66d29164ee8cd919",
@@ -259,6 +273,8 @@ The voice server should respond with an [Opcode 2 Ready](#gateway-events) payloa
 }
 ```
 
+When `streams` is populated, the voice server has assigned local send SSRCs for the offered simulcast streams. Use each stream's `ssrc` and `rtx_ssrc` when announcing local video state with [Opcode 12 Video](#video), and when configuring a custom RTP/WebRTC packetizer.
+
 ### Establishing a Voice Connection
 
 Once we receive the properties of a voice server from our [Ready](#ready-structure) payload, we can proceed to the final step of voice connections, which entails establishing and handshaking a connection for RTC data.
@@ -266,13 +282,13 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 
 ###### Select Protocol Structure
 
-| Field              | Type                                                 | Description                                                  |
-| ------------------ | ---------------------------------------------------- | ------------------------------------------------------------ |
-| protocol           | string                                               | The [voice protocol](#protocol-type) to use                  |
-| data               | ?[protocol data](#protocol-data-structure) \| string | The voice connection data or WebRTC SDP                      |
-| rtc_connection_id? | string                                               | The UUID RTC connection ID, used for analytics               |
-| codecs?            | array[[codec](#codec-structure) object]              | The supported audio/video codecs                             |
-| experiments?       | array[string]                                        | The [received voice experiments](#ready-structure) to enable |
+| Field              | Type                                                 | Description                                                                       |
+| ------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------- |
+| protocol           | string                                               | The [voice protocol](#protocol-type) to use                                       |
+| data               | ?[protocol data](#protocol-data-structure) \| string | The voice connection data or WebRTC SDP                                           |
+| rtc_connection_id? | string                                               | The UUID RTC connection ID, used for analytics                                    |
+| codecs?            | array[[codec](#codec-structure) object]              | The supported audio/video codecs                                                  |
+| experiments?       | array[string]                                        | The [received voice experiments](#ready-structure) or selected experiments to use |
 
 ###### Protocol Type
 
@@ -389,16 +405,17 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
 
 ###### Session Description Structure
 
-| Field                 | Type           | Description                                                                                  |
-| --------------------- | -------------- | -------------------------------------------------------------------------------------------- |
-| audio_codec           | string         | The audio codec to use                                                                       |
-| video_codec           | string         | The video codec to use                                                                       |
-| media_session_id      | string         | The media session ID, used for analytics                                                     |
-| mode?                 | string         | The [transport encryption mode](#transport-encryption-mode) to use, not applicable to WebRTC |
-| secret_key?           | array[integer] | The 32 byte secret key used for encryption, not applicable to WebRTC                         |
-| sdp?                  | string         | The WebRTC session description protocol                                                      |
-| keyframe_interval?    | integer        | The keyframe interval in milliseconds                                                        |
-| dave_protocol_version | integer        | The DAVE protocol version to use, where 0 indicates no DAVE support                          |
+| Field                            | Type           | Description                                                                                  |
+| -------------------------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| audio_codec                      | string         | The audio codec to use                                                                       |
+| video_codec                      | string         | The video codec to use                                                                       |
+| media_session_id                 | string         | The media session ID, used for analytics                                                     |
+| mode?                            | string         | The [transport encryption mode](#transport-encryption-mode) to use, not applicable to WebRTC |
+| secret_key?                      | array[integer] | The 32 byte secret key used for encryption, not applicable to WebRTC                         |
+| sdp?                             | string         | The WebRTC session description protocol                                                      |
+| keyframe_interval?               | integer        | The keyframe interval in milliseconds                                                        |
+| bandwidth_estimation_experiment? | string         | The selected bandwidth estimation experiment                                                 |
+| dave_protocol_version?           | integer        | The DAVE protocol version to use, where 0 indicates no DAVE support                          |
 
 ###### Example Session Description
 
@@ -462,15 +479,16 @@ When a call is E2EE, all members of the call exchange keys via a [Messaging Laye
 
 ### Binary Websocket Messages
 
-To reduce overhead, some of the new DAVE protocol opcodes are sent as binary instead of JSON text. See the format column in [voice opcodes](/gateway/opcodes-and-close-codes#voice) to identify them. Binary websocket messages have the following format:
+To reduce overhead, some of the new DAVE protocol opcodes are sent as binary instead of JSON text. See the format column in [voice opcodes](/gateway/opcodes-and-close-codes#voice) to identify them.
+Client-to-server binary messages start with a 1-byte opcode followed by the payload. Server-to-client binary messages on Gateway v8 and above include a 2-byte sequence number before the opcode:
 
-| Field        | Type                          | Description                   | Size           |
-| ------------ | ----------------------------- | ----------------------------- | -------------- |
-| Sequence ^1^ | Unsigned short (big endian)   | Sequence number               | 2 bytes        |
-| Opcode       | Unsigned integer (big endian) | Unsigned integer opcode value | 1 bytes        |
-| Payload      | Binary data                   | Format defined by opcode      | Variable bytes |
+| Field        | Type                        | Description              | Size           |
+| ------------ | --------------------------- | ------------------------ | -------------- |
+| Sequence ^1^ | Unsigned short (big endian) | Sequence number          | 2 bytes        |
+| Opcode       | Unsigned byte               | Opcode value             | 1 byte         |
+| Payload      | Binary data                 | Format defined by opcode | Variable bytes |
 
-^1^ Sequence numbers are only sent from the server to the client, and all server-sent binary opcodes require the sequence number. See [Buffered Resume](#buffered-resume) for further details on how sequence numbers are used when present.
+^1^ Sequence numbers are only sent from the server to the client on Gateway v8 and above. See [Buffered Resume](#buffered-resume) for further details on how sequence numbers are used when present.
 
 ### Indicating DAVE Protocol Support
 
@@ -788,7 +806,311 @@ Likewise, Discord will send [RTCP Receiver Reports](http://www.rfcreader.com/#rf
 
 ## WebRTC Connections
 
-WebRTC allows for direct peer-to-peer voice connections, and is most commonly used in browsers. To use WebRTC, you must first send a [Select Protocol](#establishing-a-voice-connection) payload as outlined above, with the `protocol` field set to `webrtc`, and `data` set to the client's WebRTC SDP. The voice server will respond with a [Session Description](#session-description-structure) payload, with the `sdp` field set to the server's WebRTC SDP. The client can then use this SDP to establish a WebRTC connection.
+WebRTC is the browser-compatible voice transport. Despite the name, modern Discord WebRTC voice is not peer-to-peer between users. The browser establishes a WebRTC connection to Discord's RTC worker/SFU,
+while the voice Gateway WebSocket continues to carry signaling, user, SSRC, video, and media-sink state.
+
+WebRTC replaces the UDP-specific parts of the flow. It does not use [IP Discovery](#ip-discovery), UDP protocol data, `mode`, `secret_key`, or the transport encryption modes from [UDP connections](#udp-connections).
+Browser media is protected by ICE, DTLS, and SRTP; when DAVE is active, encoded media frames are additionally encrypted with [DAVE](#end-to-end-encryption).
+
+### Peer Connection Configuration
+
+Modern Discord WebRTC clients use Unified Plan and bundle all media onto one ICE/DTLS transport:
+
+```js
+const pc = new RTCPeerConnection({
+  bundlePolicy: "max-bundle",
+  sdpSemantics: "unified-plan",
+  encodedInsertableStreams: daveEnabled,
+});
+```
+
+Create the base receive transceivers before the first offer. These establish stable media sections and `mid` values for answer generation:
+
+```js
+const audio = pc.addTransceiver("audio", { direction: "recvonly" });
+const video = pc.addTransceiver("video", { direction: "recvonly" });
+```
+
+When the local microphone or camera is enabled, replace the sender track on the matching transceiver and set its direction to `sendrecv`. When a local track is removed, replace it with `null` and set the direction back to `recvonly`. If the track identity changes, renegotiate.
+
+If DAVE is enabled, attach encoded frame transforms to every sender and receiver before media flows. Browser support may be exposed through `RTCRtpScriptTransform` or through the older `RTCRtpSender.createEncodedStreams()` and `RTCRtpReceiver.createEncodedStreams()` APIs.
+
+### Local Offer Processing
+
+The browser's full local offer is not sent to the voice server. Discord web clients derive three pieces of state from the offer:
+
+1. **SDP fragment**: Sent as `data` in [Select Protocol](#select-protocol-structure)
+2. **Codec list**: Sent as `codecs` in [Select Protocol](#select-protocol-structure)
+3. **Outbound streams**: Kept locally to synthesize the eventual browser remote answer from the server-provided SDP data
+
+#### Outbound Streams
+
+For every media section in the browser offer, record:
+
+| Field       | Source                    | Description                                           |
+| ----------- | ------------------------- | ----------------------------------------------------- |
+| `type`      | `m=<type>`                | `audio` or `video`                                    |
+| `mid`       | `a=mid:<mid>`             | Browser media-section ID                              |
+| `direction` | media direction attribute | One of `sendrecv`, `sendonly`, `recvonly`, `inactive` |
+
+This list is later used to generate one answer media section for each offered media section. Do not remove, reorder, or collapse entries in this list.
+
+#### Codec Extraction
+
+Extract codecs from the offer's `a=rtpmap` and `a=fmtp` lines. Discord clients advertise only codecs that are present in the browser offer. Opus is used for audio. For video, modern clients prefer H265 when it is enabled and present, otherwise they use H264 first, followed by VP8 and VP9.
+
+For each codec:
+
+1. Find the `a=rtpmap:<payload> <codec>/<clock>` entry for the codec name.
+2. Set `payload_type` to that RTP payload number.
+3. For video, find a matching RTX payload by locating an `a=fmtp:<rtx-payload> apt=<payload>` line whose `apt` points back to the video payload, then find the corresponding `a=rtpmap:<rtx-payload> rtx/90000` line.
+4. Set `rtx_payload_type` to the RTX payload number for video, or `null` for audio.
+5. Assign codec priority by codec order within each media type, multiplied by 1000 on the wire.
+
+The codec order used by modern clients is:
+
+- Audio: `opus`
+- Video: `H265`, `H264`, `VP8`, and `VP9`
+
+For browser-generated offers, the browser chooses the dynamic payload types. Do not rewrite browser WebRTC payload types to UDP defaults. For example, Opus is usually payload type `111` in browser offers, not the default UDP Opus payload type `120`.
+Non-browser WebRTC stacks that construct their own offer may choose different dynamic payload types, but the payload numbers must remain consistent across the local SDP, [Select Protocol](#select-protocol-structure) codec list, and generated answer.
+
+#### Local SSRC Extraction
+
+When a local media section is `sendrecv`, extract the local SSRCs from `a=ssrc` lines:
+
+| Media | Extracted value | Source                                                              |
+| ----- | --------------- | ------------------------------------------------------------------- |
+| audio | Audio SSRC      | First audio `a=ssrc:<ssrc> cname:...` in a `sendrecv` audio section |
+| video | Video SSRC      | First video `a=ssrc:<ssrc> cname:...` in a `sendrecv` video section |
+| video | RTX SSRC        | Last video `a=ssrc:<ssrc> cname:...` in a `sendrecv` video section  |
+
+The local audio/video SSRCs are used for [Speaking](#speaking), [Video](#video), and DAVE sender state. The video and RTX SSRCs should also be reflected in the [Video](#video) payload's stream parameters.
+
+### Select Protocol SDP Fragment
+
+The `data` field in a WebRTC [Select Protocol](#select-protocol-structure) payload is not the full local SDP. It is a stripped SDP fragment built from the browser's local offer after ICE gathering has completed.
+
+Build it from the full local SDP using this exact rule:
+
+1. Keep every line matching `^a=(extmap-allow-mixed|ice-|fingerprint|extmap:)`.
+2. Keep only `a=rtpmap` lines for Opus, VP8, and the RTX payload whose `apt` points at VP8.
+3. Remove duplicates.
+4. Join the remaining lines with `\n`.
+
+Other video codecs are still advertised in the `codecs` field of [Select Protocol](#select-protocol-structure) when they are present in the browser offer; their `a=rtpmap` lines are not included in this SDP fragment.
+
+In pseudocode:
+
+```js
+const vp8Codec = codecs.find((codec) => codec.name === "VP8");
+
+const data = localSdp
+  .split(/\r?\n/)
+  .filter((line) => {
+    if (/^a=(extmap-allow-mixed|ice-|fingerprint|extmap:)/i.test(line)) return true;
+    if (/^a=rtpmap:\d+\s+opus\//i.test(line)) return true;
+    if (/^a=rtpmap:\d+\s+VP8\//i.test(line)) return true;
+    const rtxRtpmap = /^a=rtpmap:(\d+)\s+rtx\//i.exec(line);
+    return rtxRtpmap != null && Number(rtxRtpmap[1]) === vp8Codec?.rtx_payload_type;
+  })
+  .filter((line, index, lines) => lines.indexOf(line) === index)
+  .join("\n");
+```
+
+The fragment intentionally does **not** contain `v=`, `o=`, `s=`, `t=`, `m=`, `c=`, `a=group`, `a=mid`, `a=setup`, `a=rtcp-mux`, `a=sendrecv`, `a=recvonly`, `a=ssrc`, `a=fmtp`, or `a=rtcp-fb` lines.
+
+###### Example Select Protocol SDP Fragment
+
+```sh
+a=extmap-allow-mixed
+a=ice-ufrag:9WZo
+a=ice-pwd:vcfFowC3gQI1KHu0Fm5ZTXum
+a=ice-options:trickle
+a=fingerprint:sha-256 71:20:4C:BE:C2:D0:B7:9B:73:5B:4B:29:7C:32:41:25:D8:D2:BC:66:74:D3:93:98:B3:0D:01:F7:67:19:01:13
+a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:4 urn:ietf:params:rtp-hdrext:sdes:mid
+a=rtpmap:111 opus/48000/2
+a=extmap:14 urn:ietf:params:rtp-hdrext:toffset
+a=extmap:13 urn:3gpp:video-orientation
+a=extmap:5 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/video-content-type
+a=extmap:7 http://www.webrtc.org/experiments/rtp-hdrext/video-timing
+a=extmap:8 http://www.webrtc.org/experiments/rtp-hdrext/color-space
+a=extmap:10 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id
+a=extmap:11 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id
+a=rtpmap:96 VP8/90000
+a=rtpmap:97 rtx/90000
+```
+
+### Server SDP Validation
+
+For WebRTC, [Session Description](#session-description-structure) contains `sdp` instead of `mode` and `secret_key`. The server `sdp` must include the transport information needed to construct the browser remote answer.
+
+Validate at least the following before generating the answer:
+
+| Required data         | Required line pattern or field                |
+| --------------------- | --------------------------------------------- |
+| DTLS fingerprint      | `a=fingerprint:...`                           |
+| ICE username fragment | `a=ice-ufrag:...`                             |
+| ICE password          | `a=ice-pwd:...`                               |
+| ICE candidate         | `a=candidate:...`                             |
+| Connection address    | `c=<nettype> <addrtype> <connection-address>` |
+
+The `c=` line must have at least three space-separated components. If any of these are absent, the SDP cannot produce a valid browser remote description.
+
+### Generating the Browser Remote Answer
+
+The `sdp` value from [Session Description](#session-description-structure) is not enough by itself to describe all remote users and browser transceivers. Discord web clients synthesize a complete `RTCSessionDescription` of type `answer` by combining:
+
+- The server `sdp` transport/codec template,
+- The selected `audio_codec` and `video_codec`,
+- The selected audio, video, and RTX payload types from the local offer,
+- The local offer's outbound stream list (`type`, `mid`, `direction`),
+- Known remote user audio/video SSRCs from [Speaking](#speaking) and [Video](#video), and
+- The RTP header extensions extracted from the local offer.
+
+The generated answer has the following session-level shape:
+
+```sh
+v=0
+o=- 1420070400000 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE <space-separated mids>
+a=msid-semantic: WMS *
+```
+
+The BUNDLE mids are the `mid` values of every generated media section that has a `mid`.
+
+For every media section from the local offer's outbound stream list, generate exactly one answer media section, in the same order. The answer direction is based on the offer direction:
+
+| Offer direction | Answer direction when a remote SSRC is assigned | Answer direction when no remote SSRC is assigned |
+| --------------- | ----------------------------------------------- | ------------------------------------------------ |
+| `recvonly`      | `sendonly`                                      | `inactive`                                       |
+| `sendonly`      | `recvonly`                                      | `recvonly`                                       |
+| `sendrecv`      | `sendrecv`                                      | `recvonly`                                       |
+| `inactive`      | `inactive`                                      | `inactive`                                       |
+
+The remote answer must keep the same m-line count and order as the local offer. If another remote user is discovered and there are not enough inactive receive transceivers for that media type, add more `recvonly` transceivers and create a new local offer before generating the next answer. Do not reorder existing transceivers.
+
+The transceiver and remote-user assignment rules above describe browser clients. Custom WebRTC stacks that construct their own local offer with fixed send/receive m-lines can generate a simpler answer for those offered m-lines, as long as the answer preserves the offer's m-line count and order and uses the negotiated transport, codec, SSRC, and RTP extension values consistently.
+
+Each generated media section uses:
+
+| Property      | Value                                                        |
+| ------------- | ------------------------------------------------------------ |
+| `m=` protocol | `UDP/TLS/RTP/SAVPF`                                          |
+| `a=setup`     | `passive` for the answer                                     |
+| `a=mid`       | The original offered media section's `mid`                   |
+| `a=rtcp-mux`  | Present                                                      |
+| payloads      | Selected codec payload, plus RTX payload for video when used |
+
+Custom WebRTC stacks that construct their own answers may include `a=ice-lite` for easier implementation.
+
+#### Answer Audio Media Sections
+
+For an audio media section:
+
+| SDP field    | Value                                                                  |
+| ------------ | ---------------------------------------------------------------------- |
+| `a=rtpmap`   | Selected audio payload with `opus/48000/2`                             |
+| `a=fmtp`     | For Opus: `minptime=10;useinbandfec=1;usedtx=<0 or 1>`                 |
+| `a=maxptime` | `60`                                                                   |
+| `a=rtcp-fb`  | `transport-cc`, optionally `nack`, except in Firefox-specific handling |
+| `a=extmap`   | Audio level and transport-wide congestion control, when offered        |
+
+`usedtx` is `0` when the local client is sending video and `1` otherwise.
+
+#### Answer Video Media Sections
+
+For a video media section:
+
+| SDP field      | Value                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| `a=rtpmap`     | Selected video payload with a 90 kHz clock rate                                              |
+| `a=fmtp`       | `x-google-max-bitrate=<kbps>`                                                                |
+| H264 `a=fmtp`  | Also include `level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f`        |
+| `a=rtcp-fb`    | `ccm fir`, `nack`, `nack pli`, `goog-remb`, and `transport-cc`                               |
+| RTX `a=rtpmap` | RTX payload with `rtx/90000`, when RTX is used                                               |
+| RTX `a=fmtp`   | `apt=<video-payload>`                                                                        |
+| `a=extmap`     | Video timestamp, orientation, congestion-control, and playout-delay extensions, when offered |
+
+Video answers include RTX by appending the RTX payload to the media payload list and adding the RTX `rtpmap` and `fmtp` lines.
+
+#### Answer SSRC and MSID Lines
+
+For an assigned stream, generate SSRC metadata from the remote user ID and SSRC. For a primary SSRC `S`, user ID `U`, and media sentinel `a` for audio or `v` for video:
+
+```sdp
+a=ssrc:S cname:U-S
+a=ssrc:S msid:U-S <sentinel>U-S
+a=ssrc:S mslabel:U-S
+a=ssrc:S label:<sentinel>U-S
+```
+
+In Unified Plan, browsers generally require the media-level `a=msid` and only the `cname` SSRC attribute:
+
+```sdp
+a=msid:U-S <sentinel>U-S
+a=ssrc:S cname:U-S
+```
+
+For video with RTX, include an `FID` SSRC group and matching SSRC metadata for the retransmission SSRC. The web SDP generator derives the answer-side retransmission SSRC as the primary video SSRC plus one; it does not consume the `rtx_ssrc` value from a received [Video](#video) stream object when building the answer:
+
+```sdp
+a=ssrc-group:FID <video-ssrc> <rtx-ssrc>
+```
+
+### Transceivers, SSRCs, and Remote Users
+
+Discord still uses voice Gateway events to identify users and SSRCs. WebRTC clients should not rely only on browser track arrival order to identify speakers.
+
+Use [Speaking](#speaking) events to learn a user's audio SSRC. Use [Video](#video) events to learn a user's video SSRC and stream parameters, including any `rtx_ssrc` metadata reported by the Gateway. The browser answer assigns receive media sections from the primary audio and video SSRCs;
+RTX metadata in the answer is generated from the assigned primary video SSRC. When a new remote SSRC appears, ensure there is a receive transceiver available for the corresponding media type and renegotiate if necessary.
+
+In Unified Plan, the generated remote description should assign incoming SSRCs to media sections by `mid`. When there are more remote audio or video streams than inactive receive transceivers, add new `recvonly` transceivers and create a new offer before applying the next answer. Do not reorder existing transceivers because browsers require remote answers to keep the offer's m-line order.
+
+Incoming `MediaStreamTrack` objects can be mapped back to users using the SSRC/user mapping from Gateway events and, where present, the SDP `msid`/stream labels. Treat the voice Gateway SSRC mapping as authoritative.
+
+### Local Media State
+
+The WebRTC transport uses normal browser `MediaStreamTrack` objects for local microphone and camera media. Muting should stop microphone media from being sent; web clients can do this by disabling the local audio track and sending a non-speaking state. Replacing the sender track with `null` is used when the local stream or track is removed. Camera changes require renegotiation when the video track changes.
+
+When a local camera stream starts, clients should also send [Opcode 12 Video](#video) with the current audio SSRC, video SSRC, RTX SSRC, and stream parameters. When camera stops, send another Video payload indicating an inactive or zero video SSRC state, depending on the negotiated state.
+
+Screenshare/Go Live streams use separate stream connections, as described in [Streams](#streams), even when the transport for that stream connection is WebRTC.
+
+### RTP Header Extensions
+
+The Select Protocol SDP fragment sends every `a=extmap` line from the local offer. During answer generation, include only extensions that make sense for the media section.
+Note that not all extensions are necessarily offered in every WebRTC client or available in every browser.
+
+Browser clients let the browser serialize RTP header extensions. Custom packetizers should use the negotiated extension IDs from their SDP and include Discord-required extensions themselves; in particular, video packets are expected to carry the playout-delay extension when that extension is negotiated.
+
+Currently, these extension URIs are included:
+
+| Extension URI                                                               | Answer media section | Usage                             |
+| --------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| `urn:ietf:params:rtp-hdrext:ssrc-audio-level`                               | Audio                | Audio level reporting             |
+| `http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01` | Audio and video      | Transport-wide congestion control |
+| `urn:ietf:params:rtp-hdrext:toffset`                                        | Video                | Video timestamp offset            |
+| `http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time`                | Video                | Absolute send time                |
+| `urn:3gpp:video-orientation`                                                | Video                | Video rotation/orientation        |
+| `http://www.webrtc.org/experiments/rtp-hdrext/playout-delay`                | Video                | Video playout delay               |
+
+### Congestion, Quality, and Sink Wants
+
+After WebRTC is connected, the client should continue sending [Media Sink Wants](#simulcasting) for remote video streams.
+
+WebRTC clients should monitor `RTCPeerConnection.getStats()` for packet loss, jitter, frames, bitrate, and round-trip time. Discord clients use these stats for connection quality, video quality, ping display, stream health, and analytics.
+
+### WebRTC and DAVE
+
+DAVE negotiation uses the same voice Gateway fields and opcodes for UDP and WebRTC.
+The WebRTC-specific requirement is that encoded frame encryption/decryption must be attached to each relevant sender and receiver. If encoded transforms are unavailable, the client should advertise DAVE protocol version `0` and expect calls that require E2EE to close with the relevant voice close code.
 
 ## Speaking
 
@@ -947,13 +1269,13 @@ When your client detects that its connection has been severed, it should open a 
 
 ###### Resume Structure
 
-| Field          | Type      | Description                                               |
-| -------------- | --------- | --------------------------------------------------------- |
-| server_id      | snowflake | The ID of the guild or private channel being connected to |
-| channel_id ^2^ | snowflake | The ID of the channel being connected to                  |
-| session_id     | string    | The session ID of the current session                     |
-| token          | string    | The voice token for the current session                   |
-| seq_ack? ^1^   | integer   | The last received sequence number                         |
+| Field          | Type      | Description                                                               |
+| -------------- | --------- | ------------------------------------------------------------------------- |
+| server_id      | snowflake | The ID of the guild, private channel, stream, or lobby being connected to |
+| channel_id ^2^ | snowflake | The ID of the channel being connected to                                  |
+| session_id     | string    | The session ID of the current session                                     |
+| token          | string    | The voice token for the current session                                   |
+| seq_ack? ^1^   | integer   | The last received sequence number                                         |
 
 ^1^ Only available on Gateway v8 and above.
 
@@ -966,8 +1288,10 @@ When your client detects that its connection has been severed, it should open a 
   "op": 7,
   "d": {
     "server_id": "41771983423143937",
+    "channel_id": "127121515262115840",
     "session_id": "30f32c5d54ae86130fc4a215c7474263",
-    "token": "66d29164ee8cd919"
+    "token": "66d29164ee8cd919",
+    "seq_ack": 10
   }
 }
 ```
@@ -1029,9 +1353,9 @@ These events are meant to inform a new client of all existing clients and their 
 
 ###### Clients Connect Structure
 
-| Field    | Type      | Description                         |
-| -------- | --------- | ----------------------------------- |
-| user_ids | snowflake | The IDs of the users that connected |
+| Field    | Type             | Description                         |
+| -------- | ---------------- | ----------------------------------- |
+| user_ids | array[snowflake] | The IDs of the users that connected |
 
 ###### Example Clients Connect
 
@@ -1142,6 +1466,14 @@ This functionality is only available on [Gateway version 5 and above](#gateway-v
 
 </Alert>
 
+###### Media Sink Wants Structure
+
+| Field        | Type                    | Description                                                       |
+| ------------ | ----------------------- | ----------------------------------------------------------------- |
+| {ssrc}?      | integer                 | Desired quality for the stream with the matching SSRC key (0-100) |
+| any?         | integer                 | Desired quality for all otherwise unspecified streams (0-100)     |
+| pixelCounts? | object[integer, number] | Desired approximate pixel count for each stream, keyed by SSRC    |
+
 ###### Example Media Sink Wants
 
 ```json
@@ -1149,6 +1481,7 @@ This functionality is only available on [Gateway version 5 and above](#gateway-v
   "op": 15,
   "d": {
     "8964": 100,
+    "any": 50,
     "pixelCounts": {
       "8964": 1189844.5769597634
     }
@@ -1158,7 +1491,7 @@ This functionality is only available on [Gateway version 5 and above](#gateway-v
 
 ## Voice Backend Version
 
-For analytics, the client may want to receive information about the voice backend's current version. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload:
+For analytics, the client may want to receive information about the voice backend's current version. To do so, send an [Opcode 16 Voice Backend Version](#gateway-commands) with an empty payload.
 
 <Alert type="warn">
 
@@ -1182,7 +1515,7 @@ This functionality is only available on [Gateway version 6 and above](#gateway-v
 }
 ```
 
-In response, the voice server will send an [Opcode 16 Voice Backend Version](#gateway-commands) payload with the versions:
+In response, the voice server will send an [Opcode 16 Voice Backend Version](#gateway-events) payload with the versions:
 
 ###### Example Voice Backend Version (Receive)
 
@@ -1193,6 +1526,20 @@ In response, the voice server will send an [Opcode 16 Voice Backend Version](#ga
     "voice": "0.9.1",
     "rtc_worker": "0.3.35"
   }
+}
+```
+
+## No Route
+
+If a client cannot establish any usable RTC route after selecting a protocol, it may send an [Opcode 32 No Route](#gateway-commands) payload with an empty payload.
+This informs the voice server that connection setup failed at the RTC transport layer.
+
+###### Example No Route
+
+```json
+{
+  "op": 32,
+  "d": {}
 }
 ```
 
