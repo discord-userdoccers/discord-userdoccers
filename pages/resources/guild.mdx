@@ -1797,6 +1797,95 @@ Represents a member's premium guild subscription ([boost](https://support.discor
 }
 ```
 
+### Guild Product Listing Object
+
+###### Guild Product Listing Structure
+
+| Field             | Type                                                             | Description                                                         |
+| ----------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------- |
+| id                | snowflake                                                        | The ID of the SKU                                                   |
+| application_id    | snowflake                                                        | The ID of the application                                           |
+| guild_id          | snowflake                                                        | The ID of the guild                                                 |
+| name              | string                                                           | The name of the product listing                                     |
+| description       | string                                                           | The description of the product listing                              |
+| image_asset       | ?[store asset](/resources/store#store-asset-object) object       | The thumbnail of the product listing                                |
+| role_id           | snowflake                                                        | The ID of the role                                                  |
+| published         | boolean                                                          | Whether the product listing is published                            |
+| has_entitlement   | boolean                                                          | Whether the current user has an entitlement for the product listing |
+| attachments_count | integer                                                          | Number of the attachments on the product listing                    |
+| published_at      | ISO8601 timestamp                                                | When the product listing was published at                           |
+| price_tier        | integer                                                          | The [base price](/resources/store#get-store-price-tiers) of the SKU |
+| attachments       | array[[attachment](/resources/message#attachment-object) object] | The attached attachments on the product listing                     |
+| price             | [unit price](/resources/payment#unit-price-structure) object     | The price for the product listing                                   |
+
+### Guild Role Subscription Group Listing Object
+
+###### Guild Role Subscription Group Listing Structure
+
+| Field                      | Type                                                                                                        | Description                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| id                         | snowflake                                                                                                   | The ID of the subscription group listing          |
+| guild_id                   | snowflake                                                                                                   | The ID of the guild                               |
+| application_id             | snowflake                                                                                                   | The ID of the application                         |
+| name                       | string                                                                                                      | The name of the subscription group listing        |
+| description                | string                                                                                                      | The description of the subscription group listing |
+| subscription_listings_ids? | array[snowflake]                                                                                            | The IDs of the subscription listing SKUs          |
+| subscription_listings?     | array[[guild role subscription listing](#guild-role-subscription-listing-object) object]                    | The subscription listings                         |
+| benefit_channels?          | array[[guild role subscription benefit channel](#guild-role-subscription-benefit-channel-structure) object] | The benefits for the channel                      |
+
+###### Guild Role Subscription Benefit Channel Structure
+
+| Field | Type      | Description             |
+| ----- | --------- | ----------------------- |
+| id    | snowflake | The ID of the channel   |
+| name  | string    | The name of the channel |
+
+### Guild Role Subscription Listing Object
+
+###### Guild Role Subscription Listing Structure
+
+| Field              | Type                                                                                   | Description                                      |
+| ------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| id                 | snowflake                                                                              | The ID of the SKU                                |
+| guild_id           | snowflake                                                                              | The ID of the guild                              |
+| application_id     | snowflake                                                                              | The ID of the application                        |
+| name               | string                                                                                 | The name of the subscription listing             |
+| description        | string                                                                                 | The description of the subscription listing      |
+| image_asset        | [store asset](/resources/store#store-asset-object) object                              | The thumbnail of the subscription listing        |
+| subscription_plans | array[[subscription plan](/resources/store#subscription-plan-object) object]           | The subscription plans for the listing           |
+| role_benefits      | [guild role subscription benefits](#guild-role-subscription-benefits-structure) object | The role benefits                                |
+| role_id            | snowflake                                                                              | The ID of the role given by the subscription     |
+| published          | boolean                                                                                | Whether the subscription listing is published    |
+| soft_deleted       | boolean                                                                                | Whether the subscription listing is soft deleted |
+| archived           | boolean                                                                                | Whether the subscription listing is archived     |
+
+###### Guild Role Subscription Benefits Structure
+
+| Field    | Type                                                                                        | Description              |
+| -------- | ------------------------------------------------------------------------------------------- | ------------------------ |
+| sku_id   | snowflake                                                                                   | The ID of the SKU        |
+| benefits | array[[guild role subscription benefit](#guild-role-subscription-benefit-structure) object] | The benefits of the role |
+
+###### Guild Role Subscription Benefit Structure
+
+| Field          | Type       | Description                                                    |
+| -------------- | ---------- | -------------------------------------------------------------- |
+| emoji_id ^1^   | ?snowflake | The ID of a guild's custom emoji                               |
+| emoji_name ^1^ | ?string    | The unicode character of the emoji                             |
+| name           | string     | The name of the benefit                                        |
+| description    | string     | The description of the benefit                                 |
+| ref_type       | integer    | The [type of reference](#guild-role-subscription-benefit-type) |
+| ref_id         | ?snowflake | The ID of the referenced entity                                |
+
+^1^ At most one of `emoji_id` and `emoji_name` may be set to a non-null value.
+
+###### Guild Role Subscription Benefit Type
+
+| Value | Name       | Description           | Reference Type                                      |
+| ----- | ---------- | --------------------- | --------------------------------------------------- |
+| 1     | CHANNEL    | Access to the channel | [channel](/resources/channel#channel-object) object |
+| 2     | INTANGIBLE | Intangible benefit    | —                                                   |
+
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/guilds" supportsOAuth2="guilds" supportsBot>
@@ -3395,7 +3484,7 @@ Signs up the user for the student hub waitlist. The user will get an email and s
   Get Guild Role Subscriptions Settings
 </RouteHeader>
 
-Returns a [role subscription settings](#role-subscription-settings-object) object for the given guild ID. Requires the `MANAGE_GUILD` permission.
+Returns a [role subscription settings](#role-subscription-settings-object) object for the given guild ID.
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/role-subscriptions/settings">
   Modify Guild Role Subscriptions Settings
@@ -3416,12 +3505,121 @@ Modifies the guild's role subscription settings. Requires the `MANAGE_GUILD` per
 | store_page_show_subscriber_count?       | boolean  | Whether to show amount of role subscribers                                                                |
 | store_page_guild_products_default_sort? | integer  | The default [sort order](#guild-product-sort-order-type) of guild's products                              |
 
+<RouteHeader method="POST" url="/guilds/{guild.id}/role-subscriptions/group-listings">
+  Create Guild Role Subscription Group Listing
+</RouteHeader>
 
+Creates a subscription group listing. Requires the `ADMINISTRATOR` permission. Accepts an empty object. Returns a [guild role subscription group listing](#guild-role-subscription-group-listing-object) object on success.
 
-                GUILD_ROLE_SUBSCRIPTION_GROUP_LISTINGS: (e, t) => `/guilds/${e}/role-subscriptions/group-listings${null != t ? `/${t}` : ""}`,
-                GUILD_ROLE_SUBSCRIPTION_LISTINGS: (e, t, n) => `/guilds/${e}/role-subscriptions/group-listings/${t}/subscription-listings${null != n ? `/${n}` : ""}`,
-                GUILD_ROLE_SUBSCRIPTION_GROUP_LISTING_ARCHIVE: (e, t, n) => `/guilds/${e}/role-subscriptions/group-listings/${t}/subscription-listings/${n}/archive`,
+<RouteHeader method="GET" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}">
+  Get Guild Role Subscription Group Listing
+</RouteHeader>
+
+Returns a partial [guild role subscription group listing](#guild-role-subscription-group-listing-object) object without `subscription_listings`, `benefit_channels` for the given guild and subscription group listing ID.
+
+###### Query String Parameters
+
+| Field                          | Type    | Description                                                       |
+| ------------------------------ | ------- | ----------------------------------------------------------------- |
+| include_draft_listings? ^1^    | boolean | Whether to include drafted subscription listings (default false)  |
+| include_archived_listings? ^1^ | boolean | Whether to include archived subscription listings (default false) |
+
+^1^ Requires the `ADMINISTRATOR` permission.
+
+###### Example Response Body
+
+```json
+{
+    "id": "1005887530828320878",
+    "guild_id": "679875946597056683",
+    "application_id": "1004764183042211890",
+    "name": "Premium Membership Group",
+    "description": " ",
+    "subscription_listings_ids": [
+        "1005887534900985896",
+        "1031542675255603261",
+        "1162013584243556412"
+    ]
+}
+```
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/role-subscriptions/group-listings">
+  List Guild Role Subscription Group Listings
+</RouteHeader>
+
+Returns an array of [guild role subscription group listing](#guild-role-subscription-group-listing-object) objects for the given guild and subscription group listing ID.
+
+###### Query String Parameters
+
+| Field                 | Type    | Description                                                                                    |
+| --------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| include_soft_deleted? | boolean | Whether to include soft deleted subscription group listings (default false)                    |
+| country_code?         | string  | The user's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}">
+  Modify Guild Role Subscription Group Listing
+</RouteHeader>
+
+Modifies the guild role subscription group listing. Returns an updated [guild role subscription group listing](#guild-role-subscription-group-listing-object) object on success.
+
+###### JSON Params
+
+| Field        | Type   | Description                                                             |
+| ------------ | ------ | ----------------------------------------------------------------------- |
+| description? | string | The description of the subscription group listing (max 1500 characters) |
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}">
+  Delete Guild Role Subscription Group Listing
+</RouteHeader>
+
+Deletes the guild role subscription group listing. Returns a 204 empty response on success.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}/subscription-listings">
+  Create Guild Role Subscription Listing
+</RouteHeader>
+
+Creates the guild role subscription listing. Returns a [guild role subscription listing](#guild-role-subscription-listing-object) object on success.
+
+###### JSON Params
+
+| Field                    | Type                                                                                        | Description                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| name                     | string                                                                                      | The name of the subscription listing                                       |
+| description              | string                                                                                      | The description of the subscription listing                                |
+| image                    | ?[image data](/reference#cdn-data)                                                          | The thumbnail of the subscription listing                                  |
+| price_tier               | integer                                                                                     | The [base price](/resources/store#get-store-price-tiers) of the SKU        |
+| benefits                 | array[[guild role subscription benefit](#guild-role-subscription-benefit-structure) object] | The benefits of the role                                                   |
+| can_access_all_channels? | boolean                                                                                     | Whether purchasing the subscription listing will grant access to the guild |
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}/subscription-listings/{subscription_listing.id}">
+  Modify Guild Role Subscription Listing
+</RouteHeader>
+
+Modifies the guild role subscription listing. Returns an updated [guild role subscription listing](#guild-role-subscription-listing-object) object on success.
+
+###### JSON Params
+
+| Field                    | Type                                                                                        | Description                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| name?                    | string                                                                                      | The name of the subscription listing                                       |
+| description?             | string                                                                                      | The description of the subscription listing                                |
+| image?                   | ?[image data](/reference#cdn-data)                                                          | The thumbnail of the subscription listing                                  |
+| price_tier?              | integer                                                                                     | The [base price](/resources/store#get-store-price-tiers) of the SKU        |
+| benefits?                | array[[guild role subscription benefit](#guild-role-subscription-benefit-structure) object] | The benefits of the role                                                   |
+| can_access_all_channels? | boolean                                                                                     | Whether purchasing the subscription listing will grant access to the guild |
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}/subscription-listings/{subscription_listing.id}">
+  Delete Guild Role Subscription Listing
+</RouteHeader>
+
+Deletes the guild role subscription listing. Returns a 204 empty response on success.
                 
+<RouteHeader method="POST" url="/guilds/{guild.id}/role-subscriptions/group-listings/{subscription_group_listing.id}/subscription-listings/{subscription_listing.id}/archive">
+  Archive Guild Role Subscription Group Listing
+</RouteHeader>
+
+Archives the subscription group listing. Requires the `ADMINISTRATOR` permission. Returns a 204 empty response on success.
+
 <RouteHeader method="GET" url="/guilds/{guild.id}/role-subscriptions/trials">
   List Guild Role Subscription Trials
 </RouteHeader>
@@ -3503,7 +3701,13 @@ Returns whether the current user is eligible for a role subscription listing tri
 | ----------- | ------- | ------------------------------------ |
 | is_eligible | boolean | Whether the current user is eligible |
                 
-                CREATOR_MONETIZATION_ENABLE_REQUESTS: e => `/guilds/${e}/creator-monetization/enable-requests`,
+<RouteHeader method="POST" url="/guilds/{guild.id}/creator-monetization/enable-requests">
+  Create Creator Monetization Enable Request
+</RouteHeader>
+
+Creates a request to enable the access to guild's monetization features. Returns a 204 empty response on success.
+                
+                
                 CREATOR_MONETIZATION_ELIGIBILITY: e => `/guilds/${e}/creator-monetization/requirements`,
 
 
@@ -3628,7 +3832,7 @@ This endpoint is deprecated. It is replaced by [Accept Creator Monetization New 
 Accepts guild monetization's terms of use. Returns a 204 empty response.
 
 <RouteHeader method="POST" url="/guilds/${e}/creator-monetization/remove-monetization">
-  Remove Guild Creator Monetization
+  Remove Creator Monetization
 </RouteHeader>
 
 Removes the guild's access to monetization features. Accepts an empty object. Returns a 204 empty response on succses. Fires a [Guild Update](/gateway/gateway-events#guild-update) Gateway event.
@@ -3636,7 +3840,80 @@ Removes the guild's access to monetization features. Accepts an empty object. Re
                 SUBSCRIPTION_PLAN_GROUP_LISTING: e => `/subscription-plans/${e}/subscription-group-listing`,
                 SUBSCRIPTION_PLAN_GUILD_ROLE_GROUP_LISTING: e => `/subscription-plans/${e}/guild-role-subscription-group-listing`,
 
-                GUILD_PRODUCTS: e => `/guilds/${e}/products`,
-                GUILD_PRODUCT_LISTINGS: (e, t) => `/guilds/${e}/products/listings${null != t ? `/${t}` : ""}`,
-                GUILD_PRODUCT_CREATE_ATTACHMENT_UPLOAD: e => `/guilds/${e}/products/attachments`,
-                GUILD_PRODUCT_ATTACHMENT_DOWNLOAD: (e, t, n) => `/guilds/${e}/products/listings/${t}/attachments/${n}/download`,
+<RouteHeader method="POST" url="/guilds/{guild.id}/products">
+  Create Guild Product Listing
+</RouteHeader>
+
+Creates a guild product listing. Requires the `ADMINISTRATOR` permission. Returns a [guild product listing](#guild-product-listing-object) object on success.
+
+###### JSON Params
+
+| Field            | Type                                                   | Description                                                         |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| name?            | string                                                 | The name of the product listing                                     |
+| description?     | string                                                 | The description of the product listing                              |
+| price_tier?      | integer                                                | The [base price](/resources/store#get-store-price-tiers) of the SKU |
+| create_new_role? | boolean                                                | Whether to create new role                                          |
+| image?           | ?[image data](/reference#cdn-data)                     | The thumbnail of product listing                                    |
+| image_name?      | string                                                 | The name of the thumbnail image                                     |
+| unlink_role?     | boolean                                                | Whether to unlink the role                                          |
+| attachments? ^1^ | array[partial [attachment](#attachment-object) object] | The attachments to upload                                           |
+
+^1^ See [Uploading Files](/reference#uploading-files) for details.
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/products/listings">
+  List Guild Product Listings
+</RouteHeader>
+
+Returns a list of product listings for the given guild ID.
+
+###### Response Body
+
+| Field    | Type                                                                 | Description                        |
+| -------- | -------------------------------------------------------------------- | ---------------------------------- |
+| listings | array[[guild product listing](#guild-product-listing-object) object] | The product listings for the guild |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/products/listings/{product_listing.id}">
+  Get Guild Product Listing
+</RouteHeader>
+
+Returns a [guild product listing](#guild-product-listing-object) object for the given guild and product listing ID.
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/products/listings/{product_listing.id}">
+  Modify Guild Product Listing
+</RouteHeader>
+
+Modifies the guild product listing. Requires the `ADMINISTRATOR` permission. Returns a [guild product listing](#guild-product-listing-object) object on success.
+
+###### JSON Params
+
+| Field            | Type                                                   | Description                                                         |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| name?            | string                                                 | The name of the product listing                                     |
+| description?     | string                                                 | The description of the product listing                              |
+| price_tier?      | integer                                                | The [base price](/resources/store#get-store-price-tiers) of the SKU |
+| create_new_role? | boolean                                                | Whether to create new role                                          |
+| image?           | ?[image data](/reference#cdn-data)                     | The thumbnail of product listing                                    |
+| image_name?      | string                                                 | The name of the thumbnail image                                     |
+| unlink_role?     | boolean                                                | Whether to unlink the role                                          |
+| attachments? ^1^ | array[partial [attachment](#attachment-object) object] | The attachments to upload                                           |
+
+^1^ See [Uploading Files](/reference#uploading-files) for details.
+
+<RouteHeader method="DELETE" url="/guilds/{guild.id}/products/listings/{product_listing.id}">
+  Delete Guild Product Listing
+</RouteHeader>
+
+Deletes the guild product listing. Requires the `ADMINISTRATOR` permission. Returns a 204 empty response on success.
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/products/listings/{product_listing.id}/attachments/{attachment.id}/download">
+  Get Guild Product Listing Attachment URL
+</RouteHeader>
+
+Returns an URL to the attachment for the given guild and product ID.
+
+###### Response Body
+
+| Field | Type   | Description               |
+| ----- | ------ | ------------------------- |
+| url   | string | The URL to the attachment |
