@@ -85,6 +85,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Delete Speed Test](#delete-speed-test)                       | Delete the client's RTC speed test.                               |
 | [Request Last Messages](#request-last-messages)               | Request last messages for a guild's channels                      |
 | [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
+| [Resync Guild Channels](#resync-guild-channels)               | Requests channel(s) for a guild                                   |
 | [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
 | [Request Channel Member Count](#request-channel-member-count) | Request the number of members that can view a channel             |
 | [Request Channel Info](#request-channel-info)                 | Request extra voice channel fields for a guild                    |
@@ -737,6 +738,29 @@ Used to search the 10,000 most recently joined members in a guild. User must be 
 }
 ```
 
+#### Resync Guild Channels
+
+Likely used to request channels that were previously obfuscated when the user gains `VIEW_CHANNEL` permission.
+
+Like the [List Guild Channels](/resources/channel#list-guild-channels) only channels the account has `VIEW_CHANNEL` permissions for will be returned. endpoint Fires a [Channel Sync](#channel-sync) Gateway event with the requested channels.
+
+###### Resync Guild Channels Structure
+
+| Field                  | Type             | Description                |
+| ---------------------- | ---------------- | -------------------------- |
+| guild_id               | snowflake        | The ID of the guild        |
+| obfuscated_channel_ids | array[snowflake] | The channel IDs to request |
+
+```json
+{
+  "op": 38,
+  "d": {
+    "guild_id": "957057010334048288",
+    "obfuscated_channel_ids": ["1142105002492575794"]
+  }
+}
+```
+
 #### Request Channel Statuses
 
 Used to request the voice channel statuses for a guild. Fires a [Channel Statuses](#channel-statuses) Gateway event with the requested statuses.
@@ -925,6 +949,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Create](#channel-create)                                                                 | Channel was created                                                                            |
 | [Channel Update](#channel-update)                                                                 | Channel was updated                                                                            |
 | [Channel Delete](#channel-delete)                                                                 | Channel was deleted                                                                            |
+| [Channel Sync](#channel-sync)                                                                     | Response to [Resync Guild Channels](#resync-guild-channels)                                    |
 | [Channel Update Partial](#channel-update-partial)                                                 | Channel was partially updated                                                                  |
 | [Channel Statuses](#channel-statuses)                                                             | Response to [Request Channel Statuses](#request-channel-statuses)                              |
 | [Channel Info](#channel-info)                                                                     | Response to [Request Channel Info](#request-channel-info)                                      |
@@ -1612,6 +1637,24 @@ Sent when a channel relevant to the current user is deleted. The inner payload i
 For private channels, the received channel object will be partial.
 
 </Alert>
+
+#### Channel Sync
+
+Sent in response to [Resync Guild Channels](#resync-guild-channels). Contains channels requested.
+
+<Alert type="info">
+
+The channel list will only include channels the account has the `VIEW_CHANNEL` permission for.
+
+</Alert>
+
+###### Channel Sync Structure
+
+| Field           | Type                                                       | Description            |
+| --------------- | ---------------------------------------------------------- | ---------------------- |
+| integrity_check | boolean                                                    | Unknown use            |
+| guild_id        | snowflake                                                  | The ID of the guild    |
+| channels        | array[[channel](/resources/channel#channel-object) object] | The requested channels |
 
 #### Channel Update Partial
 
