@@ -13,7 +13,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   avatar: "/resources/user#avatar-structure",
   channel: "/resources/channel#channel-object",
   classification: "/resources/safety-hub#classification-object",
-  cloud_attachment: "/reference#cloud-attachment-object",
+  cloud_attachment: "/topics/cloud-uploads#cloud-attachment-object",
   collection: "/resources/store#storefront-collection-object",
   command: "/interactions/application-commands#application-command-object",
   company: "/resources/team#company-object",

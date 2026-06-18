@@ -951,7 +951,7 @@ so when you receive a payload with a signed URL (like when you [fetch a message]
 When passing CDN URLs into API fields, like [`url` in an embed image object](/resources/message#embed-media-structure) and [`avatar_url` for webhooks](/resources/webhook#execute-webhook), or when simply sending a message,
 you can pass the CDN URL without any parameters as the value and Discord will automatically render and refresh the URL.
 
-If you need to refresh an attachment URL manually, you can use the [Refresh Attachment URLs](#refresh-attachment-urls) endpoint with any URL.
+If you need to refresh an attachment URL manually, you can use the [Refresh Attachment URLs](/topics/cloud-uploads#refresh-attachment-urls) endpoint with any URL.
 
 [Other CDN endpoints](#cdn-endpoints) listed above are not signed, so they will not expire.
 
@@ -997,7 +997,7 @@ The file upload size limit applies to each file in a request, but the total atta
 <Alert type="info">
 
 Note that Cloudflare enforces a maximum request size of less than **500 MiB**. Exceeding this limit will fail with a 413 payload too large.
-To upload a set of files larger than this, you must utilize [Google Cloud uploads](#uploading-to-google-cloud).
+To upload a set of files larger than this, you must utilize [Google Cloud uploads](/topics/cloud-uploads).
 
 </Alert>
 
@@ -1102,185 +1102,6 @@ For example:
       "image": {
         "url": "attachment://screenshot.png"
       }
-    }
-  ]
-}
-```
-
-#### Uploading to Google Cloud
-
-You can upload large attachments quickly directly to Discord's Google Cloud storage bucket, using [endpoints below](#upload-endpoints) to generate upload URLs, and sending each generated URL a `PUT` request with the intended attachment as the body.
-
-This allows you to upload up a file up to **500 MiB** directly to Google Cloud. Note that [file size limits](#uploading-files) will still apply when sending the attachment in a message.
-
-An example implementation in Python pseudocode would be:
-
-```py
-import requests
-import os
-
-url = "https://discord.com/api/v10/channels/<channel_id>/attachments"
-
-headers = {
-    "Authorization": "Bot <bot_token>"
-}
-
-filename = "cat.png"
-size = os.stat(filename).st_size
-
-json = {
-    "files": [{
-        "file_size": size,
-        "filename": filename
-    }]
-}
-
-r = requests.post(url, headers=headers, json=json)
-r.raise_for_status()
-
-upload = r.json()['attachments'][0]
-with open(filename, "r") as f:
-    data = f.read()
-    r = requests.put(upload['upload_url'], data=data)
-    r.raise_for_status()
-
-upload_filename = upload['upload_filename']
-```
-
-Now, instead of sending the attachment again in a form body in the request, you can just send the `upload_filename`! For example:
-
-```json
-{
-  "content": "look at my cute cat!",
-  "attachments": [
-    {
-      "id": "0",
-      "filename": "cat.png",
-      "uploaded_filename": "6a08e58a-265f-485a-8c85-5cd4df0edde0/cat.png"
-    }
-  ]
-}
-```
-
-### Upload Attachment Object
-
-###### Upload Attachment Structure
-
-| Field                  | Type       | Description                                                                                                                              |
-| ---------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| id?                    | ?snowflake | The ID of the attachment to reference in the response                                                                                    |
-| filename               | string     | The name of the file being uploaded (max 1024 characters)                                                                                |
-| file_size              | integer    | The size of the file being uploaded in bytes                                                                                             |
-| is_clip? ^1^ ^2^       | boolean    | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
-| original_content_type? | string     | The attachment's original [media type](https://en.wikipedia.org/wiki/Media_type)                                                         |
-
-^1^ When uploading a clip, an increased default file size limit of **100 MiB** applies.
-
-^2^ Only applicable within [Create Message Attachments](#create-message-attachments) endpoint.
-
-### Cloud Attachment Object
-
-###### Cloud Attachment Structure
-
-| Field           | Type       | Description                                                 |
-| --------------- | ---------- | ----------------------------------------------------------- |
-| id              | ?snowflake | The ID of the attachment upload, if provided in the request |
-| upload_url      | string     | The URL to upload the file to                               |
-| upload_filename | string     | The name of the uploaded file                               |
-
-## Upload Endpoints
-
-<RouteHeader method="POST" url="/channels/{channel.id}/attachments" supportsBot>
-  Create Message Attachments
-</RouteHeader>
-
-Creates attachment URLs to upload the intended attachments directly to Discord's GCP storage bucket. Returns an array of [cloud attachment](#cloud-attachment-object) objects. Requires the same permissions as uploading an attachment inline with a message. See [Uploading to Google Cloud](#uploading-to-google-cloud) for more information.
-
-###### JSON Params
-
-| Field | Type                                                         | Description                                                               |
-| ----- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| files | array[[upload attachment](#upload-attachment-object) object] | The target files to create a URL for, containing the name and size (1-10) |
-
-###### Example Response
-
-```json
-{
-  "attachments": [
-    {
-      "id": "23",
-      "upload_url": "https://discord-attachments-uploads-prd.storage.googleapis.com/87e49c99-43f8-4a33-baad-5a834c94424c/cat.png?upload_id=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-      "upload_filename": "87e49c99-43f8-4a33-baad-5a834c94424c/cat.png"
-    }
-  ]
-}
-```
-
-<RouteHeader method="POST" url="/guilds/{channel.id}/products/attachments">
-  Create Guild Product Attachments
-</RouteHeader>
-
-Creates attachment URLs to upload the intended attachments directly to Discord's GCP storage bucket. Returns an array of [cloud attachment](#cloud-attachment-object) objects. See [Uploading to Google Cloud](#uploading-to-google-cloud) for more information.
-
-###### JSON Params
-
-| Field | Type                                                         | Description                                                               |
-| ----- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| files | array[[upload attachment](#upload-attachment-object) object] | The target files to create a URL for, containing the name and size (1-10) |
-
-<RouteHeader method="POST" url="/users/@me/gravity-attachments">
-  Create Gravity Attachments
-</RouteHeader>
-
-Creates attachment URLs to upload the intended attachments directly to Discord's GCP storage bucket. Returns an array of [cloud attachment](#cloud-attachment-object) objects. See [Uploading to Google Cloud](#uploading-to-google-cloud) for more information.
-
-###### JSON Params
-
-| Field | Type                                                         | Description                                                               |
-| ----- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| files | array[[upload attachment](#upload-attachment-object) object] | The target files to create a URL for, containing the name and size (1-10) |
-
-<RouteHeader method="DELETE" url="/attachments/{cloud_attachment.upload_filename}" supportsBot>
-  Delete Attachment
-</RouteHeader>
-
-Deletes an attachment from Discord's GCP storage bucket. Returns a 204 empty response on success.
-
-This endpoint should be used to delete an uploaded attachment that was not used. See [Uploading to Google Cloud](#uploading-to-google-cloud) for more information.
-
-<RouteHeader method="POST" url="/attachments/refresh-urls" supportsBot>
-  Refresh Attachment URLs
-</RouteHeader>
-
-Refreshes the URLs of attachments that were uploaded to Discord's CDN. The provided URLs do not have to be valid or signed. Existing query string parameters are preserved.
-
-###### JSON Params
-
-| Field           | Type          | Description                                   |
-| --------------- | ------------- | --------------------------------------------- |
-| attachment_urls | array[string] | The URLs of the attachments to refresh (1-50) |
-
-###### Response Body
-
-| Field          | Type                                                                  | Description        |
-| -------------- | --------------------------------------------------------------------- | ------------------ |
-| refreshed_urls | array[[refreshed attachment](#refreshed-attachment-structure) object] | The refreshed URLs |
-
-###### Refreshed Attachment Structure
-
-| Field     | Type   | Description       |
-| --------- | ------ | ----------------- |
-| original  | string | The provided URL  |
-| refreshed | string | The refreshed URL |
-
-###### Example Response
-
-```json
-{
-  "refreshed_urls": [
-    {
-      "original": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211234/my_image.png?ex=65d903de&is=65c68ede&hm=2481f30dd67f503f54d020ae3b5533b9987fae4e55f2b4e3926e08a3fa3ee24f&",
-      "refreshed": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211234/my_image.png?ex=66143372&is=6601be72&hm=5a90a0ac363d9de3619044102ffe963041517f0e2f78baecabfc2f544a14eace&"
     }
   ]
 }
