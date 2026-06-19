@@ -951,7 +951,7 @@ so when you receive a payload with a signed URL (like when you [fetch a message]
 When passing CDN URLs into API fields, like [`url` in an embed image object](/resources/message#embed-media-structure) and [`avatar_url` for webhooks](/resources/webhook#execute-webhook), or when simply sending a message,
 you can pass the CDN URL without any parameters as the value and Discord will automatically render and refresh the URL.
 
-If you need to refresh an attachment URL manually, you can use the [Refresh Attachment URLs](/resources/message#refresh-attachment-urls) endpoint with any URL.
+If you need to refresh an attachment URL manually, you can use the [Refresh Attachment URLs](/topics/cloud-uploads#refresh-attachment-urls) endpoint with any URL.
 
 [Other CDN endpoints](#cdn-endpoints) listed above are not signed, so they will not expire.
 
@@ -997,7 +997,7 @@ The file upload size limit applies to each file in a request, but the total atta
 <Alert type="info">
 
 Note that Cloudflare enforces a maximum request size of less than **500 MiB**. Exceeding this limit will fail with a 413 payload too large.
-To upload a set of files larger than this, you must utilize [Google Cloud uploads](#uploading-to-google-cloud).
+To upload a set of files larger than this, you must utilize [Google Cloud uploads](/topics/cloud-uploads).
 
 </Alert>
 
@@ -1102,61 +1102,6 @@ For example:
       "image": {
         "url": "attachment://screenshot.png"
       }
-    }
-  ]
-}
-```
-
-#### Uploading to Google Cloud
-
-You can upload large attachments quickly directly to Discord's Google Cloud storage bucket, using the [Create Attachments](/resources/message#create-attachments) endpoint to generate upload URLs, and sending each generated URL a `PUT` request with the intended attachment as the body.
-
-This allows you to upload up a file up to **500 MiB** directly to Google Cloud. Note that [file size limits](#uploading-files) will still apply when sending the attachment in a message.
-
-An example implementation in Python pseudocode would be:
-
-```py
-import requests
-import os
-
-url = "https://discord.com/api/v10/channels/<channel_id>/attachments"
-
-headers = {
-    "Authorization": "Bot <bot_token>"
-}
-
-filename = "cat.png"
-size = os.stat(filename).st_size
-
-json = {
-    "files": [{
-        "file_size": size,
-        "filename": filename
-    }]
-}
-
-r = requests.post(url, headers=headers, json=json)
-r.raise_for_status()
-
-upload = r.json()['attachments'][0]
-with open(filename, "r") as f:
-    data = f.read()
-    r = requests.put(upload['upload_url'], data=data)
-    r.raise_for_status()
-
-upload_filename = upload['upload_filename']
-```
-
-Now, instead of sending the attachment again in a form body in the request, you can just send the `upload_filename`! For example:
-
-```json
-{
-  "content": "look at my cute cat!",
-  "attachments": [
-    {
-      "id": "0",
-      "filename": "cat.png",
-      "uploaded_filename": "6a08e58a-265f-485a-8c85-5cd4df0edde0/cat.png"
     }
   ]
 }

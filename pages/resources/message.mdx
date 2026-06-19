@@ -810,7 +810,7 @@ Most embed types are "loosely defined" and, for the most part, are not used by c
 
 <Alert type="info">
 
-When sending/editing messages, only `id` is required. `filename` is also required when [uploading to Google Cloud](/reference#uploading-to-google-cloud).
+When sending/editing messages, only `id` is required. `filename` is also required when [uploading to Google Cloud](/topics/cloud-uploads).
 
 </Alert>
 
@@ -848,7 +848,7 @@ When sending/editing messages, only `id` is required. `filename` is also require
 
 ^2^ These fields are received only and cannot be set.
 
-^3^ This field is send-only. See [uploading to Google Cloud](/reference#uploading-to-google-cloud) for more information.
+^3^ This field is send-only. See [Cloud Uploads](/topics/cloud-uploads) topic for more information.
 
 ^4^ The proxy URL only supports attachments with a defined `width` and `height`, such as images and videos. For all other attachments, the proxy returns a 415 unsupported media type error.
 
@@ -1861,7 +1861,7 @@ Note that when sending a message, you must provide a value for **at least one of
 | shared_client_theme? | [shared client theme](#shared-client-theme-object) object                 | A shared client theme                                                                                                                                                        |
 | with_checkpoint?     | boolean                                                                   | Whether to send a [checkpoint card](/resources/components#checkpoint-card) component (default false)                                                                         |
 
-^1^ See [Uploading Files](/reference#uploading-files) for details.
+^1^ See [Uploading Files](/reference#uploading-files) for details. The attachments must be uploaded through the [Create Message Attachments](/topics/cloud-uploads#create-message-attachments) endpoint.
 
 ^2^ Cannot be used by user accounts.
 
@@ -1928,97 +1928,6 @@ Posts a greet message to a channel. This endpoint requires the channel is a DM c
 | sticker_ids        | array[snowflake]                                         | IDs of up to 1 [sticker](/resources/sticker#sticker-object) to send in the message |
 | allowed_mentions?  | [allowed mention](#allowed-mentions-object) object       | Allowed mentions for the message                                                   |
 | message_reference? | [message reference](#message-reference-structure) object | The message being replied to                                                       |
-
-<RouteHeader method="POST" url="/channels/{channel.id}/attachments" supportsBot>
-  Create Attachments
-</RouteHeader>
-
-Creates attachment URLs to upload the intended attachments directly to Discord's GCP storage bucket. Returns an array of [cloud attachment](#cloud-attachment-structure) objects. Requires the same permissions as uploading an attachment inline with a message. See [Uploading to Google Cloud](/reference#uploading-to-google-cloud) for more information.
-
-###### JSON Params
-
-| Field | Type                                                            | Description                                                               |
-| ----- | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| files | array[[upload attachment](#upload-attachment-structure) object] | The target files to create a URL for, containing the name and size (1-10) |
-
-###### Upload Attachment Structure
-
-| Field        | Type       | Description                                                                                                                              |
-| ------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| id?          | ?snowflake | The ID of the attachment to reference in the response                                                                                    |
-| filename     | string     | The name of the file being uploaded                                                                                                      |
-| file_size    | integer    | The size of the file being uploaded in bytes                                                                                             |
-| is_clip? ^1^ | boolean    | Whether the file being uploaded is a [clipped recording of a stream](https://support.discord.com/hc/en-us/articles/16861982215703-Clips) |
-
-^1^ When uploading a clip, an increased default file size limit of **100 MiB** applies.
-
-###### Cloud Attachment Structure
-
-| Field           | Type       | Description                                                 |
-| --------------- | ---------- | ----------------------------------------------------------- |
-| id              | ?snowflake | The ID of the attachment upload, if provided in the request |
-| upload_url      | string     | The URL to upload the file to                               |
-| upload_filename | string     | The name of the uploaded file                               |
-
-###### Example Response
-
-```json
-{
-  "attachments": [
-    {
-      "id": "23",
-      "upload_url": "https://discord-attachments-uploads-prd.storage.googleapis.com/87e49c99-43f8-4a33-baad-5a834c94424c/cat.png?upload_id=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-      "upload_filename": "87e49c99-43f8-4a33-baad-5a834c94424c/cat.png"
-    }
-  ]
-}
-```
-
-<RouteHeader method="DELETE" url="/attachments/{cloud_attachment.upload_filename}" supportsBot>
-  Delete Attachment
-</RouteHeader>
-
-Deletes an attachment from Discord's GCP storage bucket. Returns a 204 empty response on success.
-
-This endpoint should be used to delete an uploaded attachment that was not used. See [Uploading to Google Cloud](/reference#uploading-to-google-cloud) for more information.
-
-<RouteHeader method="POST" url="/attachments/refresh-urls" supportsBot>
-  Refresh Attachment URLs
-</RouteHeader>
-
-Refreshes the URLs of attachments that were uploaded to Discord's CDN. The provided URLs do not have to be valid or signed. Existing query string parameters are preserved.
-
-###### JSON Params
-
-| Field           | Type          | Description                                   |
-| --------------- | ------------- | --------------------------------------------- |
-| attachment_urls | array[string] | The URLs of the attachments to refresh (1-50) |
-
-###### Response Body
-
-| Field          | Type                                                                  | Description        |
-| -------------- | --------------------------------------------------------------------- | ------------------ |
-| refreshed_urls | array[[refreshed attachment](#refreshed-attachment-structure) object] | The refreshed URLs |
-
-###### Refreshed Attachment Structure
-
-| Field     | Type   | Description       |
-| --------- | ------ | ----------------- |
-| original  | string | The provided URL  |
-| refreshed | string | The refreshed URL |
-
-###### Example Response
-
-```json
-{
-  "refreshed_urls": [
-    {
-      "original": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211234/my_image.png?ex=65d903de&is=65c68ede&hm=2481f30dd67f503f54d020ae3b5533b9987fae4e55f2b4e3926e08a3fa3ee24f&",
-      "refreshed": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211234/my_image.png?ex=66143372&is=6601be72&hm=5a90a0ac363d9de3619044102ffe963041517f0e2f78baecabfc2f544a14eace&"
-    }
-  ]
-}
-```
 
 <RouteHeader method="PATCH" url="/channels/{channel.id}/explicit-media" supportsBot>
   Scan Explicit Media
@@ -2235,7 +2144,7 @@ Messages older than 1 hour may only be edited 3 times per 6-second window per ch
 | files[n] ^1^      | ?file contents                                                             | Contents of the file being sent                                                                |
 | attachments ^1^   | ?array[partial [attachment](#attachment-object) object]                    | Partial attachment objects with `filename` and `description`, including attached files to keep |
 
-^1^ See [Uploading Files](/reference#uploading-files) for details.
+^1^ See [Uploading Files](/reference#uploading-files) for details. The attachments must be uploaded through the [Create Message Attachments](/topics/cloud-uploads#create-message-attachments) endpoint.
 
 ^2^ Cannot be used by user accounts.
 
