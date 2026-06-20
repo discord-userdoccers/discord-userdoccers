@@ -83,12 +83,28 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // Work around uBlock Origin blocking /assets/push-notifications.js despite it NOT being a push notification script
         entryFileNames: "assets/page-[name].js",
         chunkFileNames: "assets/page-[name].js",
         assetFileNames: "assets/[name].[ext]",
+        codeSplitting: {
+          groups: [
+            {
+              test: /node_modules\/react(-dom|-router)?/,
+              name: "vendor-react",
+            },
+            {
+              test: /node_modules\/prism-react-renderer/,
+              name: "vendor-prism",
+            },
+            {
+              test: /node_modules\/@headlessui/,
+              name: "vendor-ui",
+            },
+          ],
+        },
       },
     },
   },

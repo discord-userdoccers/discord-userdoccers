@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
+import classNames from "@lib/classnames";
+import MenuContext from "../../contexts/MenuContext";
 import Header from "../Header";
 import { EndpointProvider, useEndpointContext } from "../EndpointContext";
 
@@ -57,6 +59,8 @@ function FilteredContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function ContentWrapper({ children }: ContentWrapperProps) {
+  const { sidebarHidden } = useContext(MenuContext);
+
   return (
     <EndpointProvider>
       <div
@@ -65,7 +69,14 @@ export default function ContentWrapper({ children }: ContentWrapperProps) {
       >
         <Header />
         <div className="h-16 xl:hidden" />
-        <main className="desktop-content-left-pad desktop-content-max w-full p-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-10 lg:pb-10">
+        <main
+          className={classNames(
+            "desktop-content-left-pad desktop-content-max w-full p-4 sm:px-6 sm:pt-0 sm:pb-6 lg:px-10 lg:pb-10",
+            {
+              "desktop-sidebar-hidden": sidebarHidden,
+            },
+          )}
+        >
           <FilteredContent>{children}</FilteredContent>
         </main>
       </div>

@@ -54,9 +54,9 @@ export default function ErrorCodeGroup({
           return true;
         })
         .map(([code, { message, isUnknown }]) => (
-          <ErrorCode key={code} code={code} message={message} isUnknown={isUnknown} />
+          <ErrorCode key={code} code={code} message={message} isUnknown={isUnknown} isActive={hash === `#${code}`} />
         )),
-    [search, unknownOnly, processedCodes, isGroupMatch],
+    [search, unknownOnly, processedCodes, isGroupMatch, hash],
   );
 
   if (filteredCodes.length === 0) {
@@ -102,15 +102,24 @@ export default function ErrorCodeGroup({
   );
 }
 
-const ErrorCode = ({ code, message, isUnknown }: { code: string; message: string; isUnknown: boolean }) => {
+const ErrorCode = ({
+  code,
+  message,
+  isUnknown,
+  isActive,
+}: {
+  code: string;
+  message: string;
+  isUnknown: boolean;
+  isActive: boolean;
+}) => {
   const ref = useRef<HTMLTableRowElement>(null);
-  const hash = useHash();
 
   useEffect(() => {
-    if (ref.current && hash === `#${code}`) {
+    if (ref.current && isActive) {
       ref.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [hash, code]);
+  }, [isActive]);
 
   return (
     <TableRow key={code} ref={ref}>

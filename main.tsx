@@ -12,24 +12,27 @@ import routes from "~react-pages";
 
 import classNames from "@lib/classnames";
 import { ThemeProvider } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import Footer from "./components/Footer";
 import LoadingBar from "./components/LoadingBar";
 import MDX from "./components/MDX";
 import Menu from "./components/Menu";
 import MenuContext from "./contexts/MenuContext";
-import "@docsearch/css";
+
+const Searchbar = React.lazy(() => import("./components/Searchbar"));
 import { CodegenLanguageProvider } from "./lib/type-generator/store";
 import OnThisPage from "./components/OnThisPage";
 import { ThemeWatcher } from "./components/ThemeWatcher";
 import navigationData from "./components/navigation/data.json";
+import DevButton from "@components/DevButton";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setOpen = useCallback(() => setSidebarOpen(true), []);
   const setClose = useCallback(() => setSidebarOpen(false), []);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
+  const toggleSidebarHidden = useCallback(() => setSidebarHidden((prev) => !prev), []);
   const location = useLocation();
 
   useEffect(() => {
@@ -55,6 +58,12 @@ function App() {
 
     if (document.title !== pageTitle) {
       document.title = pageTitle;
+    }
+
+    const hash = location.hash.slice(1);
+
+    if (hash) {
+      document.getElementById(hash)?.scrollIntoView();
     }
   }, [location.pathname]);
 
@@ -84,15 +93,18 @@ function App() {
           amoled: "dark",
         }}
       >
-        <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose }}>
+        <MenuContext.Provider value={{ open: sidebarOpen, setOpen, setClose, sidebarHidden, toggleSidebarHidden }}>
           <ThemeWatcher />
           <div className="app-wrapper">
             <div className={fadeClasses} onClick={() => setSidebarOpen(false)} />
             <Menu />
             {component}
+            {import.meta.env.VITE_DEV_BUTTON_COMMIT && <DevButton />}
             <OnThisPage />
+            <Suspense fallback={null}>
+              <Searchbar />
+            </Suspense>
           </div>
-          <Footer />
         </MenuContext.Provider>
       </ThemeProvider>
     </>

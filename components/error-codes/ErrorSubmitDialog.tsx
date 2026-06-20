@@ -1,6 +1,6 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Fragment, useMemo, useState } from "react";
-import { toast } from "react-toastify";
+import { useToast } from "../../lib/type-generator/store";
 import classNames from "../../lib/classnames";
 import { ErrorGroup } from "./ErrorCodesEmbed";
 import Styles from "../../stylesheets/modules/Errors.module.css";
@@ -17,6 +17,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
   const [errorCode, setErrorCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { showSuccessToast } = useToast();
 
   const codesFlat = useMemo(
     () => (props.codes ? Object.fromEntries(props.codes.flatMap((x) => Object.entries(x.codes))) : {}),
@@ -67,6 +68,12 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                     e.preventDefault();
 
                     setIsSubmitting(true);
+                    if (!import.meta.env.VITE_ERROR_CODES_ENDPOINT) {
+                      setError("Error code submission not available.");
+                      setIsSubmitting(false);
+                      return;
+                    }
+
                     fetch(import.meta.env.VITE_ERROR_CODES_ENDPOINT!, {
                       method: "PUT",
                       body: new FormData(e.currentTarget),
@@ -75,7 +82,7 @@ export function SubmitErrorDialog(props: { isOpen: boolean; onClose: () => void;
                         setIsSubmitting(false);
                         setError("");
                         props.onClose();
-                        toast.success("Your error code has been submitted. Thank you!");
+                        showSuccessToast("Your error code has been submitted. Thank you!");
                       } else {
                         res.text().then((text) => {
                           setIsSubmitting(false);

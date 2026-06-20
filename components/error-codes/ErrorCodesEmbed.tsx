@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import useSWR from "swr";
 import { HashProvider } from "../../hooks/useHash";
 import Styles from "../../stylesheets/modules/Errors.module.css";
 import ErrorCodeGroup from "./ErrorCodeGroups";
@@ -13,14 +12,17 @@ export interface ErrorGroup {
 }
 
 export default function ErrorCodesEmbed() {
-  const { data: codes, error } = useSWR<ErrorGroup[]>(import.meta.env.VITE_ERROR_CODES_ENDPOINT, (url: string) =>
-    fetch(url).then((res): Promise<ErrorGroup[]> => {
-      if (res.ok) {
-        return res.json();
-      }
-      return res.text().then((text) => Promise.reject(new Error(`Server Error: ${text}`)));
-    }),
-  );
+  const [codes, setCodes] = useState<ErrorGroup[] | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const url = import.meta.env.VITE_ERROR_CODES_ENDPOINT;
+    if (!url) return;
+    fetch(url)
+      .then((res) => (res.ok ? res.json() : res.text().then((t) => Promise.reject(new Error(`Server Error: ${t}`)))))
+      .then((data: ErrorGroup[]) => setCodes(data))
+      .catch((e: Error) => setError(e));
+  }, []);
 
   const [showLoading, setShowLoading] = useState(false);
   const [search, setSearch] = useState("");
