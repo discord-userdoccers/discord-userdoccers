@@ -50,6 +50,14 @@ function normalizeAnchor(text: string): string {
   return text.trim().toLowerCase().replaceAll(" ", "-");
 }
 
+function decodeAnchor(anchor: string): string {
+  try {
+    return decodeURIComponent(anchor);
+  } catch {
+    return anchor;
+  }
+}
+
 /**
  * Extracts all anchor IDs from an MDX file by parsing markdown headings and
  * RouteHeader JSX components. These are the only two sources of element IDs in
@@ -119,10 +127,11 @@ function scanFile(
       }
 
       if (!split[1]) continue;
+      const anchor = decodeAnchor(split[1]);
       const validAnchors = valid.get(url)!;
-      if (!validAnchors.includes(split[1])) {
+      if (!validAnchors.includes(anchor)) {
         results.push({
-          title: `Anchor ${chalk.cyan(split[1])} does not exist on ${chalk.blueBright(url)}`,
+          title: `Anchor ${chalk.cyan(anchor)} does not exist on ${chalk.blueBright(url)}`,
           startLine: lineNum + 1,
           startColumn: match.index,
           endColumn: (match.index ?? 0) + match[0].length,
@@ -212,7 +221,7 @@ for (const [variable, url] of Object.entries(ENDPOINT_VARS)) {
 
   const split = url.split("#");
   const baseUrl = split[0].endsWith("/") ? split[0].slice(0, -1) : split[0];
-  const anchor = split[1];
+  const anchor = split[1] ? decodeAnchor(split[1]) : undefined;
 
   if (!validLinks.has(baseUrl)) {
     endpointsResults.push({
@@ -233,7 +242,7 @@ for (const [variable, url] of Object.entries(ENDPOINT_VARS)) {
   }
 }
 
-function printResults(resultMap: Map<string, github.AnnotationProperties[]>): void {
+function printResults(resultMap: Map<string, github.AnnotationProperties[]>): number {
   let output = "\n";
   let total = 0;
   for (const [resultFile, resultArr] of resultMap) {
@@ -253,6 +262,7 @@ function printResults(resultMap: Map<string, github.AnnotationProperties[]>): vo
     output += chalk.red.bold(`\u2716 ${total} problem${total === 1 ? "" : "s"}\n`);
   }
   output.trim() && console.log(output.trim());
+  return total;
 }
 
 function annotateResults(resultMap: Map<string, github.AnnotationProperties[]>): void {
@@ -281,6 +291,7 @@ if (results.size > 0) {
   if (process.env.GITHUB_ACTIONS) {
     annotateResults(results);
   } else {
-    printResults(results);
+    const total = printResults(results);
+    if (total > 0) process.exitCode = 1;
   }
 }
