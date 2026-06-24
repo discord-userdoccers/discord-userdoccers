@@ -827,26 +827,47 @@ For suffix and RTP-size encryption modes, strip the appended nonce suffix before
 
 Discord uses the one-byte RTP header extension profile (`0xBEDE`). Extension IDs are negotiated out of band by the Discord client and RTC worker rather than through a public SDP document on UDP connections.
 
-| ID  | URI                                                                         | Applies to   | Description                                                                                      |
-| --- | --------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------ |
-| 1   | `urn:ietf:params:rtp-hdrext:ssrc-audio-level`                               | Audio        | One byte. The high bit is voice activity and the lower 7 bits are audio level                    |
-| 2   | `urn:ietf:params:rtp-hdrext:toffset`                                        | Video        | RTP timestamp offset from the send time                                                          |
-| 3   | `http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time`                | Audio, video | Compact send-time value used by congestion control                                               |
-| 4   | `urn:3gpp:video-orientation`                                                | Video        | Encoded camera orientation                                                                       |
-| 5   | `http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01` | Video        | Transport sequence number used for congestion control                                            |
-| 6   | `http://www.webrtc.org/experiments/rtp-hdrext/playout-delay`                | Video        | Minimum and maximum receiver playout delay. Discord expects this on video packets                |
-| 7   | `http://www.webrtc.org/experiments/rtp-hdrext/video-content-type`           | Video        | Indicates normal video or screen content                                                         |
-| 8   | `http://www.webrtc.org/experiments/rtp-hdrext/video-timing`                 | Video        | Optional encode/decode timing metadata                                                           |
-| 9   | `https://discord.com/#rtp-hdrext/2018-07-29/speaker`                        | Audio        | One byte Discord speaking flags. Bit 0 marks priority; bits 1-2 carry voice and soundshare state |
-| 10  | `urn:ietf:params:rtp-hdrext:sdes:mid`                                       | Audio, video | Media section identifier                                                                         |
-| 11  | `urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id`                             | Audio, video | RID for primary media packets, such as `100` or `50`                                             |
-| 12  | `urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id`                    | Audio, video | RID for repaired packets, normally RTX video packets                                             |
+| ID  | URI                                                                         | Applies to   | Description                                                                       |
+| --- | --------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------- |
+| 1   | `urn:ietf:params:rtp-hdrext:ssrc-audio-level`                               | Audio        | One byte. The high bit is voice activity and the lower 7 bits are audio level     |
+| 2   | `urn:ietf:params:rtp-hdrext:toffset`                                        | Video        | RTP timestamp offset from the send time                                           |
+| 3   | `http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time`                | Audio, video | Compact send-time value used by congestion control                                |
+| 4   | `urn:3gpp:video-orientation`                                                | Video        | Encoded camera orientation                                                        |
+| 5   | `http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01` | Video        | Transport sequence number used for congestion control                             |
+| 6   | `http://www.webrtc.org/experiments/rtp-hdrext/playout-delay`                | Video        | Minimum and maximum receiver playout delay. Discord expects this on video packets |
+| 7   | `http://www.webrtc.org/experiments/rtp-hdrext/video-content-type`           | Video        | Indicates normal video or screen content                                          |
+| 8   | `http://www.webrtc.org/experiments/rtp-hdrext/video-timing`                 | Video        | Optional encode/decode timing metadata                                            |
+| 9   | `https://discord.com/#rtp-hdrext/2018-07-29/speaker`                        | Audio        | Custom [Discord speaking extension](#discord-speaking-extension)                  |
+| 10  | `urn:ietf:params:rtp-hdrext:sdes:mid`                                       | Audio, video | Media section identifier                                                          |
+| 11  | `urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id`                             | Audio, video | RID for primary media packets, such as `100` or `50`                              |
+| 12  | `urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id`                    | Audio, video | RID for repaired packets, normally RTX video packets                              |
 
 #### Audio RTP
 
 Opus audio commonly uses payload type `120` unless a different payload type is selected by [Session Description](#session-description-structure). A normal 20ms Opus frame advances the RTP timestamp by `960` samples at a 48kHz clock. See [Voice Data Interpolation](#voice-data-interpolation) for the silence-frame shutdown behavior.
 
 Clients should send a [Speaking](#speaking) payload before sending audible Opus packets. The Discord speaking RTP extension can also carry packet-level speaking state, while the audio-level extension carries VAD and level metadata for receivers.
+
+##### Discord Speaking Extension
+
+The custom Discord speaking extension is audio RTP extension ID `9` with URI `https://discord.com/#rtp-hdrext/2018-07-29/speaker`.
+Its payload is a single byte that encodes the Gateway [speaking flags](#speaking-flags) value from the `speaking` field.
+
+| Extension bit | Speaking flag |
+| ------------- | ------------- |
+| `0x01`        | `PRIORITY`    |
+| `0x02`        | `VOICE`       |
+| `0x04`        | `SOUNDSHARE`  |
+
+When sending, let `speaking_flags` be the integer used in the Gateway `speaking` field. Convert it into the extension byte as:
+
+```python
+extension = ((speaking_flags & 0x03) << 1) | ((speaking_flags & 0x04) >> 2)
+```
+
+This shifts `VOICE` and `SOUNDSHARE` one bit left and moves `PRIORITY` from `0x04` to `0x01`. For example, `VOICE | PRIORITY` (`0x05`) becomes `0x03`.
+
+When receiving a speech packet, missing extension ID `9` and extension value `0x00` should fallback to `VOICE` speaking. If bit `0x01` is set, receivers should also implicitly set `VOICE`. Opus silence packets clear speaking state regardless of this extension.
 
 #### Video RTP
 
