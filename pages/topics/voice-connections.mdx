@@ -160,23 +160,26 @@ All JSON payloads sent to the Gateway must be text frames. Binary frames are not
 
 ###### Stream Structure
 
-| Field           | Type                                                     | Description                                     |
-| --------------- | -------------------------------------------------------- | ----------------------------------------------- |
-| type            | string                                                   | The [type of media stream](#media-type) to send |
-| rid             | string                                                   | The RTP stream ID                               |
-| quality?        | integer                                                  | The media quality to send (0-100, default 0)    |
-| active?         | boolean                                                  | Whether the stream is active (default false)    |
-| max_bitrate?    | integer                                                  | The maximum bitrate to send in bps              |
-| max_framerate?  | integer                                                  | The maximum framerate to send in fps            |
-| max_resolution? | [stream resolution](#stream-resolution-structure) object | The maximum resolution to send                  |
-| ssrc?           | integer                                                  | The SSRC of the stream                          |
-| rtx_ssrc?       | integer                                                  | The SSRC of the retransmission stream           |
+| Field            | Type                                                     | Description                                               |
+| ---------------- | -------------------------------------------------------- | --------------------------------------------------------- |
+| type             | string                                                   | The [type of media stream](#media-type) to send           |
+| rid              | string                                                   | The RTP stream ID, conventionally the stringified quality |
+| quality?         | integer                                                  | The media quality to send (0-100, default 0)              |
+| active?          | boolean                                                  | Whether the stream is active (default false)              |
+| max_bitrate? ^1^ | integer                                                  | The maximum bitrate to send in bps                        |
+| max_framerate?   | integer                                                  | The maximum framerate to send in fps                      |
+| max_resolution?  | [stream resolution](#stream-resolution-structure) object | The maximum resolution to send                            |
+| ssrc?            | integer                                                  | The SSRC of the stream                                    |
+| rtx_ssrc? ^2^    | integer                                                  | The SSRC of the retransmission stream                     |
+
+^1^ Not sent by the voice server.
+
+^2^ If omitted for a negotiated video stream, clients should derive the RTX SSRC as the primary stream `ssrc + 1`.
 
 ###### Media Type
 
 | Value      | Description |
 | ---------- | ----------- |
-| audio      | Audio       |
 | video      | Video       |
 | screen ^1^ | Screenshare |
 | test       | Speed test  |
@@ -219,7 +222,7 @@ All JSON payloads sent to the Gateway must be text frames. Binary frames are not
 }
 ```
 
-The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of the SSRC, connection IP/port, supported transport encryption modes, and experiments the voice server supports:
+The voice server should respond with an [Opcode 2 Ready](#gateway-events) payload, which informs us of our SSRCs and connection information:
 
 ###### Ready Structure
 
@@ -241,15 +244,7 @@ The voice server should respond with an [Opcode 2 Ready](#gateway-events) payloa
     "ssrc": 12871,
     "ip": "127.0.0.1",
     "port": 1234,
-    "modes": [
-      "aead_aes256_gcm_rtpsize",
-      "aead_aes256_gcm",
-      "aead_xchacha20_poly1305_rtpsize",
-      "xsalsa20_poly1305_lite_rtpsize",
-      "xsalsa20_poly1305_lite",
-      "xsalsa20_poly1305_suffix",
-      "xsalsa20_poly1305"
-    ],
+    "modes": ["aead_aes256_gcm_rtpsize", "aead_xchacha20_poly1305_rtpsize"],
     "experiments": ["fixed_keyframe_interval"],
     "streams": [
       {
@@ -273,7 +268,7 @@ The voice server should respond with an [Opcode 2 Ready](#gateway-events) payloa
 }
 ```
 
-When `streams` is populated, the voice server has assigned local send SSRCs for the offered simulcast streams. Use each stream's `ssrc` and `rtx_ssrc` when announcing local video state with [Opcode 12 Video](#video), and when configuring a custom RTP/WebRTC packetizer.
+When `streams` is populated, the voice server has assigned local send SSRCs for the offered simulcast streams. Use each stream's `ssrc` and `rtx_ssrc` when announcing local video state with [Opcode 12 Video](#video), and when configuring a WebRTC packetizer.
 
 ### Establishing a Voice Connection
 
@@ -310,15 +305,15 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 
 ###### Codec Structure
 
-| Field             | Type    | Description                                                                 |
-| ----------------- | ------- | --------------------------------------------------------------------------- |
-| name              | string  | The [name of the codec](#supported-codecs)                                  |
-| type              | string  | The [type of codec](#supported-codecs)                                      |
-| priority ^1^      | integer | The preferred priority of the codec as a multiple of 1000 (unique per type) |
-| payload_type ^2^  | integer | The dynamic RTP payload type of the codec                                   |
-| rtx_payload_type? | integer | The dynamic RTP payload type of the retransmission codec (video-only)       |
-| encode?           | boolean | Whether the client supports encoding this codec (default `true`)            |
-| decode?           | boolean | Whether the client supports decoding this codec (default `true`)            |
+| Field             | Type    | Description                                                                   |
+| ----------------- | ------- | ----------------------------------------------------------------------------- |
+| name              | string  | The [name of the codec](#supported-codecs)                                    |
+| type              | string  | The [type of codec](#supported-codecs)                                        |
+| priority ^1^      | integer | The preferred priority of the codec as a multiple of 1000 (unique per `type`) |
+| payload_type ^2^  | integer | The dynamic RTP payload type of the codec                                     |
+| rtx_payload_type? | integer | The dynamic RTP payload type of the retransmission codec (video-only)         |
+| encode?           | boolean | Whether the client supports encoding this codec (default true)                |
+| decode?           | boolean | Whether the client supports decoding this codec (default true)                |
 
 ^1^ For audio, Opus is the only available codec and should be priority `1000`.
 
@@ -328,7 +323,9 @@ First, we establish either a [UDP connection](#udp-connections) using the [Ready
 
 Providing codecs is optional due to backwards compatibility with old clients and bots that do not handle video.
 If the client does not provide any codecs, the server assumes an Opus audio codec with a payload type of `120` and no specific video codec.
-If no clients with specified video codecs are connected, the server defaults to H264.
+
+Codec support is used by the server to negotiate a send codec per-client that all other clients can decode. If multiple are supported, the one with the lowest priority will be chosen.
+If the client does not support any codec others can decode, the server will choose the client's highest priority encode codec. If no codecs are supported, the server will fall back to `H264`.
 
 | Type  | Name | Status    |
 | ----- | ---- | --------- |
@@ -389,7 +386,8 @@ The RTP size variants determine the unencrypted size of the RTP header in [the s
 The deprecated variants use a fixed size unencrypted header for RTP.
 
 The Gateway will report what encryption modes are available in [Opcode 2 Ready](#gateway-events).
-Compatible modes will always include `aead_xchacha20_poly1305_rtpsize` but may not include `aead_aes256_gcm_rtpsize` depending on the underlying hardware. You must support `aead_xchacha20_poly1305_rtpsize`. You should prefer to use `aead_aes256_gcm_rtpsize` when it is available.
+Compatible modes will always include `aead_xchacha20_poly1305_rtpsize` but may not include `aead_aes256_gcm_rtpsize` depending on the underlying hardware.
+You must support `aead_xchacha20_poly1305_rtpsize`. You should prefer to use `aead_aes256_gcm_rtpsize` when it is available.
 
 | Value                           | Name                               | Nonce                                                 | Status     |
 | ------------------------------- | ---------------------------------- | ----------------------------------------------------- | ---------- |
@@ -401,14 +399,14 @@ Compatible modes will always include `aead_xchacha20_poly1305_rtpsize` but may n
 | xsalsa20_poly1305_suffix        | XSalsa20 Poly1305 (Suffix)         | 24 random bytes                                       | Deprecated |
 | xsalsa20_poly1305_lite          | XSalsa20 Poly1305 (Lite)           | 32-bit incremental integer value, appended to payload | Deprecated |
 
-Finally, the voice server will respond with an [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [sending and receiving](#sending-and-receiving-voice) RTC data:
+Finally, the voice server will respond with an [Opcode 4 Session Description](#gateway-events) that includes the `mode` and `secret_key`, a 32 byte array used for [sending and receiving](#sending-and-receiving-media) RTC data:
 
 ###### Session Description Structure
 
 | Field                            | Type           | Description                                                                                  |
 | -------------------------------- | -------------- | -------------------------------------------------------------------------------------------- |
-| audio_codec                      | string         | The audio codec to use                                                                       |
-| video_codec                      | string         | The video codec to use                                                                       |
+| audio_codec ^1^                  | string         | The audio codec to use                                                                       |
+| video_codec ^1^                  | string         | The video codec to use                                                                       |
 | media_session_id                 | string         | The media session ID, used for analytics                                                     |
 | mode?                            | string         | The [transport encryption mode](#transport-encryption-mode) to use, not applicable to WebRTC |
 | secret_key?                      | array[integer] | The 32 byte secret key used for encryption, not applicable to WebRTC                         |
@@ -416,6 +414,8 @@ Finally, the voice server will respond with an [Opcode 4 Session Description](#g
 | keyframe_interval?               | integer        | The keyframe interval in milliseconds                                                        |
 | bandwidth_estimation_experiment? | string         | The selected bandwidth estimation experiment                                                 |
 | dave_protocol_version?           | integer        | The DAVE protocol version to use, where 0 indicates no DAVE support                          |
+
+^1^ Note that these describe the codecs the client should _send_. Other clients may send media in a different codec that you indicated decode support for.
 
 ###### Example Session Description
 
@@ -459,7 +459,7 @@ This may also be sent to update the current `media_session_id` or `keyframe_inte
 
 ## End-to-End Encryption
 
-Since September 2024, Discord is migrating voice and video in private channels, voice channels, and streams to use end-to-end encryption (E2EE) through the DAVE protocol.
+Since September 2024, Discord has migrated voice and video in private channels, voice channels, and streams to use end-to-end encryption (E2EE) through the DAVE protocol.
 When any DAVE protocol is enabled for a call, the full contents of media frames sent and received by call participants are end-to-end encrypted.
 
 <Alert type="warn">
@@ -762,47 +762,149 @@ Generally routers on the Internet mask or obfuscate UDP ports through a process 
 | Address | Null-terminated string        | The external IP address of the user                                | 64 bytes |
 | Port    | Unsigned short (big endian)   | The external port number of the user                               | 2 bytes  |
 
-### Sending and Receiving Voice
+### UDP Ping
 
-Voice data sent to and received from Discord should be encoded or decoded with [Opus](https://www.opus-codec.org/), using two channels (stereo) and a sample rate of 48kHz.
-Video data should be encoded or decoded using the RFCs relevant to the [codec being used](#session-description-structure). Data is sent using a [RTP Header](https://www.rfcreader.com/#rfc3550_line548), followed by encrypted Opus audio data or video data. Encryption uses the key passed in [Session Description](#session-description-structure) and the nonce formed with the 12 byte header appended with 12 `null` bytes, if required. Discord encrypts with the [libsodium](https://download.libsodium.org/doc/) encryption library.
+Clients may also send a small UDP ping on the same socket. Pinging should start shortly after the UDP socket connects, using a 5 second timeout. Successful responses may be used as the UDP RTT. Media receivers should filter these packets before RTP/RTCP decoding.
+
+#### UDP Ping Structure
+
+| Field    | Type                          | Description                                       | Size    |
+| -------- | ----------------------------- | ------------------------------------------------- | ------- |
+| Magic    | Unsigned integer (big endian) | `0x1337CAFE` for requests, `0x1337F00D` responses | 4 bytes |
+| Sequence | Unsigned integer              | Client-chosen sequence echoed by the response     | 4 bytes |
+
+### Sending and Receiving Media
+
+Despite the heading, the UDP transport carries all voice, camera, and stream media. Audio is encoded with [Opus](https://www.opus-codec.org/) at 48kHz stereo.
+Video is encoded with the selected codec from the [Session Description](#session-description-structure), then packetized according to that codec's RTP payload format.
+
+UDP media uses RTP for media packets and RTCP for sender reports, receiver reports, and video feedback. IP discovery and UDP ping packets are Discord UDP control packets and are not RTP or RTCP.
+
+The outbound media pipeline is:
+
+1. Encode an audio or video frame
+2. Apply [DAVE](#end-to-end-encryption) to the encoded frame if the session has an active usable DAVE transition
+3. Packetize the encoded frame as RTP
+4. Add RTP header extensions for audio level, speaking state, transport sequence, playout delay, RID, and other negotiated metadata as applicable
+5. Encrypt the RTP packet with the transport `secret_key` and selected `mode`
+6. Send the encrypted packet to the selected UDP endpoint
+
+The inbound pipeline is the reverse: receive UDP, decrypt transport encryption, parse RTP or RTCP, undo RTX/NACK repair when applicable, depacketize encoded frames, decrypt DAVE when applicable, then decode or dispatch the media.
 
 Transport encryption between the client and the selective forwarding unit (SFU) is still used even in E2EE calls.
 
-When receiving data, the user who sent the packet is identified by caching the SSRC and user IDs received from [Speaking](#speaking) events. At least one [Speaking](#speaking) event for the user is received before any frames are received, so the user ID should always be available.
+In RTP-size AEAD modes, the encrypted UDP packet carries a small nonce suffix that must be stripped before decrypting. The packet size protected by the AEAD authentication tag includes the RTP header and encrypted body, so decryptors should not treat the suffix as RTP payload.
+
+When receiving media, the sender is identified by caching SSRC mappings from [Speaking](#speaking) and [Video](#video) events. Audio-only clients can usually rely on the Speaking event arriving before media,
+but full media clients should still treat SSRC mapping as state: video, RTX, and stream SSRCs are announced separately and can change when users enable camera, stream, or simulcast layers.
 
 <Alert type="warn">
 
-The nonce has to be stripped from the payload before encrypting or decrypting audio data.
+For suffix and RTP-size encryption modes, strip the appended nonce suffix before decrypting and append a fresh nonce suffix after encrypting media or RTCP packets.
 
 </Alert>
 
-<Alert type="info">
+#### RTP Packet Structure
 
-Discord expects a [playout delay](https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/playout-delay) RTP extension header on every video packet.
+| Field               | Type                          | Description                                                                                       | Size    |
+| ------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------- | ------- |
+| Version + Flags ^1^ | Unsigned byte                 | The RTP version and flags; version 2 with no padding, extension, or CSRCs is `0x80`               | 1 byte  |
+| Payload Type ^2^    | Unsigned byte                 | Marker bit plus the [payload type](#codec-structure) (`0x78` with the default Opus configuration) | 1 byte  |
+| Sequence            | Unsigned short (big endian)   | The RTP sequence number, wraps at `65535`                                                         | 2 bytes |
+| Timestamp           | Unsigned integer (big endian) | The RTP timestamp; Opus commonly advances by `960` per 20ms frame; video uses a 90kHz clock       | 4 bytes |
+| SSRC                | Unsigned integer (big endian) | The SSRC for the media or RTX stream                                                              | 4 bytes |
+| CSRCs?              | array[integer]                | Optional contributing sources when the CSRC count flag is non-zero                                | n bytes |
+| Extension? ^3^      | Binary data                   | Optional RTP header extension block, usually using the one-byte extension profile `0xBEDE`        | n bytes |
+| Payload             | Binary data                   | Encrypted audio, video, or RTX payload                                                            | n bytes |
 
-</Alert>
+^1^ If sending an RTP header extension, set the extension bit (`1 << 4`).
 
-###### RTP Packet Structure
+^2^ For video, set the marker bit (`1 << 7`) on the final RTP packet of an encoded frame.
 
-| Field               | Type                          | Description                                                                          | Size    |
-| ------------------- | ----------------------------- | ------------------------------------------------------------------------------------ | ------- |
-| Version + Flags ^1^ | Unsigned byte                 | The RTP version and flags (always `0x80` for voice)                                  | 1 byte  |
-| Payload Type ^2^    | Unsigned byte                 | The [type of payload](#codec-structure) (`0x78` with the default Opus configuration) | 1 byte  |
-| Sequence            | Unsigned short (big endian)   | The sequence number of the packet                                                    | 2 bytes |
-| Timestamp           | Unsigned integer (big endian) | The RTC timestamp of the packet                                                      | 4 bytes |
-| SSRC                | Unsigned integer (big endian) | The [SSRC](#ready-structure) of the user                                             | 4 bytes |
-| Payload             | Binary data                   | Encrypted audio/video data                                                           | n bytes |
+^3^ With RTP-size AEAD transport modes, the clear authenticated data is only the fixed RTP header, any CSRCs, and the 4 byte RTP extension preamble. The individual RTP extension elements are encrypted with the RTP payload.
 
-^1^ If sending an RTP header extension, the flags should have the extension bit (`1 << 4`) set (e.g. `0x80` becomes `0x90`).
+#### Native RTP Header Extensions
 
-^2^ When sending a final video frame, the payload type should have the M bit (`1 << 7`) set (e.g. `0x78` becomes `0xF8`).
+Discord uses the one-byte RTP header extension profile (`0xBEDE`). Extension IDs are negotiated out of band by the Discord client and RTC worker rather than through a public SDP document on UDP connections.
+
+| ID  | URI                                                                         | Applies to   | Description                                                                       |
+| --- | --------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------- |
+| 1   | `urn:ietf:params:rtp-hdrext:ssrc-audio-level`                               | Audio        | One byte. The high bit is voice activity and the lower 7 bits are audio level     |
+| 2   | `urn:ietf:params:rtp-hdrext:toffset`                                        | Video        | RTP timestamp offset from the send time                                           |
+| 3   | `http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time`                | Audio, video | Compact send-time value used by congestion control                                |
+| 4   | `urn:3gpp:video-orientation`                                                | Video        | Encoded camera orientation                                                        |
+| 5   | `http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01` | Video        | Transport sequence number used for congestion control                             |
+| 6   | `http://www.webrtc.org/experiments/rtp-hdrext/playout-delay`                | Video        | Minimum and maximum receiver playout delay. Discord expects this on video packets |
+| 7   | `http://www.webrtc.org/experiments/rtp-hdrext/video-content-type`           | Video        | Indicates normal video or screen content                                          |
+| 8   | `http://www.webrtc.org/experiments/rtp-hdrext/video-timing`                 | Video        | Optional encode/decode timing metadata                                            |
+| 9   | `https://discord.com/#rtp-hdrext/2018-07-29/speaker`                        | Audio        | Custom [Discord speaking extension](#discord-speaking-extension)                  |
+| 10  | `urn:ietf:params:rtp-hdrext:sdes:mid`                                       | Audio, video | Media section identifier                                                          |
+| 11  | `urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id`                             | Audio, video | RID for primary media packets, such as `100` or `50`                              |
+| 12  | `urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id`                    | Audio, video | RID for repaired packets, normally RTX video packets                              |
+
+#### Audio RTP
+
+Opus audio commonly uses payload type `120` unless a different payload type is selected by [Session Description](#session-description-structure). A normal 20ms Opus frame advances the RTP timestamp by `960` samples at a 48kHz clock. See [Voice Data Interpolation](#voice-data-interpolation) for the silence-frame shutdown behavior.
+
+Clients should send a [Speaking](#speaking) payload before sending audible Opus packets. The Discord speaking RTP extension can also carry packet-level speaking state, while the audio-level extension carries VAD and level metadata for receivers.
+
+##### Discord Speaking Extension
+
+The custom Discord speaking extension is audio RTP extension ID `9` with URI `https://discord.com/#rtp-hdrext/2018-07-29/speaker`.
+Its payload is a single byte that encodes the Gateway [speaking flags](#speaking-flags) value from the `speaking` field.
+
+| Extension bit | Speaking flag |
+| ------------- | ------------- |
+| `0x01`        | `PRIORITY`    |
+| `0x02`        | `VOICE`       |
+| `0x04`        | `SOUNDSHARE`  |
+
+When sending, let `speaking_flags` be the integer used in the Gateway `speaking` field. Convert it into the extension byte as:
+
+```python
+extension = ((speaking_flags & 0x03) << 1) | ((speaking_flags & 0x04) >> 2)
+```
+
+This shifts `VOICE` and `SOUNDSHARE` one bit left and moves `PRIORITY` from `0x04` to `0x01`. For example, `VOICE | PRIORITY` (`0x05`) becomes `0x03`.
+
+When receiving a speech packet, missing extension ID `9` and extension value `0x00` should fallback to `VOICE` speaking. If bit `0x01` is set, receivers should also implicitly set `VOICE`. Opus silence packets clear speaking state regardless of this extension.
+
+#### Video RTP
+
+Clients must send [Video](#video) state before sending camera or stream video. The RTP SSRC must match one of the announced video streams, and the RTX SSRC must match that stream's repair SSRC.
+
+Video RTP uses a 90kHz timestamp clock. Encoded frames may be split across multiple RTP packets; only the last packet for the frame should have the RTP marker bit set.
+Primary video packets use the negotiated video payload type and the primary stream RID extension. RTX packets use the negotiated RTX payload type and repaired RID extension.
+
+#### RTCP and RTX
+
+Discord uses RTCP sender reports and receiver reports for quality and clock information. Clients should send an RTCP Sender Report roughly every 5 seconds for each sent media SSRC.
+Discord sends RTCP Receiver Reports back to the client with packet loss, jitter, and timing feedback.
+
+Video clients should also handle RTCP Generic NACK feedback. When the server reports missing video packets, retransmit them as RTX packets when they are still available.
+RTX packets use the stream's `rtx_ssrc`, an RTX payload type, and a payload beginning with the original RTP sequence number followed by the original media payload. Receivers map RTX packets back to the primary media SSRC before depacketizing.
+
+RTCP packets are protected by the same transport encryption. For RTP-size AEAD modes, RTCP feedback packets keep the RTCP header clear as authenticated data and encrypt the feedback body.
+
+#### Media Receive Loop
+
+RTP and RTCP are multiplexed on the same UDP socket. The clear packet header is enough to route packets before transport decryption: RTCP packets use RTCP packet types such as
+Sender Report (`200`), Receiver Report (`201`), RTPFB (`205`), and PSFB (`206`), while RTP packets use the negotiated media payload types.
+
+After transport decryption, parse RTP headers, extensions, payload type, sequence, timestamp, and SSRC before dispatching to a decoder. Audio payloads are decoded as Opus.
+Video payloads must first be reordered, repaired through RTX when possible, depacketized according to the negotiated codec, DAVE-decrypted when applicable, and then decoded.
+
+Receivers should route media to sinks by user ID when the SSRC is known. During short races where RTP arrives before the matching Gateway state,
+implementations can queue briefly by SSRC or route to an SSRC-based fallback sink, then attach the user ID once the [Speaking](#speaking) or [Video](#video) event arrives.
 
 ### Quality of Service
 
-Discord utilizes [RTCP](http://www.rfcreader.com/#rfc3550_line855) packets to monitor the quality of the connection. Sending and parsing these packets is not required, but is recommended to aid in monitoring the connection and synchronizing audio and video streams.
-The client should send an [RTCP Sender Report](http://www.rfcreader.com/#rfc3550_line1614) roughly every 5 seconds (without padding or reception report blocks) to inform the server of the current state of the connection.
-Likewise, Discord will send [RTCP Receiver Reports](http://www.rfcreader.com/#rfc3550_line1879) to the client to provide feedback on the quality of the connection.
+Discord utilizes [RTCP](http://www.rfcreader.com/#rfc3550_line855) packets to monitor connection quality, synchronize audio and video, and repair lost video frames.
+
+At minimum, media clients should parse [RTCP Receiver Reports](http://www.rfcreader.com/#rfc3550_line1879) and send [RTCP Sender Reports](http://www.rfcreader.com/#rfc3550_line1614).
+Video clients should additionally parse RTCP transport feedback and Generic NACK so they can update congestion state and retransmit recently sent packets through RTX.
+
+The voice server also uses [Media Sink Wants](#simulcasting) to communicate desired send quality. While RTCP describes packet delivery and timing, Media Sink Wants describes what video layers and approximate pixel counts the SFU wants the sender to provide.
 
 ## WebRTC Connections
 
@@ -920,7 +1022,7 @@ const data = localSdp
 
 The fragment intentionally does **not** contain `v=`, `o=`, `s=`, `t=`, `m=`, `c=`, `a=group`, `a=mid`, `a=setup`, `a=rtcp-mux`, `a=sendrecv`, `a=recvonly`, `a=ssrc`, `a=fmtp`, or `a=rtcp-fb` lines.
 
-###### Example Select Protocol SDP Fragment
+#### Example Select Protocol SDP Fragment
 
 ```sh
 a=extmap-allow-mixed
@@ -1071,35 +1173,31 @@ Discord still uses voice Gateway events to identify users and SSRCs. WebRTC clie
 Use [Speaking](#speaking) events to learn a user's audio SSRC. Use [Video](#video) events to learn a user's video SSRC and stream parameters, including any `rtx_ssrc` metadata reported by the Gateway. The browser answer assigns receive media sections from the primary audio and video SSRCs;
 RTX metadata in the answer is generated from the assigned primary video SSRC. When a new remote SSRC appears, ensure there is a receive transceiver available for the corresponding media type and renegotiate if necessary.
 
-In Unified Plan, the generated remote description should assign incoming SSRCs to media sections by `mid`. When there are more remote audio or video streams than inactive receive transceivers, add new `recvonly` transceivers and create a new offer before applying the next answer. Do not reorder existing transceivers because browsers require remote answers to keep the offer's m-line order.
+In Unified Plan, the generated remote description should assign incoming SSRCs to media sections by `mid`. When there are more remote audio or video streams than inactive receive transceivers, add new `recvonly` transceivers and create a new offer before applying the next answer.
+Do not reorder existing transceivers because browsers require remote answers to keep the offer's m-line order.
 
 Incoming `MediaStreamTrack` objects can be mapped back to users using the SSRC/user mapping from Gateway events and, where present, the SDP `msid`/stream labels. Treat the voice Gateway SSRC mapping as authoritative.
 
 ### Local Media State
 
-The WebRTC transport uses normal browser `MediaStreamTrack` objects for local microphone and camera media. Muting should stop microphone media from being sent; web clients can do this by disabling the local audio track and sending a non-speaking state. Replacing the sender track with `null` is used when the local stream or track is removed. Camera changes require renegotiation when the video track changes.
+The WebRTC transport uses normal browser `MediaStreamTrack` objects for local microphone and camera media. Muting should stop microphone media from being sent; web clients can do this by disabling the local audio track and sending a non-speaking state.
+Replacing the sender track with `null` is used when the local stream or track is removed. Camera changes require renegotiation when the video track changes.
 
-When a local camera stream starts, clients should also send [Opcode 12 Video](#video) with the current audio SSRC, video SSRC, RTX SSRC, and stream parameters. When camera stops, send another Video payload indicating an inactive or zero video SSRC state, depending on the negotiated state.
+When a local camera stream starts, clients should also send [Opcode 12 Video](#video) with the current audio SSRC, video SSRC, RTX SSRC, and stream parameters.
+When camera stops, send another Video payload indicating an inactive or zero video SSRC state, depending on the negotiated state.
 
 Screenshare/Go Live streams use separate stream connections, as described in [Streams](#streams), even when the transport for that stream connection is WebRTC.
 
-### RTP Header Extensions
+### WebRTC RTP Header Extensions
 
 The Select Protocol SDP fragment sends every `a=extmap` line from the local offer. During answer generation, include only extensions that make sense for the media section.
 Note that not all extensions are necessarily offered in every WebRTC client or available in every browser.
 
-Browser clients let the browser serialize RTP header extensions. Custom packetizers should use the negotiated extension IDs from their SDP and include Discord-required extensions themselves; in particular, video packets are expected to carry the playout-delay extension when that extension is negotiated.
+Browser clients let the browser serialize RTP header extensions. Custom packetizers should use the negotiated extension IDs from their SDP and include Discord-required extensions themselves;
+in particular, video packets are expected to carry the playout-delay extension when that extension is negotiated.
 
-Currently, these extension URIs are included:
-
-| Extension URI                                                               | Answer media section | Usage                             |
-| --------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| `urn:ietf:params:rtp-hdrext:ssrc-audio-level`                               | Audio                | Audio level reporting             |
-| `http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01` | Audio and video      | Transport-wide congestion control |
-| `urn:ietf:params:rtp-hdrext:toffset`                                        | Video                | Video timestamp offset            |
-| `http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time`                | Video                | Absolute send time                |
-| `urn:3gpp:video-orientation`                                                | Video                | Video rotation/orientation        |
-| `http://www.webrtc.org/experiments/rtp-hdrext/playout-delay`                | Video                | Video playout delay               |
+The common Discord extension URIs are listed in [Native RTP Header Extensions](#native-rtp-header-extensions), but the numeric IDs in WebRTC are the IDs from SDP, not the native UDP IDs.
+For example, a browser offer might use audio-level as `a=extmap:1 ...` and transport-wide CC as `a=extmap:3 ...`, while the native UDP video map uses transport-wide CC ID `5`.
 
 ### Congestion, Quality, and Sink Wants
 
@@ -1173,6 +1271,12 @@ When a different user's speaking state is updated, and for each user with a spea
 }
 ```
 
+### Voice Data Interpolation
+
+When there's a break in the sent data, the packet transmission shouldn't simply stop. Instead, send five frames of silence (`0xF8, 0xFF, 0xFE`) before stopping to avoid unintended Opus interpolation with subsequent transmissions.
+
+Likewise, when you receive these five frames of silence, you know that the user has stopped speaking.
+
 ## Video
 
 To notify the voice server that you are sending video, send an [Opcode 12 Video](#gateway-commands) payload:
@@ -1185,15 +1289,15 @@ You must send at least one [Video](#video) payload before sending or receiving v
 
 ###### Video Structure
 
-| Field        | Type                                      | Description                                                |
-| ------------ | ----------------------------------------- | ---------------------------------------------------------- |
-| audio_ssrc   | integer                                   | The [SSRC](#ready-structure) of the audio stream           |
-| video_ssrc   | integer                                   | The [SSRC](#stream-structure) of the video stream          |
-| rtx_ssrc ^1^ | integer                                   | The [SSRC](#stream-structure) of the retransmission stream |
-| streams      | array[[stream](#stream-structure) object] | Simulcast streams to send                                  |
-| user_id ^2^  | snowflake                                 | The user ID of the video user                              |
+| Field        | Type                                      | Description                                                                                                                                                       |
+| ------------ | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| audio_ssrc   | integer                                   | On send, this connection's audio SSRC from [Ready](#ready-structure). On receive, the remote user's audio SSRC associated with this video state                   |
+| video_ssrc   | integer                                   | On send, the selected primary outbound video SSRC, or `0` when clearing video. On receive, the remote user's primary video SSRC                                   |
+| rtx_ssrc ^1^ | integer                                   | On send, the RTX SSRC paired with `video_ssrc`, or `0` when clearing video. This should match the selected stream's `rtx_ssrc` when RTX is active                 |
+| streams      | array[[stream](#stream-structure) object] | Current video stream state. For simulcast, this is the authoritative list of primary and RTX SSRCs for every layer. Send an empty array when clearing local video |
+| user_id ^2^  | snowflake                                 | The user ID of the video user                                                                                                                                     |
 
-^1^ Not sent by the voice server.
+^1^ The top-level `rtx_ssrc` is not sent by the voice server. Received stream objects can still include `rtx_ssrc`.
 
 ^2^ Only sent by the voice server.
 
@@ -1257,11 +1361,32 @@ When a different user's video state is updated, and for each user with a video s
 }
 ```
 
-### Voice Data Interpolation
+### Sending Video
 
-When there's a break in the sent data, the packet transmission shouldn't simply stop. Instead, send five frames of silence (`0xF8, 0xFF, 0xFE`) before stopping to avoid unintended Opus interpolation with subsequent transmissions.
+Video state is negotiated in three places:
 
-Likewise, when you receive these five frames of silence, you know that the user has stopped speaking.
+1. [Identify](#identify-structure) advertises whether this voice connection supports video and which local simulcast RIDs the client supports.
+2. [Ready](#ready-structure) assigns the actual primary and RTX SSRCs for those streams.
+3. [Video](#video) announces which of those assigned streams are currently active.
+
+The top-level `video_ssrc`/`rtx_ssrc` pair should point at the selected primary outbound stream. The `streams` array carries the full active video state, including every simulcast layer a receiver may map or request.
+
+When a local source is paused, send another [Video](#video) payload with that stream's `active` flag set to `false`. When resuming, send `active: true` and prefer sending a keyframe as soon as possible so receivers can decode without waiting for an old reference frame.
+
+RTP packetization, header extensions, and RTX retransmission details are covered in [Video RTP](#video-rtp) and [RTCP and RTX](#rtcp-and-rtx).
+
+### Receiving Video
+
+Receiving clients should cache SSRC ownership from every received [Video](#video) payload:
+
+- `audio_ssrc` maps the user's audio stream.
+- Each stream `ssrc` maps primary video RTP for that user.
+- Each stream `rtx_ssrc` maps repaired video RTP for the same stream.
+- `rid` and `quality` identify the simulcast layer represented by the stream.
+
+Video RTP packets are not self-describing enough to choose a user, stream, or sink without this state. If a packet arrives before the Video event that maps its SSRC, queue it briefly or drop it; do not assume all unknown video packets belong to the speaking audio SSRC.
+
+Receivers request layers through [Media Sink Wants](#simulcasting). The SFU may still send packets during transitions, so receivers should tolerate short overlap between old and new layer choices.
 
 ## Resuming Voice Connection
 
@@ -1448,17 +1573,23 @@ When received, the SSRC of the user should be discarded.
 
 ## Simulcasting
 
-The voice server supports simulcasting, allowing clients to send multiple video streams of different qualities and adjust the quality of the video stream they receive to fit bandwidth constraints.
-This can be used to lower the quality of a received video stream when the user is not in focus, or to disable the transmission of a voice or video stream entirely when a user is off-screen or a client has muted them.
+The voice server supports simulcasting, allowing clients to send multiple video layers and allowing receivers to request the layer that best fits the current view.
+A full-size focused video can request quality `100`, while a thumbnail, background stream, or muted/off-screen user can request lower quality or `0`.
 
-A media stream specified by a given SSRC can be requested at a quality level between 0 and 100, with 0 disabling it entirely and 100 being the highest quality.
-Additionally, if the user offers multiple streams for a given media type, the client can request a specific stream by setting its quality level to 100 and the others to 0.
-A special SSRC value of `any` can be used to request a quality level for all streams.
+Simulcast state is described by [stream objects](#stream-structure). The `rid` identifies the RTP stream ID, `quality` describes the layer's intended quality, `ssrc` identifies primary RTP, `rtx_ssrc` identifies retransmissions, and `active` tells receivers whether the sender currently intends to transmit that layer.
 
-Clients may request the media quality they want per SSRC by sending an [Opcode 15 Media Sink Wants](#gateway-commands) payload with a mapping of SSRCs to quality levels.
-Clients may also specify a `pixelCounts` field to indicate the preferred resolution of the video stream for each SSRC, which can be used by the voice server to determine the best quality level to send based on the client's capabilities and preferences.
+Camera video commonly offers two layers: one full-size stream at quality `100`, and another reduced-quality stream at `50`.
+Stream connections commonly offer one screen layer at quality `100`. The client proposes RIDs in [Identify](#identify-structure), but the [Ready](#ready-structure) payload assigns the real SSRCs.
 
-Likewise, the voice server may send a [Opcode 15 Media Sink Wants](#gateway-events) payload to inform the client of the quality levels it should be sending for each SSRC.
+[Media Sink Wants](#media-sink-wants-structure) is the control message for desired receive and send quality. A receiving client sends [Opcode 15 Media Sink Wants](#gateway-commands) to tell the SFU which remote SSRCs it wants and at what quality.
+The voice server may also send [Opcode 15 Media Sink Wants](#gateway-events) to tell a sender which of its local SSRCs should currently be active or reduced.
+
+The keys in the payload are primary media SSRCs, not RTX SSRCs. A special key of `any` applies to otherwise unspecified streams. Values are `0` through `100`, where `0` disables a stream and `100` requests the highest available layer.
+The optional `pixelCounts` object gives the SFU approximate rendered pixel counts for each SSRC, which helps it choose between layers when a view is resized.
+
+A sender should treat server-sent wants as dynamic encoder input, not as the sole source of [Video](#video) stream state. If a layer is wanted at `0`, pause that layer and announce it inactive when appropriate.
+If a layer is wanted at a lower quality, reduce bitrate, resolution, framerate, or choose a lower RID rather than continuing to send the full layer.
+Receivers should keep sending updated wants as views appear, disappear, resize, pin, or move between foreground and background.
 
 <Alert type="warn">
 
@@ -1554,6 +1685,22 @@ To start or join a stream, the client must first be connected to the voice insta
 Then, send a [Create Stream](/gateway/gateway-events#create-stream) or [Watch Stream](/gateway/gateway-events#watch-stream) payload to the Gateway.
 
 If our request succeeded, as with voice, you must wait for the Gateway to respond with _two_ events—a [Stream Create](/gateway/gateway-events#stream-create) event and a [Stream Server Update](/gateway/gateway-events#stream-server-update).
-You can then use the information provided in these events to establish a connection to the stream server as outlined in [Connecting to Voice](#connecting-to-voice). Note that the `server_id` used when identifying will be provided in the [Stream Create](/gateway/gateway-events#stream-create) event.
+You can then use the information provided in these events to establish a connection to the stream server as outlined in [Connecting to Voice](#connecting-to-voice).
+Note that the `server_id` and `channel_id` used when [identifying](#establishing-a-voice-websocket-connection) will be provided in the [Stream Create](/gateway/gateway-events#stream-create) event.
 
 Note that if joining a stream fails, the Gateway will instead respond with a [Stream Delete](/gateway/gateway-events#stream-delete) event which will contain the reason for the failure.
+
+### Stream Media Connections
+
+A stream uses a separate RTC connection from the parent voice channel. The parent voice connection must remain connected so the user remains in the voice instance, but the stream has its own WebSocket, transport, state, and media packets.
+
+If the stream includes application or system audio, send that audio on the stream RTC connection as Opus.
+Clients should mark this with the [`SOUNDSHARE` speaking flag](#speaking-flags) rather than normal voice speaking, so viewers can treat it as contextual stream audio.
+
+Stream viewers connect to the stream RTC connection and request the stream SSRCs they want with [Media Sink Wants](#simulcasting).
+Do not use the parent voice connection's audio or video SSRCs for stream media; the stream connection has its own SSRC namespace.
+Additionally, do not attempt to send media to streams you are viewing. Only stream owners should transmit data to the RTC connection.
+
+For stream E2EE, clients must use a stream-specific MLS group ID rather than the voice channel ID. Current stream RTC uses the media-session ID, which is one less than the stream `rtc_server_id`, as the DAVE/MLS group ID.
+
+If a stream becomes unavailable, reset RTP receive, RTCP feedback, DAVE, and transport state for that stream RTC connection. The parent voice connection and its media state are independent and unaffected.
