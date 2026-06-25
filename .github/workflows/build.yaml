@@ -23,6 +23,31 @@ jobs:
     name: Build
 
     steps:
+      - name: Setup Variables
+        # Run if
+        # - event == 'pull_request'
+        # - event == 'push' && branch != 'master'
+        if: github.event_name != 'push' || github.ref_name != 'master'
+        id: vars
+        shell: bash
+        run: |
+          # WARNING:
+          # use '...' especially when using github templating
+          # only use "..." when using bash variable references
+
+          output() {
+            echo "$1=$2" >> "$GITHUB_OUTPUT"
+          }
+
+          if [[ '${{ github.event_name }}' == "pull_request" ]]; then
+            output pr_number '${{ github.event.pull_request.number }}'
+          else
+            PR=$(curl -fsSL 'https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls')
+            NUMBER=$(echo "$PR" | jq '.[0]? | .number? // empty')
+
+            output pr_number "$NUMBER"
+          fi
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install pnpm
@@ -47,9 +72,37 @@ jobs:
       - name: Install and Build Artifacts
         env:
           VITE_ERROR_CODES_ENDPOINT: ${{ vars.VITE_ERROR_CODES_ENDPOINT }}
+          VITE_DEV_BUTTON_COMMIT: ${{ case(github.event_name == 'pull_request', github.event.pull_request.head.sha, case(github.ref_name != 'master', github.sha, '')) }}
+          VITE_DEV_BUTTON_BRANCH: ${{ case(github.event_name == 'pull_request', github.head_ref, github.ref_name) }}
+          VITE_DEV_BUTTON_BRANCH_REPO: ${{ case(github.event_name == 'pull_request', github.event.pull_request.head.repo.full_name, github.repository) }}
+          VITE_DEV_BUTTON_PR: ${{ steps.vars.outputs.pr_number }}
         run: |
           pnpm install --frozen-lockfile --production=false
           pnpm build
+
+      - name: Write metadata
+        shell: bash
+        env:
+          OUTPUT_MESSAGE: ${{ toJSON(case(github.event_name == 'pull_request', github.event.pull_request.title, github.event.head_commit.message)) }}
+        run: |
+          # WARNING:
+          # use '...' especially when using github templating
+          # only use "..." when using bash variable references
+
+          output() {
+            echo "$1=$2" >> ./dist/_github_output
+          }
+
+          # prevent someone from just injecting into $GITHUB_OUTPUT 
+          rm -fr ./dist/_github_output
+
+          output event '${{ github.event_name }}'
+          output branch '${{ github.ref_name }}'
+
+          output ref '${{ case(github.event_name == 'pull_request', github.event.pull_request.head.sha, github.sha) }}'
+          output pr_number '${{ steps.vars.outputs.pr_number }}'
+
+          output description "$OUTPUT_MESSAGE"
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:

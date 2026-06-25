@@ -74,32 +74,34 @@ A guild or private channel within Discord.
 
 ^4^ This field is not automatically copied into new threads created in the channel. It should be manually set when creating a thread.
 
-^5^ Only returned when part of the `resolved` data received in an interaction or when `permissions` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+^5^ Only returned when part of the `resolved` data received in an interaction or when `permissions` is set to `true` when fetched from the [List Guild Channels](#list-guild-channels) endpoint.
 
 ^6^ Only included in the [Gateway Guild](/gateway/gateway-events#gateway-guild-object) object.
 
-^7^ Only included in [Gateway events](/gateway/gateway-events#channels) and when fetched from the [Get Private Channels](#get-private-channels) endpoint.
+^7^ Only included in [Gateway events](/gateway/gateway-events#channels) and when fetched from the [List Private Channels](#list-private-channels) endpoint.
 
 ^8^ For ephemeral DM channels, the channel ID will always equal the ID of the other recipient.
 
-^9^ Only included when `with_can_link_lobby` is set to `true` when fetching [Get Guild Channels](#get-guild-channels).
+^9^ Only included when `with_can_link_lobby` is set to `true` when fetched from the [List Guild Channels](#list-guild-channels) endpoint.
 
 ###### Partial Channel Structure
 
 A channel referenced in an [invite](/resources/invite#invite-object) or [message](/resources/message#message-object).
 
-| Field           | Type                                                      | Description                                                    |
-| --------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| id              | snowflake                                                 | The ID of the channel                                          |
-| type            | integer                                                   | The [type of channel](#channel-type)                           |
-| name            | ?string                                                   | The name of the channel (1-100 characters)                     |
-| recipients? ^1^ | array[partial [user](/resources/user#user-object) object] | The recipients of the DM; only the `username` field is present |
-| icon?           | ?string                                                   | The group DM's [icon hash](/reference#cdn-formatting)          |
-| guild_id? ^2^   | ?snowflake                                                | The ID of the guild the channel is in                          |
+| Field               | Type                                                      | Description                                           |
+| ------------------- | --------------------------------------------------------- | ----------------------------------------------------- |
+| id                  | snowflake                                                 | The ID of the channel                                 |
+| type                | integer                                                   | The [type of channel](#channel-type)                  |
+| name                | ?string                                                   | The name of the channel (1-100 characters)            |
+| recipients? ^1^ ^2^ | array[partial [user](/resources/user#user-object) object] | The recipients of the DM                              |
+| icon?               | ?string                                                   | The group DM's [icon hash](/reference#cdn-formatting) |
+| guild_id? ^3^       | ?snowflake                                                | The ID of the guild the channel is in                 |
 
 ^1^ Only present when the channel is fetched from an [invite](/resources/invite#invite-object) with `with_counts` set to `true`.
 
-^2^ Not present when the channel is fetched from an [invite](/resources/invite#invite-object), as it can be inferred from the `guild_id` field.
+^2^ The recipient objects contain the `id`, `username`, and `avatar` fields.
+
+^3^ Not present when the channel is fetched from an [invite](/resources/invite#invite-object) or [monetization store page](/resources/discovery#monetization-store-page-structure), as it can be inferred from the `guild_id` and `guild.id` fields respectively.
 
 ###### Channel Nick Structure
 
@@ -506,10 +508,9 @@ The [threads](/topics/threads) topic has some more information.
   "icon": null,
   "recipients": [
     {
-      "username": "alien"
-    },
-    {
-      "username": "alien.2.electric.boogaloo"
+      "id": "1001086404203389018",
+      "username": ".dziurwa",
+      "avatar": "7447ee696188f6566862eb5072033c79"
     }
   ]
 }
@@ -589,7 +590,7 @@ A thread member object contains information about a user that has joined a threa
 
 ^2^ These fields are omitted for thread members other than the current user.
 
-^3^ The `member` field is only present when `with_member` is set to `true` when fetching [Get Thread Members](#get-thread-members) or [Get Thread Member](#get-thread-member).
+^3^ The `member` field is only present when `with_member` is set to `true` when fetching [List Thread Members](#list-thread-members) or [Get Thread Member](#get-thread-member).
 
 ###### Thread Member Flags
 
@@ -659,7 +660,7 @@ A lobby linked to a channel.
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/channels">
-  Get Private Channels
+  List Private Channels
 </RouteHeader>
 
 Returns a list of active [private channel](#channel-object) objects the user is participating in.
@@ -707,8 +708,14 @@ One of `recipient_id`, `recipients` or `access_tokens` is required. Bots cannot 
 ^3^ Requires `access_tokens` to be provided.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/channels" supportsOAuth2="guilds.channels.read" supportsBot>
-  Get Guild Channels
+  List Guild Channels
 </RouteHeader>
+
+<Alert type="info">
+
+In the future, the channel list will only include channels the user has the `VIEW_CHANNEL` permission for.
+
+</Alert>
 
 Returns a list of [guild channel](#channel-object) objects for the guild. Does not include threads. If the user is not in the guild, the guild must be discoverable.
 
@@ -724,7 +731,7 @@ Returns a list of [guild channel](#channel-object) objects for the guild. Does n
 ^2^ Only usable in OAuth2 contexts.
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/top-read-channels" supportsBot deprecated>
-  Get Guild Top Read Channels
+  List Guild Top Read Channels
 </RouteHeader>
 
 Returns a list of snowflakes representing up to 10 of the top read channels in the guild. If the user is not in the guild, the guild must be discoverable.
@@ -853,7 +860,7 @@ If modifying a thread and setting `archived` to `false`, when `locked` is also `
 | archived?                           | ?boolean                                                            | Whether the thread is archived                                                                                                                                                       | Thread                                                             |
 | locked?                             | ?boolean                                                            | Whether the thread is locked; when a thread is locked, only users with `MANAGE_THREADS` can unarchive it                                                                             | Thread                                                             |
 | invitable?                          | ?boolean                                                            | Whether non-moderators can add other non-moderators to a thread                                                                                                                      | Private Thread                                                     |
-| flags?                              | integer                                                             | The [channel's flags](#channel-flags) (only `GUILD_FEED_REMOVED`, `PINNED`, `ACTIVE_CHANNELS_REMOVED`, and `REQUIRE_TAG` can be set)                                                 | All                                                                |
+| flags?                              | integer                                                             | The [channel's flags](#channel-flags) (only `GUILD_FEED_REMOVED`, `PINNED`, `ACTIVE_CHANNELS_REMOVED`, `REQUIRE_TAG`, and `IS_SPOILER_CHANNEL` can be set)                           | All                                                                |
 | available_tags? ^3^                 | array[partial [forum tag](#forum-tag-object) object]                | The tags that can be used in a thread-only channel (max 20)                                                                                                                          | Forum, Media                                                       |
 | applied_tags?                       | array[snowflake]                                                    | The IDs of tags that are applied to a thread in a thread-only channel (max 5)                                                                                                        | Thread                                                             |
 | default_reaction_emoji?             | ?[default reaction](#default-reaction-object) object                | The emoji to show in the add reaction button on a thread in a thread-only channel                                                                                                    | Forum, Media                                                       |
@@ -1202,7 +1209,7 @@ This endpoint is only usable by Discord employees.
 </Alert>
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/threads/active" supportsBot>
-  Get Guild Active Threads
+  List Guild Active Threads
 </RouteHeader>
 
 Returns all active threads in the guild, including public and private threads. Threads are ordered by their `id`, in descending order.
@@ -1221,7 +1228,7 @@ This endpoint is not usable by user accounts.
 | members | array[[thread members](#thread-member-object) object] | A thread member object for each returned thread the current user has joined |
 
 <RouteHeader method="GET" url="/channels/{channel.id}/threads/active" supportsBot deprecated>
-  Get Active Threads
+  List Active Threads
 </RouteHeader>
 
 Returns all active threads in the channel, including public and private threads. Threads are ordered by their `id`, in descending order. User must be a member of the guild.
@@ -1234,7 +1241,7 @@ This endpoint is not usable by user accounts.
 
 <Alert type="warn">
 
-This endpoint is deprecated and removed in v10. It is replaced by [Get Guild Active Threads](#get-guild-active-threads).
+This endpoint is deprecated and removed in v10. It is replaced by [List Guild Active Threads](#list-guild-active-threads).
 
 </Alert>
 
@@ -1246,7 +1253,7 @@ This endpoint is deprecated and removed in v10. It is replaced by [Get Guild Act
 | members | array[[thread member](#thread-member-object) object] | A thread member object for each returned thread the current user has joined |
 
 <RouteHeader method="GET" url="/channels/{channel.id}/threads/archived/public" supportsBot>
-  Get Public Archived Threads
+  List Public Archived Threads
 </RouteHeader>
 
 Returns archived threads in the channel that are public. When called on a `GUILD_TEXT` channel, returns threads of [type](#channel-type) `PUBLIC_THREAD`. When called on a `GUILD_NEWS` channel returns threads of [type](#channel-type) `NEWS_THREAD`. Threads are ordered by `archive_timestamp`, in descending order. Requires the `READ_MESSAGE_HISTORY` permission.
@@ -1267,7 +1274,7 @@ Returns archived threads in the channel that are public. When called on a `GUILD
 | has_more | boolean                                              | Whether there are potentially additional threads that could be returned on a subsequent call |
 
 <RouteHeader method="GET" url="/channels/{channel.id}/threads/archived/private" supportsBot>
-  Get Private Archived Threads
+  List Private Archived Threads
 </RouteHeader>
 
 Returns archived threads in the channel that are of [type](#channel-type) `PRIVATE_THREAD`. Threads are ordered by `archive_timestamp`, in descending order. Requires both the `READ_MESSAGE_HISTORY` and `MANAGE_THREADS` permissions.
@@ -1288,7 +1295,7 @@ Returns archived threads in the channel that are of [type](#channel-type) `PRIVA
 | has_more | boolean                                              | Whether there are potentially additional threads that could be returned on a subsequent call |
 
 <RouteHeader method="GET" url="/channels/{channel.id}/users/@me/threads/archived/private" supportsBot>
-  Get Joined Private Archived Threads
+  List Joined Private Archived Threads
 </RouteHeader>
 
 Returns archived threads in the channel that are of [type](#channel-type) `PRIVATE_THREAD`, and the user has joined. Threads are ordered by their `id`, in descending order. Requires the `READ_MESSAGE_HISTORY` permission.
@@ -1490,7 +1497,7 @@ Returns a mapping of thread IDs to their [post data](#thread-post-data-structure
 ```
 
 <RouteHeader method="GET" url="/channels/{channel.id}/thread-members" supportsBot>
-  Get Thread Members
+  List Thread Members
 </RouteHeader>
 
 Returns an array of [thread members](#thread-member-object) objects that are members of the thread. Requires the `VIEW_CHANNEL` permission.

@@ -25,30 +25,6 @@ jobs:
     name: Deploy
 
     steps:
-      - name: Setup Variables
-        id: vars
-        shell: bash
-        run: |
-          # WARNING:
-          # use '...' especially when using github templating
-          # only use "..." when using bash variable references
-
-          output() {
-            echo "$1=$2" >> "$GITHUB_OUTPUT"
-          }
-
-          EVENT='${{ github.event.workflow_run.event }}'
-          BRANCH='${{ github.event.workflow_run.head_branch }}'
-
-          output event "$EVENT"
-          output branch "$BRANCH"
-
-          if [[ "$EVENT" == "pull_request" ]]; then
-            output deploy_branch 'pr-${{ github.event.workflow_run.pull_requests[0].number }}'
-          else
-            output deploy_branch "$BRANCH"
-          fi
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install pnpm
@@ -68,6 +44,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
+      - name: Setup Variables
+        id: vars
+        shell: bash
+        run: |
+          cat ./dist/_github_output | tee -a "$GITHUB_OUTPUT"
+          rm ./dist/_github_output
+
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile --production=false
 
@@ -83,7 +66,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy --branch ${{ steps.vars.outputs.deploy_branch }}
+          command: pages deploy --branch ${{ case(steps.vars.outputs.event == 'push', steps.vars.outputs.branch, format('pr-{0}', steps.vars.outputs.pr_number)) }}
 
       - name: Notify Deployment
         env:
@@ -98,5 +81,9 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
           DEPLOYMENT_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url || 'https://docs.discord.food' }}
           DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+
+          DEPLOYMENT_REF: ${{ steps.vars.outputs.ref }}
+          DEPLOYMENT_PR_NUMBER: ${{ steps.vars.outputs.pr_number }}
+          DEPLOYMENT_DESCRIPTION: ${{ steps.vars.outputs.description }}
         run: pnpm run ci:deploy
             

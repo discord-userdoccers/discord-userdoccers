@@ -34,7 +34,7 @@ Scheduled events are a way to plan and organize events in a guild. They can be a
 
 ^3^ Only included in [Gateway events](/gateway/gateway-events#guild-scheduled-events). See [the automations section](#guild-scheduled-event-status-update-automation) for more info on how to determine this manually.
 
-^4^ Only included when fetched from the [Get Guild Scheduled Events](#get-guild-scheduled-events) or [Get Guild Scheduled Event](#get-guild-scheduled-event) endpoints with `with_user_count` set to `true`.
+^4^ Only included when fetched from the [List Guild Scheduled Events](#list-guild-scheduled-events) or [Get Guild Scheduled Event](#get-guild-scheduled-event) endpoints with `with_user_count` set to `true`.
 
 ###### Example Guild Scheduled Event
 
@@ -324,16 +324,18 @@ Represents a user's subscription to a guild scheduled event or override for a sp
 
 ###### Guild Scheduled Event User Structure
 
-| Field                               | Type                                                        | Description                                                                        |
-| ----------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| guild_scheduled_event_id            | snowflake                                                   | The ID of the scheduled event the user subscribed to                               |
-| guild_scheduled_event_exception_id? | snowflake                                                   | The ID of the specific exception this subscription is for, if any                  |
-| response                            | integer                                                     | The user's [response](#guild-scheduled-event-user-response) to the scheduled event |
-| user_id                             | snowflake                                                   | The ID of the user that subscribed to the scheduled event                          |
-| user? ^1^                           | partial [user](/resources/user#user-object) object          | The user that subscribed to the scheduled event                                    |
-| member? ^1^                         | [guild member](/resources/guild#guild-member-object) object | Guild member data for the user in the scheduled event's guild, if any              |
+| Field                                   | Type                                                        | Description                                                                        |
+| --------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| guild_scheduled_event_id                | snowflake                                                   | The ID of the scheduled event the user subscribed to                               |
+| guild_scheduled_event_exception_id? ^2^ | snowflake                                                   | The ID of the specific exception this subscription is for, if any                  |
+| response                                | integer                                                     | The user's [response](#guild-scheduled-event-user-response) to the scheduled event |
+| user_id                                 | snowflake                                                   | The ID of the user that subscribed to the scheduled event                          |
+| user? ^1^                               | partial [user](/resources/user#user-object) object          | The user that subscribed to the scheduled event                                    |
+| member? ^1^                             | [guild member](/resources/guild#guild-member-object) object | Guild member data for the user in the scheduled event's guild, if any              |
 
-^1^ Only included when fetched from the [Get Guild Scheduled Event Users](#get-guild-scheduled-event-users) endpoint.
+^1^ Only included when fetched from the [List Guild Scheduled Event Users](#list-guild-scheduled-event-users) endpoint.
+
+^2^ May not necessarily point to an existing exception. The only requirement of this field is that it is a snowflake representing the start time for a specific recurrence.
 
 ###### Guild Scheduled Event User Response
 
@@ -345,7 +347,7 @@ Represents a user's subscription to a guild scheduled event or override for a sp
 ## Endpoints
 
 <RouteHeader method="GET" url="/users/@me/scheduled-events">
-  Get User Guild Scheduled Events
+  List User Guild Scheduled Events
 </RouteHeader>
 
 Returns an array of [guild scheduled event user](#guild-scheduled-event-user-object) objects for the current user for a given guild.
@@ -357,7 +359,7 @@ Returns an array of [guild scheduled event user](#guild-scheduled-event-user-obj
 | guild_ids | snowflake | The guild ID to get the subscribed scheduled events for |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/scheduled-events" supportsBot>
-  Get Guild Scheduled Events
+  List Guild Scheduled Events
 </RouteHeader>
 
 Returns a list of `SCHEDULED` and `ACTIVE` [guild scheduled event](#guild-scheduled-event-object) objects for the given guild.
@@ -501,12 +503,18 @@ Deletes a guild scheduled event. Returns a 204 empty response on success. Fires 
 
 Creates an exception to the recurrence rule for a guild scheduled event. Returns a [guild scheduled event exception](#guild-scheduled-event-exception-object) object on success. Fires a [Guild Scheduled Event Exception Create](/gateway/gateway-events#guild-scheduled-event-exception-create) Gateway event.
 
+<Alert type="warn">
+
+If an exception with the same `original_scheduled_start_time` already exists, this endpoint will completely overwrite the existing exception.
+
+</Alert>
+
 ###### JSON Params
 
 | Field                         | Type               | Description                                                       |
 | ----------------------------- | ------------------ | ----------------------------------------------------------------- |
 | original_scheduled_start_time | ISO8601 timestamp  | When the scheduled event would have started without the exception |
-| is_canceled? ^1^              | boolean            | Whether the scheduled event will be skipped on this recurrence    |
+| is_canceled? ^1^              | ?boolean           | Whether the scheduled event will be skipped on this recurrence    |
 | scheduled_start_time? ^1^     | ?ISO8601 timestamp | The scheduled event's modified start time for this recurrence     |
 | scheduled_end_time? ^1^       | ?ISO8601 timestamp | The scheduled event's modified end time for this recurrence       |
 
@@ -523,11 +531,17 @@ Creates an exception to the recurrence rule for a guild scheduled event. Returns
 
 Modifies an exception to the recurrence rule for a guild scheduled event. Returns the modified [guild scheduled event exception](#guild-scheduled-event-exception-object) object on success. Fires a [Guild Scheduled Event Exception Create](/gateway/gateway-events#guild-scheduled-event-exception-create) Gateway event.
 
+<Alert type="info">
+
+All parameters to this endpoint are optional and nullable. Omitting or setting a `null` value will set it to default.
+
+</Alert>
+
 ###### JSON Params
 
 | Field                 | Type               | Description                                                    |
 | --------------------- | ------------------ | -------------------------------------------------------------- |
-| is_canceled?          | boolean            | Whether the scheduled event will be skipped on this recurrence |
+| is_canceled?          | ?boolean           | Whether the scheduled event will be skipped on this recurrence |
 | scheduled_start_time? | ?ISO8601 timestamp | The scheduled event's modified start time for this recurrence  |
 | scheduled_end_time?   | ?ISO8601 timestamp | The scheduled event's modified end time for this recurrence    |
 
@@ -573,7 +587,7 @@ Returns the number of users subscribed to a guild scheduled event.
 ```
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/users" supportsBot>
-  Get Guild Scheduled Event Users
+  List Guild Scheduled Event Users
 </RouteHeader>
 
 Returns a list of users subscribed to a guild scheduled event.
@@ -617,7 +631,7 @@ Unsubscribes the current user from a guild scheduled event. Returns a 204 empty 
   url="/guilds/{guild.id}/scheduled-events/{guild_scheduled_event.id}/{guild_scheduled_event_exception.id}/users"
   supportsBot
 >
-  Get Guild Scheduled Event Exception Users
+  List Guild Scheduled Event Exception Users
 </RouteHeader>
 
 Returns a list of [guild scheduled event user](#guild-scheduled-event-user-object) objects subscribed to a specific guild scheduled event exception.
