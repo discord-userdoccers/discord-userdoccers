@@ -85,6 +85,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Delete Speed Test](#delete-speed-test)                       | Delete the client's RTC speed test.                               |
 | [Request Last Messages](#request-last-messages)               | Request last messages for a guild's channels                      |
 | [Search Recent Members](#search-recent-members)               | Request recently-joined members for a guild                       |
+| [Resync Guild Channels](#resync-guild-channels)               | Requests channel(s) for a guild                                   |
 | [Request Channel Statuses](#request-channel-statuses)         | Request voice channel statuses for a guild                        |
 | [Request Channel Member Count](#request-channel-member-count) | Request the number of members that can view a channel             |
 | [Request Channel Info](#request-channel-info)                 | Request extra voice channel fields for a guild                    |
@@ -737,6 +738,27 @@ Used to search the 10,000 most recently joined members in a guild. User must be 
 }
 ```
 
+#### Resync Guild Channels
+
+Used to request channels for a guild. Fires a [Channel Sync](#channel-sync) Gateway event with the requested channels.
+
+###### Resync Guild Channels Structure
+
+| Field                  | Type             | Description                |
+| ---------------------- | ---------------- | -------------------------- |
+| guild_id               | snowflake        | The ID of the guild        |
+| obfuscated_channel_ids | array[snowflake] | The channel IDs to request |
+
+```json
+{
+  "op": 38,
+  "d": {
+    "guild_id": "957057010334048288",
+    "obfuscated_channel_ids": ["1142105002492575794"]
+  }
+}
+```
+
 #### Request Channel Statuses
 
 Used to request the voice channel statuses for a guild. Fires a [Channel Statuses](#channel-statuses) Gateway event with the requested statuses.
@@ -925,6 +947,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Create](#channel-create)                                                                 | Channel was created                                                                            |
 | [Channel Update](#channel-update)                                                                 | Channel was updated                                                                            |
 | [Channel Delete](#channel-delete)                                                                 | Channel was deleted                                                                            |
+| [Channel Sync](#channel-sync)                                                                     | Response to [Resync Guild Channels](#resync-guild-channels)                                    |
 | [Channel Update Partial](#channel-update-partial)                                                 | Channel was partially updated                                                                  |
 | [Channel Statuses](#channel-statuses)                                                             | Response to [Request Channel Statuses](#request-channel-statuses)                              |
 | [Channel Info](#channel-info)                                                                     | Response to [Request Channel Info](#request-channel-info)                                      |
@@ -936,6 +959,7 @@ These events directly correspond with a specific action or state change that has
 | [Channel Recipient Remove](#channel-recipient-remove)                                             | User was removed from a group DM channel                                                       |
 | [Console Command Update](#console-command-update)                                                 | Console command was updated                                                                    |
 | [Conversation Summary Update](#conversation-summary-update)                                       | Conversation summaries were updated for a text channel                                         |
+| [Creator Monetization Restrictions Update](#creator-monetization-restrictions-update)             | Guild creator monetization restrictions were updated                                           |
 | [DM Settings Upsell Show](#dm-settings-upsell-show)                                               | DM privacy settings upsell modal was triggered                                                 |
 | [Thread Create](#thread-create)                                                                   | Thread was created, also sent when being added to a private thread                             |
 | [Thread Update](#thread-update)                                                                   | Thread was updated                                                                             |
@@ -1021,6 +1045,7 @@ These events directly correspond with a specific action or state change that has
 | [Message Reaction Remove](#message-reaction-remove)                                               | User removed a reaction from a message                                                         |
 | [Message Reaction Remove All](#message-reaction-remove-all)                                       | All reactions were explicitly removed from a message                                           |
 | [Message Reaction Remove Emoji](#message-reaction-remove-emoji)                                   | All reactions for a given emoji were explicitly removed from a message                         |
+| [Reaction Notification Sent](#reaction-notification-sent)                                         | User reacted to a message authored by the current user                                         |
 | [Recent Mention Delete](#recent-mention-delete)                                                   | Recent message that mentioned the current user was acknowledged                                |
 | [Last Messages](#last-messages)                                                                   | Response to [Request Last Messages](#request-last-messages)                                    |
 | [Notification Center Item Create](#notification-center-item-create)                               | Notification center item was created                                                           |
@@ -1612,6 +1637,26 @@ For private channels, the received channel object will be partial.
 
 </Alert>
 
+#### Channel Sync
+
+Sent in response to [Resync Guild Channels](#resync-guild-channels).
+
+<Alert type="info">
+
+The channel list will only include channels the account has the `VIEW_CHANNEL` permission for.
+
+</Alert>
+
+###### Channel Sync Structure
+
+| Field           | Type                                                       | Description                                                    |
+| --------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| guild_id        | snowflake                                                  | The ID of the guild                                            |
+| channels ^1^    | array[[channel](/resources/channel#channel-object) object] | The requested channels                                         |
+| integrity_check | boolean                                                    | Whether an integrity check needs to be performed on client cache |
+
+^1^ If the current user does not have `VIEW_CHANNEL` permission in a requested channel or it does not exist, it will be omitted.
+
 #### Channel Update Partial
 
 Sent instead of [Channel Unread Update](#channel-unread-update) in OAuth2 contexts. Inner payload is a [channel unread](#channel-unread-structure) object.
@@ -1776,6 +1821,17 @@ Sent when conversation summaries are updated for a text channel. Only new or upd
 | guild_id   | snowflake                                                                            | The ID of the guild                                |
 | channel_id | snowflake                                                                            | The ID of the text channel                         |
 | summaries  | array[[conversation summary](/resources/message#conversation-summary-object) object] | The updated conversation summaries for the channel |
+
+#### Creator Monetization Restrictions Update
+
+Sent when guild creator monetization restrictions are updated.
+
+###### Creator Monetization Restrictions Update
+
+| Field        | Type            | Description                                                                                        |
+| ------------ | --------------- | -------------------------------------------------------------------------------------------------- |
+| guild_id     | snowflake       | The ID of the guild                                                                                |
+| restrictions | ?array[integer] | The [restrictions to creator monetization](/resources/guild#creator-monetization-restriction-type) |
 
 #### DM Settings Upsell Show
 
@@ -2886,6 +2942,23 @@ Sent when a user removes all instances of a given emoji from the reactions of a 
 | message_id | snowflake                                             | The ID of the message      |
 | guild_id?  | snowflake                                             | The ID of the guild        |
 | emoji      | partial [emoji object](/resources/emoji#emoji-object) | The emoji that was removed |
+
+#### Reaction Notification Sent
+
+Sent when a user reacts to a message authored by the current user.
+
+###### Reaction Notification Sent Structure
+
+| Field           | Type                                                  | Description                                                          |
+| --------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| message         | [message](/resources/message#message-object) object   | The message that was reacted to                                      |
+| reactor_user_id | snowflake                                             | The ID of the user who reacted                                       |
+| emoji           | partial [emoji](/resources/emoji#emoji-object) object | The emoji used to react                                              |
+| title           | string                                                | The notification title                                               |
+| body            | string                                                | The notification body text                                           |
+| icon            | string                                                | The notification icon URL                                            |
+| route           | string                                                | The client route opened by the notification                          |
+| tracking_type   | string                                                | The notification tracking type (always `reaction_push_notification`) |
 
 #### Recent Mention Delete
 
