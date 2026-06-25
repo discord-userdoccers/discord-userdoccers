@@ -778,15 +778,17 @@ A collection of store listings in a unified showcase.
 | pages                      | array[[storefront page](#storefront-page-structure) object]             | The pages of the storefront                    |
 | store_listings             | array[[store listing](#store-listing-object) object]                    | The store listings                             |
 | assets                     | array[[store asset](#store-asset-object) object]                        | The store assets                               |
+| storefront_pricing?        | [storefront prices](#storefront-prices-object) object                   | The storefront prices                          |
 
 ###### Storefront Page Structure
 
-| Field        | Type                                                                        | Description                                |
-| ------------ | --------------------------------------------------------------------------- | ------------------------------------------ |
-| title?       | string                                                                      | The title of the page (max 256 characters) |
-| leaderboard? | [storefront leaderboard](#storefront-leaderboard-structure) object          | The leaderboard on the page                |
-| sku_ids      | array[snowflake]                                                            | The IDs of the SKUs on the page (max 100)  |
-| sections?    | array[[storefront page section](#storefront-page-section-structure) object] | The sections on the page (max 5)           |
+| Field          | Type                                                                        | Description                                      |
+| -------------- | --------------------------------------------------------------------------- | ------------------------------------------------ |
+| title?         | string                                                                      | The title of the page (max 256 characters)       |
+| leaderboard?   | [storefront leaderboard](#storefront-leaderboard-structure) object          | The leaderboard on the page                      |
+| sku_ids        | array[snowflake]                                                            | The IDs of the SKUs on the page (max 100)        |
+| custom_sku_ids | array[string]                                                               | The IDs of the custom SKUs on the page (max 100) |
+| sections?      | array[[storefront page section](#storefront-page-section-structure) object] | The sections on the page (max 5)                 |
 
 ###### Storefront Leaderboard Structure
 
@@ -798,10 +800,11 @@ A collection of store listings in a unified showcase.
 
 ###### Storefront Page Section Structure
 
-| Field   | Type             | Description                                        |
-| ------- | ---------------- | -------------------------------------------------- |
-| title?  | string           | The title of the page section (max 256 characters) |
-| sku_ids | array[snowflake] | The IDs of the SKUs on the page section (max 100)  |
+| Field          | Type             | Description                                              |
+| -------------- | ---------------- | -------------------------------------------------------- |
+| title?         | string           | The title of the page section (max 256 characters)       |
+| sku_ids        | array[snowflake] | The IDs of the SKUs on the page section (max 100)        |
+| custom_sku_ids | array[string]    | The IDs of the custom SKUs on the page section (max 100) |
 
 ### Storefront Collection Object
 
@@ -993,6 +996,70 @@ An abstraction around SKUs for modern marketplace items on Discord.
   ]
 }
 ```
+
+### Storefront Prices Object
+
+###### Storefront Prices Structure
+
+| Field                 | Type                                                                                                       | Description                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| sku_price_map         | map[snowflake, [storefront SKU pricing](#storefront-sku-pricing-structure) object]                         | A mapping of SKU IDs to their pricing                                                                                             |
+| pricing_result_id_map | map[snowflake, map[integer, [storefront pricing result](#storefront-pricing-result-structure) object]]     | A mapping of pricing result IDs to mapping of [storefront purchase type](#storefront-purchase-type) to storefront pricing results |
+| reward_result_id_map  | map[snowflake, map[integer, [storefront promotion reward](#storefront-promotion-reward-structure) object]] | A mapping of reward result IDs to mapping of [storefront purchase type](#storefront-purchase-type) to discounts                   |
+
+###### Storefront SKU Pricing Structure
+
+| Field                    | Type             | Description                   |
+| ------------------------ | ---------------- | ----------------------------- |
+| pricing_result_id        | snowflake        | The ID of the pricing result  |
+| storefront_promotion_ids | array[snowflake] | The ID of the promotions      |
+| reward_result_ids        | array[snowflake] | The IDs of the reward results |
+
+###### Storefront Pricing Result Structure
+
+| Field      | Type                                                                                            | Description                                                                                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| user_price | array[[unit price](/resources/payment#unit-price-structure) object]                             | The price for the user                                                                                                                                                  |
+| prices     | map[integer, map[integer, array[[unit price](/resources/payment#unit-price-structure) object]]] | A mapping of [price set assignment purchase type](#price-set-assignment-purchase-type) to mapping of [price variant type](#storefront-price-variant-type) to the prices |
+
+###### Storefront Promotion Reward Structure
+
+| Field  | Type    | Description                                                           |
+| ------ | ------- | --------------------------------------------------------------------- |
+| type   | integer | The [type of the promotion reward](#storefront-promotion-reward-type) |
+| amount | integer | How much the discount is                                              |
+
+###### Storefront Purchase Type
+
+| Value | Name          | Description                                   |
+| ----- | ------------- | --------------------------------------------- |
+| 0     | SELF_PURCHASE | The user is purchasing an item for themselves |
+| 1     | GIFT          | The user is purchasing item as a gift         |
+
+###### Price Set Assignment Purchase Type
+
+| Value | Name                  | Description       |
+| ----- | --------------------- | ----------------- |
+| 0     | BASE                  | Base              |
+| 1     | PREMIUM_TIER_0        | Nitro Basic       |
+| 2     | PREMIUM_TIER_1        | Nitro Classic     |
+| 3     | PREMIUM_TIER_2        | Nitro             |
+| 4     | MOBILE                | Mobile            |
+| 5     | MOBILE_PREMIUM_TIER_2 | Mobile with Nitro |
+| 6     | GIFT                  | Gift              |
+
+###### Storefront Price Variant Type
+
+| Value | Name       | Description                |
+| ----- | ---------- | -------------------------- |
+| 0     | NORMAL     | The price is normal        |
+| 1     | DISCOUNTED | The price is with discount |
+
+###### Storefront Promotion Reward Type
+
+| Value | Name     | Description |
+| ----- | -------- | ----------- |
+| 1     | DISCOUNT | Discount    |
 
 ## Endpoints
 
@@ -1690,42 +1757,6 @@ Returns prices for the given storefront SKUs.
 
 Returns a [storefront](#storefront-object) object for the application linked to the given guild ID.
 
-<RouteHeader method="GET" url="/partner-sdk/applications/{application.id}/skus/recommendations">
-  List Application SKU Recommendations
-</RouteHeader>
-
-Returns recommended giftable SKUs for the specified users.
-
-###### Query String Parameters
-
-| Field                | Type             | Description                                                |
-| -------------------- | ---------------- | ---------------------------------------------------------- |
-| user_ids             | array[snowflake] | The IDs of the users to return recommendations for (1-100) |
-| max_recommendations? | integer          | Max number of recommendations to return (1-25, default ?)  |
-| include_wishlists?   | boolean          | Whether to include SKUs on the users' wishlists            |
-
-###### Response Body
-
-| Field            | Type                                                                                               | Description                               |
-| ---------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| skus             | array[[SKU](#sku-object) object]                                                                   | The SKUs                                  |
-| skus_to_user_ids | map[snowflake, [application SKU recommendation](#application-sku-recommendation-structure) object] | A mapping of SKU IDs to recommended users |
-| application      | partial [application](/resources/application#application-object) object                            | The application                           |
-
-###### Application SKU Recommendation Structure
-
-| Field   | Type      | Description                                                                                  |
-| ------- | --------- | -------------------------------------------------------------------------------------------- |
-| user_id | snowflake | The ID of the user                                                                           |
-| reason  | string    | The [reason why the SKU was recommended to the user](#application-sku-recommendation-reason) |
-
-###### Application SKU Recommendation Reason
-
-| Value          | Description                     |
-| -------------- | ------------------------------- |
-| WISHLIST       | User has the SKU wishlisted     |
-| RECOMMENDATION | SKU is recommended for the user |
-
 <RouteHeader method="GET" url="/partner-sdk/application/{application.id}/skus">
   List Social Layer SKUs
 </RouteHeader>
@@ -1762,8 +1793,8 @@ Modifies the application's storefront. Returns the modified [storefront](#storef
 | Field                      | Type                                                        | Description                                      |
 | -------------------------- | ----------------------------------------------------------- | ------------------------------------------------ |
 | title                      | string                                                      | The title of the storefront (max 256 characters) |
-| logo_asset_id?             | snowflake                                                   | The ID of the logo store asset                   |
-| light_theme_logo_asset_id? | snowflake                                                   | The ID of the logo store asset for light theme   |
+| logo_asset_id?             | ?snowflake                                                  | The ID of the logo store asset                   |
+| light_theme_logo_asset_id? | ?snowflake                                                  | The ID of the logo store asset for light theme   |
 | pages                      | array[[storefront page](#storefront-page-structure) object] | The pages of the storefront (max 5)              |
 
 <RouteHeader method="DELETE" url="/partner-sdk/applications/{application.id}/storefront">
@@ -1772,18 +1803,56 @@ Modifies the application's storefront. Returns the modified [storefront](#storef
 
 Deletes the application's storefront. Returns a 204 empty response on success. User must be the owner of the application or developer of the owning team.
 
-<RouteHeader method="GET" url="/partner-sdk/guilds/{guild.id}/application-storefront/skus/{sku.id}">
+<RouteHeader method="GET" url="/partner-sdk/guilds/{guild.id}/application-storefront/skus/{sku.id}" deprecated>
   Get Guild Application SKU Storefront
 </RouteHeader>
 
 Returns the storefront associated with the given SKU ID.
 
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Get Application SKU Storefront](#get-application-sku-storefront).
+
+</Alert>
+
 ###### Response Body
 
-| Field         | Type                                             | Description       |
-| ------------- | ------------------------------------------------ | ----------------- |
-| store_listing | [store listing](#store-listing-object) object    | The store listing |
-| assets        | array[[store asset](#store-asset-object) object] | The store assets  |
+| Field               | Type                                                         | Description             |
+| ------------------- | ------------------------------------------------------------ | ----------------------- |
+| store_listing       | [store listing](#store-listing-object) object                | The store listing       |
+| assets              | array[[store asset](#store-asset-object) object]             | The store assets        |
+| storefront_metadata | [storefront metadata](#storefront-metadata-structure) object | The storefront metadata |
+| storefront_pricing  | [storefront prices](#storefront-prices-object) object        | The storefront prices   |
+
+###### Storefront Metadata Structure
+
+| Field                      | Type      | Description                                    |
+| -------------------------- | --------- | ---------------------------------------------- |
+| logo_asset_id?             | snowflake | The ID of the logo store asset                 |
+| light_theme_logo_asset_id? | snowflake | The ID of the logo store asset for light theme |
+
+<RouteHeader method="GET" url="/partner-sdk/applications/{application.id}/storefront/skus/{sku.id}">
+  Get Application SKU Storefront
+</RouteHeader>
+
+Returns the storefront associated with the given SKU ID.
+
+###### Query String Parameters
+
+| Field                | Type    | Description                                                                             |
+| -------------------- | ------- | --------------------------------------------------------------------------------------- |
+| with_google_sku_ids? | boolean | Whether to include Google Play SKU ID mappings (default false)                          |
+| country_code?        | string  | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code |
+| payment_gateway?     | integer | The [payment gateway](/resources/billing#payment-gateway) (only `APPLE` is allowed)     |
+
+###### Response Body
+
+| Field               | Type                                                         | Description             |
+| ------------------- | ------------------------------------------------------------ | ----------------------- |
+| store_listing       | [store listing](#store-listing-object) object                | The store listing       |
+| assets              | array[[store asset](#store-asset-object) object]             | The store assets        |
+| storefront_metadata | [storefront metadata](#storefront-metadata-structure) object | The storefront metadata |
+| storefront_pricing  | [storefront prices](#storefront-prices-object) object        | The storefront prices   |
 
 <RouteHeader method="GET" url="/partner-sdk/guilds/{guild.id}/application-storefront/announcement">
   Get Guild Application Storefront Announcement
@@ -1813,7 +1882,29 @@ Returns the most recent announcement on the storefront for the application linke
 }
 ```
 
-<RouteHeader method="POST" url="/partner-sdk/guilds/{guild.id}/application-storefront/skus/{sku.id}/eligibility">
+<RouteHeader
+  method="POST"
+  url="/partner-sdk/guilds/{guild.id}/application-storefront/skus/{sku.id}/eligibility"
+  deprecated
+>
+  Check Social Layer SKU Purchase Eligibility By Guild
+</RouteHeader>
+
+Creates a [`SOCIAL_LAYER_SKU_PURCHASE_ELIGIBILITY`](/interactions/receiving-and-responding#interaction-type) interaction used to check whether the user is eligible to purchase a social layer SKU.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Check Social Layer SKU Purchase Eligibility](#check-social-layer-sku-purchase-eligibility).
+
+</Alert>
+
+###### Response Body
+
+| Field          | Type      | Description                       |
+| -------------- | --------- | --------------------------------- |
+| interaction_id | snowflake | The ID of the created interaction |
+
+<RouteHeader method="POST" url="/partner-sdk/applications/{application.id}/storefront/skus/{sku.id}/eligibility">
   Check Social Layer SKU Purchase Eligibility
 </RouteHeader>
 
@@ -1833,7 +1924,39 @@ Returns the promotion currently running for Social Layer integrated storefronts.
 
 ###### Response Body
 
-| Field                  | Type               | Description                               |
-| ---------------------- | ------------------ | ----------------------------------------- |
-| promotional_sku_ids    | array[snowflake]   | The IDs of the promotional store listings |
-| promotion_end_datetime | ?ISO8601 timestamp | When the promotion ends                   |
+| Field                  | Type                                                            | Description                               |
+| ---------------------- | --------------------------------------------------------------- | ----------------------------------------- |
+| promotional_sku_ids    | array[snowflake]                                                | The IDs of the promotional store listings |
+| promotion_end_datetime | ?ISO8601 timestamp                                              | When the promotion ends                   |
+| storefronts            | array[[storefront config](#storefront-config-structure) object] | The storefronts                           |
+
+###### Storefront Config Structure
+
+| Field                                | Type          | Description                                                                                                          |
+| ------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| guild_id                             | snowflake     | The ID of the guild                                                                                                  |
+| application_id                       | snowflake     | The ID of the application                                                                                            |
+| game_id                              | snowflake     | The ID of the game                                                                                                   |
+| collectibles_shop_navigation_enabled | boolean       | Whether navigation is enabled in the game collectible shop                                                           |
+| excluded_platforms                   | array[string] | The [platforms](#storefront-platform-type) that the game does not support account linking for accepting purchases on |
+| disable_mobile_account_linking       | boolean       | Whether account linking is disabled on mobile                                                                        |
+
+###### Storefront Platform Type
+
+| Value       | Description |
+| ----------- | ----------- |
+| desktop     | Desktop     |
+| xbox        | Xbox        |
+| playstation | PlayStation |
+
+<RouteHeader method="GET" url="/partner-sdk/storefront-eligibility">
+  Get Social Layer Storefront Eligibilities
+</RouteHeader>
+
+Returns a mapping of application IDs to [storefront eligibility](#storefront-eligibility-structure) objects.
+
+###### Storefront Eligibility Structure
+
+| Field       | Type    | Description                                                   |
+| ----------- | ------- | ------------------------------------------------------------- |
+| is_eligible | boolean | Whether the application is eligible for setting up storefront |
