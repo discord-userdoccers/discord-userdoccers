@@ -17,12 +17,14 @@ Characters with no lowercase variants and uncased letters are still allowed. `US
 | type?                               | integer                                                                                          | The type of command (default `CHAT_INPUT`)                                                                                                                      | All                   |
 | application_id ^2^                  | snowflake                                                                                        | The ID of the application that the command belongs to                                                                                                           | All                   |
 | guild_id? ^2^                       | snowflake                                                                                        | The ID of the guild the command is for                                                                                                                          | All                   |
-| name                                | string                                                                                           | The name of the command (1-32 characters)                                                                                                                       | All                   |
+| name ^5^                            | string                                                                                           | The name of the command (1-32 characters)                                                                                                                       | All                   |
 | name_localizations?                 | ?map[string, string]                                                                             | The localized name for each [locale](/reference#locales) (values follow same restrictions as `name`)                                                            | All                   |
-| name_localized? ^2^                 | ?string                                                                                          | The localized name of the command                                                                                                                               | All                   |
-| description                         | string                                                                                           | The description of the command (1-100 characters)                                                                                                               | All                   |
+| name_localized? ^2^ ^5^             | ?string                                                                                          | The localized name of the command                                                                                                                               | All                   |
+| name_default? ^2^ ^4^ ^5^           | string                                                                                           | The name of the command                                                                                                                                         | All                   |
+| description ^5^                     | string                                                                                           | The description of the command (1-100 characters)                                                                                                               | All                   |
 | description_localizations?          | ?map[string, string]                                                                             | The localized description for each [locale](/reference#locales) (values follow same restrictions as `description`)                                              | All                   |
-| description_localized? ^2^          | ?string                                                                                          | The localized description of the command                                                                                                                        | All                   |
+| description_localized? ^2^ ^5^      | ?string                                                                                          | The localized description of the command                                                                                                                        | All                   |
+| description_default? ^2^ ^4^ ^5^    | string                                                                                           | The description of the command                                                                                                                                  | All                   |
 | options?                            | array[[application command option](#application-command-option-structure) object]                | The options for the command (max 25)                                                                                                                            | `CHAT_INPUT`          |
 | default_member_permissions          | ?string                                                                                          | The default required permissions to call the command                                                                                                            | All                   |
 | dm_permission? ^3^ **(deprecated)** | boolean                                                                                          | Whether the command is available in DMs with the application (default true)                                                                                     | All                   |
@@ -41,6 +43,8 @@ Characters with no lowercase variants and uncased letters are still allowed. `US
 ^3^ Only applicable for globally-scoped commands.
 
 ^4^ Only available within [application command index](#application-command-index-object) objects.
+
+^5^ Within [application command index](#application-command-index-object) objects, if a `name_localized` is determined, it will be serialized as `name`, with the original `name` being serialized as `name_default`. The same applies to `description_localized` and `description_default`.
 
 ###### Application Command Type
 
@@ -1258,6 +1262,8 @@ An autocomplete interaction **can return partial data** for option values. Your 
 For example, you may receive partial strings, but not invalid numbers. The option the user is currently typing will be sent with a `focused: true` boolean field and options the user has already filled will also be sent but without the `focused` field.
 This is a special case where options that are otherwise required might not be present, due to the user not having filled them yet.
 
+Autocomplete interactions will not contain attachments.
+
 <Alert type="warn">
 
 This validation is **client-side only**.
@@ -1327,7 +1333,10 @@ For example, if you have a command with the default name "color", and your local
 
 ### Retrieving Localized Commands
 
-While most endpoints that return application command objects will return the `name_localizations` and `description_localizations` fields, some will not by default. This includes `GET` endpoints that return all of an application's guild or global commands. Instead, those endpoints will supply additional `name_localized` or `description_localized` fields, which only contain the localization relevant to the requester's locale. The full dictionaries can still be obtained by supplying the appropriate query argument.
+While most endpoints that return application command objects will return the `name_localizations` and `description_localizations` fields, some will not by default. This includes `GET` endpoints that return all of an application's guild or global commands.
+Instead, those endpoints will supply additional `name_localized` or `description_localized` fields, which only contain the localization relevant to the requester's locale. The full dictionaries can still be obtained by supplying the appropriate query argument.
+
+[Application command index](#application-command-index-object) objects have special behavior for localization. See the [application command](#application-command-object) object notes for details.
 
 For example, if a batch `GET` request were made with locale `zh-CN`, including the above command, the returned object would look as follows:
 
@@ -1350,7 +1359,7 @@ For example, if a batch `GET` request were made with locale `zh-CN`, including t
 }
 ```
 
-If the requester's locale is not found in a localizations dictionary, then the corresponding `name_localization` or `description_localization` for that field will also not be present.
+If the requester's locale is not found in a localizations dictionary, then the corresponding `name_localized` or `description_localized` for that field will also not be present.
 
 Locale is determined by looking at the `X-Discord-Locale` header, then the `Accept-Language` header if not present, then lastly the user settings locale.
 
