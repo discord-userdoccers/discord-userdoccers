@@ -9,6 +9,7 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | Field                            | Type                                                                               | Description                                                                                                           |
 | -------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | id                               | snowflake                                                                          | The ID of the subscription                                                                                            |
+| user_id?                         | snowflake                                                                          | The ID of the user that owns the subscription                                                                         |
 | type                             | integer                                                                            | The [type](#subscription-type) of subscription                                                                        |
 | payment_gateway                  | ?integer                                                                           | The [payment gateway](/resources/billing#payment-gateway) used to bill the subscription                               |
 | currency                         | string                                                                             | The lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code                                      |
@@ -19,6 +20,8 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | current_period_end               | ISO8601 timestamp                                                                  | When the current billing period ends                                                                                  |
 | streak_started_at?               | ISO8601 timestamp                                                                  | When the current subscription streak started                                                                          |
 | status                           | integer                                                                            | The [status](#subscription-status) of subscription                                                                    |
+| pause_ends_at?                   | ?ISO8601 timestamp                                                                 | When the subscription pause ends                                                                                      |
+| pause_reason?                    | ?integer                                                                           | The [reason the subscription was paused](#subscription-pause-reason)                                                  |
 | renewal_mutations?               | [subscription renewal mutations](#subscription-renewal-mutations-structure) object | The mutations to the subscription that will occur after renewal                                                       |
 | trial_id?                        | snowflake                                                                          | The ID of the trial the subscription is from                                                                          |
 | payment_source_id                | ?snowflake                                                                         | The ID of the payment source the subscription is paid with                                                            |
@@ -30,6 +33,8 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | latest_invoice?                  | [subscription invoice](/resources/payment#invoice-object) object                   | The latest invoice for the subscription                                                                               |
 | use_storekit_resubscribe         | boolean                                                                            | Whether the subscription should be managed through StoreKit                                                           |
 | price                            | ?integer                                                                           | The price of the subscription (only available for certain third-party subscriptions)                                  |
+| eligible_payment_gateways?       | ?array[integer]                                                                    | The [payment gateways](/resources/billing#payment-gateway) eligible for the subscription                              |
+| price_change?                    | ?[subscription price change](#subscription-price-change-structure) object          | The pending price change for the subscription                                                                         |
 | entitlements?                    | array[[entitlement](/resources/entitlement#entitlement-object) object]             | The entitlements granted by the subscription                                                                          |
 
 ###### Partial Subscription Structure
@@ -69,6 +74,16 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | 8     | PAUSED        | Subscription is paused                     |
 | 9     | PAUSE_PENDING | Subscription is pending pause              |
 
+###### Subscription Pause Reason
+
+| Value | Name               | Description              |
+| ----- | ------------------ | ------------------------ |
+| 1     | ADMIN              | Administrative pause     |
+| 2     | USER               | User pause               |
+| 3     | FRACTIONAL_PREMIUM | Fractional premium pause |
+| 4     | DEFERRED_START     | Deferred start pause     |
+| 5     | USER_TEMPORARY_BAN | Temporary user ban pause |
+
 ###### Subscription Item Structure
 
 | Field    | Type      | Description                                         |
@@ -83,6 +98,28 @@ Subscriptions in Discord represent an user making recurring payments for at leas
 | ------------------------ | --------------------------------------------------------------- | ------------------------------------------------------ |
 | payment_gateway_plan_id? | ?string                                                         | The payment gateway's new plan ID for the subscription |
 | items?                   | array[[subscription item](#subscription-item-structure) object] | The new items of the subscription                      |
+
+###### Subscription Price Change Structure
+
+| Field                | Type              | Description                                                                               |
+| -------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| user_id              | snowflake         | The ID of the user                                                                        |
+| subscription_id      | snowflake         | The ID of the subscription                                                                |
+| old_currency         | string            | The previous lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code |
+| old_price            | integer           | The previous price amount in the smallest currency unit                                   |
+| new_currency         | string            | The new lower-cased [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code      |
+| new_price            | integer           | The new price amount in the smallest currency unit                                        |
+| price_change_mode    | string            | The [mode of the price change](#subscription-price-change-mode)                           |
+| expected_charge_time | ISO8601 timestamp | When the new price is expected to be charged                                              |
+| price_change_id      | string            | The ID of the price change                                                                |
+
+###### Subscription Price Change Mode
+
+| Value                  | Description                              |
+| ---------------------- | ---------------------------------------- |
+| PRICE_INCREASE         | Price increases                          |
+| OPT_OUT_PRICE_INCREASE | Price increases unless the user opts out |
+| PRICE_DECREASE         | Price decreases                          |
 
 ###### Subscription Metadata Structure
 
@@ -130,6 +167,23 @@ Subscriptions in Discord represent an user making recurring payments for at leas
   "sku_id": "521847234246082599"
 }
 ```
+
+### Premium Subscription Group Member Object
+
+###### Premium Subscription Group Member Structure
+
+| Field       | Type                                               | Description                                                         |
+| ----------- | -------------------------------------------------- | ------------------------------------------------------------------- |
+| user        | partial [user](/resources/user#user-object) object | The user in the premium subscription group                          |
+| member_type | integer                                            | The [type of member](#premium-subscription-group-member-type)       |
+| accepted_at | ?ISO8601 timestamp                                 | When the member accepted the group invite, or null if it is pending |
+
+###### Premium Subscription Group Member Type
+
+| Value | Name    | Description                                     |
+| ----- | ------- | ----------------------------------------------- |
+| 1     | PRIMARY | User owns the premium subscription group        |
+| 2     | MEMBER  | User is a member or invited member of the group |
 
 ### Premium Guild Subscription Slot Object
 
@@ -396,6 +450,72 @@ Claims a promotion reward from the given subscription.
 | -------------------------------- | -------------------------------------------- |
 | user_eligible_for_reward         | User is eligible for reward                  |
 | user_not_eligible_for_experiment | User is not eligible for relevant experiment |
+
+<RouteHeader method="GET" url="/users/@me/billing/subscriptions/{subscription.id}/eligible-users">
+  Get Eligible Premium Subscription Group Users
+</RouteHeader>
+
+Returns users that can be invited to the premium subscription group.
+
+###### Query String Params
+
+| Field               | Type    | Description                                         |
+| ------------------- | ------- | --------------------------------------------------- |
+| index?              | integer | The current search index                            |
+| limit?              | integer | Max number of users to return                       |
+| search_query?       | string  | Query to match usernames against                    |
+| include_ineligible? | boolean | Whether to include ineligible users in the response |
+
+###### Response Body
+
+| Field             | Type                                                      | Description                     |
+| ----------------- | --------------------------------------------------------- | ------------------------------- |
+| users             | array[partial [user](/resources/user#user-object) object] | The eligible users              |
+| next_index?       | integer                                                   | The next index to paginate from |
+| ineligible_users? | array[partial [user](/resources/user#user-object) object] | The ineligible users            |
+
+<RouteHeader method="POST" url="/users/@me/billing/subscriptions/{subscription.id}/invites">
+  Invite Premium Subscription Group Users
+</RouteHeader>
+
+Invites users to the premium subscription group.
+
+###### JSON Params
+
+| Field    | Type             | Description                    |
+| -------- | ---------------- | ------------------------------ |
+| user_ids | array[snowflake] | The IDs of the users to invite |
+
+###### Response Body
+
+| Field            | Type             | Description                                    |
+| ---------------- | ---------------- | ---------------------------------------------- |
+| invited_users    | array[snowflake] | The IDs of the users that were invited         |
+| ineligible_users | array[snowflake] | The IDs of the users that could not be invited |
+
+<RouteHeader method="GET" url="/users/@me/billing/subscriptions/{subscription.id}/members">
+  Get Premium Subscription Group Members
+</RouteHeader>
+
+Returns a list of [premium subscription group member](#premium-subscription-group-member-object) objects.
+
+<RouteHeader method="PATCH" url="/users/@me/billing/subscriptions/{subscription.id}/members/{user.id}/invite">
+  Accept Premium Subscription Group Invite
+</RouteHeader>
+
+Accepts a premium subscription group invite for the given user.
+
+<RouteHeader method="DELETE" url="/users/@me/billing/subscriptions/{subscription.id}/members/{user.id}/invite">
+  Delete Premium Subscription Group Invite
+</RouteHeader>
+
+Deletes a premium subscription group invite for the given user.
+
+<RouteHeader method="DELETE" url="/users/@me/billing/subscriptions/{subscription.id}/members/{user.id}">
+  Remove Premium Subscription Group Member
+</RouteHeader>
+
+Removes a user from the premium subscription group.
 
 <RouteHeader method="GET" url="/users/@me/guilds/premium/subscriptions/cooldown">
   Get Premium Guild Subscription Cooldown
