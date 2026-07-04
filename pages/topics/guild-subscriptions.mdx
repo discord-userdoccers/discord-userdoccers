@@ -1,0 +1,279 @@
+# Guild Subscriptions
+
+Originally, Discord used [Request Guild Members](/gateway/gateway-events#request-guild-members) and Guild Sync for member sidebar. However, as Discord guilds been getting larger and larger, these methods started causing scalability issues. Since then, guild subscriptions were primarily introduced to reduce load on clients and servers by lazily loading only visually visible chunks.
+
+## How It Works
+
+Clients in large guilds (guilds with over 75000 members), will no longer receive [message](/gateway/gateway-events#messages) and [presence](/gateway#gateway-events#presences) events if they do not have a guild subscription.
+
+Upon startup, the client is automatically subscribed to the members of all friends, users with an open DMs for all non-large guilds.
+For each opened DM recipient during the session, the Gateway will automatically subscribe to them.
+
+To receive the events again, the client must subscribe to the guild using [Update Guild Subscription](/gateway/gateway-events#update-guild-subscription) or [Update Guild Subscriptions](/gateway/gateway-events#update-guild-subscriptions) and set `typing: true`. Once the client subscribes to `typing` feature, the guild is considered to be subscribed to indefinitely and therefore cannot be unsubscribed.
+
+However, an event may be force dispatched if it influences client's cache in way that is visible to the user. For example, messages with mentioning the user, messages with `mention_everyone: true` or messages mentioning the role that the current user has, will be force dispatched, even if the users are not explicitly subscribed.
+
+Initial subscription to a large guild will dispatch a [Guild Create](/gateway/gateway-events#guild-create) Gateway event for the guild. This is normal and expected, and means that the client should repopulate it's cache again.
+
+The Gateway will periodically fire a [Channel Unread Update](/gateway/gateway-events#channel-unread-update) / [Passive Update V1](/gateway/gateway-events#passive-update-v1) / [Passive Update V2](/gateway/gateway-events#passive-update-v2) Gateway event for unsubscribed large guilds, in order to keep the client's cache up to date.
+
+## Range Parsing
+
+The ranges are validated and normalized using the following pseudocode:
+
+```py
+def parse(ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    if len(ranges) == 0:
+        raise ValueError('Must have at least 1 range')
+
+    if len(ranges) > 3:
+        raise ValueError('Cannot have more than 3 ranges')
+
+    result: List[Tuple[int, int]] = []
+    for start, end in ranges:
+        start, end = min(start, end), max(start, end)
+
+        if (end - start) > 300:
+            raise ValueError('Cannot request 300 items in a single range')
+
+        for chunk_index in range(start // 100, (end // 100) + 1):
+            result.append((chunk_index * 100, (chunk_index * 100) + 99))
+
+    return sorted(set(result))
+```
+
+## Member List ID
+
+A member list ID is typically used by clients to deduplicate member list subscriptions across multiple channels in same guild.
+
+The following pseudocode can be used to retrieve member list IDs for a channel:
+
+```py
+def is_accessible_by_everyone(channel):
+    guild = channel.guild
+    everyone_role = guild.get_role(guild.id)
+
+    if everyone.permissions & VIEW_CHANNEL != VIEW_CHANNEL:
+        return False
+
+    for overwrite in channel.permission_overwrites:
+        if overwrite.deny & VIEW_CHANNEL == VIEW_CHANNEL:
+            return False
+
+    return True
+
+def get_member_list_id(channel):
+    if is_accessible_by_everyone(channel);
+        return 'everyone'
+    
+    overwrites = []
+    
+    for overwrite in channel.permission_overwrites:
+        if overwrite.allow & VIEW_CHANNEL == VIEW_CHANNEL:
+            overwrites.append(f'allow:{overwrite.id}')
+        elif overwrite.deny & VIEW_CHANNEL == VIEW_CHANNEL:
+            overwrites.append(f'deny:{overwrite.id}')
+
+    return mmh3.hash(','.join(sorted(overwrites)), signed=False)
+```
+
+## Channel Member List
+
+Upon subscribing to a guild with `channels` key, the Gateway will start sending [Guild Member List Update](/gateway/gateway-events#guild-member-list-update) event to the current user.
+
+The indexes in the event do not represent index of the specific item type (group or member) or within range; instead, they represent an index of the item in whole member list.
+
+Each hoisted role will get it's own group, [sorted by it's role position/ID](/topics/permissions#permission-hierachy).
+However, if the member is offline, they're moved to a synthenic group called "offline".
+If the member is online, and does not have any of hoisted roles, they're moved to an another synthenic group called "online".
+
+The members in the list is sorted by a displayed name, which is resolved in following order:
+
+1. `nick` field on [guild member](/resources/guild#guild-member-object) object.
+2. `display_name` field on partial [user](/resources/user#user-object) object.
+3. `username` field on partial [user](/resources/user#user-object) object.
+
+Typically, if a group is empty, it will be not included in the member list.
+
+For example, given the following pseudo-guild:
+
+```json
+{
+    "id": "2000",
+    "name": "SMP",
+    "roles": [
+        {
+            "id": "2000",
+            "name": "@everyone",
+            "position": 0
+        },
+        {
+            "id": "2001",
+            "name": "Premium",
+            "position": 1,
+        },
+        {
+            "id": "2002",
+            "name": "Mod",
+            "position": 2,
+        },
+        {
+            "id": "2003",
+            "name": "Admin",
+            "position": 3
+        }
+    ],
+    "owner_id": "1001",
+    "members": [
+        {
+            "user": {
+                "id": "1001",
+                "username": "bob",
+                "global_name": "Bob",
+            },
+            "roles": ["2003"]
+        },
+        {
+            "user": {
+                "id": "1002",
+                "username": "john",
+                "global_name": "John"
+            },
+            "roles": ["2003"]
+        },
+        {
+            "user": {
+                "id": "1003",
+                "username": "alice",
+                "global_name": "Alice"
+            },
+            "roles": ["2001"]
+        },
+        {
+            "user": {
+                "id": "1004",
+                "username": "alien",
+                "global_name": "Alien"
+            },
+            "roles": []
+        },
+        {
+            "user": {
+                "id": "1005",
+                "username": "eve",
+                "global_name": "Eve"
+            },
+            "roles": []
+        }
+    ],
+    "presences": [
+        {
+            "user": {"id": "1001"},
+            "guild_id": "2000",
+            "status": "online",
+            "activities": []
+        },
+        {
+            "user": {"id": "1003"},
+            "guild_id": "2000",
+            "status": "online",
+            "activities": []
+        },
+        {
+            "user": {"id": "1004"},
+            "guild_id": "2000",
+            "status": "online",
+            "activities": []
+        }
+    ],
+    "channels": [
+        {
+            "id": "10001",
+            "type": 0,
+            "guild_id": "2000",
+            "name": "general",
+            "permission_overwrites": []
+        }
+    ]
+}
+
+```
+
+Following member list would be generated (member details are omitted for clarity):
+
+```json
+{
+    "guild_id": "2000",
+    "id": "everyone",
+    "member_count": 5,
+    "online_count": 2,
+    "groups": [
+        {"id": "2003", "count": 1},
+        {"id": "2001", "count": 1}
+        {"id": "online", "count": 1},
+        {"id": "offline", "count": 1}
+    ],
+    "ops": [
+        {
+            "op": "SYNC",
+            "items": [
+                {"group": {"id": "2003", "count": 1}},
+                {
+                    "member": {
+                        "user": {"id": "1001"},
+                        "roles": ["2003"]
+                    }
+                },
+                {"group": {"id": "2001", "count": 1}},
+                {
+                    "member": {
+                        "user": {"id": "1003"},
+                        "roles": ["2001"]
+                    }
+                },
+                {"group": {"id": "online", "count": 1}},
+                {
+                    "member": {
+                        "user": {"id": "1004"},
+                        "roles": []
+                    }
+                },
+                {"group": {"id": "offline", "count": 2}},
+                {
+                    "member": {
+                        "user": {"id": "1005"},
+                        "roles": []
+                    }
+                },
+                {
+                    "member": {
+                        "user": {"id": "1002"},
+                        "roles": ["2003"]
+                    }
+                }
+            ],
+            "range": [[0, 99]]
+        }
+    ]
+}
+```
+
+## Member Subscriptions
+
+By default, the Gateway does not send [`GUILD_MEMBER_ADD`](/gateway/gateway-events#guild-member-add), [`GUILD_MEMBER_UPDATE`](/gateway/gateway-events#guild-member-update), and [`GUILD_MEMBER_REMOVE`](/gateway/gateway-events#guild-member-remove) events for other users to the current user. You can set `member_updates` to `true` to explicitly receive them.
+
+You can individually subscribe to users you wish to receive events for, using `members` array.
+
+Independently of the subscriptions, all actions the current user does on themselves or other members will be dispatched to the current user's Gateway sessions.
+
+## Thread Subscriptions
+
+Similarly to member subscriptions, the Gateway does not send events for threads the current user is not in.
+
+To receive these events, you must set `threads: true`. Upon doing that, the Gateway will send [Thread List Sync](/gateway/gateway-events#thread-list-sync) event.
+
+## Thread Member List
+
+Similarly to [channels](#channel-member-list), threads do have member list. However, the implementation for threads is different, as the Gateway sends only a list of active members in the thread.
+
+To receive the [Thread Member List Update](/gateway/gateway-events#thread-member-list-update) events, you must add an ID of the thread you wish to receive member list for to `thread_member_lists` array.

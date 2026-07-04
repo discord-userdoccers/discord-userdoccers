@@ -76,7 +76,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Ping Lobby Voice Server](#ping-lobby-voice-server)                                   | Ping a lobby's voice server                                       |
 | [Request Guild Members](#request-guild-members)                                       | Request members for one or more guilds                            |
 | [Request Call Connect](#request-call-connect)                                         | Request a private channels's pre-existing call information        |
-| Update Guild Subscriptions                                                            | Update subscriptions for a guild                                  |
+| [Update Guild Subscriptions](#update-guild-subscriptions)                             | Update subscriptions for a guild                                  |
 | Request Forum Unreads                                                                 | Request thread-only channel unread counts                         |
 | [Remote Command](<#remote-command-(send)>)                                            | Send a message to another Gateway session                         |
 | [Get Deleted Entity IDs Not Matching Hash](#get-deleted-entity-ids-not-matching-hash) | Request deleted entity IDs not matching a given hash for a guild  |
@@ -86,6 +86,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Request Last Messages](#request-last-messages)                                       | Request last messages for a guild's channels                      |
 | [Search Recent Members](#search-recent-members)                                       | Request recently-joined members for a guild                       |
 | [Resync Guild Channels](#resync-guild-channels)                                       | Requests channel(s) for a guild                                   |
+| [Bulk Update Guild Subscriptions](#bulk-update-guild-subscriptions)                   | ...                                                               |
 | [Request Channel Statuses](#request-channel-statuses)                                 | Request voice channel statuses for a guild                        |
 | [Request Channel Member Count](#request-channel-member-count)                         | Request the number of members that can view a channel             |
 | [Request Channel Info](#request-channel-info)                                         | Request extra voice channel fields for a guild                    |
@@ -612,6 +613,30 @@ When using the `AUTO_CALL_CONNECT` [Gateway capability](/gateway/using-gateway#g
 }
 ```
 
+#### Update Guild Subscriptions
+
+Used to update subscriptions for a guild. Accepts a partial [update guild subscription](#partial-update-guild-subscription-structure) object, with extra fields below.
+
+###### Update Guild Subscriptions Extra Fields Structure
+
+| Field    | Type      | Description         |
+| -------- | --------- | ------------------- |
+| guild_id | snowflake | The ID of the guild |
+
+###### Partial Update Guild Subscription Structure
+
+| Field                | Type                                           | Description                                                                                                                                                                |
+| -------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| typing?              | boolean                                        | Whether the current user is subscribed to the guild                                                                                                                        |
+| threads?             | boolean                                        | Whether the current user is subscribed to the guild threads                                                                                                                |
+| activities?          | boolean                                        | Whether the current user can receive embedded activity events                                                                                                              |
+| members?             | array[snowflake]                               | Te IDs of the users whose member events should be sent for the current user                                                                                                |
+| member_updates?      | boolean                                        | Whether the member events are sent                                                                                                                                         |
+| channels? ^1^        | map[snowflake, array[array[integer, integer]]] | A mapping of channel IDs to ranges of member list items, containing the  `(start, end)` arrays representing the indexes of chunk (max 5 channel subscriptions, 1-3 ranges) |
+| thread_member_lists? | array[snowflake]                               | The IDs of the threads to receive member list for                                                                                                                          |
+
+^1^ See [Range Parsing](/topics/guild-subscriptions#range-parsing) for details.
+
 #### Remote Command (Send)
 
 Used to send a message to another Gateway session. Typically, this is used to control embedded sessions, such as an Xbox or PlayStation session. Fires a [Remote Command](<#remote-command-(receive)>) Gateway event on the target session.
@@ -787,6 +812,43 @@ Used to request channels for a guild. Fires a [Channel Sync](#channel-sync) Gate
   }
 }
 ```
+
+#### Bulk Update Guild Subscriptions
+
+Used to update subscriptions for multiple guilds.
+
+<Alert type="warn">
+
+Due to 15 KiB limitation, this command must be fragmented in a specific way using the following pseudocode:
+
+```py
+import json
+
+def fragment_guild_subscriptions(subscriptions):
+  current_subscriptions = {}
+  current_payload_length = 0
+  
+  for guild_id, subscriptions_ in subscriptions.items():
+    payload_length = len(json.dumps([str(guild_id), subscriptions_], separators=(',', ':')))
+    if (current_payload_length + payload_length) > 15360:
+      yield current_subscriptions
+      current_subscriptions.clear()
+      current_payload_length = 0
+
+    current_subscriptions[guild_id] = subscriptions_
+    current_payload_length += payload_length
+  
+  if current_payload_length > 0:
+    yield current_subscriptions
+```
+
+</Alert>
+
+###### Update Guild Subscriptions Extra Fields Structure
+
+| Field         | Type                                                                                                     | Description                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| subscriptions | map[snowflake, partial [update guild subscription](#partial-update-guild-subscription-structure) object] | A mapping of guild IDs to their subscription update request |
 
 #### Request Channel Statuses
 
@@ -995,6 +1057,7 @@ These events directly correspond with a specific action or state change that has
 | [Thread Update](#thread-update)                                                                   | Thread was updated                                                                                |
 | [Thread Delete](#thread-delete)                                                                   | Thread was deleted                                                                                |
 | [Thread List Sync](#thread-list-sync)                                                             | Sent when gaining access to a channel, contains all active threads in that channel                |
+| [Thread Member List Update](#thread-member-list-update)                                           | Thread member list was updated                                                                    |
 | [Thread Member Update](#thread-member-update)                                                     | [Thread member](/resources/channel#thread-member-object) for the current user was updated         |
 | [Thread Members Update](#thread-members-update)                                                   | User(s) were added to or removed from a thread                                                    |
 | [Embedded Activity Update V2](#embedded-activity-update-v2)                                       | Embedded activity was created, updated, or deleted                                                |
@@ -1031,6 +1094,7 @@ These events directly correspond with a specific action or state change that has
 | [Guild Member Update](#guild-member-update)                                                       | Guild member was updated                                                                          |
 | [Guild Member Remove](#guild-member-remove)                                                       | User was removed from a guild                                                                     |
 | [Guild Members Chunk](#guild-members-chunk)                                                       | Response to [Request Guild Members](#request-guild-members)                                       |
+| [Guild Member List Update](#guild-member-list-update)                                             | Guild member list was updated                                                                     |
 | [Guild Official Game Applications Update](#guild-official-game-applications-update)               | Guild game applications were updated                                                              |
 | [Guild Powerup Entitlements Create](#guild-powerup-entitlements-create)                           | Guild powerups were added                                                                         |
 | [Guild Powerup Entitlements Delete](#guild-powerup-entitlements-delete)                           | Guild powerups were removed                                                                       |
@@ -1936,6 +2000,24 @@ For bots, all active threads are synced at startup. For user accounts, only join
 | threads      | array[[channel](/resources/channel#channel-object) object]             | All active threads in the given channels that the current user can access                                                                                                                             |
 | members      | array[[thread member](/resources/channel#thread-member-object) object] | All thread member objects from the synced threads for the current user, indicating which threads the current user has been added to                                                                   |
 
+#### Thread Member List Update
+
+Sent when the thread member list is updated. See [Guild Subscriptions](/topics/guild-subscriptions#threads) for more details.
+
+###### Thread Member List Update Structure
+
+| Field     | Type                                                                        | Description               |
+| --------- | --------------------------------------------------------------------------- | ------------------------- |
+| guild_id  | snowflake                                                                   | The ID of the guild       |
+| thread_id | snowflake                                                                   | The ID of the thread      |
+| members   | array[[thread member list item](#thread-member-list-item-structure) object] | The members in the thread |
+
+###### Thread Member List Item Structure
+
+| user_id  | snowflake                                                   |
+| member   | [guild member](/resources/guild#guild-member-object) object |
+| presence | [presence](/resources/presence#presence-object) object      |
+
 #### Thread Member Update
 
 Sent when the [thread member](/resources/channel#thread-member-object) object for the current user is updated. The inner payload is a [thread member](/resources/channel#thread-member-object) object with an extra `guild_id` field. For bots, this event largely is just a signal that you are a member of the thread. See the [threads docs](/topics/threads) for more details.
@@ -2433,14 +2515,16 @@ If using [Gateway intents](/gateway/using-gateway#gateway-intents), the `GUILD_M
 
 Sent when a user is removed from a guild (leave/kick/ban).
 
-For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. Users are automatically subscribed to [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/gateway/using-gateway#gateway-capabilities)), as well as users they have an open DM with.
+For user accounts, this event is only sent for themselves, members they are subscribed to, and in response to actions committed by the user. [Users are automatically subscribed](/topics/guild-subscriptions) to [friends and implicit relationships](/resources/relationships#relationship-object) (depending on the `NO_AFFINE_USER_IDS` [Gateway capability](/gateway/using-gateway#gateway-capabilities)), as well as users they have an open DM with.
 
 ###### Guild Member Remove Structure
 
 | Field    | Type                                       | Description         |
 | -------- | ------------------------------------------ | ------------------- |
 | guild_id | snowflake                                  | The ID of the guild |
-| user     | [user](/resources/user#user-object) object | The removed user    |
+| user ^1^ | [user](/resources/user#user-object) object | The removed user    |
+
+^1^ If the object contains only `id`, then the event is a signal that the user is not a member of the guild. See [Guild Subscriptions](/topics/guild-subscriptions) for more details.
 
 #### Guild Members Chunk
 
@@ -2458,6 +2542,57 @@ You can use the `chunk_index` and `chunk_count` to calculate how many chunks are
 | not_found?  | array                                                              | The passed IDs that were not found                                                                                           |
 | presences?  | array[[presence](/resources/presence#presence-object) object]      | The presences of the returned members, if requested                                                                          |
 | nonce?      | string                                                             | The nonce used in [Request Guild Members](#request-guild-members) or [Search Recent Members](#search-recent-members), if any |
+
+#### Guild Member List Update
+
+Sent when the guild member list is updated. See [Guild Subscriptions](/topics/guild-subscriptions) for more details.
+
+###### Guild Member List Update Structure
+
+| Field        | Type                                                                                | Description                                                             |
+| ------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| guild_id     | snowflake                                                                           | The ID of the guild                                                     |
+| id ^1^       | string                                                                              | The [ID of the member list](/topics/guild-subscriptions#member-list-id) |
+| member_count | integer                                                                             | Number of total members in the guild                                    |
+| online_count | integer                                                                             | Number of total non-offline members in the guild                        |
+| groups       | array[[guild member list group](#guild-member-list-group-structure) object]         | The groups                                                              |
+| ops          | array[[guild member list operation](#guild-member-list-operation-structure) object] | The operations on the member list                                       |
+
+###### Guild Member List Group Structure
+
+| Field | Type               | Description                                                                                                                |
+| ----- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| id    | snowflake \|string | The ID of the role, or `online` / `offline` representing the online members without roles and offline members respectively |
+| count | integer            | Number of total members with the role                                                                                      |
+
+###### Guild Member List Operation Structure
+
+| Field  | Type                                                                      | Description                                                | Operation Type               |
+| ------ | ------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------- |
+| op     | string                                                                    | The [type of operation](#guild-member-list-operation-type) | All                          |
+| items? | array[[guild member list item](#guild-member-list-item-structure) object] | The items in the requested range                           | `SYNC`                       |
+| range? | array[integer, integer]                                                   | The range that the operation is syncing or invalidating    | `SYNC`, `INVALIDATE`         |
+| item?  | [guild member list item](#guild-member-list-item-structure) object        | The item that was added or updated                         | `INSERT`, `UPDATE`           |
+| index? | integer                                                                   | The index of the item that was updated or removed          | `INSERT`, `UPDATE`, `DELETE` |
+
+###### Guild Member List Item Structure
+
+Only either `group` or `member` fields will be present.
+
+| Field   | Type                                                                 | Description      |
+| ------- | -------------------------------------------------------------------- | ---------------- |
+| group?  | [guild member list group](#guild-member-list-group-structure) object | Item as a group  |
+| member? | [guild member](/resources/guild#guild-member-object) object          | Item as a member |
+
+###### Guild Member List Operation Type
+
+| Value      | Description                     |
+| ---------- | ------------------------------- |
+| SYNC       | Member list is syncing          |
+| INVALIDATE | A specific range is invalidated |
+| INSERT     | Member list item is added       |
+| UPDATE     | Member list item is updated     |
+| DELETE     | Member list item is removed     |
 
 #### Guild Official Game Applications Update
 
