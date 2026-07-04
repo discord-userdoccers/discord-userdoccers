@@ -77,7 +77,7 @@ Send events are Gateway events encapsulated in an [event payload](#gateway-paylo
 | [Request Guild Members](#request-guild-members)                                       | Request members for one or more guilds                            |
 | [Request Call Connect](#request-call-connect)                                         | Request a private channels's pre-existing call information        |
 | [Update Guild Subscriptions](#update-guild-subscriptions)                             | Update subscriptions for a guild                                  |
-| Request Forum Unreads                                                                 | Request thread-only channel unread counts                         |
+| [Request Forum Unreads](#request-forum-unreads)                                       | Request thread-only channel unread counts                         |
 | [Remote Command](<#remote-command-(send)>)                                            | Send a message to another Gateway session                         |
 | [Get Deleted Entity IDs Not Matching Hash](#get-deleted-entity-ids-not-matching-hash) | Request deleted entity IDs not matching a given hash for a guild  |
 | [Request Soundboard Sounds](#request-soundboard-sounds)                               | Request soundboard sounds for one or more guilds                  |
@@ -637,6 +637,25 @@ Used to update subscriptions for a guild. Accepts a partial [update guild subscr
 
 ^1^ See [Range Parsing](/topics/guild-subscriptions#range-parsing) for details.
 
+#### Request Forum Unreads
+
+Used to request thread-only channel unread counts. Fires a [Forum Unreads](#forum-unreads) Gateway event.
+
+###### Request Forum Unreads Structure
+
+| Field      | Type                                                           | Description                        |
+| ---------- | -------------------------------------------------------------- | ---------------------------------- |
+| guild_id   | snowflake                                                      | The ID of the guild                |
+| channel_id | snowflake                                                      | The ID of the channel              |
+| threads    | [forum unread request](#forum-unread-request-structure) object | The threads to request unreads for |
+
+#### Forum Unread Request Structure
+
+| Field          | Type      | Description                             |
+| -------------- | --------- | --------------------------------------- |
+| thread_id      | snowflake | The ID of the thread                    |
+| ack_message_id | snowflake | The ID of the last acknowledged message |
+
 #### Remote Command (Send)
 
 Used to send a message to another Gateway session. Typically, this is used to control embedded sessions, such as an Xbox or PlayStation session. Fires a [Remote Command](<#remote-command-(receive)>) Gateway event on the target session.
@@ -1053,6 +1072,7 @@ These events directly correspond with a specific action or state change that has
 | [Creator Monetization Restrictions Update](#creator-monetization-restrictions-update)             | Guild creator monetization restrictions were updated                                              |
 | [Deleted Entity IDs](#deleted-entity-ids)                                                         | Response to [Get Deleted Entity IDs Not Matching Hash](#get-deleted-entity-ids-not-matching-hash) |
 | [DM Settings Upsell Show](#dm-settings-upsell-show)                                               | DM privacy settings upsell modal was triggered                                                    |
+| [Forum Unreads](#forum-unreads)                                                                   | Response to [Request Forum Unreads](#request-forum-unreads)                                       |
 | [Thread Create](#thread-create)                                                                   | Thread was created, also sent when being added to a private thread                                |
 | [Thread Update](#thread-update)                                                                   | Thread was updated                                                                                |
 | [Thread Delete](#thread-delete)                                                                   | Thread was deleted                                                                                |
@@ -1964,6 +1984,27 @@ May be sent when a user rejects a message request.
 | -------- | --------- | ------------------- |
 | guild_id | snowflake | The ID of the guild |
 
+#### Forum Unreads
+
+Sent in response to [Request Forum Unreads](#request-forum-unreads). Contains the counts of unread messages in threads.
+
+###### Forum Unreads Structure
+
+| Field             | Type                                                           | Description                                                                         |
+| ----------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| guild_id          | snowflake                                                      | The ID of the guild                                                                 |
+| channel_id        | snowflake                                                      | The ID of the channel                                                               |
+| threads?          | [forum unread request](#forum-unread-request-structure) object | The threads to request unreads for                                                  |
+| permission_denied | boolean                                                        | Whether the current user does not have permissions to view the threads-only channel |
+
+#### Forum Unread Structure
+
+| Field     | Type      | Description                  |
+| --------- | --------- | ---------------------------- |
+| thread_id | snowflake | The ID of the thread         |
+| missing?  | integer   | Unknown                      |
+| count?    | integer   | The count of unread messages |
+
 #### Thread Create
 
 Sent when a thread is created, relevant to the current user, or when the current user is added to a thread. The inner payload is a [channel](/resources/channel#channel-object) object.
@@ -2002,7 +2043,7 @@ For bots, all active threads are synced at startup. For user accounts, only join
 
 #### Thread Member List Update
 
-Sent when the thread member list is updated. See [Guild Subscriptions](/topics/guild-subscriptions#threads) for more details.
+Sent when the thread member list is updated. See [Guild Subscriptions](/topics/guild-subscriptions#thread-subscriptions) for more details.
 
 ###### Thread Member List Update Structure
 
