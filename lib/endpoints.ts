@@ -19,7 +19,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   command: "/interactions/application-commands#application-command-object",
   company: "/resources/team#company-object",
   connection: "/resources/connected-accounts#connection-object",
-  creator_monetization_request: null,
+  creator_monetization_request: "/resources/guild#creator-monetization-request-object",
   device: "/resources/connected-accounts#console-device-object",
   discovery_category: "/resources/discovery#discovery-category-object",
   emoji: "/resources/emoji#emoji-object",
