@@ -1,6 +1,7 @@
 export const ENDPOINT_VARS: Record<string, string | null> = {
   activity_instance: "/resources/application#embedded-activity-instance-object",
   activity_link: "/resources/application#activity-link-object",
+  ad_creative: "/resources/quests#ad-creative-type",
   application: "/resources/application#application-object",
   application_asset: "/resources/application#application-asset-object",
   oauth2_application_asset: "/resources/application#application-oauth2-asset-object",

@@ -15,14 +15,16 @@ A sponsored quest.
 | user_status                           | ?[quest user status](#quest-user-status-object) object | The user's quest progress, if it has been accepted                    |
 | targeted_content **(deprecated)** ^1^ | ?array[integer]                                        | The [content areas where the quest can be shown](#quest-content-type) |
 | preview                               | boolean                                                | Whether the quest is unreleased and in preview for Discord employees  |
+| traffic_metadata_sealed?              | string                                                 | Sealed traffic metadata for the delivered quest                       |
 
 ^1^ Some quest content areas may be dismissed using the [Dismiss Quest Content](#dismiss-quest-content) endpoint.
 
 ###### Partial Quest Structure
 
-| Field | Type      | Description         |
-| ----- | --------- | ------------------- |
-| id    | snowflake | The ID of the quest |
+| Field           | Type       | Description                                                  |
+| --------------- | ---------- | ------------------------------------------------------------ |
+| id              | snowflake  | The ID of the quest                                          |
+| replacement_id? | ?snowflake | The ID of the analogous replacement for an unavailable quest |
 
 ### Quest Config Object
 
@@ -43,31 +45,39 @@ The config structure has multiple distinct versions with different field sets. O
 | assets              | [quest assets](#quest-assets-structure) object                         | Object that holds the quest's assets                       |
 | colors              | [quest gradient](#quest-gradient-structure) object                     | The accent colors for the quest                            |
 | messages            | [quest messages](#quest-messages-structure) object                     | Human-readable metadata for the quest                      |
-| task_config         | [quest task config](#quest-task-config-structure) object               | The task configuration for the quest                       |
+| task_config_v2      | [quest task config](#quest-task-config-structure) object               | The task configuration for the quest                       |
 | rewards_config      | [quest rewards config](#quest-rewards-config-structure) object         | Specifies rewards for the quest (e.g. collectibles)        |
-| video_metadata?     | [quest video metadata](#quest-video-metadata-structure) object         | The configuration for the video quest                      |
 | cosponsor_metadata? | [quest cosponsor metadata](#quest-cosponsor-metadata-structure) object | The configuration for the quest co-sponsor                 |
+| share_policy        | string                                                                 | The [share policy](#quest-share-policy) for the quest      |
+| cta_config          | [quest CTA config](#quest-cta-config-structure) object                 | The quest call-to-action configuration                     |
 
 ###### Quest Application Structure
 
-| Field | Type      | Description                 |
-| ----- | --------- | --------------------------- |
-| id    | snowflake | The ID of the application   |
-| name  | string    | The name of the application |
-| link  | string    | The link to the game's page |
+| Field                     | Type      | Description                 |
+| ------------------------- | --------- | --------------------------- |
+| id                        | snowflake | The ID of the application   |
+| name                      | string    | The name of the application |
+| link **(deprecated)** ^1^ | string    | The link to the game's page |
+
+^1^ See the `cta_config` field instead.
 
 ###### Quest Assets Structure
 
 An object holding [CDN asset names](/reference#cdn-formatting).
 
-| Field                | Type    | Description                                                                                                                                         |
-| -------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| hero                 | string  | The quest's [hero image](https://en.wiktionary.org/wiki/hero_image)                                                                                 |
-| hero_video           | ?string | A video representation of the hero image                                                                                                            |
-| quest_bar_hero       | string  | The [hero image](https://en.wiktionary.org/wiki/hero_image) used in the quest popup that appears when launching the game before accepting the quest |
-| quest_bar_hero_video | ?string | A video representation of the quest bar hero image                                                                                                  |
-| game_tile            | string  | The game's icon                                                                                                                                     |
-| logotype             | string  | The game's [logo](https://en.wikipedia.org/wiki/Logo)                                                                                               |
+| Field                    | Type    | Description                                                                                                                                         |
+| ------------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hero                     | string  | The quest's [hero image](https://en.wiktionary.org/wiki/hero_image)                                                                                 |
+| hero_video               | ?string | A video representation of the hero image                                                                                                            |
+| quest_bar_hero           | string  | The [hero image](https://en.wiktionary.org/wiki/hero_image) used in the quest popup that appears when launching the game before accepting the quest |
+| quest_bar_hero_blurhash? | ?string | The blurhash for the quest bar hero image                                                                                                           |
+| quest_bar_hero_video     | ?string | A video representation of the quest bar hero image                                                                                                  |
+| game_tile                | string  | The game's icon                                                                                                                                     |
+| game_tile_light?         | string  | The game's icon for light backgrounds                                                                                                               |
+| game_tile_dark?          | string  | The game's icon for dark backgrounds                                                                                                                |
+| logotype                 | string  | The game's [logo](https://en.wikipedia.org/wiki/Logo)                                                                                               |
+| logotype_light?          | string  | The game's logo for light backgrounds                                                                                                               |
+| logotype_dark?           | string  | The game's logo for dark backgrounds                                                                                                                |
 
 ###### Quest Gradient Structure
 
@@ -88,52 +98,58 @@ A 2-point gradient with a `primary` and `secondary` color.
 
 ###### Quest Task Config Structure
 
-| Field                     | Type                                                    | Description                                                                               |
-| ------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| type                      | integer                                                 | The [type of task configuration](#quest-task-config-type)                                 |
-| join_operator ^1^         | string                                                  | The eligibility operator used to join multiple tasks (`and` or `or`)                      |
-| tasks                     | map[string, [quest task](#quest-task-structure) object] | Tasks required to complete the quest, keyed by their [event name](#quest-task-event-name) |
-| enrollment_url?           | string                                                  | A link to the third-party quest tasks enrollment page                                     |
-| developer_application_id? | snowflake                                               | The ID of the embedded activity for the third-party task                                  |
+| Field             | Type                                                    | Description                                                                   |
+| ----------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| join_operator ^1^ | string                                                  | The eligibility operator used to join multiple tasks (`and` or `or`)          |
+| tasks             | map[string, [quest task](#quest-task-structure) object] | Tasks required to complete the quest, keyed by their [type](#quest-task-type) |
 
-^1^ For a task to be considered complete, the user must complete either all tasks (when `join_operator` is `and`) or at least one task (when `join_operator` is `or`).
+^1^ For a task set to be considered complete, the user must complete either all tasks (when `join_operator` is `and`) or at least one task (when `join_operator` is `or`).
 
 ###### Quest Task Structure
 
-| Field         | Type          | Description                                      |
-| ------------- | ------------- | ------------------------------------------------ |
-| event_name    | string        | The [type of task event](#quest-task-event-name) |
-| target ^1^    | integer       | The required value                               |
-| external_ids? | array[string] | IDs of the target game on console platforms      |
-| title?        | string        | The third-party task title                       |
-| description?  | string        | The third-party task description                 |
+| Field                      | Type                                                                      | Description                                    |
+| -------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
+| type                       | string                                                                    | The [type of task event](#quest-task-type)     |
+| target ^1^                 | integer                                                                   | The required value                             |
+| applications?              | array[[quest task application](#quest-task-application-structure) object] | The application targets that satisfy this task |
+| external_ids?              | array[string]                                                             | IDs of the target game on console platforms    |
+| assets?                    | [quest video assets](#quest-video-assets-structure) object                | Video task assets                              |
+| messages?                  | [quest task messages](#quest-task-messages-structure) object              | Human-readable task metadata                   |
+| event_name?                | string                                                                    | The achievement event name                     |
+| account_link_instructions? | string                                                                    | Instructions for linking an account            |
 
 ^1^ While this is an opaque value, for duration-based tasks, this will be a duration in seconds.
 
-###### Quest Task Config Type
+###### Quest Task Application Structure
 
-| Value | Name        | Description               |
-| ----- | ----------- | ------------------------- |
-| 1     | FIRST_PARTY | The tasks are first-party |
-| 2     | THIRD_PARTY | The tasks are third-party |
+| Field | Type      | Description               |
+| ----- | --------- | ------------------------- |
+| id    | snowflake | The ID of the application |
 
-###### Quest Task Event Name
+###### Quest Task Messages Structure
 
-| Value                   | Description                                                                                                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| STREAM_ON_DESKTOP       | The user must play and stream the game on desktop to at least one other user for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session)) |
-| PLAY_ON_DESKTOP         | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))                                       |
-| PLAY_ON_DESKTOP_V2      | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))                                       |
-| PLAY_ON_XBOX            | The user must play the game on Xbox for a certain duration                                                                                                                       |
-| PLAY_ON_PLAYSTATION     | The user must play the game on PlayStation for a certain duration                                                                                                                |
-| WATCH_VIDEO             | The user must watch a video for a certain duration                                                                                                                               |
-| WATCH_VIDEO_ON_MOBILE   | The user must watch a video on mobile for a certain duration                                                                                                                     |
-| PLAY_ACTIVITY           | The user must play the embedded activity for a certain duration                                                                                                                  |
-| ACHIEVEMENT_IN_GAME     | The user must complete an achievement in the game                                                                                                                                |
-| ACHIEVEMENT_IN_ACTIVITY | The user must complete an achievement in the embedded activity                                                                                                                   |
-| progress ^1^            | The user must complete a certain number of tasks in an embedded activity                                                                                                         |
+| Field             | Type   | Description          |
+| ----------------- | ------ | -------------------- |
+| video_title?      | string | The title of a video |
+| task_title?       | string | The task title       |
+| task_description? | string | The task description |
 
-^1^ Completion of this task is tracked by the embedded activity itself.
+###### Quest Task Type
+
+| Value                       | Description                                                                                                                                                                      |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| STREAM_ON_DESKTOP           | The user must play and stream the game on desktop to at least one other user for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session)) |
+| PLAY_ON_DESKTOP             | The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))                                       |
+| ~~PLAY_ON_DESKTOP_V2~~      | ~~The user must play the game on desktop for a certain duration (see [Update Activity Session](/resources/presence#update-activity-session))~~                                   |
+| PLAY_ON_XBOX                | The user must play the game on Xbox for a certain duration                                                                                                                       |
+| PLAY_ON_PLAYSTATION         | The user must play the game on PlayStation for a certain duration                                                                                                                |
+| WATCH_VIDEO                 | The user must watch a video for a certain duration                                                                                                                               |
+| WATCH_VIDEO_ON_MOBILE       | The user must watch a video on mobile for a certain duration                                                                                                                     |
+| PLAY_ACTIVITY               | The user must play the embedded activity for a certain duration                                                                                                                  |
+| ACHIEVEMENT_IN_GAME ^1^     | The user must complete an achievement in the game                                                                                                                                |
+| ACHIEVEMENT_IN_ACTIVITY ^1^ | The user must complete an achievement in the embedded activity                                                                                                                   |
+
+^1^ Completion of this task is tracked by the application itself.
 
 ###### Quest Rewards Config Structure
 
@@ -159,17 +175,18 @@ A 2-point gradient with a `primary` and `secondary` color.
 | expires_at_premium?    | ?ISO8601 timestamp                                               | When the reward expires for premium users                   |
 | expiration_mode?       | integer                                                          | The [expiration mode](#quest-reward-expiration-mode)        |
 | orb_quantity?          | integer                                                          | The amount of Discord Orbs awarded                          |
+| premium_orb_quantity?  | integer                                                          | The amount of Discord Orbs awarded to premium users         |
 | quantity?              | integer                                                          | The days of fractional premium awarded                      |
 
 ^1^ If the amount of users who claimed the awards exceeds this count, then all future claimers will be assigned the next reward tier in the list.
 
 ###### Quest Reward Messages Structure
 
-| Field                                       | Type                 | Description                                                                  |
-| ------------------------------------------- | -------------------- | ---------------------------------------------------------------------------- |
-| name                                        | string               | The reward's name                                                            |
-| name_with_article                           | string               | The article variant of the name (e.g. a Cybernetic Headgear Decoration)      |
-| reward_redemption_instructions_by_platform? | map[integer, string] | The instrutions on redeeming the reward [per-platform](#quest-platform-type) |
+| Field                                | Type                 | Description                                                                |
+| ------------------------------------ | -------------------- | -------------------------------------------------------------------------- |
+| name                                 | string               | The reward's name                                                          |
+| name_with_article                    | string               | The article variant of the name (e.g. a Cybernetic Headgear Decoration)    |
+| redemption_instructions_by_platform? | map[integer, string] | Instructions for redeeming the reward [per-platform](#quest-platform-type) |
 
 ###### Quest Reward Assignment Method
 
@@ -202,43 +219,63 @@ Controls the expiration behavior of `COLLECTIBLE` rewards.
 | 2     | PREMIUM_EXTENSION | The reward lasts longer for premium (Nitro) users                                          |
 | 3     | PREMIUM_PERMANENT | The reward is permanent for premium (Nitro) users, even after their subscription has ended |
 
-###### Quest Video Metadata Structure
-
-| Field    | Type                                                           | Description                                 |
-| -------- | -------------------------------------------------------------- | ------------------------------------------- |
-| messages | [quest video messages](#quest-video-messages-structure) object | Human-readable metadata for the video quest |
-| assets   | [quest video assets](#quest-video-assets-structure) object     | Object that holds the quest's video assets  |
-
-###### Quest Video Messages Structure
-
-| Field                      | Type   | Description                                                    |
-| -------------------------- | ------ | -------------------------------------------------------------- |
-| video_title                | string | The title of the video                                         |
-| video_end_cta_title        | string | The title of the call-to-action at the end of the video        |
-| video_end_cta_subtitle     | string | The subtitle of the call-to-action at the end of the video     |
-| video_end_cta_button_label | string | The label of the call-to-action button at the end of the video |
-
 ###### Quest Video Assets Structure
 
-| Field                       | Type    | Description                                         |
-| --------------------------- | ------- | --------------------------------------------------- |
-| video_player_video_hls      | ?string | The HLS video asset for the video player            |
-| video_player_video          | string  | The video asset for the video player                |
-| video_player_thumbnail      | ?string | The thumbnail asset for the video player            |
-| video_player_video_low_res  | string  | The low-resolution video asset for the video player |
-| video_player_caption        | string  | The caption asset for the video player              |
-| video_player_transcript     | string  | The transcript asset for the video player           |
-| quest_bar_preview_video     | ?string | The video asset for the quest bar preview           |
-| quest_bar_preview_thumbnail | ?string | The thumbnail asset for the quest bar preview       |
-| quest_home_video            | ?string | The video asset for the quest home page             |
+| Field          | Type                                                     | Description                    |
+| -------------- | -------------------------------------------------------- | ------------------------------ |
+| video          | [quest video asset](#quest-video-asset-structure) object | The primary video asset        |
+| video_low_res? | [quest video asset](#quest-video-asset-structure) object | The low-resolution video asset |
+| video_hls?     | [quest video asset](#quest-video-asset-structure) object | The HLS video asset            |
+
+###### Quest Video Asset Structure
+
+| Field       | Type    | Description              |
+| ----------- | ------- | ------------------------ |
+| url         | string  | The video asset URL      |
+| width?      | integer | The video width          |
+| height?     | integer | The video height         |
+| thumbnail?  | string  | The thumbnail asset URL  |
+| caption?    | string  | The caption asset URL    |
+| transcript? | string  | The transcript asset URL |
 
 ###### Quest Cosponsor Metadata Structure
 
-| Field                   | Type   | Description                              |
-| ----------------------- | ------ | ---------------------------------------- |
-| name                    | string | The name of the co-sponsor               |
-| logotype                | string | The co-sponsor's logo asset              |
-| redemption_instructions | string | The co-sponsor's redemption instructions |
+| Field                   | Type   | Description                                       |
+| ----------------------- | ------ | ------------------------------------------------- |
+| name                    | string | The name of the co-sponsor                        |
+| logotype                | string | The co-sponsor's logo asset                       |
+| logotype_light?         | string | The co-sponsor's logo asset for light backgrounds |
+| logotype_dark?          | string | The co-sponsor's logo asset for dark backgrounds  |
+| redemption_instructions | string | The co-sponsor's redemption instructions          |
+
+###### Quest CTA Config Structure
+
+| Field        | Type                                                                   | Description                 |
+| ------------ | ---------------------------------------------------------------------- | --------------------------- |
+| link         | string                                                                 | The CTA link                |
+| button_label | string                                                                 | The CTA button label        |
+| subtitle?    | string                                                                 | The CTA subtitle            |
+| android?     | [Android quest CTA config](#android-quest-cta-config-structure) object | Android-specific CTA config |
+| ios?         | [iOS quest CTA config](#ios-quest-cta-config-structure) object         | iOS-specific CTA config     |
+
+###### Android Quest CTA Config Structure
+
+| Field          | Type   | Description                          |
+| -------------- | ------ | ------------------------------------ |
+| android_app_id | string | The Android application package name |
+
+###### iOS Quest CTA Config Structure
+
+| Field      | Type   | Description            |
+| ---------- | ------ | ---------------------- |
+| ios_app_id | string | The iOS application ID |
+
+###### Quest Share Policy
+
+| Value                | Description                        |
+| -------------------- | ---------------------------------- |
+| shareable_everywhere | The quest can be shared everywhere |
+| not_shareable        | The quest cannot be shared         |
 
 ###### Quest Config Version
 
@@ -253,36 +290,81 @@ The version of the quest configuration.
 
 Areas where the quest can be shown in the Discord client.
 
-| Value | Name                          | Description                                                         | Dismissable |
-| ----- | ----------------------------- | ------------------------------------------------------------------- | ----------- |
-| 0     | GIFT_INVENTORY_SETTINGS_BADGE | This quest is shown as a badge in User Settings                     | Yes         |
-| 1     | QUEST_BAR                     | This quest is shown as a bar above the user popout                  | Yes         |
-| 2     | QUEST_INVENTORY_CARD          | This quest is shown as a card in the user's gift inventory          | No          |
-| 3     | QUESTS_EMBED                  | This quest is shown as an embed in chat                             | No          |
-| 4     | ACTIVITY_PANEL                | This quest is shown in the Active Now page                          | Yes         |
-| 5     | QUEST_LIVE_STREAM             | This quest is shown while watching a stream                         | Yes         |
-| 6     | MEMBERS_LIST                  | This quest is shown in the member list                              | No          |
-| 7     | QUEST_BADGE                   | This quest is shown on the quest profile badge upsell               | No          |
-| 8     | GIFT_INVENTORY_FOR_YOU        | This quest is featured in the user's gift inventory for you section | No          |
-| 9     | GIFT_INVENTORY_OTHER          | This quest is featured in the user's gift inventory                 | No          |
-| 10    | QUEST_BAR_V2                  | This quest is shown in the new quest bar design                     | Yes         |
-| 11    | QUEST_HOME_DESKTOP            | This quest is shown on the desktop Quest discovery page             | No          |
-| 12    | QUEST_HOME_MOBILE             | This quest is shown on the mobile Quest discovery page              | No          |
-| 13    | QUEST_BAR_MOBILE              | This quest is shown in the mobile Quest bar design                  | Yes         |
-| 14    | THIRD_PARTY_APP               | This quest is shown in a third-party app                            | No          |
-| 15    | QUEST_BOTTOM_SHEET            | This quest is shown in the bottom sheet                             | No          |
-| 16    | QUEST_EMBED_MOBILE            | This quest is shown in the mobile Quest embed                       | No          |
-| 17    | QUEST_HOME_MOVE_CALLOUT       | This quest is shown in the move callout on the Quest discovery page | No          |
-| 18    | DISCOVERY_SIDEBAR             | This quest is shown in the discovery sidebar                        | No          |
-| 19    | QUEST_SHARE_LINK              | This quest is eligible to be shared as a link                       | No          |
-| 20    | CONNECTIONS_MODAL             | This quest is shown in the user connections modal                   | No          |
-| 21    | DISCOVERY_COMPASS             | This quest is shown on the discovery button                         | No          |
-| 22    | TROPHY_CASE_CARD              | This quest is shown as a card in the user's trophy case             | No          |
-| 23    | VIDEO_MODAL                   | This quest has a video modal                                        | No          |
-| 24    | VIDEO_MODAL_END_CARD          | This quest has an end card in the video modal                       | No          |
-| 25    | REWARD_MODAL                  | This quest is shown in the reward modal                             | No          |
-| 26    | EXCLUDED_QUEST_EMBED          | This quest is excluded from the Quest embed                         | No          |
-| 27    | VIDEO_MODAL_MOBILE            | This quest is shown in the mobile video modal                       | No          |
+| Value | Name                                  | Description                                                         | Dismissable |
+| ----- | ------------------------------------- | ------------------------------------------------------------------- | ----------- |
+| 0     | GIFT_INVENTORY_SETTINGS_BADGE         | This quest is shown as a badge in User Settings                     | Yes         |
+| 1     | QUEST_BAR                             | This quest is shown as a bar above the user popout                  | Yes         |
+| 2     | QUEST_INVENTORY_CARD                  | This quest is shown as a card in the user's gift inventory          | No          |
+| 3     | QUESTS_EMBED                          | This quest is shown as an embed in chat                             | No          |
+| 4     | ACTIVITY_PANEL                        | This quest is shown in the Active Now page                          | Yes         |
+| 5     | QUEST_LIVE_STREAM                     | This quest is shown while watching a stream                         | Yes         |
+| 6     | MEMBERS_LIST                          | This quest is shown in the member list                              | No          |
+| 7     | QUEST_BADGE                           | This quest is shown on the quest profile badge upsell               | No          |
+| 8     | GIFT_INVENTORY_FOR_YOU                | This quest is featured in the user's gift inventory for you section | No          |
+| 9     | GIFT_INVENTORY_OTHER                  | This quest is featured in the user's gift inventory                 | No          |
+| 10    | QUEST_BAR_V2                          | This quest is shown in the new quest bar design                     | Yes         |
+| 11    | QUEST_HOME_DESKTOP                    | This quest is shown on the desktop Quest discovery page             | No          |
+| 12    | QUEST_HOME_MOBILE                     | This quest is shown on the mobile Quest discovery page              | No          |
+| 13    | QUEST_BAR_MOBILE                      | This quest is shown in the mobile Quest bar design                  | Yes         |
+| 14    | THIRD_PARTY_APP                       | This quest is shown in a third-party app                            | No          |
+| 15    | QUEST_BOTTOM_SHEET                    | This quest is shown in the bottom sheet                             | No          |
+| 16    | QUEST_EMBED_MOBILE                    | This quest is shown in the mobile Quest embed                       | No          |
+| 17    | QUEST_HOME_MOVE_CALLOUT               | This quest is shown in the move callout on the Quest discovery page | No          |
+| 18    | DISCOVERY_SIDEBAR                     | This quest is shown in the discovery sidebar                        | No          |
+| 19    | QUEST_SHARE_LINK                      | This quest is eligible to be shared as a link                       | No          |
+| 20    | CONNECTIONS_MODAL                     | This quest is shown in the user connections modal                   | No          |
+| 21    | DISCOVERY_COMPASS                     | This quest is shown on the discovery button                         | No          |
+| 22    | TROPHY_CASE_CARD                      | This quest is shown as a card in the user's trophy case             | No          |
+| 23    | VIDEO_MODAL                           | This quest has a video modal                                        | No          |
+| 24    | VIDEO_MODAL_END_CARD                  | This quest has an end card in the video modal                       | No          |
+| 25    | REWARD_MODAL                          | This quest is shown in the reward modal                             | No          |
+| 26    | EXCLUDED_QUEST_EMBED                  | This quest is excluded from the Quest embed                         | No          |
+| 27    | VIDEO_MODAL_MOBILE                    | This quest is shown in the mobile video modal                       | No          |
+| 28    | ORBS_ANNOUNCEMENT_MODAL               | This quest is shown in the Orbs announcement modal                  | No          |
+| 29    | ORBS_BALANCE_MENU                     | This quest is shown in the Orbs balance menu                        | No          |
+| 30    | QUEST_ENROLLMENT_BLOCKED_BOTTOM_SHEET | This quest is shown in the enrollment blocked bottom sheet          | No          |
+| 31    | ORBS_SHOP_HERO_CTA                    | This quest is shown in the Orbs shop hero CTA                       | No          |
+| 32    | QUEST_ENROLLMENT_BLOCKED_MODAL        | This quest is shown in the enrollment blocked modal                 | No          |
+| 33    | INTERNAL_PREVIEW_TOOL                 | This quest is shown in the internal preview tool                    | No          |
+| 34    | ORBS_REHEAT_COACHMARK_CTA             | This quest is shown in the Orbs reheat coachmark CTA                | No          |
+| 35    | INVALID_QUEST_EMBED                   | This quest is shown for invalid quest embeds                        | No          |
+| 36    | NOT_SHAREABLE_QUEST_EMBED             | This quest is shown for quest embeds that cannot be shared          | No          |
+| 37    | QUEST_HOME_MOVE_CALLOUT_DISCOVER      | This quest is shown in the Quest Home move callout discover CTA     | No          |
+| 38    | SPONSORED_QUEST_SHEET                 | This quest is shown in the sponsored quest sheet                    | No          |
+| 39    | MOBILE_ORBS_ONBOARDING_DC             | This quest is shown in mobile Orbs onboarding dismissible content   | No          |
+| 40    | RUNNING_ACTIVITY                      | This quest is shown from a running activity                         | No          |
+| 41    | VIDEO_MODAL_PRIMARY_CTA               | This quest is shown in the video modal primary CTA                  | No          |
+| 42    | QUEST_HOME_TAKEOVER                   | This quest is shown in the Quest Home takeover                      | No          |
+| 43    | USER_PROFILE_ACTIVITY                 | This quest is shown in user profile activity                        | No          |
+| 44    | MEMBERS_LIST_CARD                     | This quest is shown in a member list card                           | No          |
+| 45    | APP_LAUNCHER                          | This quest is shown in the app launcher                             | No          |
+| 46    | ACTIVITY_SUGGESTION                   | This quest is shown as an activity suggestion                       | No          |
+| 47    | QUEST_HOME_ENTRYPOINT                 | This quest is shown in the Quest Home entrypoint                    | No          |
+| 48    | QUEST_HOME_ENTRYPOINT_THEMED          | This quest is shown in the themed Quest Home entrypoint             | No          |
+| 49    | QUEST_ACTIVITY_UNENROLLED_MODAL       | This quest is shown in the quest activity unenrolled modal          | No          |
+| 50    | QUEST_HOME_HERO                       | This quest is shown in the Quest Home hero                          | No          |
+| 51    | QUEST_ACTIVITY_HEADER                 | This quest is shown in the quest activity header                    | No          |
+| 52    | USER_PROFILE_HEADER                   | This quest is shown in the user profile header                      | No          |
+| 53    | USER_SETTINGS                         | This quest is shown in user settings                                | No          |
+| 54    | NITRO_HOME_PERK_CARD                  | This quest is shown on a Nitro Home perk card                       | No          |
+| 55    | QUEST_HOME_MOBILE_CAROUSEL            | This quest is shown in the mobile Quest Home carousel               | No          |
+| 56    | QUEST_HOME_HERO_SHELF                 | This quest is shown in the Quest Home hero shelf                    | No          |
+| 57    | VIDEO_MODAL_ICON_END_CARD             | This quest has an icon end card in the video modal                  | No          |
+| 58    | ACHIEVEMENT_IN_GAME_MODAL             | This quest is shown in the in-game achievement modal                | No          |
+| 59    | QUEST_HOME_FEATURED_SECTION           | This quest is shown in the Quest Home featured section              | No          |
+| 60    | QUEST_HOME_IN_PROGRESS_SECTION        | This quest is shown in the Quest Home in-progress section           | No          |
+| 61    | QUEST_HOME_ENDING_SOON_SECTION        | This quest is shown in the Quest Home ending soon section           | No          |
+| 62    | QUEST_HOME_ORB_SECTION                | This quest is shown in the Quest Home Orbs section                  | No          |
+| 63    | QUEST_HOME_DISCOVERED_SECTION         | This quest is shown in the Quest Home discovered section            | No          |
+| 64    | QUEST_HOME_SEARCH_RESULT              | This quest is shown in Quest Home search results                    | No          |
+| 65    | PLAY_QUEST_MODAL                      | This quest is shown in the play quest modal                         | No          |
+| 66    | VIDEO_MODAL_MOBILE_FOOTER             | This quest is shown in the mobile video modal footer                | No          |
+| 67    | QUEST_HOME_ENTRYPOINT_MOBILE          | This quest is shown in the mobile Quest Home entrypoint             | No          |
+| 68    | BOUNTIES_END_INTERSTITIAL             | This quest is shown in the bounties end interstitial                | No          |
+| 69    | QUEST_HOME_EXPIRED_SECTION            | This quest is shown in the Quest Home expired section               | No          |
+| 70    | QUEST_HOME_PREVIEW_SECTION            | This quest is shown in the Quest Home preview section               | No          |
+| 71    | SOCIAL_LAYER_STOREFRONT               | This quest is shown in the social layer storefront                  | No          |
+| 72    | QUEST_HOME_SPECIAL_QUESTS_SECTION     | This quest is shown in the Quest Home special quests section        | No          |
 
 ###### Quest Platform Type
 
@@ -300,26 +382,50 @@ Specifies the platforms that the quest reward can be redeemed on.
 
 A behavioral variant for a quest.
 
-| Value | Name                               | Description                                         |
-| ----- | ---------------------------------- | --------------------------------------------------- |
-| 1     | POST_ENROLLMENT_CTA                | The quest has a post-enrollment call-to-action      |
-| 2     | PLAYTIME_CRITERIA                  | The quest has a playtime criteria                   |
-| 3     | QUEST_BAR_V2                       | The quest uses the new quest bar design             |
-| ~~4~~ | ~~EXCLUDE_MINORS~~                 | ~~The quest is not shown to minors~~                |
-| 5     | EXCLUDE_RUSSIA                     | The quest is not shown in Russia                    |
-| 6     | IN_HOUSE_CONSOLE_QUEST             | The console quest is first-party                    |
-| 7     | MOBILE_CONSOLE_QUEST               | The console quest is available on mobile            |
-| 8     | START_QUEST_CTA                    | The quest has a start call-to-action                |
-| 9     | REWARD_HIGHLIGHTING                | The quest has reward highlighting                   |
-| 10    | FRACTIONS_QUEST                    | The quest offers fractional rewards                 |
-| 11    | ADDITIONAL_REDEMPTION_INSTRUCTIONS | The quest has additional redemption instructions    |
-| 12    | PACING_V2                          | The quest uses the new pacing system                |
-| 13    | DISMISSAL_SURVEY                   | The quest presents a survey upon dismissal          |
-| 14    | MOBILE_QUEST_DOCK                  | The quest is shown in the mobile quest dock         |
-| 15    | QUESTS_CDN                         | The quest uses the CDN for assets                   |
-| 16    | PACING_CONTROLLER                  | The quest uses the pacing controller                |
-| 17    | QUEST_HOME_FORCE_STATIC_IMAGE      | The quest displays a static image on the Quest Home |
-| 18    | VIDEO_QUEST_FORCE_HLS_VIDEO        | The video quest forces HLS video playback           |
+| Value | Name                                | Description                                         |
+| ----- | ----------------------------------- | --------------------------------------------------- |
+| 1     | POST_ENROLLMENT_CTA                 | The quest has a post-enrollment call-to-action      |
+| ~~2~~ | ~~PLAYTIME_CRITERIA~~               | ~~The quest has a playtime criteria~~               |
+| 3     | QUEST_BAR_V2                        | The quest uses the new quest bar design             |
+| ~~4~~ | ~~EXCLUDE_MINORS~~                  | ~~The quest is not shown to minors~~                |
+| 5     | EXCLUDE_RUSSIA                      | The quest is not shown in Russia                    |
+| 6     | IN_HOUSE_CONSOLE_QUEST              | The console quest is first-party                    |
+| 7     | MOBILE_CONSOLE_QUEST                | The console quest is available on mobile            |
+| 8     | START_QUEST_CTA                     | The quest has a start call-to-action                |
+| 9     | REWARD_HIGHLIGHTING                 | The quest has reward highlighting                   |
+| 10    | FRACTIONS_QUEST                     | The quest offers fractional rewards                 |
+| 11    | ADDITIONAL_REDEMPTION_INSTRUCTIONS  | The quest has additional redemption instructions    |
+| 12    | PACING_V2                           | The quest uses the new pacing system                |
+| 13    | DISMISSAL_SURVEY                    | The quest presents a survey upon dismissal          |
+| 14    | MOBILE_QUEST_DOCK                   | The quest is shown in the mobile quest dock         |
+| 15    | QUESTS_CDN                          | The quest uses the CDN for assets                   |
+| 16    | PACING_CONTROLLER                   | The quest uses the pacing controller                |
+| 17    | QUEST_HOME_FORCE_STATIC_IMAGE       | The quest displays a static image on the Quest Home |
+| 18    | VIDEO_QUEST_FORCE_HLS_VIDEO         | The video quest forces HLS video playback           |
+| 19    | VIDEO_QUEST_FORCE_END_CARD_CTA_SWAP | The video quest swaps the end card CTA              |
+| 20    | EXPERIMENTAL_TARGETING_TRAITS       | The quest uses experimental targeting traits        |
+| 21    | DO_NOT_DISPLAY                      | The quest should not be displayed                   |
+| 22    | EXTERNAL_DIALOG                     | The quest uses an external dialog                   |
+| 23    | MOBILE_ONLY_QUEST_PUSH_TO_MOBILE    | The quest is mobile-only and pushes users to mobile |
+| 24    | MANUAL_HEARTBEAT_INITIALIZATION     | The quest uses manual heartbeat initialization      |
+| 25    | CLOUD_GAMING_ACTIVITY               | The quest uses cloud gaming activity behavior       |
+| 26    | NON_GAMING_PLAY_QUEST               | The quest is a non-gaming play quest                |
+| 27    | ACTIVITY_QUEST_AUTO_ENROLLMENT      | The activity quest can auto-enroll users            |
+| 28    | PACKAGE_ACTION_ADVENTURE            | The quest is in the action/adventure package        |
+| 29    | PACKAGE_RPG_MMO                     | The quest is in the RPG/MMO package                 |
+| 30    | PACKAGE_RACING_SPORTS               | The quest is in the racing/sports package           |
+| 31    | PACKAGE_SANDBOX_CREATIVE            | The quest is in the sandbox/creative package        |
+| 32    | PACKAGE_FAMILY_FRIENDLY             | The quest is in the family-friendly package         |
+| 33    | PACKAGE_HOLIDAY_SEASON              | The quest is in the holiday season package          |
+| 34    | PACKAGE_NEW_YEARS                   | The quest is in the New Years package               |
+| 35    | FULL_EPISODE_VIDEO_QUEST            | The quest is a full episode video quest             |
+| 36    | MOBILE_ACTIVITY_QUEST               | The quest is a mobile activity quest                |
+| 37    | QUEST_BAR_UNFURL                    | The quest supports quest bar unfurl behavior        |
+| 38    | NO_PREMIUM_ORBS_PERK                | The quest does not use the premium Orbs perk        |
+| 39    | NITRO_CONTROL_CTA                   | The quest has a Nitro control CTA                   |
+| 40    | NITRO_2_POINT_0_CTA                 | The quest has a Nitro 2.0 CTA                       |
+| 41    | ORBS_MULTIPLIER_QUEST               | The quest is an Orbs multiplier quest               |
+| 42    | XBOX_GAME_PASS_QUEST                | The quest is an Xbox Game Pass quest                |
 
 ###### Example Quest
 
@@ -332,11 +438,6 @@ A behavioral variant for a quest.
     "starts_at": "2025-02-21T18:00:00+00:00",
     "expires_at": "2025-02-28T01:00:00+00:00",
     "features": [3, 9, 12, 14, 15, 16],
-    "experiments": {
-      "rollout": "2025-02_alien",
-      "targeting": null,
-      "preview": "2025-02_alien_preview"
-    },
     "application": {
       "link": "https://alien.studios/cyberalien",
       "id": "891436233903964161",
@@ -359,24 +460,25 @@ A behavioral variant for a quest.
       "game_title": "Cyberalien 2077",
       "game_publisher": "Alien Studios"
     },
-    "task_config": {
-      "type": 1,
+    "task_config_v2": {
       "join_operator": "or",
       "tasks": {
         "PLAY_ON_DESKTOP": {
-          "event_name": "PLAY_ON_DESKTOP",
+          "type": "PLAY_ON_DESKTOP",
           "target": 900,
-          "external_ids": []
+          "applications": [{ "id": "891436233903964161" }]
         },
         "PLAY_ON_XBOX": {
-          "event_name": "PLAY_ON_XBOX",
+          "type": "PLAY_ON_XBOX",
           "target": 900,
-          "external_ids": ["267696969"]
+          "external_ids": ["267696969"],
+          "applications": [{ "id": "891436233903964161" }]
         },
         "PLAY_ON_PLAYSTATION": {
-          "event_name": "PLAY_ON_PLAYSTATION",
+          "type": "PLAY_ON_PLAYSTATION",
           "target": 900,
-          "external_ids": ["CUSA42069_00"]
+          "external_ids": ["CUSA42069_00"],
+          "applications": [{ "id": "891436233903964161" }]
         }
       }
     },
@@ -401,6 +503,11 @@ A behavioral variant for a quest.
       ],
       "rewards_expire_at": "2025-03-28T00:00:00+00:00",
       "platforms": [0]
+    },
+    "share_policy": "shareable_everywhere",
+    "cta_config": {
+      "link": "https://alien.studios/cyberalien",
+      "button_label": "Play Now"
     }
   },
   "user_status": null,
@@ -504,26 +611,27 @@ The user's quest progression.
 | completed_at                  | ?ISO8601 timestamp                                                        | When the user completed the quest                                                                                                                            |
 | claimed_at                    | ?ISO8601 timestamp                                                        | When the user claimed the quest's reward                                                                                                                     |
 | claimed_tier?                 | ?integer                                                                  | Which reward tier the user has claimed, if the quest's [`assignment_method`](#quest-rewards-config-structure) is [`TIERED`](#quest-reward-assignment-method) |
+| orb_quantity_claimed?         | ?integer                                                                  | The amount of Discord Orbs claimed                                                                                                                           |
 | last_stream_heartbeat_at? ^1^ | ?ISO8601 timestamp                                                        | When the last heartbeat was received                                                                                                                         |
-| stream_progress_seconds? ^1^  | ISO8601 timestamp                                                         | Duration (in seconds) the user has streamed the game for since the quest was accepted                                                                        |
+| stream_progress_seconds? ^1^  | integer                                                                   | Duration (in seconds) the user has streamed the game for since the quest was accepted                                                                        |
 | dismissed_quest_content?      | integer                                                                   | The [content areas the user has dismissed](#dismissible-quest-content-flags) for the quest                                                                   |
-| progress                      | map[string, [quest task progress](#quest-task-progress-structure) object] | The user's progress for each task in the quest, keyed by their [event name](#quest-task-event-name)                                                          |
+| progress                      | map[string, [quest task progress](#quest-task-progress-structure) object] | The user's progress for each task in the quest, keyed by their [type](#quest-task-type)                                                                      |
 
 ^1^ These fields are only used for quest config version 1, where the event is always `STREAM_ON_DESKTOP`.
 
 ###### Quest Task Progress Structure
 
-| Field          | Type                                                            | Description                                      |
-| -------------- | --------------------------------------------------------------- | ------------------------------------------------ |
-| event_name     | string                                                          | The [type of task event](#quest-task-event-name) |
-| value ^1^      | integer                                                         | The current task value                           |
-| updated_at     | ISO8601 timestamp                                               | When the task was last updated                   |
-| completed_at   | ?ISO8601 timestamp                                              | When the task was completed                      |
-| heartbeat? ^2^ | ?[quest task heartbeat](#quest-task-heartbeat-structure) object | The task's heartbeat data                        |
+| Field          | Type                                                            | Description                                |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------ |
+| event_name     | string                                                          | The [type of task event](#quest-task-type) |
+| value ^1^      | integer                                                         | The current task value                     |
+| updated_at     | ISO8601 timestamp                                               | When the task was last updated             |
+| completed_at   | ?ISO8601 timestamp                                              | When the task was completed                |
+| heartbeat? ^2^ | ?[quest task heartbeat](#quest-task-heartbeat-structure) object | The task's heartbeat data                  |
 
 ^1^ While this is an opaque value, for duration-based tasks, this will be a duration in seconds. To complete the task, this value must match the `target` value.
 
-^2^ Heartbeats are only present for events `STREAM_ON_DESKTOP`, `PLAY_ON_DESKTOP`, `PLAY_ON_DESKTOP_V2`, and `PLAY_ACTIVITY`.
+^2^ Heartbeats are only present for events `STREAM_ON_DESKTOP`, `PLAY_ON_DESKTOP`, and `PLAY_ACTIVITY`.
 
 ###### Quest Task Heartbeat Structure
 
@@ -565,7 +673,7 @@ Dismissed [quest content areas](#quest-content-type).
       "updated_at": "2025-03-11T18:19:54.189229+00:00",
       "completed_at": "2025-03-11T18:19:54.189231+00:00",
       "heartbeat": {
-        "last_beat_at": "2077-01-01T11:59:59+00:000",
+        "last_beat_at": "2077-01-01T11:59:59+00:00",
         "expires_at": null
       }
     }
@@ -635,6 +743,18 @@ Returns information on the [claimed quests](#claimed-quest-object) for the curre
 
 Returns a [quest config](#quest-config-object) object for the specified quest. Quest must be currently active.
 
+<RouteHeader method="GET" url="/quests/{quest.id}/preview">
+  Get Quest Preview
+</RouteHeader>
+
+Returns a [quest](#quest-object) object for the specified preview quest.
+
+<Alert type="info">
+
+This endpoint is only available to authorized quests previewers.
+
+</Alert>
+
 <RouteHeader method="GET" url="/quests/decision">
   Get Quest Placement
 </RouteHeader>
@@ -643,45 +763,218 @@ Returns the sponsored quest that should be shown to the user in a specific place
 
 ###### Query String Params
 
-| Field                            | Type    | Description                                                                    |
-| -------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| placement                        | integer | The [quest placement area](#quest-placement-area) to get the quest for         |
-| client_heartbeat_session_id? ^1^ | string  | A client-generated UUID representing the current persisted analytics heartbeat |
+| Field                            | Type             | Description                                                                    |
+| -------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| placement                        | integer          | The [quest placement area](#quest-placement-area) to get the quest for         |
+| client_heartbeat_session_id? ^1^ | string           | A client-generated UUID representing the current persisted analytics heartbeat |
+| client_ad_session_id? ^2^        | string           | A client-generated UUID representing the current ad attribution session        |
+| visible_guild_ids?               | array[snowflake] | Visible guild IDs used as ad context (max 50)                                  |
 
 ^1^ This value is also sent in the [client properties](/reference#client-properties).
 
+^2^ This value is used to correlate ad decision requests, ad heartbeat events, and follow-up actions. Clients should reuse an ad session until it has been idle for 30 minutes or active for 12 hours.
+
 ###### Quest Placement Area
 
-| Value | Name                       | Description              |
-| ----- | -------------------------- | ------------------------ |
-| 1     | DESKTOP_ACCOUNT_PANEL_AREA | Account panel on desktop |
-| 2     | MOBILE_HOME_DOCK_AREA      | Home dock on mobile      |
+| Value | Name                       | Description                   |
+| ----- | -------------------------- | ----------------------------- |
+| 1     | DESKTOP_ACCOUNT_PANEL_AREA | Account panel on desktop      |
+| 2     | MOBILE_HOME_DOCK_AREA      | Home dock on mobile           |
+| 3     | QUEST_HOME_BANNER_DESKTOP  | Quest Home banner on desktop  |
+| 4     | QUEST_HOME_MOBILE_CAROUSEL | Quest Home carousel on mobile |
+| 5     | VIDEO_MODAL_MOBILE         | Video modal on mobile         |
 
 ###### Response Body
 
-| Field          | Type                                                            | Description                                            |
-| -------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
-| request_id     | string                                                          | The advertisement decision ID                          |
-| quest          | ?[quest](#quest-object) object                                  | The quest to show to the user                          |
-| ad_identifiers | ?[quest ad identifiers](#quest-ad-identifiers-structure) object | The advertisement identifiers for the delivered quest  |
-| ad_context     | ?[quest ad context](#quest-ad-context-structure) object         | The advertisement context for the delivered quest      |
-| metadata_raw   | ?string                                                         | Base64-encoded protobuf metadata for the advertisement |
+| Field                    | Type                                                            | Description                                           |
+| ------------------------ | --------------------------------------------------------------- | ----------------------------------------------------- |
+| request_id               | string                                                          | The advertisement decision ID                         |
+| quest                    | ?[quest](#quest-object) object                                  | The quest to show to the user                         |
+| creative                 | ?[quest ad creative](#quest-ad-creative-structure) object       | The advertisement creative to show to the user        |
+| ad_identifiers           | ?[quest ad identifiers](#quest-ad-identifiers-structure) object | The advertisement identifiers for the delivered quest |
+| ad_context               | ?[quest ad context](#quest-ad-context-structure) object         | The advertisement context for the delivered quest     |
+| response_ttl_seconds?    | integer                                                         | How long the response should be cached, in seconds    |
+| metadata_sealed?         | ?string                                                         | Sealed metadata for the advertisement                 |
+| traffic_metadata_sealed? | ?string                                                         | Sealed traffic metadata for the advertisement         |
 
 ###### Quest Ad Identifiers Structure
 
-| Field         | Type      | Description                          |
-| ------------- | --------- | ------------------------------------ |
-| campaign_id   | snowflake | The ID of the advertisement campaign |
-| ad_set_id     | snowflake | The ID of the advertisement set      |
-| ad_id         | snowflake | The ID of the advertisement          |
-| creative_id   | snowflake | The ID of the advertisement creative |
-| creative_type | integer   | The type of advertisement creative   |
+| Field          | Type      | Description                                             |
+| -------------- | --------- | ------------------------------------------------------- |
+| campaign_id?   | snowflake | The ID of the advertisement campaign                    |
+| ad_set_id?     | snowflake | The ID of the advertisement set                         |
+| ad_id?         | snowflake | The ID of the advertisement                             |
+| creative_id?   | snowflake | The ID of the advertisement creative                    |
+| creative_type? | integer   | The [type of advertisement creative](#ad-creative-type) |
+| is_targeted?   | boolean   | Whether the advertisement is targeted                   |
+| ad_content_id? | snowflake | The ID of the advertisement content                     |
 
 ###### Quest Ad Context Structure
 
 | Field                   | Type    | Description                                          |
 | ----------------------- | ------- | ---------------------------------------------------- |
 | is_campaign_ias_enabled | boolean | Whether the campaign has Integral Ad Science enabled |
+
+###### Quest Ad Decision Structure
+
+| Field                    | Type                                                           | Description                                           |
+| ------------------------ | -------------------------------------------------------------- | ----------------------------------------------------- |
+| creative                 | ?[quest ad creative](#quest-ad-creative-structure) object      | The advertisement creative to show to the user        |
+| ad_identifiers?          | [quest ad identifiers](#quest-ad-identifiers-structure) object | The advertisement identifiers for the delivered quest |
+| ad_context?              | [quest ad context](#quest-ad-context-structure) object         | The advertisement context for the delivered quest     |
+| response_ttl_seconds?    | integer                                                        | How long the response should be cached, in seconds    |
+| metadata_sealed?         | ?string                                                        | Sealed metadata for the advertisement                 |
+| traffic_metadata_sealed? | ?string                                                        | Sealed traffic metadata for the advertisement         |
+
+###### Quest Ad Creative Structure
+
+| Field            | Type              | Description                                             |
+| ---------------- | ----------------- | ------------------------------------------------------- |
+| creative_type    | integer           | The [type of advertisement creative](#ad-creative-type) |
+| creative_content | object            | The creative content; shape depends on `creative_type`  |
+| starts_at        | ISO8601 timestamp | When the creative starts being available                |
+| ends_at          | ISO8601 timestamp | When the creative stops being available                 |
+
+###### Ad Creative Type
+
+| Value | Name            | Description                                                                                      |
+| ----- | --------------- | ------------------------------------------------------------------------------------------------ |
+| 1     | QUEST           | The creative content is a [quest config](#quest-config-object) object                            |
+| 2     | QUEST_HOME_HERO | The creative content is a [quest home hero creative](#quest-home-hero-creative-structure) object |
+| 3     | BOUNTY          | The creative content is a [quest bounty creative](#quest-bounty-creative-structure) object       |
+
+###### Quest Home Hero Creative Structure
+
+| Field                  | Type                                                             | Description                            |
+| ---------------------- | ---------------------------------------------------------------- | -------------------------------------- |
+| id                     | snowflake                                                        | The ID of the quest home hero creative |
+| label_title            | string                                                           | The hero title                         |
+| label_subtitle?        | string                                                           | The hero subtitle                      |
+| hero_image             | string                                                           | The hero image asset                   |
+| hero_video?            | string                                                           | The hero video asset                   |
+| sponsor_image?         | string                                                           | The sponsor image asset                |
+| cta                    | [quest creative CTA](#quest-creative-cta-structure) object       | The hero CTA                           |
+| quest_ids?             | array[snowflake]                                                 | The quests represented by the hero     |
+| quest_home_entrypoint? | [quest home entrypoint](#quest-home-entrypoint-structure) object | Quest Home entrypoint metadata         |
+| shelf_image?           | string                                                           | The shelf image asset                  |
+| shelf_video?           | string                                                           | The shelf video asset                  |
+
+###### Quest Bounty Creative Structure
+
+| Field                 | Type                                                       | Description                                          |
+| --------------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
+| id                    | snowflake                                                  | The ID of the bounty creative                        |
+| advertiser_name       | string                                                     | The advertiser name                                  |
+| product_name?         | string                                                     | The advertised product name                          |
+| product_icon?         | string                                                     | The advertised product icon asset                    |
+| video_preview?        | string                                                     | The preview video asset                              |
+| image_preview?        | string                                                     | The preview image asset                              |
+| video_hls             | string                                                     | The HLS video asset                                  |
+| cta                   | [quest creative CTA](#quest-creative-cta-structure) object | The bounty CTA                                       |
+| reward_timer_seconds? | integer                                                    | The number of seconds before a reward can be claimed |
+
+###### Quest Creative CTA Structure
+
+| Field        | Type                                                                   | Description                 |
+| ------------ | ---------------------------------------------------------------------- | --------------------------- |
+| url          | string                                                                 | The CTA URL                 |
+| button_label | string                                                                 | The CTA button label        |
+| android?     | [Android quest CTA config](#android-quest-cta-config-structure) object | Android-specific CTA config |
+| ios?         | [iOS quest CTA config](#ios-quest-cta-config-structure) object         | iOS-specific CTA config     |
+
+###### Quest Home Entrypoint Structure
+
+| Field             | Type                                                                               | Description                |
+| ----------------- | ---------------------------------------------------------------------------------- | -------------------------- |
+| linear_gradient?  | [quest home entrypoint gradient](#quest-home-entrypoint-gradient-structure) object | The linear gradient        |
+| radial_gradient?  | [quest home entrypoint gradient](#quest-home-entrypoint-gradient-structure) object | The radial gradient        |
+| gradient_preset?  | integer                                                                            | The gradient preset        |
+| image?            | string                                                                             | The entrypoint image asset |
+| tooltip_image?    | string                                                                             | The tooltip image asset    |
+| tooltip_title?    | string                                                                             | The tooltip title          |
+| tooltip_subtitle? | string                                                                             | The tooltip subtitle       |
+
+###### Quest Home Entrypoint Gradient Structure
+
+| Field | Type   | Description              |
+| ----- | ------ | ------------------------ |
+| start | string | The gradient start color |
+| end   | string | The gradient end color   |
+
+<RouteHeader method="GET" url="/quests/earned-decision">
+  Get Earned Quest Placement
+</RouteHeader>
+
+Returns the earned quests that should be shown to the user in a specific content area.
+
+###### Query String Params
+
+| Field                            | Type          | Description                                                                    |
+| -------------------------------- | ------------- | ------------------------------------------------------------------------------ |
+| quest_ids                        | array[string] | Quest IDs to evaluate (1-20)                                                   |
+| content                          | integer       | The [content location](#quest-content-type) to get earned quests for           |
+| client_heartbeat_session_id? ^1^ | string        | A client-generated UUID representing the current persisted analytics heartbeat |
+
+^1^ This value is also sent in the [client properties](/reference#client-properties).
+
+###### Response Body
+
+| Field                 | Type                                           | Description                                        |
+| --------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| quests                | map[snowflake, ?[quest](#quest-object) object] | The earned quests, keyed by quest ID               |
+| response_ttl_seconds? | integer                                        | How long the response should be cached, in seconds |
+| request_id?           | ?string                                        | The advertisement decision request ID              |
+
+<RouteHeader method="GET" url="/quests/get-decisions">
+  Get Quest Decisions
+</RouteHeader>
+
+Returns one or more quest advertisement decisions for a placement.
+
+###### Query String Params
+
+| Field                            | Type    | Description                                                                    |
+| -------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| placement                        | integer | The [quest placement area](#quest-placement-area) to get decisions for         |
+| num_decisions_requested          | integer | The number of decisions to request (1-15)                                      |
+| client_heartbeat_session_id? ^1^ | string  | A client-generated UUID representing the current persisted analytics heartbeat |
+| client_ad_session_id? ^2^        | string  | A client-generated UUID representing the current ad attribution session        |
+
+^1^ This value is also sent in the [client properties](/reference#client-properties).
+
+^2^ This value is used to correlate ad decision requests, ad heartbeat events, and follow-up actions. Clients should reuse an ad session until it has been idle for 30 minutes or active for 12 hours.
+
+###### Response Body
+
+| Field      | Type                                                            | Description                           |
+| ---------- | --------------------------------------------------------------- | ------------------------------------- |
+| request_id | string                                                          | The advertisement decision request ID |
+| decisions  | array[[quest ad decision](#quest-ad-decision-structure) object] | The advertisement decisions           |
+
+<RouteHeader method="GET" url="/quests/preview">
+  Get Quest Creative Preview
+</RouteHeader>
+
+Returns quest advertisement decisions for specific advertisement creatives.
+
+<Alert type="info">
+
+This endpoint is only available to authorized quests previewers.
+
+</Alert>
+
+###### Query String Params
+
+| Field           | Type             | Description                    |
+| --------------- | ---------------- | ------------------------------ |
+| ad_creative_ids | array[snowflake] | The advertisement creative IDs |
+
+###### Response Body
+
+| Field      | Type                                                            | Description                           |
+| ---------- | --------------------------------------------------------------- | ------------------------------------- |
+| request_id | string                                                          | The advertisement decision request ID |
+| decisions  | array[[quest ad decision](#quest-ad-decision-structure) object] | The advertisement decisions           |
 
 <RouteHeader method="POST" url="/quests/{quest.id}/enroll">
   Accept Quest
@@ -691,9 +984,11 @@ Accepts a quest and returns a [quest user status](#quest-user-status-object) obj
 
 ###### JSON Params
 
-| Field    | Type    | Description                                                                |
-| -------- | ------- | -------------------------------------------------------------------------- |
-| location | integer | The [content location](#quest-content-type) where the action was initiated |
+| Field                    | Type    | Description                                                                |
+| ------------------------ | ------- | -------------------------------------------------------------------------- |
+| location                 | integer | The [content location](#quest-content-type) where the action was initiated |
+| metadata_sealed?         | ?string | Sealed metadata for the advertisement decision                             |
+| traffic_metadata_sealed? | ?string | Sealed traffic metadata for the advertisement decision                     |
 
 <RouteHeader method="POST" url="/quests/{quest.id}/claim-reward">
   Claim Quest Reward
@@ -704,10 +999,12 @@ Fires a [Quests User Status Update](/gateway/gateway-events#quests-user-status-u
 
 ###### JSON Params
 
-| Field    | Type    | Description                                                                |
-| -------- | ------- | -------------------------------------------------------------------------- |
-| location | integer | The [content location](#quest-content-type) where the action was initiated |
-| platform | string  | The [platform](#quest-platform-type) to claim the reward for               |
+| Field                    | Type    | Description                                                                |
+| ------------------------ | ------- | -------------------------------------------------------------------------- |
+| location                 | integer | The [content location](#quest-content-type) where the action was initiated |
+| platform                 | integer | The [platform](#quest-platform-type) to claim the reward for               |
+| metadata_sealed?         | ?string | Sealed metadata for the advertisement decision                             |
+| traffic_metadata_sealed? | ?string | Sealed traffic metadata for the advertisement decision                     |
 
 ###### Response Body
 
@@ -755,11 +1052,30 @@ Fires a [Quests User Status Update](/gateway/gateway-events#quests-user-status-u
 }
 ```
 
+<RouteHeader method="POST" url="/quests/creatives/{ad_creative.id}/claim-reward">
+  Claim Quest Creative Reward
+</RouteHeader>
+
+Claims the reward for a quest advertisement creative. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field                            | Type    | Description                                                                    |
+| -------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| decision_metadata_sealed?        | ?string | Sealed metadata for the advertisement decision                                 |
+| traffic_metadata_sealed?         | ?string | Sealed traffic metadata for the advertisement decision                         |
+| client_heartbeat_session_id? ^1^ | string  | A client-generated UUID representing the current persisted analytics heartbeat |
+| client_ad_session_id? ^2^        | string  | A client-generated UUID representing the current ad attribution session        |
+
+^1^ This value is also sent in the [client properties](/reference#client-properties).
+
+^2^ This value is used to correlate ad decision requests, ad heartbeat events, and follow-up actions. Clients should reuse an ad session until it has been idle for 30 minutes or active for 12 hours.
+
 <RouteHeader method="GET" url="/quests/{quest.id}/reward-code">
   Get Quest Reward Code
 </RouteHeader>
 
-Retrieves the reward code for the specified platform. Returns a [quest reward code](#quest-reward-code-object) object on success.
+Retrieves the current user's claimed reward code. Returns a [quest reward code](#quest-reward-code-object) object on success.
 
 <RouteHeader method="POST" url="/quests/{quest.id}/heartbeat">
   Send Quest Heartbeat
@@ -782,12 +1098,15 @@ Heartbeated quest tasks may only be completed from desktop clients. If the reque
 
 ###### JSON Params
 
-| Field          | Type    | Description                                                                                                                                 |
-| -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| stream_key ^1^ | string  | The [encoded key of the stream](/gateway/gateway-events#stream-key) (e.g `guild:169256939211980800:1050497861969793164:222069018507345921`) |
-| terminal?      | boolean | Whether this is the last heartbeat in the sequence                                                                                          |
+| Field                   | Type      | Description                                                                                                                                 |
+| ----------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| stream_key? ^1^         | string    | The [encoded key of the stream](/gateway/gateway-events#stream-key) (e.g `guild:169256939211980800:1050497861969793164:222069018507345921`) |
+| application_id?         | snowflake | The ID of the application being played                                                                                                      |
+| terminal?               | boolean   | Whether this is the last heartbeat in the sequence (default false)                                                                          |
+| executable_path?        | ?string   | The executable path for the detected game                                                                                                   |
+| executable_fingerprint? | ?string   | The executable fingerprint for the detected game                                                                                            |
 
-^1^ For heartbeats without an associated stream, a special stream key of `call:<quest_id>:1` should be used, where `<quest_id>` is the ID of the quest.
+^1^ Only required for stream quests.
 
 <RouteHeader method="POST" url="/quests/{quest.id}/video-progress">
   Send Quest Video Progress
@@ -870,7 +1189,7 @@ Forcefully completes the quest for the current user. Returns a [quest user statu
 
 <Alert type="info">
 
-This endpoint is only available to Discord employees for quests in preview.
+This endpoint is only available to authorized quests previewers.
 
 </Alert>
 
@@ -882,7 +1201,19 @@ Resets the quest's status for the current user. Returns a [quest user status](#q
 
 <Alert type="info">
 
-This endpoint is only available to Discord employees for quests in preview.
+This endpoint is only available to authorized quests previewers.
+
+</Alert>
+
+<RouteHeader method="DELETE" url="/quests/reset-recent-quest-completions">
+  Reset Recent Quest Completions
+</RouteHeader>
+
+Clears recent quest completion tracking for the current user. Returns a 204 empty response on success.
+
+<Alert type="info">
+
+This endpoint is only available to Discord employees.
 
 </Alert>
 
@@ -902,6 +1233,6 @@ Returns a [quest user status](#quest-user-status-object) object. Fires a [Quests
 
 <Alert type="info">
 
-This endpoint is only available to Discord employees for quests in preview.
+This endpoint is only available to authorized quests previewers.
 
 </Alert>
