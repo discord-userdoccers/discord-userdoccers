@@ -13,10 +13,14 @@ How this is determined depends on the read state type:
 - For read states of type `GUILD_EVENT`, the ID of the newest scheduled event in the guild is compared against the read state's `last_acked_id`.
 - For read states of type `GUILD_HOME`, no specific entity is tracked; guild home is considered unread if the timestamp of the read state's `last_acked_id` is more than 24 hours old.
 - For read states of type `GUILD_ONBOARDING_QUESTION`, the [guild `latest_onboarding_question_id` field](/resources/guild#guild-object) is compared against the read state's `last_acked_id`.
-- For read states of type `NOTIFICATION_CENTER`, the ID of the newest notification center item is compared against the read state's `last_acked_id`.
+- For read states of type `NOTIFICATION_CENTER`, the ID of the newest [notification center item](/resources/notification-center#notification-center-item-object) is compared against the read state's `last_acked_id`. Mobile clients also use the same read state to track whether notification tab message mentions have been viewed, comparing the mentioned message IDs against `last_acked_id`.
 - For read states of type `MESSAGE_REQUESTS`, the ID of the newest message request is compared against the read state's `last_acked_id`.
 
 These same principles can be applied to determine what entity ID to use when acknowledging a read state.
+
+For notification center, the `NOTIFICATION_CENTER` read state and the `acked` state on individual notification center items are separate.
+The read state controls the notification center's overall unread badge by storing an acknowledged item threshold,
+while [notification center item acknowledgements](/resources/notification-center#acknowledge-notification-center-item) control whether individual items are marked as acknowledged.
 
 ## Automations
 
@@ -43,6 +47,13 @@ However, certain read state updates are done automatically by Discord without fi
 - When a [Guild Scheduled Event Create](/gateway/gateway-events#guild-scheduled-event-create) Gateway event is received, if the guild's [notification settings](/resources/user-settings#user-guild-settings-object) does not have `mute_scheduled_events` set, the corresponding read state must be updated to increment `badge_count` by one.
 - When a [Guild Scheduled Event Create](/gateway/gateway-events#guild-scheduled-event-create) Gateway event is received, if the event's `creator_id` matches the current user's ID, the corresponding read state must be updated to set `last_acked_id` to the new event's ID, thereby resetting `badge_count` to zero.
 
+#### User Read State Automations
+
+- When a [Notification Center Item Create](/gateway/gateway-events#notification-center-item-create) Gateway event is received, the `NOTIFICATION_CENTER` read state must be updated to increment `badge_count` by one.
+- When a [Relationship Add](/gateway/gateway-events#relationship-add) Gateway event is received with q`type` `INCOMING_REQUEST`, the `NOTIFICATION_CENTER` read state must be updated to increment `badge_count` by one.
+- When a [Relationship Add](/gateway/gateway-events#relationship-add) Gateway event is received with `type` `FRIEND`, or a [Relationship Remove](/gateway/gateway-events#relationship-remove) Gateway event is received with `type` `INCOMING_REQUEST`, the `NOTIFICATION_CENTER` read state must be updated to decrement `badge_count` by one, without going below zero.
+- On mobile, message mentions can also contribute to the `NOTIFICATION_CENTER` badge. When they do, clients must use the message's ID as the latest entity for the notification center read state.
+
 ## Management
 
 Read states are almost entirely managed by clients, with the server not doing much other than storing them.
@@ -58,7 +69,7 @@ Flags must be calculated as follows:
 - If the channel's `type` is one of the thread types (`NEWS_THREAD`, `PUBLIC_THREAD`, `PRIVATE_THREAD`), set the `IS_THREAD` flag.
 - If the read state's `mention_count` is comprised entirely of non-ping mentions, set the `IS_MENTION_LOW_IMPORTANCE` flag. ^1^
 
-^1^ When the user has the [`MENTION_ON_ALL_MESSAGES` setting](/resources/user-settings#notification-settings-flags) enabled and the channel's [notification level](/resources/user-settings#user-guild-settings-object) is set to `ALL_MESSAGES`, all messages in the channel increase the `mention_count`. However, these mentions are considered low importance as they do not ping the user. However, if there is at least one ping mention in the channel, the read state is not considered low importance.
+^1^ When the user has the [`MENTION_ON_ALL_MESSAGES` setting](/resources/user-settings#notification-settings-flags) enabled and the channel's [notification level](/resources/user-settings#user-guild-settings-object) is set to `ALL_MESSAGES`, all messages in the channel increase the `mention_count`. These mentions are considered low importance as they do not ping the user. However, if there is at least one ping mention in the channel, the read state is not considered low importance.
 
 #### Calculating Last Viewed
 
@@ -117,14 +128,14 @@ The client should reset the ack token to `null` whenever it switches accounts or
 
 ###### Read State Type
 
-| Value | Name                      | Description                   |
-| ----- | ------------------------- | ----------------------------- |
-| 0     | CHANNEL                   | Channel message unreads       |
-| 1     | GUILD_EVENT               | Guild scheduled event feature |
-| 2     | NOTIFICATION_CENTER       | Notification center feature   |
-| 3     | GUILD_HOME                | Guild home feature            |
-| 4     | GUILD_ONBOARDING_QUESTION | Guild onboarding feature      |
-| 5     | MESSAGE_REQUESTS          | Message requests feature      |
+| Value | Name                      | Description                      |
+| ----- | ------------------------- | -------------------------------- |
+| 0     | CHANNEL                   | Channel message unreads          |
+| 1     | GUILD_EVENT               | Guild scheduled event feature    |
+| 2     | NOTIFICATION_CENTER       | User notification center feature |
+| 3     | GUILD_HOME                | Guild home feature               |
+| 4     | GUILD_ONBOARDING_QUESTION | Guild onboarding feature         |
+| 5     | MESSAGE_REQUESTS          | User message requests feature    |
 
 ###### Read State Flags
 
@@ -150,7 +161,7 @@ In this case, `mention_count` should also be updated to the amount of mentions u
 | Field              | Type    | Description                                                        |
 | ------------------ | ------- | ------------------------------------------------------------------ |
 | token?             | ?string | The last received [ack token](#ack-tokens), or `null`              |
-| manual?            | boolean | Whether the acknowleged message ID is manually set                 |
+| manual?            | boolean | Whether the acknowledged message ID is manually set                |
 | mention_count? ^1^ | integer | The new unread indicator for the channel                           |
 | flags? ^2^         | integer | The [read state flags](#read-state-flags) for the channel          |
 | last_viewed? ^2^   | integer | When the channel was last viewed (in days since the Discord epoch) |
