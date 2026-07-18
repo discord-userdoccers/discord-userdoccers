@@ -66,6 +66,7 @@ export const ENDPOINT_VARS: Record<string, string | null> = {
   sticker: "/resources/sticker#sticker-object",
   sticker_pack: "/resources/sticker#sticker-pack-object",
   store_listing: "/resources/store#store-listing-object",
+  storefront: "/resources/store#storefront-object",
   stream_key: "/gateway/gateway-events#stream-key",
   subscription: "/resources/subscription#subscription-object",
   subscription_group_listing: "/resources/guild#role-subscription-group-listing-object",
