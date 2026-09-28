@@ -218,7 +218,7 @@ Details about heartbeats are in the [Gateway documentation](/gateway/using-gatew
 
 | Field   | Type          | Description                                                      |
 | ------- | ------------- | ---------------------------------------------------------------- |
-| ver     | integer       | The client heartbeat version (currently `27`)                    |
+| ver     | integer       | The client heartbeat version (currently `31`)                    |
 | active  | boolean       | Whether the session is currently active (has reasons of service) |
 | reasons | array[string] | [Reasons of service](#reasons-of-service)                        |
 
@@ -237,7 +237,7 @@ Details about heartbeats are in the [Gateway documentation](/gateway/using-gatew
   "d": {
     "seq": 1337,
     "qos": {
-      "ver": 27,
+      "ver": 31,
       "active": true,
       "reasons": ["foregrounded", "rtc_connected"]
     }
@@ -1018,6 +1018,7 @@ These events directly correspond with a specific action or state change that has
 | [Guild Audit Log Entry Create](#guild-audit-log-entry-create)                                     | Guild audit log entry was created                                                                 |
 | [Guild Ban Add](#guild-ban-add)                                                                   | User was banned from a guild                                                                      |
 | [Guild Ban Remove](#guild-ban-remove)                                                             | User was unbanned from a guild                                                                    |
+| [Guild Bulk Ban Update](#guild-bulk-ban-update)                                                   | Guild finished processing a bulk-ban operation performed by the user                              |
 | [Guild Directory Entry Create](#guild-directory-entry-create)                                     | Guild directory entry was created                                                                 |
 | [Guild Directory Entry Update](#guild-directory-entry-update)                                     | Guild directory entry was updated                                                                 |
 | [Guild Directory Entry Delete](#guild-directory-entry-delete)                                     | Guild directory entry was deleted                                                                 |
@@ -1049,6 +1050,7 @@ These events directly correspond with a specific action or state change that has
 | [Guild Soundboard Sound Create](#guild-soundboard-sound-create)                                   | Guild soundboard sound was created                                                                |
 | [Guild Soundboard Sound Update](#guild-soundboard-sound-update)                                   | Guild soundboard sound was updated                                                                |
 | [Guild Soundboard Sound Delete](#guild-soundboard-sound-delete)                                   | Guild soundboard sound was deleted                                                                |
+| [Guild Soundboard Sounds Update](#guild-soundboard-sound-update)                                  | Guild soundboard sounds were updated                                                              |
 | [Soundboard Sounds](#soundboard-sounds)                                                           | Response to [Request Soundboard Sounds](#request-soundboard-sounds)                               |
 | [Guild Integrations Update](#guild-integrations-update)                                           | Guild integration was updated                                                                     |
 | [Integration Create](#integration-create)                                                         | Guild integration was created                                                                     |
@@ -2261,6 +2263,26 @@ Sent when a user is unbanned from a guild. Requires the `BAN_MEMBERS` or `VIEW_A
 | guild_id | snowflake                                          | The ID of the guild |
 | user     | partial [user](/resources/user#user-object) object | The unbanned user   |
 
+#### Guild Bulk Ban Update
+
+Sent when a guild finishes processing a [bulk-ban operation](/resources/guild#bulk-guild-ban-v2) for the current user.
+
+###### Guild Bulk Ban Update Structure
+
+| Field    | Type                                                                      | Description                             |
+| -------- | ------------------------------------------------------------------------- | --------------------------------------- |
+| guild_id | snowflake                                                                 | The ID of the guild                     |
+| bulk_ban | [guild bulk ban](/gateway/gateway-events#guild-bulk-ban-structure) object | The information about the ban operation |
+
+###### Guild Bulk Ban Structure
+
+| Field            | Type             | Description                                |
+| ---------------- | ---------------- | ------------------------------------------ |
+| banned_users     | array[snowflake] | The user IDs that were successfully banned |
+| failed_users ^1^ | array[snowflake] | The user IDs that were not banned          |
+
+^1^ A ban will fail if the user is already banned, the user has a higher role than the current user, the user is the owner of the guild, or the user is the current user.
+
 #### Guild Directory Entry Create
 
 Sent when a guild directory entry is created. The inner payload is a [directory entry](/resources/directory-entry#directory-entry-object) object.
@@ -2601,6 +2623,17 @@ Sent when a guild soundboard sound is deleted.
 | guild_id | snowflake | The ID of the guild            |
 | sound_id | snowflake | The ID of the soundboard sound |
 
+#### Guild Soundboard Sounds Update
+
+Sent when multiple guild soundboard sounds are updated.
+
+###### Guild Soundboard Sounds Update Structure
+
+| Field             | Type                                                                            | Description                   |
+| ----------------- | ------------------------------------------------------------------------------- | ----------------------------- |
+| guild_id          | snowflake                                                                       | The ID of the guild           |
+| soundboard_sounds | array[[soundboard sound](/resources/soundboard#soundboard-sound-object) object] | The guild's soundboard sounds |
+
 #### Soundboard Sounds
 
 Sent in response to [Request Soundboard Sounds](#request-soundboard-sounds).
@@ -2740,16 +2773,16 @@ Sent when an application responds to interaction with a modal.
 
 ###### Interaction Modal Create Structure
 
-| Field       | Type                                                                         | Description                                                 |
-| ----------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| id          | snowflake                                                                    | The ID of the interaction                                   |
-| channel_id  | snowflake                                                                    | The ID of the channel the interaction was created in        |
-| custom_id   | string                                                                       | The developer-defined identifier for the modal              |
-| application | partial [application](/resources/application#application-object) object      | The application associated with the interaction             |
-| title       | string                                                                       | The title of the modal                                      |
-| components  | array[[component](/resources/components#component-object) object]            | The modal components                                        |
-| nonce       | ?string                                                                      | The interaction's nonce, used for interaction deduplication |
-| resolved?   | [resolved data](/interactions/receiving-and-responding#resolved-data-object) | The resolved entities                                       |
+| Field       | Type                                                                                    | Description                                                 |
+| ----------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| id          | snowflake                                                                               | The ID of the interaction                                   |
+| channel_id  | snowflake                                                                               | The ID of the channel the interaction was created in        |
+| custom_id   | string                                                                                  | The developer-defined identifier for the modal              |
+| application | [integration application](/resources/integration#integration-application-object) object | The application associated with the interaction             |
+| title       | string                                                                                  | The title of the modal                                      |
+| components  | array[[component](/resources/components#component-object) object]                       | The modal components                                        |
+| nonce       | ?string                                                                                 | The interaction's nonce, used for interaction deduplication |
+| resolved?   | [resolved data](/interactions/receiving-and-responding#resolved-data-object)            | The resolved entities                                       |
 
 #### Interaction IFrame Modal Create
 
@@ -2757,16 +2790,18 @@ Sent when an application responds to interaction with an iFrame modal.
 
 ###### Interaction IFrame Modal Create Structure
 
-| Field       | Type                                                                    | Description                                                                       |
-| ----------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| id          | snowflake                                                               | The ID of the interaction                                                         |
-| channel_id  | snowflake                                                               | The ID of the channel the interaction was created in                              |
-| custom_id   | string                                                                  | The developer-defined identifier for the iFrame modal                             |
-| application | partial [application](/resources/application#application-object) object | The application associated with the interaction                                   |
-| title       | string                                                                  | The title of the modal                                                            |
-| iframe_path | string                                                                  | The relative URL to the iFrame modal                                              |
-| modal_size  | integer                                                                 | The [iFrame modal size](/interactions/receiving-and-responding#iframe-modal-size) |
-| nonce       | ?string                                                                 | The interaction's nonce, used for interaction deduplication                       |
+| Field           | Type                                                                                    | Description                                                                       |
+| --------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| id              | snowflake                                                                               | The ID of the interaction                                                         |
+| channel_id      | snowflake                                                                               | The ID of the channel the interaction was created in                              |
+| custom_id       | string                                                                                  | The developer-defined identifier for the iFrame modal                             |
+| application     | [integration application](/resources/integration#integration-application-object) object | The application associated with the interaction                                   |
+| title           | string                                                                                  | The title of the modal                                                            |
+| iframe_path ^1^ | string                                                                                  | The relative URL to the iFrame modal                                              |
+| modal_size      | integer                                                                                 | The [iFrame modal size](/interactions/receiving-and-responding#iframe-modal-size) |
+| nonce           | ?string                                                                                 | The interaction's nonce, used for interaction deduplication                       |
+
+^1^ The complete iFrame URL will be `https://{application_id}.discordsays.com/{iframe_path}?instance_id={channel_id}:{application_id}:{custom_id}&custom_id={custom_id}&channel_id={channel_id}&guild_id={guild_id}&frame_id={frame_id}&platform={platform}` where `guild_id` is optional, `frame_id` is a unique UUID for the frame, and `platform` is either `desktop` or `mobile`.
 
 #### Social Layer SKU Purchase Eligibility Response
 

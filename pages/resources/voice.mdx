@@ -220,11 +220,12 @@ There are currently several caveats for this endpoint:
 
 ###### JSON Params
 
-| Field                       | Type               | Description                                    |
-| --------------------------- | ------------------ | ---------------------------------------------- |
-| channel_id?                 | snowflake          | The ID of the channel the user is currently in |
-| suppress?                   | boolean            | Whether the user is suppressed in the channel  |
-| request_to_speak_timestamp? | ?ISO8601 timestamp | When the user requested to speak               |
+| Field                       | Type               | Description                                                                        |
+| --------------------------- | ------------------ | ---------------------------------------------------------------------------------- |
+| channel_id?                 | snowflake          | The ID of the channel the user is currently in                                     |
+| suppress?                   | boolean            | Whether the user is suppressed in the channel                                      |
+| request_to_speak_timestamp? | ?ISO8601 timestamp | When the user requested to speak                                                   |
+| silent?                     | boolean            | Whether to acknowledge the stage speaker request without notifying (default false) |
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/voice-states/{user.id}" supportsBot>
   Modify User Voice State
@@ -265,12 +266,14 @@ Sending a voice channel effect requires the current user to be connected to the 
 
 ###### JSON Params
 
-| Field           | Type       | Description                                                                                          |
-| --------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
-| animation_type? | ?integer   | The [type of emoji animation](#voice-channel-effect-animation-type), if applicable (default `BASIC`) |
-| animation_id?   | ?integer   | The ID of the emoji animation (0-20, default 0)                                                      |
-| emoji_id?       | ?snowflake | The ID of the custom emoji to send                                                                   |
-| emoji_name?     | ?string    | The emoji name or unicode character of the emoji to send                                             |
+| Field             | Type       | Description                                                                                          |
+| ----------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
+| animation_type?   | ?integer   | The [type of emoji animation](#voice-channel-effect-animation-type), if applicable (default `BASIC`) |
+| animation_id? ^1^ | ?integer   | The ID of the emoji animation (default 0)                                                            |
+| emoji_id?         | ?snowflake | The ID of the custom emoji to send                                                                   |
+| emoji_name?       | ?string    | The emoji name or unicode character of the emoji to send                                             |
+
+^1^ The animation ID is a zero-based index in the animation set selected by `animation_type`. `BASIC` only supports ID `0`. `PREMIUM` supports IDs `0` through `20`.
 
 ###### Voice Channel Effect Animation Type
 
@@ -278,6 +281,27 @@ Sending a voice channel effect requires the current user to be connected to the 
 | ----- | ------- | -------------------------------------------------------- |
 | 0     | PREMIUM | A fun animation, requires a premium (Nitro) subscription |
 | 1     | BASIC   | The standard animation                                   |
+
+<RouteHeader method="POST" url="/channels/{channel.id}/custom-call-sounds">
+  Send Custom Call Sound
+</RouteHeader>
+
+Sends the user's configured custom call sound effect to a voice channel. Returns a 204 empty response on success. Fires a [Voice Channel Effect Send](/gateway/gateway-events#voice-channel-effect-send) Gateway event.
+
+<Alert type="info">
+
+Sending a custom call sound requires the current user to be connected to the voice channel. The user cannot be server muted, deafened, or suppressed.
+
+</Alert>
+
+###### JSON Params
+
+| Field            | Type    | Description                                                                     |
+| ---------------- | ------- | ------------------------------------------------------------------------------- |
+| animation_type   | integer | The [type of animation](#voice-channel-effect-animation-type) (default `BASIC`) |
+| animation_id ^1^ | integer | The ID of the animation (default 0)                                             |
+
+^1^ The animation ID is a zero-based index in the animation set selected by `animation_type`. `BASIC` only supports ID `0`. For `PREMIUM`, the official client randomly selects IDs `10` through `15`, but any IDs from `0` through `20` are supported.
 
 <RouteHeader method="PATCH" url="/streams/{stream_key}/stream">
   Modify Stream

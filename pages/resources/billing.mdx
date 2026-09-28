@@ -69,6 +69,12 @@ Discord supports a variety of payment providers to enable billing for first-part
 | state?       | string  | The state or province of the location |
 | country      | string  | The country of the location           |
 
+###### PIX Payment Metadata Structure
+
+| Field   | Type   | Description                  |
+| ------- | ------ | ---------------------------- |
+| tax_id? | string | The PIX tax ID for the payer |
+
 ###### Payment Source Type
 
 | Value | Name                    | Description        |
@@ -262,22 +268,44 @@ Returns a list of [payment source](#payment-source-object) objects. Note that th
 
 Returns a [payment source](#payment-source-object) object for a given payment source ID.
 
+<RouteHeader method="GET" url="/users/@me/billing/payment-source-creation-context">
+  Get Payment Source Creation Context
+</RouteHeader>
+
+Returns information about which payment source types and billing address countries are available to the current user.
+
+###### Response Body
+
+| Field                             | Type           | Description                                                                                                                          |
+| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| store_country                     | ?string        | The user's store country, as an [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country code                  |
+| allowed_payment_source_types      | array[integer] | The creatable [payment source types](#payment-source-type)                                                                           |
+| allowed_billing_address_countries | array[string]  | The countries allowed for billing addresses, as [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country codes |
+
 <RouteHeader method="POST" url="/users/@me/billing/payment-sources">
   Create Payment Source
 </RouteHeader>
 
 Creates a payment source. Returns a [payment source](#payment-source-object) object on success. Fires a [User Payment Sources Update](/gateway/gateway-events#user-payment-sources-update) Gateway event.
 
+###### Query String Params
+
+| Field     | Type   | Description                                                            |
+| --------- | ------ | ---------------------------------------------------------------------- |
+| location? | string | The analytics location the request initiated from (max 100 characters) |
+
 ###### JSON Params
 
-| Field                  | Type                                                 | Description                                                                                           |
-| ---------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| token                  | string                                               | The payment source token retrieved from the payment gateway                                           |
-| payment_gateway        | integer                                              | The [payment gateway](#payment-gateway) of the payment source                                         |
-| billing_address        | [billing address](#billing-address-structure) object | The billing address of the payment source                                                             |
-| billing_address_token? | string                                               | The validation token obtained from the [Validate Billing Address](#validate-billing-address) endpoint |
-| return_url?            | string                                               | The URL to return to after the payment source is created                                              |
-| bank?                  | string                                               | The bank information for the payment source                                                           |
+| Field                  | Type                                                           | Description                                                                                           |
+| ---------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| token                  | string                                                         | The payment source token retrieved from the payment gateway                                           |
+| payment_gateway        | integer                                                        | The [payment gateway](#payment-gateway) of the payment source                                         |
+| billing_address        | [billing address](#billing-address-structure) object           | The billing address of the payment source                                                             |
+| billing_address_token? | string                                                         | The validation token obtained from the [Validate Billing Address](#validate-billing-address) endpoint |
+| return_url?            | string                                                         | The URL to return to after the payment source is created                                              |
+| bank?                  | string                                                         | The bank information for the payment source                                                           |
+| default?               | boolean                                                        | Whether the payment source is the default payment source (default false)                              |
+| pix?                   | [PIX payment metadata](#pix-payment-metadata-structure) object | PIX payment metadata                                                                                  |
 
 <RouteHeader method="PATCH" url="/users/@me/billing/payment-sources/{payment_source.id}" mfa>
   Modify Payment Source
@@ -291,8 +319,8 @@ Modifies a payment source. Returns an updated [payment source](#payment-source-o
 | ---------------- | ---------------------------------------------------- | -------------------------------------------------------- |
 | billing_address? | [billing address](#billing-address-structure) object | The billing address of the payment source                |
 | default?         | boolean                                              | Whether the payment source is the default payment source |
-| expires_month?   | integer                                              | The year the credit card expires at                      |
-| expires_year?    | integer                                              | The month the credit card expires at                     |
+| expires_month?   | integer                                              | The month the credit card expires at                     |
+| expires_year?    | integer                                              | The year the credit card expires at                      |
 
 <RouteHeader method="DELETE" url="/users/@me/billing/payment-sources/{payment_source.id}">
   Delete Payment Source
@@ -543,6 +571,19 @@ Returns whether the client should prompt the user to continue their premium purc
 </RouteHeader>
 
 Returns a list of up to 3 partial [user](/resources/user#partial-user-structure) objects representing friends with a premium subscription, used to entice the user to subscribe.
+
+<RouteHeader method="GET" url="/users/@me/billing/eligible-application-subscription-guilds">
+  List Eligible Application Subscription Guilds
+</RouteHeader>
+
+Returns a list of guild IDs eligible for an application guild subscription.
+
+###### Query String Params
+
+| Field          | Type      | Description                                             |
+| -------------- | --------- | ------------------------------------------------------- |
+| application_id | snowflake | The ID of the application the subscription belongs to   |
+| sku_id?        | snowflake | The ID of the application subscription SKU to check for |
 
 <RouteHeader method="GET" url="/users/@me/billing/wallet/{payment_source.id}/information">
   Get Wallet Information

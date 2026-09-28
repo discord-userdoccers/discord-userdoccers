@@ -13,7 +13,7 @@ A guild or private channel within Discord.
 | id ^8^                                        | snowflake                                                          | The ID of the channel                                                                                                                                                                        |
 | type                                          | integer                                                            | The [type of channel](#channel-type)                                                                                                                                                         |
 | guild_id?                                     | snowflake                                                          | The ID of the guild the channel is in                                                                                                                                                        |
-| position?                                     | integer                                                            | Sorting position of the channel                                                                                                                                                              |
+| position? ^10^                                | integer                                                            | Sorting position of the channel                                                                                                                                                              |
 | permission_overwrites?                        | array[[permission overwrite](#permission-overwrite-object) object] | Explicit permission overwrites for members and roles                                                                                                                                         |
 | name?                                         | ?string                                                            | The name of the channel (1-100 characters)                                                                                                                                                   |
 | topic?                                        | ?string                                                            | The channel topic (max 4096 characters)                                                                                                                                                      |
@@ -83,6 +83,8 @@ A guild or private channel within Discord.
 ^8^ For ephemeral DM channels, the channel ID will always equal the ID of the other recipient.
 
 ^9^ Only included when `with_can_link_lobby` is set to `true` when fetched from the [List Guild Channels](#list-guild-channels) endpoint.
+
+^10^ Channels with the same position are sorted by their ID in ascending order.
 
 ###### Partial Channel Structure
 
@@ -696,16 +698,28 @@ One of `recipient_id`, `recipients` or `access_tokens` is required. Bots cannot 
 
 | Field                          | Type                   | Description                                                                |
 | ------------------------------ | ---------------------- | -------------------------------------------------------------------------- |
-| recipient_id? **(deprecated)** | snowflake              | The recipient to DM                                                        |
+| recipient_id? **(deprecated)** | snowflake              | The user ID of the recipient to DM                                         |
 | recipients? ^1^                | array[snowflake]       | The users to include in the private channel                                |
 | access_tokens? ^2^             | array[string]          | The access tokens of users that have granted your app the `gdm.join` scope |
 | nicks? ^3^                     | map[snowflake, string] | A mapping of user IDs to their respective nicknames                        |
 
-^1^ When creating a group DM, the client user's ID can optionally be included in the `recipients` array. This allows creating a group DM with only one other user.
+^1^ When creating a group DM, the client user's ID can optionally be included in the `recipients` array. This allows creating a group DM with only one recipient.
 
 ^2^ Only usable by bots for OAuth2 requests, which can only create group DMs.
 
 ^3^ Requires `access_tokens` to be provided.
+
+<RouteHeader method="POST" url="/users/@me/channels/group-dm-shell">
+  Create Group DM Shell
+</RouteHeader>
+
+Creates a group DM channel with one recipient. Returns a [private channel](#channel-object) object. Fires a [Channel Create](/gateway/gateway-events#channel-create) Gateway event.
+
+###### JSON Params
+
+| Field        | Type      | Description                  |
+| ------------ | --------- | ---------------------------- |
+| recipient_id | snowflake | The user ID of the recipient |
 
 <RouteHeader method="GET" url="/guilds/{guild.id}/channels" supportsOAuth2="guilds.channels.read" supportsBot>
   List Guild Channels
@@ -790,6 +804,7 @@ These limits are summarized in the following table by [premium tier](/resources/
 | default_forum_layout?               | ?integer                                                            | The default [layout](#forum-layout-type) of a forum channel                                                                                                                          | Forum                                  |
 | default_sort_order?                 | ?integer                                                            | The default [sort order](#sort-order-type) of a thread-only channel's threads                                                                                                        | Forum, Media                           |
 | default_tag_setting?                | ?string                                                             | The default [tag setting](#search-tag-setting) of a thread-only channel (default `match_some`)                                                                                       | Forum, Media                           |
+| flags?                              | ?integer                                                            | The [channel's flags](#channel-flags) (only `IS_SPOILER_CHANNEL` can be set)                                                                                                         | All                                    |
 
 ^1^ For stage channels, bitrate can only be set up to **64 kbps**. See the bitrate limits section above for more information.
 
@@ -805,7 +820,14 @@ Modifies the positions of a set of [channel](#channel-object) objects for the gu
 
 <Alert type="info">
 
-Only channels to be modified are required.
+Only channels to be modified are required. For accurate sorting, the following conventions are recommended when modifying channels, but they are not required or enforced by the API.
+
+- When moving a category, you should include every category in the guild.
+- When moving an uncategorized channel, you should include every relevant uncategorized channel.
+- When moving a channel within the same category, you should include every relevant channel in that category.
+- When moving a channel into a category, you should include every relevant channel in the target category. This also applies when the target category is `null`.
+
+A relevant channel is defined as one in the same sorting bucket. For example, text, news, and forum channels are sorted together, and voice and stage channels are sorted together. The latter are always shown below the former, so they are not relevant when sorting, and vice versa.
 
 </Alert>
 
@@ -902,6 +924,18 @@ For Community guilds, the Rules or Guidelines channel and the Community Updates 
 | Field   | Type    | Description                                                                    |
 | ------- | ------- | ------------------------------------------------------------------------------ |
 | silent? | boolean | Whether to leave the group DM without sending a system message (default false) |
+
+<RouteHeader method="POST" url="/users/@me/channels/bulk-leave">
+  Bulk Leave Group DMs
+</RouteHeader>
+
+Leave multiple group DMs. Returns a 204 empty response on success. Fires multiple [Channel Delete](/gateway/gateway-events#channel-delete) Gateway events.
+
+###### JSON Params
+
+| Field       | Type             | Description                                |
+| ----------- | ---------------- | ------------------------------------------ |
+| channel_ids | array[snowflake] | The IDs of the group DMs to leave (1-1000) |
 
 <RouteHeader method="PUT" url="/channels/{channel.id}/voice-status" supportsAuditReason supportsBot>
   Modify Channel Status

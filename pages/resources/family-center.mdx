@@ -61,6 +61,7 @@ Represents the current state of the link.
 | 2     | The linked user is currently connected to the requestor        |
 | 3     | The link has been disconnected                                 |
 | 4     | The link request was rejected                                  |
+| 5     | The link request has expired                                   |
 
 ###### Link Type
 
@@ -105,31 +106,54 @@ Audit log of events of the linked user. Visible to both requestors and linked us
 | -------------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
 | teen_user_id   | ?snowflake                                                | The ID of the linked user                                                |
 | range_start_id | ?snowflake                                                | A snowflake representing the start time of the current 7-day track range |
-| actions        | array[[action](#action-structure) object]                 | List of [actions](#action-structure) the linked user has done            |
+| actions        | array[[action](#action-structure) object]                 | [Actions](#action-structure) the linked user has done                    |
 | users          | array[partial [user](/resources/user#user-object) object] | Users referenced in the audit log                                        |
 | guilds         | array[[guild](/resources/guild#guild-object) object]      | Guilds referenced in the audit log                                       |
-| totals         | map[integer, integer]                                     | Object keyed by [action types](#action-type) with their totals           |
+| totals         | map[integer, integer]                                     | Object keyed by [action types](#teen-action-type) with their totals      |
 
 ###### Action Structure
 
-| Field        | Type      | Description                                                                                                     |
-| ------------ | --------- | --------------------------------------------------------------------------------------------------------------- |
-| event_id     | snowflake | The ID of the event action                                                                                      |
-| user_id      | snowflake | The ID of the linked user                                                                                       |
-| entity_id    | snowflake | The ID of the entity the action relates to (user, guild, or group DM) based off the [action type](#action-type) |
-| display_type | integer   | The [type of the action](#action-type) of the action, detailing what this action involved                       |
+| Field        | Type      | Description                                                                                                                   |
+| ------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| event_id     | snowflake | The ID of the event action                                                                                                    |
+| user_id      | snowflake | The ID of the linked user                                                                                                     |
+| entity_id    | snowflake | The ID of the entity the action relates to (user, guild, or group DM) based off the [display type](#teen-action-display-type) |
+| display_type | integer   | The [display type](#teen-action-display-type) of the action, detailing what this action involved                              |
 
-###### Action Type
+###### Teen Action Type
 
-Represents what kind of action the linked user engaged in.
+Represents a specific teen action.
 
-| Value | Description                                                        |
-| ----- | ------------------------------------------------------------------ |
-| 1     | Users added within the last 7 days                                 |
-| 2     | Guild joined within the last 7 days                                |
-| 3     | Users messaged within the last 7 days                              |
-| 4     | Guilds the linked user has sent messages in within the last 7 days |
-| 5     | Users called within the last 7 days                                |
+| Value | Name                      | Description                      |
+| ----- | ------------------------- | -------------------------------- |
+| 1     | DM_MESSAGE_SEND           | A DM message was sent            |
+| 2     | GDM_MESSAGE_SEND          | A group DM message was sent      |
+| 3     | MESSAGE_REACT             | A message reaction was added     |
+| 4     | ADD_FRIEND                | A friend was added               |
+| 5     | SEND_CALL                 | A call was sent                  |
+| 6     | CALL_JOIN                 | A call was joined                |
+| 7     | GUILD_JOIN                | A guild was joined               |
+| 8     | GUILD_MESSAGE_SEND        | A guild message was sent         |
+| 9     | GUILD_VC_JOIN             | A guild voice channel was joined |
+| 10    | GUILD_VOICE_CHANNEL_LEAVE | A guild voice channel was left   |
+| 11    | CALL_LEAVE                | A call was left                  |
+| 12    | CALL_START                | A call was started               |
+| 13    | INVOICE_COMPLETE          | An invoice was completed         |
+
+###### Teen Action Display Type
+
+Represents the grouped display type of an action.
+
+| Value | Name                | Description                                   |
+| ----- | ------------------- | --------------------------------------------- |
+| 1     | USER_ADD            | Users added within the last 7 days            |
+| 2     | GUILD_ADD           | Guilds joined within the last 7 days          |
+| 3     | USER_INTERACTION    | Users interacted with in the last 7 days      |
+| 4     | GUILD_INTERACTION   | Guilds interacted with in the last 7 days     |
+| 5     | USER_CALLED         | Users called within the last 7 days           |
+| 6     | TOTAL_VOICE_MINUTES | Total voice minutes within the last 7 days    |
+| 7     | PURCHASES           | Purchases within the last 7 days              |
+| 8     | GIFTS               | Gifts sent or received within the last 7 days |
 
 ###### Example Teen Audit Log
 
@@ -196,9 +220,10 @@ Opening this link on the mobile app prompts the "send connection request" screen
 
 ###### Response Body
 
-| Field     | Type   | Description                                                                                               |
-| --------- | ------ | --------------------------------------------------------------------------------------------------------- |
-| link_code | string | The code used to connect a requestor to a linked user, appended to the end of the URL the QR code encodes |
+| Field      | Type    | Description                                                                                               |
+| ---------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| link_code  | string  | The code used to connect a requestor to a linked user, appended to the end of the URL the QR code encodes |
+| expires_at | integer | Unix timestamp (in milliseconds) of when the link code expires                                            |
 
 <RouteHeader method="GET" url="/users/@me/linked-users">
   Get Linked Users
@@ -227,9 +252,21 @@ Modifies the linked user status of a linked user. Can be invoked by either the l
 
 ###### JSON Params
 
-| Field              | Type    | Description                                                  |
-| ------------------ | ------- | ------------------------------------------------------------ |
-| link_status        | integer | The new [link status](#link-status) of the linked user       |
-| linked_user_id ^1^ | string  | The ID of the user the linked user or requestor is modifying |
+| Field              | Type      | Description                                                  |
+| ------------------ | --------- | ------------------------------------------------------------ |
+| link_status        | integer   | The new [link status](#link-status) of the linked user       |
+| linked_user_id ^1^ | snowflake | The ID of the user the linked user or requestor is modifying |
 
 ^1^ If this request is sent to remove a link (setting [`link_status`](#link-status) to `3`), the `linked_user_id` changes depending on if the requestor or linked user is invoking it. If the linked user invokes the request, `linked_user_id` is the ID of the requestor, otherwise it's the ID of the linked user.
+
+<RouteHeader method="DELETE" url="/users/@me/linked-users">
+  Remove Linked User
+</RouteHeader>
+
+Removes a linked user. Returns a list of [linked user](#linked-user-object) objects on success. Fires a [User Update](/gateway/gateway-events#user-update) Gateway event.
+
+###### JSON Params
+
+| Field          | Type      | Description                         |
+| -------------- | --------- | ----------------------------------- |
+| linked_user_id | snowflake | The ID of the linked user to remove |

@@ -1,14 +1,15 @@
 import { createHash } from "crypto";
 import { existsSync } from "fs";
-import { opendir, readFile, writeFile } from "fs/promises";
+import { copyFile, opendir, readFile, writeFile } from "fs/promises";
 import { join, sep } from "path";
 import matter from "gray-matter";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = "gemini-embedding-2";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const MODEL = "text-embedding-3-small";
 const DIMS = 768;
 const BATCH_SIZE = 100;
-const GEMINI_BASE = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}`;
+const EMBEDDING_CONFIG = `${MODEL}:${DIMS}:v2`;
+const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
 const HASH_FILE = join(process.cwd(), "public", "search-index.hash");
 const INDEX_FILE = join(process.cwd(), "public", "search-index.json");
 const VECTORS_FILE = join(process.cwd(), "public", "search-vectors.bin");
@@ -85,6 +86,8 @@ function toAnchor(heading: string): string {
 // Generic sub-headings that repeat under every endpoint and shouldn't be indexed as standalone sections
 const GENERIC_HEADINGS = new Set([
   "json-params",
+  "json-body",
+  "jsonform-params",
   "query-string-params",
   "form-params",
   "response-body",
@@ -184,41 +187,42 @@ async function embed(texts: string[]): Promise<number[][]> {
     const total = Math.ceil(texts.length / BATCH_SIZE);
     console.log(`  Embedding batch ${n}/${total} (${batch.length} chunks)...`);
 
-    const res = await fetch(`${GEMINI_BASE}:batchEmbedContents?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(OPENAI_EMBEDDINGS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      },
       body: JSON.stringify({
-        requests: batch.map((text) => ({
-          model: `models/${MODEL}`,
-          content: { parts: [{ text }] },
-          outputDimensionality: DIMS,
-        })),
+        model: MODEL,
+        input: batch,
+        dimensions: DIMS,
       }),
     });
 
     if (res.status === 429) {
-      console.warn(`    Rate limited by Gemini API, waiting 3 seconds before retrying...`);
+      console.warn(`    Rate limited by OpenAI API, waiting 3 seconds before retrying...`);
       await new Promise((resolve) => setTimeout(resolve, 3000));
       i -= BATCH_SIZE;
       continue;
     }
 
     if (!res.ok) {
-      throw new Error(`Gemini API error ${res.status}: ${await res.text()}`);
+      throw new Error(`OpenAI API error ${res.status}: ${await res.text()}`);
     }
 
-    const json = (await res.json()) as { embeddings: { values: number[] }[] };
-    if (!json.embeddings?.length) {
-      throw new Error(`Gemini API returned no embeddings: ${JSON.stringify(json)}`);
+    const json = (await res.json()) as { data: { embedding: number[]; index: number }[] };
+    if (!json.data?.length) {
+      throw new Error(`OpenAI API returned no embeddings: ${JSON.stringify(json)}`);
     }
 
-    all.push(...json.embeddings.map((e) => e.values));
+    all.push(...json.data.sort((a, b) => a.index - b.index).map((e) => e.embedding));
   }
   return all;
 }
 
-if (!GEMINI_API_KEY) {
-  console.warn("⚠ GEMINI_API_KEY not set, writing empty search index");
+if (!OPENAI_API_KEY) {
+  console.warn("⚠ OPENAI_API_KEY not set, writing empty search index");
   if (!existsSync(INDEX_FILE)) {
     await writeFile(INDEX_FILE, "[]");
     await writeFile(VECTORS_FILE, Buffer.alloc(0));
@@ -230,14 +234,22 @@ const root = join(process.cwd(), "pages");
 const files = (await walk(root)).sort();
 console.log(`Found ${files.length} MDX files`);
 
-// Load old per-file hashes (format: { [rel]: sha256hex })
+// Load old per-file hashes (format: { config, files: { [rel]: sha256hex } })
+interface HashStore {
+  config?: string;
+  files: Record<string, string>;
+}
 const indexExists = existsSync(INDEX_FILE) && existsSync(VECTORS_FILE);
 let oldHashes: Record<string, string> = {};
 if (existsSync(HASH_FILE) && indexExists) {
   try {
     const raw = (await readFile(HASH_FILE, "utf-8")).trim();
-    // Support both old single-hash format (64-char hex) and new JSON object format
-    oldHashes = raw.startsWith("{") ? JSON.parse(raw) : {};
+    if (raw.startsWith("{")) {
+      const parsed = JSON.parse(raw) as HashStore;
+      if (parsed.config === EMBEDDING_CONFIG && parsed.files) {
+        oldHashes = parsed.files;
+      }
+    }
   } catch {
     oldHashes = {};
   }
@@ -352,7 +364,17 @@ for (let i = 0; i < allEmbeddings.length; i++) {
 await writeFile(VECTORS_FILE, Buffer.from(flat.buffer));
 
 // Write per-file hash map for next incremental run
-await writeFile(HASH_FILE, JSON.stringify(newHashes));
+await writeFile(HASH_FILE, JSON.stringify({ config: EMBEDDING_CONFIG, files: newHashes }));
 
 console.log(`✓ search-index.json (${meta.length} chunks, ${(JSON.stringify(meta).length / 1024).toFixed(0)} KiB)`);
 console.log(`✓ search-vectors.bin (${(flat.byteLength / 1024).toFixed(0)} KiB)`);
+
+const distDir = join(process.cwd(), "dist");
+if (existsSync(distDir)) {
+  await Promise.all([
+    copyFile(INDEX_FILE, join(distDir, "search-index.json")),
+    copyFile(VECTORS_FILE, join(distDir, "search-vectors.bin")),
+    copyFile(HASH_FILE, join(distDir, "search-index.hash")),
+  ]);
+  console.log("✓ copied search index to dist/");
+}

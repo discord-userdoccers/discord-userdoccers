@@ -1,6 +1,6 @@
-const MODEL = "gemini-embedding-2";
+const MODEL = "text-embedding-3-small";
 export const DIMS = 768;
-const GEMINI_BASE = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}`;
+const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
 
 // When any term appears in the query, all others are appended to pull the
 // embedding vector toward the full concept cluster
@@ -31,7 +31,7 @@ export interface SearchAssets {
 }
 
 export interface SearchEnv {
-  GEMINI_API_KEY: string;
+  OPENAI_API_KEY: string;
   ASSETS: SearchAssets;
 }
 
@@ -43,6 +43,51 @@ export class SearchError extends Error {
     this.name = "SearchError";
     this.status = status;
   }
+}
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9_\s-]/g, " ")
+    .split(/[\s_-]+/)
+    .filter((t) => t.length > 1);
+}
+
+function tokenMatches(a: string, b: string): boolean {
+  return a === b || a.startsWith(b) || b.startsWith(a);
+}
+
+// Boost chunks whose section heading matches the query. Pure embedding search
+// tends to favor endpoint/param noise; section overlap tracks doc structure.
+function sectionBoost(query: string, chunk: ChunkMeta): number {
+  const queryTokens = tokenize(query);
+  if (!queryTokens.length) return 0;
+
+  const sectionTokens = tokenize(chunk.section);
+  const anchorTokens = tokenize(chunk.anchor.replace(/-/g, " "));
+
+  let boost = 0;
+  for (const qt of queryTokens) {
+    if (sectionTokens.some((st) => tokenMatches(qt, st))) boost += 0.12;
+    if (anchorTokens.some((at) => tokenMatches(qt, at))) boost += 0.08;
+  }
+
+  if (sectionTokens.length > 0 && sectionTokens.every((st) => queryTokens.some((qt) => tokenMatches(qt, st)))) {
+    boost += 0.25;
+  }
+
+  const queryNorm = query.toLowerCase();
+  const sectionNorm = chunk.section.toLowerCase();
+  if (queryNorm.includes(sectionNorm) || sectionNorm.includes(queryNorm)) {
+    boost += 0.2;
+  }
+
+  // Penalize unrelated "Search …" endpoint sections for non-search queries
+  if (/\bsearch\b/i.test(chunk.section) && !/\bsearch\b/i.test(query)) {
+    boost -= 0.15;
+  }
+
+  return boost;
 }
 
 function expandQuery(query: string): string {
@@ -79,25 +124,40 @@ function cosine(query: number[], vectors: Float32Array, offset: number, dims: nu
 }
 
 async function embedQuery(text: string, apiKey: string): Promise<number[]> {
-  // Asymmetric retrieval format for queries
   const formatted = `task: search result | query: ${expandQuery(text)}`;
+  const cacheKey = `${MODEL}:${DIMS}:${formatted}`;
 
-  const res = await fetch(`${GEMINI_BASE}:embedContent?key=${apiKey}`, {
+  if (!globalThis.__queryEmbeddings) globalThis.__queryEmbeddings = new Map();
+  const cached = globalThis.__queryEmbeddings.get(cacheKey);
+  if (cached) return cached;
+
+  const res = await fetch(OPENAI_EMBEDDINGS_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      model: `models/${MODEL}`,
-      content: { parts: [{ text: formatted }] },
-      outputDimensionality: DIMS,
+      model: MODEL,
+      input: formatted,
+      dimensions: DIMS,
     }),
   });
 
   if (!res.ok) {
-    throw new SearchError(`Gemini API error ${res.status}: ${await res.text()}`, 502);
+    throw new SearchError(`OpenAI API error ${res.status}: ${await res.text()}`, 502);
   }
 
-  const json = (await res.json()) as { embedding: { values: number[] } };
-  return json.embedding.values;
+  const json = (await res.json()) as { data: { embedding: number[] }[] };
+  const embedding = json.data[0]?.embedding ?? [];
+
+  globalThis.__queryEmbeddings.set(cacheKey, embedding);
+  if (globalThis.__queryEmbeddings.size > 256) {
+    const oldest = globalThis.__queryEmbeddings.keys().next().value;
+    if (oldest) globalThis.__queryEmbeddings.delete(oldest);
+  }
+
+  return embedding;
 }
 
 interface IndexCache {
@@ -109,7 +169,11 @@ interface IndexCache {
 // CF Workers reuse V8 isolates between requests on the same edge node
 // Caching the parsed index in globalThis avoids re-fetching and re-parsing
 // the ~10 MB vectors binary on every request
-declare const globalThis: { __searchIndex?: IndexCache; __llmsPages?: Map<string, string> };
+declare const globalThis: {
+  __searchIndex?: IndexCache;
+  __llmsPages?: Map<string, string>;
+  __queryEmbeddings?: Map<string, number[]>;
+};
 
 async function loadIndex(assets: SearchAssets, origin: string): Promise<IndexCache> {
   if (globalThis.__searchIndex) return globalThis.__searchIndex;
@@ -142,11 +206,11 @@ export async function search(query: string, env: SearchEnv, origin: string, limi
   const trimmed = query.trim();
   if (!trimmed) return [];
   if (trimmed.length > 200) throw new SearchError("Query too long", 400);
-  if (!env.GEMINI_API_KEY) throw new SearchError("Search not configured", 503);
+  if (!env.OPENAI_API_KEY) throw new SearchError("Search not configured", 503);
 
   const [{ chunks, vectors, dims }, qvec] = await Promise.all([
     loadIndex(env.ASSETS, origin),
-    embedQuery(trimmed, env.GEMINI_API_KEY),
+    embedQuery(trimmed, env.OPENAI_API_KEY),
   ]);
 
   if (!chunks.length) return [];
@@ -157,9 +221,10 @@ export async function search(query: string, env: SearchEnv, origin: string, limi
 
   const scored: ScoredResult[] = chunks.map((chunk, i) => {
     const pathWithAnchor = chunk.anchor ? `${chunk.path}#${chunk.anchor}` : chunk.path;
+    const semantic = cosine(qvec, vectors, i * dims, dims);
     return {
       ...chunk,
-      score: cosine(qvec, vectors, i * dims, dims),
+      score: semantic * (1 + sectionBoost(trimmed, chunk)),
       url: `${origin}${pathWithAnchor}`,
     };
   });

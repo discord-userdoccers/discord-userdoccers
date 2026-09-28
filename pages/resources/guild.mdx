@@ -403,7 +403,7 @@ These guild features are mutable, and can be edited with the [Modify Guild](#mod
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | ACTIVITY_FEED_DISABLED_BY_USER ^1^              | Whether the [member list activity feed](https://support.discord.com/hc/en-us/articles/22045487931799-Members-List-Recent-Activity-FAQ) is explicitly disabled | `MANAGE_GUILD`       |
 | ACTIVITY_FEED_ENABLED_BY_USER ^1^               | Whether the [member list activity feed](https://support.discord.com/hc/en-us/articles/22045487931799-Members-List-Recent-Activity-FAQ) is explicitly enabled  | `MANAGE_GUILD`       |
-| COMMUNITY ^2^                                   | Whether community features are available                                                                                                                      | `ADMINISTRATOR`      |
+| COMMUNITY                                       | Whether community features are available                                                                                                                      | `ADMINISTRATOR`      |
 | DISCOVERABLE ^3^                                | Whether the guild is public and discoverable in the directory                                                                                                 | `ADMINISTRATOR`      |
 | ENABLED_MODERATION_EXPERIENCE_FOR_NON_COMMUNITY | Whether the member tab is shown in the channel list for non-community guilds                                                                                  | `MANAGE_GUILD`       |
 | INVITES_DISABLED                                | Whether joining the guild is disabled                                                                                                                         | `MANAGE_GUILD`       |
@@ -415,7 +415,7 @@ These guild features are mutable, and can be edited with the [Modify Guild](#mod
 
 ^1^ Only one of the features can be set at a time.
 
-^2^ Modification requires the `ADMINISTRATOR` permission.
+^2^ Modification requires the user to be the owner of the guild.
 
 ^3^ Guild must also pass all discovery requirements in order to set.
 
@@ -1245,21 +1245,22 @@ Guild join requests are not returned to moderators until they are submitted by t
 
 ###### Guild Join Request Structure
 
-| Field                 | Type                                                                                       | Description                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| id                    | snowflake                                                                                  | The ID of the join request                                                          |
-| join_request_id       | snowflake                                                                                  | The ID of the join request                                                          |
-| created_at            | ISO8601 timestamp                                                                          | When the join request was created                                                   |
-| application_status    | string                                                                                     | The [status of the join request](#guild-join-request-status)                        |
-| guild_id              | snowflake                                                                                  | The ID of the guild this join request is for                                        |
-| form_responses? ^1^   | ?array[[member verification form field](#member-verification-form-field-structure) object] | Responses to the guild's member verification questions                              |
-| last_seen             | ?ISO8601 timestamp                                                                         | When the request was acknowledged by the user                                       |
-| actioned_at? ^1^      | snowflake                                                                                  | A snowflake representing when the join request was actioned                         |
-| actioned_by_user? ^1^ | partial [user](/resources/user#user-object) object                                         | The moderator who actioned the join request                                         |
-| rejection_reason      | ?string                                                                                    | Why the join request was rejected                                                   |
-| user_id               | snowflake                                                                                  | The ID of the user who created this join request                                    |
-| user? ^1^ ^2^         | partial [user](/resources/user#user-object) object                                         | The user who created this join request                                              |
-| interview_channel_id  | ?snowflake                                                                                 | The ID of a channel where an interview regarding this join request may be conducted |
+| Field                             | Type                                                                                       | Description                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| id                                | snowflake                                                                                  | The ID of the join request                                                          |
+| join_request_id                   | snowflake                                                                                  | The ID of the join request                                                          |
+| created_at                        | ISO8601 timestamp                                                                          | When the join request was created                                                   |
+| application_status                | string                                                                                     | The [status of the join request](#guild-join-request-status)                        |
+| guild_id                          | snowflake                                                                                  | The ID of the guild this join request is for                                        |
+| form_responses? ^1^               | ?array[[member verification form field](#member-verification-form-field-structure) object] | Responses to the guild's member verification questions                              |
+| last_seen                         | ?ISO8601 timestamp                                                                         | When the request was acknowledged by the user                                       |
+| actioned_at? **(deprecated)** ^1^ | snowflake                                                                                  | A snowflake representing when the join request was actioned                         |
+| reviewed_at? ^1^                  | ISO8601 timestamp                                                                          | When the join request was actioned                                                  |
+| actioned_by_user? ^1^             | partial [user](/resources/user#user-object) object                                         | The moderator who actioned the join request                                         |
+| rejection_reason                  | ?string                                                                                    | Why the join request was rejected                                                   |
+| user_id                           | snowflake                                                                                  | The ID of the user who created this join request                                    |
+| user? ^1^ ^2^                     | partial [user](/resources/user#user-object) object                                         | The user who created this join request                                              |
+| interview_channel_id              | ?snowflake                                                                                 | The ID of a channel where an interview regarding this join request may be conducted |
 
 ^1^ Only included when fetched from the [Get Guild Join Request](#get-guild-join-request) or [List Guild Join Requests](#list-guild-join-requests) endpoints, or when receiving a [related Gateway event](/gateway/gateway-events#guild-join-request-create) as a moderator.
 
@@ -1916,7 +1917,7 @@ Represents a member's premium guild subscription ([boost](https://support.discor
 | state              | string             | The [state of application](#creator-monetization-request-state)  |
 | actioned_at        | ?ISO8601 timestamp | When the creator monetization request was actioned               |
 | requester_id       | snowflake          | The ID of the user that created the creator monetization request |
-| requester_acked_at | ISO8601 timestamp  | Unknown                                                          |
+| requester_acked_at | ?ISO8601 timestamp | When the creator monetization request action was acknowledged    |
 
 ###### Creator Monetization Request State
 
@@ -2428,21 +2429,20 @@ Modifies the current user's member in the guild. Returns the updated private [gu
 
 ###### JSON Params
 
-| Field                     | Type                                            | Description                                                                                                                                        | Permission        |
-| ------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| nick?                     | ?string                                         | The guild-specific nickname of the member (1-32 characters)                                                                                        | `CHANGE_NICKNAME` |
-| avatar?                   | ?[image data](/reference#cdn-data)              | The member's guild avatar; can only be changed for premium users and bots                                                                          |
-| avatar_description?       | ?string                                         | The description of the new guild avatar, usually in the format "\{filename\}, added \{date\}" (max 1024 characters)                                |
-| avatar_id?                | string                                          | The ID of the recent avatar to use                                                                                                                 |
-| avatar_decoration_id?     | ?snowflake                                      | The ID of the member's guild avatar decoration; can only be changed for premium users                                                              |
-| avatar_decoration_sku_id? | ?snowflake                                      | The SKU ID of the member's guild avatar decoration; can only be changed for premium users                                                          |
-| collectibles?             | ?[collectibles](#collectibles-structure) object | The member's equipped collectibles; can only be changed for premium users                                                                          |
-| display_name_font_id?     | ?integer                                        | The [display name font](/resources/user#display-name-font) to use; can only be changed for premium users                                           |
-| display_name_effect_id?   | ?integer                                        | The [display name effect](/resources/user#display-name-effect) to use; can only be changed for premium users                                       |
-| display_name_colors?      | ?array[integer]                                 | The display name colors to use encoded as an array of integers representing hexadecimal color codes (max 2); can only be changed for premium users |
-| pronouns?                 | ?string                                         | The member's guild pronouns (max 40 characters)                                                                                                    |
-| bio?                      | ?string                                         | The member's guild bio (max 190 characters); can only be changed for premium users and bots                                                        |
-| banner?                   | ?[image data](/reference#cdn-data)              | The member's guild banner; can only be changed for premium users and bots                                                                          |
+| Field                     | Type                                            | Description                                                                                                                                                 | Permission        |
+| ------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| nick?                     | ?string                                         | The guild-specific nickname of the member (1-32 characters)                                                                                                 | `CHANGE_NICKNAME` |
+| avatar?                   | ?[image data](/reference#cdn-data)              | The member's guild avatar; can only be changed for premium users and bots                                                                                   |
+| avatar_description?       | ?string                                         | The description of the new guild avatar, usually in the format "\{filename\}, added \{date\}" (max 1024 characters)                                         |
+| avatar_id?                | string                                          | The ID of the recent avatar to use                                                                                                                          |
+| avatar_decoration_sku_id? | ?snowflake                                      | The SKU ID of the member's guild avatar decoration; can only be changed for premium users                                                                   |
+| collectibles?             | ?[collectibles](#collectibles-structure) object | The member's equipped collectibles; can only be changed for premium users                                                                                   |
+| display_name_font_id?     | ?integer                                        | The [display name font](/resources/user#display-name-font) to use; can only be changed for premium users and bots                                           |
+| display_name_effect_id?   | ?integer                                        | The [display name effect](/resources/user#display-name-effect) to use; can only be changed for premium users and bots                                       |
+| display_name_colors?      | ?array[integer]                                 | The display name colors to use encoded as an array of integers representing hexadecimal color codes (max 2); can only be changed for premium users and bots |
+| pronouns?                 | ?string                                         | The member's guild pronouns (max 40 characters)                                                                                                             |
+| bio?                      | ?string                                         | The member's guild bio (max 190 characters); can only be changed for premium users and bots                                                                 |
+| banner?                   | ?[image data](/reference#cdn-data)              | The member's guild banner; can only be changed for premium users and bots                                                                                   |
 
 ###### Collectibles Structure
 
@@ -2454,7 +2454,6 @@ Modifies the current user's member in the guild. Returns the updated private [gu
 
 | Field   | Type      | Description                   |
 | ------- | --------- | ----------------------------- |
-| id?     | snowflake | The ID of the nameplate       |
 | sku_id? | snowflake | The ID of the nameplate's SKU |
 
 <RouteHeader method="PATCH" url="/guilds/{guild.id}/members/@me/nick" supportsAuditReason supportsBot deprecated>
@@ -2477,16 +2476,16 @@ Modifies the current user's profile in the guild. Returns a [profile metadata](/
 
 ###### JSON Params
 
-| Field                           | Type                               | Description                                                                                                                                     |
-| ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| pronouns?                       | ?string                            | The member's guild pronouns (max 40 characters)                                                                                                 |
-| bio?                            | ?string                            | The member's guild bio (max 190 characters); can only be changed for premium users                                                              |
-| banner?                         | ?[image data](/reference#cdn-data) | The member's guild banner; can only be changed for premium users                                                                                |
-| accent_color?                   | ?integer                           | The member's guild accent color as a hex integer; can only be changed for premium users                                                         |
-| theme_colors?                   | ?array[integer, integer]           | The member's two guild theme colors encoded as an array of integers representing hexadecimal color codes; can only be changed for premium users |
-| popout_animation_particle_type? | ?snowflake                         | The member's guild profile popout animation particle type; can only be changed for premium users                                                |
-| emoji_id?                       | ?snowflake                         | The member's guild profile emoji ID; can only be changed for premium users                                                                      |
-| profile_effect_id?              | ?snowflake                         | The member's guild profile effect ID; can only be changed for premium users                                                                     |
+| Field                                            | Type                               | Description                                                                                                                                     |
+| ------------------------------------------------ | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| pronouns?                                        | ?string                            | The member's guild pronouns (max 40 characters)                                                                                                 |
+| bio?                                             | ?string                            | The member's guild bio (max 190 characters); can only be changed for premium users                                                              |
+| banner?                                          | ?[image data](/reference#cdn-data) | The member's guild banner; can only be changed for premium users                                                                                |
+| accent_color?                                    | ?integer                           | The member's guild accent color as a hex integer; can only be changed for premium users                                                         |
+| theme_colors?                                    | ?array[integer, integer]           | The member's two guild theme colors encoded as an array of integers representing hexadecimal color codes; can only be changed for premium users |
+| popout_animation_particle_type? **(deprecated)** | ?snowflake                         | The member's guild profile popout animation particle type; can only be changed for premium users                                                |
+| emoji_id? **(deprecated)**                       | ?snowflake                         | The member's guild profile emoji ID; can only be changed for premium users                                                                      |
+| profile_effect_id?                               | ?snowflake                         | The member's guild profile effect ID; can only be changed for premium users                                                                     |
 
 <RouteHeader method="PUT" url="/guilds/{guild.id}/members/{user.id}/roles/{role.id}" supportsAuditReason supportsBot>
   Add Guild Member Role
@@ -2563,11 +2562,17 @@ Creates a guild ban and optionally deletes previous messages sent by the banned 
 | delete_message_days? **(deprecated)** | integer | Number of days to delete messages for (0-7, default 0)         |
 | delete_message_seconds?               | integer | Number of seconds to delete messages for (0-604800, default 0) |
 
-<RouteHeader method="POST" url="/guilds/{guild.id}/bulk-ban" supportsAuditReason mfa supportsBot>
+<RouteHeader method="POST" url="/guilds/{guild.id}/bulk-ban" supportsAuditReason mfa supportsBot deprecated>
   Bulk Guild Ban
 </RouteHeader>
 
 Create multiple guild bans and optionally delete previous messages sent by the banned users. Requires both the `BAN_MEMBERS` and `MANAGE_GUILD` permissions. Fires multiple [Guild Ban Add](/gateway/gateway-events#guild-ban-add) and optionally [Guild Member Remove](/gateway/gateway-events#guild-member-remove) Gateway events.
+
+<Alert type="warn">
+
+This endpoint is deprecated. It is replaced by [Bulk Guild Ban V2](#bulk-guild-ban-v2).
+
+</Alert>
 
 ###### JSON Params
 
@@ -2583,7 +2588,22 @@ Create multiple guild bans and optionally delete previous messages sent by the b
 | banned_users     | array[snowflake] | The user IDs that were successfully banned |
 | failed_users ^1^ | array[snowflake] | The user IDs that were not banned          |
 
-^1^ A ban will fail if the user is already banned, the user has a higher role than the current user, the user is the owner of the guild, or the user is the current user. If a bulk ban has no successful bans, the response will be an error.
+^1^ A ban will fail if the user is already banned, the user has a higher role than the current user, the user is the owner of the guild, or the user is the current user. If a bulk ban has no successful bans, the request will fail with a [`500000` JSON error code](/topics/errors#json-error-codes).
+
+<RouteHeader method="POST" url="/guilds/{guild.id}/bulk-ban/v2" supportsAuditReason mfa supportsBot>
+  Bulk Guild Ban V2
+</RouteHeader>
+
+Create multiple guild bans and optionally delete previous messages sent by the banned users. Requires both the `BAN_MEMBERS` and `MANAGE_GUILD` permissions. Returns a 204 empty response on success. Fires a [Guild Bulk Ban Update](/gateway/gateway-events#guild-bulk-ban-update) Gateway event for the current user. Fires multiple [Guild Ban Add](/gateway/gateway-events#guild-ban-add) and optionally [Guild Member Remove](/gateway/gateway-events#guild-member-remove) Gateway events.
+
+###### JSON Params
+
+| Field                   | Type             | Description                                                    |
+| ----------------------- | ---------------- | -------------------------------------------------------------- |
+| user_ids ^1^            | array[snowflake] | The user IDs to ban (max 200)                                  |
+| delete_message_seconds? | integer          | Number of seconds to delete messages for (0-604800, default 0) |
+
+^1^ If the only user ID provided belongs to the current user, the request will fail with a [`500000` JSON error code](/topics/errors#json-error-codes).
 
 <RouteHeader method="DELETE" url="/guilds/{guild.id}/bans/{user.id}" supportsAuditReason supportsBot>
   Delete Guild Ban
@@ -2744,11 +2764,11 @@ Guilds may have a maximum of 250 roles.
 | description?                | ?string                                       | The description for the role (max 90 characters)                                       |
 | color? **(deprecated)** ^1^ | ?integer                                      | Integer representation of a hexadecimal color code for the role                        |
 | colors? ^1^ ^2^             | ?[role colors](#role-colors-structure) object | The colors of the role encoded as an integer representation of hexadecimal color codes |
-| hoist?                      | boolean                                       | Whether this role is pinned in the user listing (default false)                        |
+| hoist?                      | ?boolean                                      | Whether this role is pinned in the user listing (default false)                        |
 | icon?                       | ?[image data](/reference#cdn-data)            | The role's icon                                                                        |
 | unicode_emoji?              | ?string                                       | The role's unicode emoji                                                               |
 | permissions?                | ?string                                       | The permission bitwise value for the role (default @everyone permissions)              |
-| mentionable?                | boolean                                       | Whether this role is mentionable (default false)                                       |
+| mentionable?                | ?boolean                                      | Whether this role is mentionable (default false)                                       |
 
 ^1^ If both `color` and `colors` are provided, the `color` field will be ignored.
 
@@ -2978,7 +2998,7 @@ Modifies the member verification for the guild. Requires the `MANAGE_GUILD` perm
 | description? | ?string                                                                                   | A description of what the guild is about; this can be different than the guild's description (max 300 characters)                                                         |
 | bulk_action? | string                                                                                    | When disabling the verification gate, [what to do](#guild-join-request-status) with pending applications (only `APPROVED` and `REJECTED` can be used, default `APPROVED`) |
 
-<RouteHeader method="GET" url="/guilds/{guild.id}/requests">
+<RouteHeader method="GET" url="/guilds/{guild.id}/requests" supportsBot>
   List Guild Join Requests
 </RouteHeader>
 
@@ -2986,12 +3006,12 @@ Returns a list of join requests for the guild for manual approval. Requires the 
 
 ###### Query String Params
 
-| Field      | Type      | Description                                                                |
-| ---------- | --------- | -------------------------------------------------------------------------- |
-| status ^1^ | string    | The [status of the join requests](#guild-join-request-status) to filter by |
-| limit?     | integer   | Max number of join requests to return (1-100, default 100)                 |
-| before?    | snowflake | Get join requests before this request ID                                   |
-| after?     | snowflake | Get join requests after this request ID                                    |
+| Field       | Type      | Description                                                                                      |
+| ----------- | --------- | ------------------------------------------------------------------------------------------------ |
+| status? ^1^ | string    | The [status of the join requests](#guild-join-request-status) to filter by (default `SUBMITTED`) |
+| limit?      | integer   | Max number of join requests to return (1-100, default 100)                                       |
+| before?     | snowflake | Get join requests before this request ID                                                         |
+| after?      | snowflake | Get join requests after this request ID                                                          |
 
 ^1^ Requests of status `STARTED` cannot be queried.
 
@@ -3079,7 +3099,7 @@ If a group DM channel already exists for the join request, the requestor will be
 
 </Alert>
 
-<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/{guild_join_request.id}">
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/requests/{guild_join_request.id}" supportsBot>
   Action Guild Join Request
 </RouteHeader>
 
