@@ -1,0 +1,57 @@
+# QoS (Quality of Service) Token
+
+QoS Token is a protobuf that is sent in Gateway Identify, and Ready dispatch event.
+
+<Collapsible title="Help!" description="How do I parse a protobuf?!" icon="question">
+
+Protobufs are a binary format, so you'll need to decode them before you can read them. If you want to learn more about them, a good start is Google's [official documentation](https://protobuf.dev/). All protobufs transmitted in the API are encoded in base64.
+
+The types documented below follow standard protobuf types (e.g. `uint32`, `bool`, `fixed64`, etc.). Some values are wrapped in containers such as `StringValue` or `BoolValue`.
+These are wrappers that allow the value to be `null` or unset, but must be unwrapped to access the value. They are provided by the `google.protobuf.wrappers` and `google.protobuf.timestamp` packages.
+
+The order of the documented structures below is the same order used in the wire format.
+
+All protobuf definitions used by Discord are available in [this repository](https://github.com/discord-userdoccers/discord-protos). They are also packaged on [PyPI](https://pypi.org/project/discord-protos) and [npm](https://www.npmjs.com/package/discord-protos) for easy installation.
+
+</Collapsible>
+
+### QoS Token Object
+
+Serialized as `discord_protos.qos_token.v1.QosToken`.
+
+###### QoS Token Structure
+
+| Field           | Type                                                                    | Description                      |
+| --------------- | ----------------------------------------------------------------------- | -------------------------------- |
+| client_provided | ?[client provided QoS data](#client-provided-qos-data-structure) object | QoS data specified by the client |
+| derived ^1^     | ?[derived QoS token](#derived-qos-token-structure) object               | QoS data provided by Gateway     |
+
+^1^ The derived data is provded by `qos_token` under the [Ready](/gateway/gateway-events#ready) event, and then saved in persistent storage for the current user id.
+
+###### Client Provided QoS Data Structure
+
+| Field     | Type    | Description                                                                                                                |
+| --------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| is_active | boolean | Whether the session is currently active (same as `active` in [QoS payload](/gateway/gateway-events#qos-payload-structure)) |
+
+###### Derived QoS Token Structure
+
+| Field     | Type   | Description                                                  |
+| --------- | ------ | ------------------------------------------------------------ |
+| claims    | bytes  | The binary-encoded [QoS Claims](#qos-claims-object) protobuf |
+| signature | bytes  | The signature                                                |
+| key_id    | uint32 | The ID of the signing key                                    |
+
+### QoS Claims Object
+
+Serialized as `discord_protos.qos_token.v1.Claims`.
+
+###### QoS Claims Structure
+
+| Field           | Type    | Description                                                                                |
+| --------------- | ------- | ------------------------------------------------------------------------------------------ |
+| user_id         | fixed64 | The user id this was issued for                                                            |
+| issued_at       | fixed64 | The unix timestamp (in milliseconds) of when this was issued                               |
+| is_staff        | boolean | Whether the user has [`STAFF`](/resources/user#user-flags) flag                            |
+| auth_token_hash | bytes   | SHA-256 hash of the authentication token used in the gateway session where this was issued |
+| expires_at      | fixed64 | The unix timestamp (in milliseconds) of when this expires                                  |
