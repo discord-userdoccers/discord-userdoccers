@@ -2,43 +2,74 @@
 
 Widgets are a way for users to showcase their gaming interests on their profile. They can display information about the user's favorite games, games they are currently playing, games they want to play, and more. Widgets can also be created by applications to display specific game details.
 
-### Game Widget Object
+### Widget Object
 
 A tile on a user's profile showcasing their gaming interests.
 
-| Field      | Type                                                   | Description                      |
-| ---------- | ------------------------------------------------------ | -------------------------------- |
-| data       | [game widget data](#game-widget-data-structure) object | The data of the widget           |
-| id         | snowflake                                              | The ID of the widget             |
-| updated_at | ISO8601 timestamp                                      | When the widget was last updated |
+| Field      | Type                                         | Description                      |
+| ---------- | -------------------------------------------- | -------------------------------- |
+| id         | snowflake                                    | The ID of the widget             |
+| updated_at | ISO8601 timestamp                            | When the widget was last updated |
+| data       | [widget data](#widget-data-structure) object | The data of the widget           |
 
-###### Game Widget Data Structure
+###### Widget Data Structure
 
-| Field           | Type                                                          | Description                                                                         |
-| --------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| type            | string                                                        | The [type of the game widget](#game-widget-type)                                    |
-| games?          | array[[game widget game](#game-widget-game-structure) object] | The widget's games (not applicable for [`application` widgets](#game-widget-type))  |
-| application_id? | snowflake                                                     | The application ID (only applicable for [`application` widgets](#game-widget-type)) |
+| Field          | Type                                                                         | Description                            | Types                                                 |
+| -------------- | ---------------------------------------------------------------------------- | -------------------------------------- | ----------------------------------------------------- |
+| type           | string                                                                       | The [type of the widget](#widget-type) | All                                                   |
+| games          | array[[widget game](#widget-game-structure) object]                          | The widget's games                     | All except `application`, `personal`, `clips_gallery` |
+| application_id | snowflake                                                                    | The application ID                     | `application`                                         |
+| header?        | ?string                                                                      | The header                             | `personal`                                            |
+| sections?      | ?array[[personal widget section](#personal-widget-section-structure) object] | The sections                           | `personal`                                            |
 
-###### Game Widget Type
+###### Widget Game Structure
 
-| Value              | Description               |
-| ------------------ | ------------------------- |
-| favorite_games ^1^ | Favourite game (max 1)    |
-| played_games       | Games I Like (max 20)     |
-| current_games ^1^  | Games in rotation (max 5) |
-| want_to_play_games | Want to play (max 20)     |
-| application        | Specific game details     |
+| Field    | Type          | Description                                                                          |
+| -------- | ------------- | ------------------------------------------------------------------------------------ |
+| game_id  | snowflake     | The application ID of the game                                                       |
+| comment? | ?string       | Optional comment to be displayed below the game in detailed game widgets             |
+| tags?    | array[string] | The [tags](#game-widget-tag) to be displayed below the game in detailed game widgets |
+
+###### Personal Widget Section Structure
+
+| Field     | Type                                                                                    | Description                                                              | Types    |
+| --------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------- |
+| type      | string                                                                                  | The [type of the personal widget section](#personal-widget-section-type) | All      |
+| title?    | string                                                                                  | The title of the personal widget section                                 | `cover`  |
+| subtitle? | string                                                                                  | The subtitle of the personal widget section                              | `cover`  |
+| image?    | ?[widget asset](#widget-asset-structure) object                                         | The image asset on the personal widget section                           | `cover`  |
+| fields    | array[[personal widget section field](#personal-widget-section-field-structure) object] | The fields on the personal widget section                                | `fields` |
+
+###### Personal Widget Section Field Structure
+
+| Field        | Type                                            | Description                                          |
+| ------------ | ----------------------------------------------- | ---------------------------------------------------- |
+| title?       | string                                          | The title                                            |
+| description? | string                                          | The description                                      |
+| image?       | ?[widget asset](#widget-asset-structure) object | The image asset in the personal widget section field |
+
+###### Widget Asset Structure
+
+| Field       | Type      | Description                   |
+| ----------- | --------- | ----------------------------- |
+| file_id     | snowflake | The ID of the file            |
+| width       | integer   | The width of the asset        |
+| height      | integer   | The height of the asset       |
+| is_animated | boolean   | Whether the asset is animated |
+
+###### Widget Type
+
+| Value              | Description               | Max Repeating Limit in Widget List |
+| ------------------ | ------------------------- | ---------------------------------- |
+| favorite_games ^1^ | Favorite game (max 1)     | 1                                  |
+| played_games       | Games I Like (max 20)     | 1                                  |
+| current_games ^1^  | Games in rotation (max 5) | 1                                  |
+| want_to_play_games | Want to play (max 20)     | 1                                  |
+| application        | Specific game details     | —                                  |
+| personal           | Personal profile widget   | —                                  |
+| clips_gallery      | Clips gallery             | —                                  |
 
 ^1^ Rendered as a detailed game widget in the user profile.
-
-###### Game Widget Game Structure
-
-| Field    | Type          | Description                                                                      |
-| -------- | ------------- | -------------------------------------------------------------------------------- |
-| game_id  | snowflake     | The application ID of the game                                                   |
-| comment? | ?string       | Optional comment to be displayed below the game in detailed game widgets         |
-| tags?    | array[string] | [Tags](#game-widget-tag) to be displayed below the game in detailed game widgets |
 
 ###### Game Widget Tag
 
@@ -67,7 +98,14 @@ A tile on a user's profile showcasing their gaming interests.
 
 ^1^ Only one of these tags can be present in a game widget at a time.
 
-###### Example Game Widget
+###### Personal Widget Section Type
+
+| Value  | Description   |
+| ------ | ------------- |
+| cover  | Cover image   |
+| fields | Widget fields |
+
+###### Example Widget
 
 ```json
 {
@@ -107,14 +145,14 @@ The user's external identity for a connected application.
 | metadata           | ?string                                                                          | Custom metadata                                      |
 | data?              | [user application profile data](#user-application-profile-data-structure) object | The user application data                            |
 | data_trusted?      | boolean                                                                          | Whether the data is trusted (set by application bot) |
-| connection_visible | boolean                                                                          | Unknown                                              |
+| connection_visible | boolean                                                                          | Whether the connection is visible on profile         |
 
 ###### User Application Profile Data Structure
 
-| Field    | Type                                                                                                | Description                       |
-| -------- | --------------------------------------------------------------------------------------------------- | --------------------------------- |
-| primary? | [user application profile primary data](#user-application-profile-primary-data-structure) object    | The primary user application data |
-| dynamic? | array[[user application profile dynamic data](#user-application-profile-dynamic-field-type) object] | The dynamic user application data |
+| Field                     | Type                                                                                                      | Description                       |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| primary? **(deprecated)** | [user application profile primary data](#user-application-profile-primary-data-structure) object          | The primary user application data |
+| dynamic?                  | array[[user application profile dynamic field](#user-application-profile-dynamic-field-structure) object] | The dynamic user application data |
 
 ###### User Application Profile Primary Data Structure
 
@@ -147,37 +185,21 @@ The user's external identity for a connected application.
 
 ^1^ Only applicable for the "Wuthering Waves" application.
 
+###### User Application Profile Dynamic Field Structure
+
+| Field | Type    | Description                                                                   |
+| ----- | ------- | ----------------------------------------------------------------------------- |
+| type  | integer | The [type of the dynamic field](#user-application-profile-dynamic-field-type) |
+| name  | string  | The name of the dynamic field                                                 |
+| value | any     | The value of the dynamic field                                                |
+
 ###### User Application Profile Dynamic Field Type
 
-| Value | Name   | Data                                               |
-| ----- | ------ | -------------------------------------------------- |
-| 1     | TEXT   | [String structure](#dynamic-string-data-structure) |
-| 2     | NUMBER | [Number structure](#dynamic-number-data-structure) |
-| 3     | IMAGE  | [Image structure](#dynamic-image-data-structure)   |
-
-###### Dynamic String Data Structure
-
-| Field | Type    | Description                   |
-| ----- | ------- | ----------------------------- |
-| name  | string  | The name of the dynamic data  |
-| value | string  | The value of the dynamic data |
-| type  | integer | The type of the dynamic data  |
-
-###### Dynamic Number Data Structure
-
-| Field | Type    | Description                   |
-| ----- | ------- | ----------------------------- |
-| name  | string  | The name of the dynamic data  |
-| value | integer | The value of the dynamic data |
-| type  | integer | The type of the dynamic data  |
-
-###### Dynamic Image Data Structure
-
-| Field | Type                                                                           | Description                   |
-| ----- | ------------------------------------------------------------------------------ | ----------------------------- |
-| name  | string                                                                         | The name of the dynamic data  |
-| value | [unfurled media item](/resources/components#unfurled-media-item-object) object | The value of the dynamic data |
-| type  | integer                                                                        | The type of the dynamic data  |
+| Value | Name   | Value Type                                                                     |
+| ----- | ------ | ------------------------------------------------------------------------------ |
+| 1     | TEXT   | string                                                                         |
+| 2     | NUMBER | integer                                                                        |
+| 3     | IMAGE  | [unfurled media item](/resources/components#unfurled-media-item-object) object |
 
 ###### Example User Application Profile Primary Data
 
@@ -224,7 +246,7 @@ A config for a widget that is displayed on the user's profile.
 | application_id   | snowflake                                                                          | The ID of the application the widget config is for       |
 | config_id        | snowflake                                                                          | The ID of the widget config                              |
 | display_name     | string                                                                             | The display name of the widget config                    |
-| surfaces         | map[string, [surface object](#widget-surface-structure)]                           | The surfaces the widget config is displayed on           |
+| surfaces         | map[string, [widget surface](#widget-surface-structure) object]                    | The surfaces the widget config is displayed on           |
 | status           | string                                                                             | The [status of the widget config](#widget-config-status) |
 | resolved_assets? | array[[application asset](/resources/application#application-asset-object) object] | The resolved assets for the widget config                |
 | published_at     | ?ISO8601 timestamp                                                                 | When the widget config was published                     |
@@ -232,25 +254,25 @@ A config for a widget that is displayed on the user's profile.
 
 ###### Widget Surface Structure
 
-| Field      | Type                                                                        | Description                      |
-| ---------- | --------------------------------------------------------------------------- | -------------------------------- |
-| layout     | string                                                                      | The layout used for this surface |
-| components | map[string, [widget component](#widget-surface-component-structure) object] | The components of the surface    |
+| Field      | Type                                                                                | Description                     |
+| ---------- | ----------------------------------------------------------------------------------- | ------------------------------- |
+| layout     | string                                                                              | The layout used for the surface |
+| components | map[string, [widget surface component](#widget-surface-component-structure) object] | The components of the surface   |
 
 ###### Widget Surface Component Structure
 
-| Field  | Type                                                                                    | Description                 |
-| ------ | --------------------------------------------------------------------------------------- | --------------------------- |
-| fields | map[string, [widget component field](#widget-surface-component-field-structure) object] | The fields of the component |
+| Field  | Type                                                                                            | Description                 |
+| ------ | ----------------------------------------------------------------------------------------------- | --------------------------- |
+| fields | map[string, [widget surface component field](#widget-surface-component-field-structure) object] | The fields of the component |
 
 ###### Widget Surface Component Field Structure
 
-| Field             | Type                                                                       | Description                                              |
-| ----------------- | -------------------------------------------------------------------------- | -------------------------------------------------------- |
-| value_type        | string                                                                     | The [type of the value](#widget-surface-value-type)      |
-| presentation_type | string                                                                     | The [presentation type](#presentation-type) of the value |
-| value             | string                                                                     | The actual value or reference key to the data            |
-| fallback?         | [widget component field](#widget-surface-component-field-structure) object | The fallback value if the value is unavailable           |
+| Field             | Type                                                                               | Description                                              |
+| ----------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| value_type        | string                                                                             | The [type of the value](#widget-surface-value-type)      |
+| presentation_type | string                                                                             | The [presentation type](#presentation-type) of the value |
+| value             | string                                                                             | The actual value or reference key to the data            |
+| fallback?         | [widget surface component field](#widget-surface-component-field-structure) object | The fallback value if the value is unavailable           |
 
 ###### Widget Surface Value Type
 
@@ -302,7 +324,7 @@ A config for a widget that is displayed on the user's profile.
 | text     | The value is a string of text |
 | duration | The value is a duration       |
 
-###### Surface Type
+###### Widget Surface Type
 
 | Value              | Description                                                  |
 | ------------------ | ------------------------------------------------------------ |
@@ -333,13 +355,13 @@ A config for a widget that is displayed on the user's profile.
   Modify Profile Widgets
 </RouteHeader>
 
-Replaces the user's profile widgets, and returns a list of [game widget](#game-widget-object) which has been put on the user's profile.
+Replaces the user's profile widgets, and returns a list of [widget](#widget-object) objects which has been put on the user's profile.
 
 ###### JSON Params
 
-| Field   | Type                                                     | Description                                                                       |
-| ------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| widgets | array[partial [game widget](#game-widget-object) object] | The user's game widgets (max 1 of each [game widget type](#game-widget-type)) ^1^ |
+| Field       | Type                                           | Description                                                            |
+| ----------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
+| widgets ^1^ | array[partial [widget](#widget-object) object] | The user's game widgets (each [widget type](#widget-type) can be ) ^1^ |
 
 ^1^ The `id` field is optional and `updated_at` is ignored.
 
@@ -504,10 +526,10 @@ Creates a new widget config for the specified application. Returns the created [
 
 ###### JSON Params
 
-| Field        | Type                                                            | Description                                                |
-| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------- |
-| display_name | string                                                          | The display name of the widget config (max 100 characters) |
-| surfaces     | map[string, [widget surface](#widget-surface-structure) object] | The surfaces mapped by [surface type](#surface-type)       |
+| Field        | Type                                                            | Description                                                 |
+| ------------ | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| display_name | string                                                          | The display name of the widget config (max 100 characters)  |
+| surfaces     | map[string, [widget surface](#widget-surface-structure) object] | The surfaces mapped by [surface type](#widget-surface-type) |
 
 <RouteHeader method="DELETE" url="/applications/{application.id}/widget-configs/{widget_config.id}" supportsBot>
   Delete Application Widget Config
@@ -523,10 +545,10 @@ Modifies the widget config. Returns the updated [widget config](#widget-config-s
 
 ###### JSON Params
 
-| Field         | Type                                                     | Description                                                |
-| ------------- | -------------------------------------------------------- | ---------------------------------------------------------- |
-| display_name? | string                                                   | The display name of the widget config (max 100 characters) |
-| surfaces      | map[string, [widget surface](#widget-surface-structure)] | The surfaces mapped by [surface type](#surface-type)       |
+| Field         | Type                                                            | Description                                                 |
+| ------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| display_name? | string                                                          | The display name of the widget config (max 100 characters)  |
+| surfaces      | map[string, [widget surface](#widget-surface-structure) object] | The surfaces mapped by [surface type](#widget-surface-type) |
 
 <RouteHeader method="POST" url="/applications/{application.id}/widget-configs/{widget_config.id}/publish" supportsBot>
   Publish Application Widget Config
