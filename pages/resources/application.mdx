@@ -187,6 +187,7 @@ containing the full set of flag bits.
 | 3 ^1^ | TICKETED_EVENTS      | A limited application used for ticketed event SKUs                                           |
 | 4 ^1^ | CREATOR_MONETIZATION | A limited application used for creator monetization (e.g. role subscription) SKUs            |
 | 5     | GAME                 | A game integrating with Discord                                                              |
+| 6     | NON_GAME_DETECTABLE  | A non-game application that is detectable                                                    |
 
 ^1^ Applications of these types cannot be used through most of the regular applications APIs outlined here.
 
@@ -200,7 +201,7 @@ containing the full set of flag bits.
 | 1 \<\< 4      | GROUP_DM_CREATE                        | Application can create group DMs without limit                                                                                                              | No      |
 | 1 \<\< 5      | RPC_PRIVATE_BETA                       | Application can use the `rpc` scope without limitation                                                                                                      | No      |
 | 1 \<\< 6      | AUTO_MODERATION_RULE_CREATE_BADGE      | Application has created 100+ AutoMod rules                                                                                                                  | Yes     |
-| 1 \<\< 7      | GAME_PROFILE_DISABLED                  | Application has its game profile page disabled                                                                                                              | Yes     |
+| 1 \<\< 7      | GAME_DISABLED                          | Application has its game profile page disabled                                                                                                              | Yes     |
 | 1 \<\< 8      | PUBLIC_OAUTH2_CLIENT                   | Application's OAuth2 credentials are considered public and a client secret is not required                                                                  | No      |
 | 1 \<\< 9      | CONTEXTLESS_ACTIVITY                   | Embedded application's activity can be launched without a context                                                                                           | Yes     |
 | 1 \<\< 10     | SOCIAL_LAYER_INTEGRATION_LIMITED       | Application has limited access to the social layer SDK                                                                                                      | Yes     |
@@ -210,7 +211,7 @@ containing the full set of flag bits.
 | 1 \<\< 14     | GATEWAY_GUILD_MEMBERS                  | Intent required for bots in **100 or more guilds** to receive guild member-related events like [Guild Member Add](/gateway/gateway-events#guild-member-add) | Yes     |
 | 1 \<\< 15     | GATEWAY_GUILD_MEMBERS_LIMITED          | Intent required for bots in **under 100 guilds** to receive guild member-related events like [Guild Member Add](/gateway/gateway-events#guild-member-add)   | Yes     |
 | 1 \<\< 16     | VERIFICATION_PENDING_GUILD_LIMIT       | Indicates unusual growth of an application that prevents verification                                                                                       | Yes     |
-| 1 \<\< 17     | EMBEDDED                               | Application can be embedded within the Discord client                                                                                                       | Yes     |
+| 1 \<\< 17     | EMBEDDED **(deprecated)**              | Application can be embedded within the Discord client                                                                                                       | Yes     |
 | 1 \<\< 18     | GATEWAY_MESSAGE_CONTENT                | Intent required for bots in **100 or more guilds** to receive [message content](https://support-dev.discord.com/hc/en-us/articles/4404772028055)            | Yes     |
 | 1 \<\< 19     | GATEWAY_MESSAGE_CONTENT_LIMITED        | Intent required for bots in **under 100 guilds** to receive [message content](https://support-dev.discord.com/hc/en-us/articles/4404772028055)              | Yes     |
 | 1 \<\< 20     | EMBEDDED_FIRST_PARTY                   | Embedded application is created by Discord                                                                                                                  | Yes     |
@@ -223,8 +224,9 @@ containing the full set of flag bits.
 | 1 \<\< 29     | PROMOTED                               | Application is promoted by Discord in the application directory                                                                                             | Yes     |
 | 1 \<\< 30     | PARTNER                                | Application is a Discord partner                                                                                                                            | Yes     |
 | 1 \<\< 33     | PARENT                                 | Application is a parent of a child application                                                                                                              | Yes     |
-| 1 \<\< 34     | DISABLE_RELATIONSHIP_ACCESS            | Application cannot access relationship information                                                                                                          | Yes     |
+| 1 \<\< 34     | DISABLE_RELATIONSHIPS_ACCESS           | Application cannot access relationship information                                                                                                          | Yes     |
 | 1 \<\< 35     | STOREFRONT_ELIGIBLE                    | Application can create storefront listings                                                                                                                  | No      |
+| 1 \<\< 38     | QUEST                                  | Application is a Quest application                                                                                                                          | Yes     |
 | ~~1 \<\< 8~~  | ~~ALLOW_ASSETS~~                       | ~~Application can use activity assets~~                                                                                                                     | ~~No~~  |
 | ~~1 \<\< 9~~  | ~~ALLOW_ACTIVITY_ACTION_SPECTATE~~     | ~~Application can enable spectating activities~~                                                                                                            | ~~No~~  |
 | ~~1 \<\< 10~~ | ~~ALLOW_ACTIVITY_ACTION_JOIN_REQUEST~~ | ~~Application can enable activity join requests~~                                                                                                           | ~~No~~  |
@@ -267,6 +269,11 @@ containing the full set of flag bits.
 | ENTITLEMENT_CREATE         | Sent when a user creates an entitlement                                |
 | ENTITLEMENT_UPDATE         | Sent when an entitlement is updated                                    |
 | ENTITLEMENT_DELETE         | Sent when an entitlement is deleted                                    |
+| ACTIVITY_INVITE_CREATE     | Sent when a user creates an activity invite                            |
+| RELATIONSHIP_ADD           | Sent when a user adds a relationship                                   |
+| RELATIONSHIP_UPDATE        | Sent when a relationship is updated                                    |
+| RELATIONSHIP_REMOVE        | Sent when a user removes a relationship                                |
+| USER_ACTIVITY_ACTION       | Sent when a user performs an activity action                           |
 | QUEST_USER_ENROLLMENT      | Sent when a user enrolls in a quest                                    |
 | LOBBY_MESSAGE_CREATE       | Sent when a user sends a message in a lobby                            |
 | LOBBY_MESSAGE_UPDATE       | Sent when a user updates a message in a lobby                          |
@@ -274,6 +281,8 @@ containing the full set of flag bits.
 | GAME_DIRECT_MESSAGE_CREATE | Sent when a user sends a direct message through the social layer SDK   |
 | GAME_DIRECT_MESSAGE_UPDATE | Sent when a user updates a direct message through the social layer SDK |
 | GAME_DIRECT_MESSAGE_DELETE | Sent when a user deletes a direct message through the social layer SDK |
+| GAME_RELATIONSHIP_ADD      | Sent when a user adds a game relationship                              |
+| GAME_RELATIONSHIP_UPDATE   | Sent when a game relationship is updated                               |
 
 ###### Explicit Content Filter Level
 
@@ -627,6 +636,7 @@ Mapped URLs are available at `<application_id>.discordsays.com/<prefix>`.
 | client_platform_config                    | map[string, [embedded activity platform config](#embedded-activity-platform-config-structure) object] | The release configuration for the activity on each [platform](#embedded-activity-platform-type)                       |
 | shelf_rank                                | integer                                                                                               | The rank of the activity in the activity shelf sort order                                                             |
 | has_csp_exception                         | boolean                                                                                               | Whether the activity is not routed through the Discord activity proxy                                                 |
+| has_proxy_request_signing                 | boolean                                                                                               | Whether the activity requires requests to be signed by the Discord activity proxy                                     |
 | displays_advertisements                   | boolean                                                                                               | Whether the activity displays advertisements                                                                          |
 | supported_locales ^2^                     | array[string]                                                                                         | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country codes the activity is available in |
 | blocked_locales                           | array[string]                                                                                         | The [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) country codes the activity is blocked in   |
@@ -670,14 +680,15 @@ Mapped URLs are available at `<application_id>.discordsays.com/<prefix>`.
 
 ###### Embedded Activity Release Phase
 
-| Value                 | Description                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| in_development        | The activity is still in development                                                                                |
-| activities_team       | The activity is available to guilds with the [`ACTIVITIES_ALPHA` guild feature](/resources/guild#guild-features)    |
-| employee_release      | The activity is available to guilds with the [`ACTIVITIES_EMPLOYEE` guild feature](/resources/guild#guild-features) |
-| soft_launch           | The activity is available to all guilds in Canada                                                                   |
-| soft_launch_multi_geo | The activity is available to all guilds in multiple countries                                                       |
-| global_launch         | The activity is available to all guilds                                                                             |
+| Value                  | Description                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| in_development         | The activity is still in development                                                                                |
+| activities_team        | The activity is available to guilds with the [`ACTIVITIES_ALPHA` guild feature](/resources/guild#guild-features)    |
+| employee_release       | The activity is available to guilds with the [`ACTIVITIES_EMPLOYEE` guild feature](/resources/guild#guild-features) |
+| soft_launch            | The activity is available to all guilds in Canada                                                                   |
+| soft_launch_multi_geo  | The activity is available to all guilds in multiple countries                                                       |
+| global_launch_unlisted | The activity is available to all guilds, but is not listed in the activity shelf                                    |
+| global_launch          | The activity is available to all guilds                                                                             |
 
 ###### Embedded Activity Surface
 
@@ -721,6 +732,7 @@ Mapped URLs are available at `<application_id>.discordsays.com/<prefix>`.
   },
   "shelf_rank": 3,
   "has_csp_exception": false,
+  "has_proxy_request_signing": false,
   "displays_advertisements": false,
   "application_id": "880218394199220334"
 }
