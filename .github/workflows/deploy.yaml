@@ -54,14 +54,6 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile --production=false
 
-      - name: Build Search Index
-        if: steps.vars.outputs.event == 'push' && steps.vars.outputs.branch == 'master'
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          pnpm run prebuild:search
-          cp public/search-index.json public/search-vectors.bin public/search-index.hash dist/
-
       - name: Deploy Site
         id: deploy
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
@@ -88,4 +80,10 @@ jobs:
           DEPLOYMENT_PR_NUMBER: ${{ steps.vars.outputs.pr_number }}
           DEPLOYMENT_DESCRIPTION: ${{ steps.vars.outputs.description }}
         run: pnpm run ci:deploy
-            
+
+      # Runs after the site is live so search results never link to pages that don't exist yet
+      - name: Publish Search Index
+        if: steps.vars.outputs.event == 'push' && steps.vars.outputs.branch == 'master'
+        env:
+          SEARCH_PUBLISH_KEY: ${{ secrets.SEARCH_PUBLISH_KEY }}
+        run: pnpm run publish:search
