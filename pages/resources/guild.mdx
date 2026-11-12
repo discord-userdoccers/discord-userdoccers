@@ -61,7 +61,8 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | profile ^3^                                  | ?[guild identity](#guild-identity-structure) object                                        | The guild's identity                                                                                                   |
 | approximate_member_count? ^2^                | integer                                                                                    | Approximate count of total members in the guild                                                                        |
 | approximate_presence_count? ^2^              | integer                                                                                    | Approximate count of non-offline members in the guild                                                                  |
-| official_message_color                       | ?integer                                                                                   | Color for guild official messages (client defaults to 0x3498db)                                                        |
+| official_message_color                       | ?integer                                                                                   | Color for guild official messages (default `0x3498db`)                                                                 |
+| guild_space_settings?                        | ?[guild space settings](#guild-space-settings-structure) object                            | Settings for guild's space                                                                                             |
 | version? ^4^                                 | string                                                                                     | The version of the guild serialized as a stringified integer                                                           |
 
 ^1^ This limit also applies to stream viewers within the channel. The value is always 50 for premium tiers 0 to 1, 150 for premium tier 2, and `300 + 30 * (premium_subscription_count - 14)` for premium tier 3.
@@ -114,6 +115,13 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | additional_emoji_slots   | integer       | The number of additional emoji slots available to the guild      |
 | additional_sticker_slots | integer       | The number of additional sticker slots available to the guild    |
 | additional_sound_slots   | integer       | The number of additional soundboard slots available to the guild |
+
+###### Guild Space Settings Structure
+
+| Field          | Type    | Description                                                              |
+| -------------- | ------- | ------------------------------------------------------------------------ |
+| enabled        | boolean | Whether the guild space is enabled                                       |
+| publish_status | integer | The [publishment status of guild space](#guild-space-publishment-status) |
 
 ###### Message Notification Level
 
@@ -198,6 +206,13 @@ Guilds in Discord represent an isolated collection of users and channels, and ar
 | 0     | DEFAULT     | Student hub is not categorized as a high school or post-secondary institution |
 | 1     | HIGH_SCHOOL | Student hub is for a high school                                              |
 | 2     | COLLEGE     | Student hub is for a post-secondary institution (college or university)       |
+
+###### Guild Space Publishment Status
+
+| Value | Name      | Description |
+| ----- | --------- | ----------- |
+| 0     | DRAFT     | Draft       |
+| 1     | PUBLISHED | Published   |
 
 ###### Guild Features
 
@@ -1926,6 +1941,74 @@ Represents a member's premium guild subscription ([boost](https://support.discor
 | REJECTED        | The application is rejected |
 | APPROVED        | The application is approved |
 | ACTION_REQUIRED | Action required             |
+
+### Guild Space Object
+
+###### Guild Space Structure
+
+| Field    | Type                                                                   | Description             |
+| -------- | ---------------------------------------------------------------------- | ----------------------- |
+| guild_id | snowflake                                                              | The ID of the guild     |
+| header   | [guild space header](#guild-space-header-structure) object             | The guild space header  |
+| widgets? | array[partial [guild space widget](#guild-space-widget-object) object] | The guild space widgets |
+
+###### Guild Space Header Structure
+
+| Field               | Type    | Description                                                |
+| ------------------- | ------- | ---------------------------------------------------------- |
+| custom_banner_hash? | ?string | The guild space's [banner hash](/reference#cdn-formatting) |
+
+### Guild Space Widget Object
+
+###### Guild Space Widget Structure
+
+| Field              | Type                                                                         | Description                                                    |
+| ------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| id                 | snowflake                                                                    | The ID of the guild space widget                               |
+| type               | string                                                                       | The [type of the guild space widget](#guild-space-widget-type) |
+| position           | [guild space widget position](#guild-space-widget-position-structure) object | The position of the widget                                     |
+| config             | [guild space widget config](#guild-space-widget-config-structure) object     | The configuration of the widget                                |
+| requires_hydration | boolean                                                                      | Whether the widget requires hydration                          |
+| default_title?     | string                                                                       | The default title of the widget                                |
+| locked             | boolean                                                                      | Whether the widget is locked behind a powerup SKU              |
+
+###### Guild Space Widget Type
+
+| Value         | Description                                    |
+| ------------- | ---------------------------------------------- |
+| leaderboard   | Game leaderboard widget                        |
+| whiteboard    | Whiteboard widget                              |
+| popular_music | Widget representing popular music in the guild |
+| image_text    | Widget representing image and/or text          |
+| popular_games | Widget representing popular games in the guild |
+
+###### Guild Space Widget Position Structure
+
+| Field  | Type    | Description |
+| ------ | ------- | ----------- |
+| column | integer | The column  |
+| order  | integer | The row     |
+
+###### Guild Space Widget Config Structure
+
+| Field       | Type    | Description                                                      | Types        |
+| ----------- | ------- | ---------------------------------------------------------------- | ------------ |
+| type        | string  | The [type of the guild space widget](#guild-space-widget-type)   | All          |
+| title?      | string  | The title of the guild space widget                              | `IMAGE_TEXT` |
+| text?       | ?string | The text of the guild space widget                               | `IMAGE_TEXT` |
+| image_hash? | ?string | The guild space widget [image's hash](/reference#cdn-formatting) | `IMAGE_TEXT` |
+
+### Guild Space Catalog Widget Object
+
+###### Guild Space Catalog Widget Structure
+
+| Field           | Type       | Description                                                    |
+| --------------- | ---------- | -------------------------------------------------------------- |
+| type            | string     | The [type of the guild space widget](#guild-space-widget-type) |
+| name?           | ?string    | The name of the guild space widget                             |
+| powerup_sku_id? | ?snowflake | The ID of the widget powerup SKU                               |
+| boost_price?    | ?integer   | The number of boosts the widget powerup costs                  |
+| max_instances?  | integer    | Maximum number of guild space widgets of same type             |
 
 ## Endpoints
 
@@ -4075,3 +4158,68 @@ Returns a URL to the attachment for the given guild and product ID. Requires an 
 | Field | Type   | Description               |
 | ----- | ------ | ------------------------- |
 | url   | string | The URL to the attachment |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/space">
+  Get Guild Space
+</RouteHeader>
+
+Returns a [guild space](#guild-space-object) object for the given guild ID.
+
+<RouteHeader method="PUT" url="/guilds/{guild.id}/space">
+  Modify Guild Space
+</RouteHeader>
+
+Modifies guild space's contents. Requires the `MANAGE_GUILD` permission. Returns a [guild space](#guild-space-object) object on success.
+
+###### JSON Params
+
+| Field    | Type                                                                   | Description             |
+| -------- | ---------------------------------------------------------------------- | ----------------------- |
+| header   | [guild space header](#guild-space-header-structure) object             | The guild space header  |
+| widgets? | array[partial [guild space widget](#guild-space-widget-object) object] | The guild space widgets |
+
+###### Partial Guild Space Header Structure
+
+| Field          | Type                               | Description              |
+| -------------- | ---------------------------------- | ------------------------ |
+| custom_banner? | ?[image data](/reference#cdn-data) | The guild space's banner |
+
+###### Partial Guild Space Widget Structure
+
+| Field    | Type                                                                         | Description                                                |
+| -------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| id?      | string                                                                       | The draft ID of guild space widget, prefixed with `draft:` |
+| type     | string                                                                       | The [type of guild space widget](#guild-space-widget-type) |
+| position | [guild space widget position](#guild-space-widget-position-structure) object | The position of the widget                                 |
+| config   | [guild space widget config](#guild-space-widget-config-structure) object     | The configuration of the widget                            |
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/space/widgets/hydrate">
+  Hydrate Guild Space Widgets
+</RouteHeader>
+
+Hydrates. (TODO)
+
+<RouteHeader method="GET" url="/guilds/{guild.id}/space/widgets/catalog">
+  Get Guild Space Widgets Catalog
+</RouteHeader>
+
+Returns guild space widget catalog. Requires the `MANAGE_GUILD` permission.
+
+###### Response Body
+
+| Field   | Type                                                                           | Description                |
+| ------- | ------------------------------------------------------------------------------ | -------------------------- |
+| widgets | array[[guild space catalog widget](#guild-space-catalog-widget-object) object] | The widgets in the catalog |
+
+<RouteHeader method="PATCH" url="/guilds/{guild.id}/space/settings">
+  Modify Guild Space Settings
+</RouteHeader>
+
+Modifies guild space's settings. Requires the `MANAGE_GUILD` permission. Returns a 204 empty response on success.
+
+###### JSON Params
+
+| Field           | Type    | Description                                                              |
+| --------------- | ------- | ------------------------------------------------------------------------ |
+| enabled?        | boolean | Whether the guild space is enabled                                       |
+| publish_status? | integer | The [publishment status of guild space](#guild-space-publishment-status) |
